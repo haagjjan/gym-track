@@ -36,34 +36,35 @@ The database schema, constraints, and indexes will be designed to support these 
 - Filter: user_id, session_id
 - Output:
   - session metadata (started_at, ended_at, notes)
-  - ordered exercises in that session
+  - ordered exercises in that session (1. ex, 2. ex, 3. ex, ...)
   - ordered sets per exercise including:
     - set_type (warmup/working)
     - weight, reps
     - RIR
     - rest_time_seconds
+    - difference to last set
 
 ---
 
 ## 3) Logging / Editing a Workout
 
-### Q6. Create a new session (start workout)
-- Input: user_id, started_at (default now), notes(optional)
-- Output: session_id
+### Q7. Create a new session (start workout)
+- Input: Workout Type/Structure (upper, lower, push, pull, ...), user_id(automatically), started_at (default now), notes(optional)
+- Output: session_id, exercise windows
 
-### Q7. Add exercise to session (ordered)
-- Input: session_id, exercise_id, position/order
+### Q8. Add exercise to session (ordered)
+- Input: session_id, exercise_id, position/order, workig mouscle groups
 - Output: session_exercise_id
 
-### Q8. Add set to a session exercise (ordered)
-- Input: session_exercise_id, set_order, set_type, weight, reps, RIR, rest_time_seconds
-- Output: set_id
+### Q9. Add set to a session exercise (ordered)
+- Input: session_exercise_id (auto), set_order (auto), set_type, weight, reps, RIR, rest_time_seconds (auto)
+- Output: set_id, input set fields
 
-### Q9. Edit or delete a set
+### Q10. Edit or delete a set
 - Input: set_id, changed fields OR delete flag
 - Output: updated set
 
-### Q10. Reorder exercises within a session
+### Q11. Reorder exercises within a session
 - Input: session_id, new ordering
 - Output: updated ordering
 
@@ -71,11 +72,11 @@ The database schema, constraints, and indexes will be designed to support these 
 
 ## 4) Exercise Library (Defaults + Custom)
 
-### Q11. List selectable exercises
+### Q12. List selectable exercises
 - Filter: (defaults) + (user custom)
-- Output: exercise_id, name, primary muscle group, equipment(optional)
+- Output: exercise_id, name, primary muscle group, optional secondary muscle group, equipment(optional), exercise type (isolation/compound)
 
-### Q12. Create custom exercise
+### Q13. Add custom exercise to list
 - Input: user_id, name, primary muscle group, optional secondary muscle groups
 - Output: exercise_id
 
@@ -83,27 +84,32 @@ The database schema, constraints, and indexes will be designed to support these 
 
 ## 5) Progress & Analytics
 
-### Q13. Exercise progress over time (sets)
-- Filter: user_id, exercise_id, date range, optionally set_type=working
-- Output (time series):
+### Q14. Exercise progress over time (sets)
+- Filter: user_id, exercise_id, time range, optionally set_type=working, set_id
+- Output (time series), illustrated graphically:
   - session_date
-  - set_type
   - weight, reps, RIR
+- or 
+  - session_date
+  - weight, reps + RIR added
+- or
   - (optional) estimated_1RM
 
-### Q14. Exercise summary stats for a time range
+### Q15. Exercise summary stats for a time range
 - Filter: user_id, exercise_id, date range
 - Output:
   - total_sets, total_reps
   - total_volume (sum weight*reps)
+  - average RIR
+  - total time of doing this exercise
   - best_top_set (by weight or by estimated 1RM)
 
-### Q15. Weekly sets per muscle group
-- Filter: user_id, week range
+### Q16. Weekly sets per muscle group
+- Filter: user_id, time range
 - Output:
-  - week_start
+  - average weekly woking sets for each muscle group
   - muscle_group
-  - number_of_working_sets
+  - total number of sets per muscle group
 
 ---
 
