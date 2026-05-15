@@ -12,9 +12,12 @@ Read these files before implementing feature work:
 2. `docs/01-requirements.md` - MVP product requirements and user flows
 3. `docs/02-query-list.md` - DB-driven query requirements
 4. `docs/03-data-model-notes.md` - data model rules and tradeoffs
-5. `ENGINEERING.md` - TypeScript/PostgreSQL code quality rules
-6. `ARCHITECTURE.md` - module boundaries and dependency rules
-7. `CONTRIBUTING.md` - implementation workflow and review gates
+5. `docs/04-schema-draft.md` - ERD-level MVP database schema draft
+6. `docs/05-api-contract.md` - MVP REST API contract
+7. `ENGINEERING.md` - TypeScript/PostgreSQL code quality rules
+8. `ARCHITECTURE.md` - module boundaries and dependency rules
+9. `CONTRIBUTING.md` - implementation workflow and review gates
+10. `docs/git-pipeline.md` - Git, PR, and repository check workflow
 
 ## Working Rules
 
@@ -57,8 +60,8 @@ Before handing work back:
 
 ## Current Constraints
 
-- The product requirements are still draft-stage.
-- The stack direction is TypeScript for application code and PostgreSQL SQL for database work.
-- Exact framework, migration-tool, auth, API-contract, and deployment choices still require ADRs before implementation.
+- The MVP requirements, schema draft, and API contract are documented but may evolve through focused docs updates or ADRs.
+- The accepted stack direction is TypeScript, PostgreSQL, Next.js App Router, Fastify, pnpm workspaces, Kysely, Zod, and owned email/password auth.
+- Migration tooling, password hashing library, session storage details, local development setup, and deployment target still need decisions before implementation reaches those areas.
 - Application source folders should not be added as empty scaffolding.
-- Database schema work should be driven by `docs/02-query-list.md` and `docs/03-data-model-notes.md`.
+- Database schema work should be driven by `docs/02-query-list.md`, `docs/03-data-model-notes.md`, and `docs/04-schema-draft.md`.

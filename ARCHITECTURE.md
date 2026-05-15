@@ -10,7 +10,10 @@ The source-of-truth documents are:
 - `docs/01-requirements.md` for MVP scope and user flows
 - `docs/02-query-list.md` for query-driven database requirements
 - `docs/03-data-model-notes.md` for data rules and modeling decisions
+- `docs/04-schema-draft.md` for the MVP database schema draft
+- `docs/05-api-contract.md` for the MVP REST API contract
 - `ENGINEERING.md` for TypeScript/PostgreSQL engineering standards
+- `docs/git-pipeline.md` for Git and repository check workflow
 - `docs/decisions/` for architecture decision records
 
 ## Accepted Stack Direction
@@ -127,6 +130,6 @@ Small implementation choices inside an already approved stack can be documented 
 - Migration tooling
 - Session storage details
 - Password hashing library
-- API contract format
+- Local development environment setup
 - Deployment target
-- CI pipeline
+- Application build, lint, type-check, and test CI jobs
