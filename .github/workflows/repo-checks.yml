@@ -1,0 +1,76 @@
+name: repo-checks
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  repo-checks:
+    name: Repository hygiene
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check whitespace
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          CURRENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
+            git fetch origin "${GITHUB_BASE_REF}" --depth=1
+            git diff --check "origin/${GITHUB_BASE_REF}...HEAD"
+          elif [ -n "${BEFORE_SHA:-}" ] && [ "${BEFORE_SHA}" != "0000000000000000000000000000000000000000" ] && git rev-parse --verify "${BEFORE_SHA}^{commit}" >/dev/null 2>&1; then
+            git diff --check "${BEFORE_SHA}..${CURRENT_SHA}"
+          elif git rev-parse --verify "${CURRENT_SHA}^" >/dev/null 2>&1; then
+            git diff --check "${CURRENT_SHA}^..${CURRENT_SHA}"
+          else
+            git diff --check
+          fi
+
+      - name: Verify foundation docs
+        run: |
+          set -euo pipefail
+
+          required_files=(
+            "AGENTS.md"
+            "ARCHITECTURE.md"
+            "ENGINEERING.md"
+            "CONTRIBUTING.md"
+            "docs/00-workflow.md"
+            "docs/01-requirements.md"
+            "docs/02-query-list.md"
+            "docs/03-data-model-notes.md"
+            "docs/04-schema-draft.md"
+            "docs/05-api-contract.md"
+            "docs/git-pipeline.md"
+            "docs/decisions/README.md"
+          )
+
+          for file in "${required_files[@]}"; do
+            if [ ! -f "${file}" ]; then
+              echo "::error file=${file}::Required foundation doc is missing"
+              exit 1
+            fi
+          done
+
+      - name: Guard implementation scaffolding
+        run: |
+          set -euo pipefail
+
+          if [ -d "apps" ] || [ -d "packages" ]; then
+            if [ ! -f "package.json" ] || [ ! -f "pnpm-workspace.yaml" ]; then
+              echo "::error::apps/ or packages/ requires root package.json and pnpm-workspace.yaml"
+              exit 1
+            fi
+          fi
