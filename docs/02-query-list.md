@@ -70,15 +70,16 @@ The database schema, constraints, and indexes will be designed to support these 
 
 ---
 
-## 4) Exercise Library (Defaults + Custom)
+## 4) Exercise Library (Shared Global)
 
 ### Q12. List selectable exercises
-- Filter: (defaults) + (user custom)
+- Filter: shared global exercise library, excluding deleted exercises
 - Output: exercise_id, name, primary muscle group, optional secondary muscle group, equipment(optional), exercise type (isolation/compound)
 
-### Q13. Add custom exercise to list
-- Input: user_id, name, primary muscle group, optional secondary muscle groups
+### Q13. Add exercise to shared library
+- Input: user_id (for audit), name, primary muscle group, optional secondary muscle groups
 - Output: exercise_id
+- Rule: exercise names are globally unique, case-insensitively
 
 ---
 
@@ -113,12 +114,14 @@ The database schema, constraints, and indexes will be designed to support these 
 
 ---
 
-## 6) Cardio (optional MVP, but planned)
+## 6) Cardio (deferred / vNext)
 
-### Q16. Log cardio entry in a session OR standalone
+Status: Deferred from the MVP and not part of the first schema/API pass.
+
+### C1. Log cardio entry in a session OR standalone
 - Input: distance, duration, optional notes
 - Output: cardio_log_id
 
-### Q17. Cardio history
+### C2. Cardio history
 - Filter: user_id, date range
 - Output: distance, duration, pace

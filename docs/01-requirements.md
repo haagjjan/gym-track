@@ -40,9 +40,8 @@ not good success metrics
 ## 3. MVP Scope
 ### 3.1 In scope (Must-have)
 - Log workout data: date time, exercise name, set type, set number, weight per set, reps per set, RIR.
-- Create custom exercises: name, equippment, primary muscle group, secundary muscle group.
+- Add exercises to the shared exercise library: name, equippment, primary muscle group, secundary muscle group.
 - Classify sets as: working set, warmup set
-- Add and log cardio: date time, before/after workout, duration, type, distance
 - Access past workout data: past logs
 - View visualised Data for a specified exercise: each set seperatly, as a bar chart (Weight, Reps, RIR), estimated 1 Rep max.
 - View weekly volume per musclegroup: count of workingsets per muscle group, for selected muscle groups
@@ -54,6 +53,7 @@ not good success metrics
 - mobile application
 
 ### 3.3 Later (Nice-to-have / vNext)
+- Cardio logging and cardio history: date time, before/after workout, duration, type, distance
 - Introduction to different workout structures (full body, uper & lower, push pull leg, Bro split)
 - Automatic notifications/messages
 - Break times/recording of time between sets
@@ -69,8 +69,8 @@ not good success metrics
 ## 4. Prioritization (MoSCoW)
 
 ### Must
-- Log exercises (pre-made or custom)
-- Create custom exercises
+- Log exercises from the shared exercise library
+- Add globally unique exercises to the shared exercise library
 - Log sets with reps, weight, RIR, (optional) a custom note
 - Categorize sets as warmup set or working set
 - View exercise progress per set (Weight, Reps) over min one months
@@ -78,7 +78,6 @@ not good success metrics
 
 ### Should
 - Average weekly set count over a selected period
-- Add cardio to workout
 - Resting times
 - Exercises can be categorised depending on the workout split (uper / lower, push / pull / legs)
 
@@ -92,6 +91,7 @@ not good success metrics
 - Nutrition
 - coaching
 - Mobile Application
+- Cardio logging and cardio history (planned vNext)
 
 ---
 
@@ -99,7 +99,7 @@ not good success metrics
 > MVP is “done” when all items below are true.
 
 - [ ] User can create an account
-- [ ] User can create at least one exercise (custom) and reuse it
+- [ ] User can add at least one globally unique exercise to the shared library and reuse it
 - [ ] User can create a session and log multiple exercises with sets
 - [ ] Each set stores reps + weight + RIR + type (warmup/working) + note (optional)
 - [ ] User can view history of logged sets for an exercise over a time range
@@ -232,9 +232,9 @@ not good success metrics
 - Exercise picker supports search by name (filters later)
 - Recommended: auto-save the “exercise added to session” action
 
-### UF-12 — Create Custom Exercise
+### UF-12 — Add Exercise to Shared Library
 
-- **Goal:** User can create a custom exercise and reuse it  
+- **Goal:** User can add a globally unique exercise to the shared library and reuse it
 - **Actor:** Logged-in user  
 - **Trigger:** User clicks **CREATE NEW EXERCISE**  
 - **Preconditions:**
@@ -249,12 +249,12 @@ not good success metrics
    - primary muscle group  
    - secondary muscle group(s) (optional)
 4. User clicks **SAVE**
-5. System validates input (required fields, name uniqueness per user)
-6. System stores the exercise
+5. System validates input (required fields, global name uniqueness)
+6. System stores the exercise in the shared library
 7. System confirms success and (optional) prompts: **ADD TO CURRENT SESSION?**
 
 **Result / Postconditions**
-- Custom exercise exists in the user’s library and is reusable
+- Exercise exists in the shared library and is reusable by all users
 
 **Variants / Exceptions**
 - Missing required field → highlight field + **MISSING FIELD**
@@ -263,7 +263,8 @@ not good success metrics
 - API/network error → **FAILED TO SAVE EXERCISE** + retry
 
 **Notes / Decisions**
-- Exercise names should be unique per user (recommended)
+- Exercise names are globally unique, case-insensitively
+- User-added exercises should keep audit metadata such as `created_by_user_id`
 - Muscle groups should be a fixed enum list in MVP
 
 ### UF-13 — Log a Set (for an Exercise inside a Session)
@@ -367,7 +368,9 @@ not good success metrics
 **Notes / Decisions**
 - Recommended for MVP: allow editing past sessions (common corrections)
 
-### UF-16 — Add Cardio Entry
+### UF-16 — Add Cardio Entry (Deferred / vNext)
+
+**Status:** Deferred from MVP. This flow is retained as a vNext candidate and should not drive the first schema/API pass.
 
 - **Goal:** User can log cardio linked to workout or standalone  
 - **Actor:** Logged-in user  
@@ -554,7 +557,7 @@ not good success metrics
 
 ### Exercises
 - **FR-12:** The user shall be able to select and add an exercise to a session from an exercise library.
-- **FR-13:** The user shall be able to create custom exercises with: name, equipment, primary muscle group, and optional secondary muscle group(s).
+- **FR-13:** The user shall be able to add globally unique exercises to the shared exercise library with: name, equipment, primary muscle group, and optional secondary muscle group(s).
 
 ### Sets (per exercise in a session)
 - **FR-14:** The user shall be able to log sets with reps, weight, and RIR.
@@ -563,9 +566,9 @@ not good success metrics
 - **FR-17:** The user shall be able to delete a previously logged set.
 - **FR-18:** The user shall be able to optionally add a text note to a set.
 
-### Cardio
-- **FR-19:** The user shall be able to log cardio with date/time, before/after workout (or standalone), duration, type, and optional distance.
-- **FR-19.1:** The user shall be able to view cardio history (minimal list view).
+### Cardio (deferred / vNext)
+- **FR-19:** In vNext, the user should be able to log cardio with date/time, before/after workout (or standalone), duration, type, and optional distance.
+- **FR-19.1:** In vNext, the user should be able to view cardio history (minimal list view).
 
 ### Progress per exercise
 - **FR-20:** The user shall be able to view progress for a specified exercise over a selected time range.
@@ -605,10 +608,10 @@ not good success metrics
 - When I open weekly sets  
 - Then weekly totals per muscle group match the logged working sets according to the “weekly” definition  
 
-### AC-06 Create custom exercise
+### AC-06 Add exercise to shared library
 - Given I am logged in  
-- When I create a custom exercise with name + primary muscle group
-- Then it appears in my exercise library and can be added to a session
+- When I add a globally unique exercise with name + primary muscle group
+- Then it appears in the shared exercise library and can be added to a session
 
 ### AC-07 Edit a set
 - Given I have saved a set
@@ -620,7 +623,9 @@ not good success metrics
 - When I click **END SESSION**
 - Then the session is marked closed and appears in history with the correct date
 
-### AC-09 Cardio logging
+### AC-09 Cardio logging (deferred / vNext)
+Deferred from MVP.
+
 - Given I am logged in  
 - When I save a cardio entry with required fields  
 - Then it appears in cardio history (and in session summary if linked)  
@@ -645,4 +650,3 @@ not good success metrics
 - Does the MVP include accounts/auth, or is it single-user/local first? (MVP Exit Criteria suggests yes: accounts exist)
 - Can muscle groups be assigned automatically?
 - For the progress chart: show **all sets** or only **best set per session** by default?
-
