@@ -2,16 +2,19 @@
 
 This repo should stay easy to reason about. Changes are expected to be small, reviewed, documented, and tied to the product roadmap.
 
+Read `ENGINEERING.md` before implementing application code. It defines the TypeScript, SQL, size, structure, interface, DRY, and testing rules for this project.
+
 ## Standard Workflow
 
 1. Read the relevant docs before changing files.
 2. Confirm the scope of the change.
 3. Create or update an ADR if the change affects architecture, stack, schema policy, auth, API style, or deployment.
-4. Implement the smallest complete change.
-5. Add or update tests when behavior changes.
-6. Run relevant checks.
-7. Commit with a focused message.
-8. Push to `origin/main` or a feature branch, depending on the size and risk of the change.
+4. Check `ENGINEERING.md` for size, structure, interface, SQL, and testing expectations.
+5. Implement the smallest complete change.
+6. Add or update tests when behavior changes.
+7. Run relevant checks.
+8. Commit with a focused message.
+9. Push to `origin/main` or a feature branch, depending on the size and risk of the change.
 
 ## Change Gates
 
@@ -20,6 +23,7 @@ A change is ready only when:
 - The implementation matches the documented requirement or decision.
 - The diff does not include unrelated cleanup.
 - Generated or placeholder code is not left unused.
+- New implementation files follow the size, folder, and interface rules in `ENGINEERING.md`, or the exception is explained.
 - Documentation is updated when public behavior, setup, architecture, data shape, or workflow changes.
 - Relevant tests/checks pass, or any skipped checks are clearly explained.
 - `git diff --check` passes.
@@ -63,6 +67,12 @@ Before merging or pushing important work, check:
 
 - Does this match the MVP requirements?
 - Does it follow the architecture boundaries?
+- Does it follow the TypeScript/PostgreSQL rules in `ENGINEERING.md`?
+- Are files, functions, components, and classes still small enough to scan?
+- Is duplication being handled at the right time, without premature abstraction?
+- Are interfaces used at real boundaries instead of everywhere?
+- Does each folder have clear ownership, with no dumping-ground folder?
+- Are SQL changes migration-driven and tied to documented queries?
 - Is an ADR needed, and if so, is it included?
 - Are names and concepts consistent with the glossary?
 - Are tests or checks included for the risk level?

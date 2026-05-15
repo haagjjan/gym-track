@@ -12,8 +12,9 @@ Read these files before implementing feature work:
 2. `docs/01-requirements.md` - MVP product requirements and user flows
 3. `docs/02-query-list.md` - DB-driven query requirements
 4. `docs/03-data-model-notes.md` - data model rules and tradeoffs
-5. `ARCHITECTURE.md` - module boundaries and dependency rules
-6. `CONTRIBUTING.md` - implementation workflow and review gates
+5. `ENGINEERING.md` - TypeScript/PostgreSQL code quality rules
+6. `ARCHITECTURE.md` - module boundaries and dependency rules
+7. `CONTRIBUTING.md` - implementation workflow and review gates
 
 ## Working Rules
 
@@ -23,6 +24,8 @@ Read these files before implementing feature work:
 - Prefer simple, explicit implementation over clever architecture.
 - Match existing naming, formatting, and documentation style unless there is an approved reason to change it.
 - Do not introduce a new stack, framework, service, database, auth method, or cross-cutting pattern without an ADR in `docs/decisions/`.
+- Follow `ENGINEERING.md` for size limits, TypeScript rules, SQL rules, folder ownership, and interface boundaries.
+- Explain any intentional violation of size, interface, or folder-structure rules in the handoff.
 - Update documentation in the same change when behavior, workflow, data shape, API contracts, or architecture changes.
 - Keep secrets out of the repo. Never commit `.env`, credentials, tokens, database dumps, or personal data.
 
@@ -34,9 +37,10 @@ For non-trivial changes:
 2. Identify the smallest safe change.
 3. Check whether an ADR is required.
 4. Implement only the agreed scope.
-5. Add or update tests appropriate to the risk.
-6. Run the relevant checks.
-7. Summarize what changed, what was tested, and any remaining risk.
+5. Check the engineering size and structure rules before adding new files or abstractions.
+6. Add or update tests appropriate to the risk.
+7. Run the relevant checks.
+8. Summarize what changed, what was tested, and any remaining risk.
 
 Trivial typo or formatting fixes do not need an ADR, but they still need a clean diff.
 
@@ -48,11 +52,13 @@ Before handing work back:
 - `git diff --check` must pass.
 - Relevant tests or checks must be run when a toolchain exists.
 - New files must have a clear purpose and owner.
+- New implementation files must fit the size and structure rules in `ENGINEERING.md`, or the exception must be documented.
 - Public interfaces, schemas, endpoints, and workflow rules must be documented.
 
 ## Current Constraints
 
 - The product requirements are still draft-stage.
-- The tech stack has not been selected yet.
-- Application source code should not be added until the stack decision is recorded.
+- The stack direction is TypeScript for application code and PostgreSQL SQL for database work.
+- Exact framework, migration-tool, auth, API-contract, and deployment choices still require ADRs before implementation.
+- Application source folders should not be added as empty scaffolding.
 - Database schema work should be driven by `docs/02-query-list.md` and `docs/03-data-model-notes.md`.
