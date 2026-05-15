@@ -1,0 +1,73 @@
+# Contributing
+
+This repo should stay easy to reason about. Changes are expected to be small, reviewed, documented, and tied to the product roadmap.
+
+## Standard Workflow
+
+1. Read the relevant docs before changing files.
+2. Confirm the scope of the change.
+3. Create or update an ADR if the change affects architecture, stack, schema policy, auth, API style, or deployment.
+4. Implement the smallest complete change.
+5. Add or update tests when behavior changes.
+6. Run relevant checks.
+7. Commit with a focused message.
+8. Push to `origin/main` or a feature branch, depending on the size and risk of the change.
+
+## Change Gates
+
+A change is ready only when:
+
+- The implementation matches the documented requirement or decision.
+- The diff does not include unrelated cleanup.
+- Generated or placeholder code is not left unused.
+- Documentation is updated when public behavior, setup, architecture, data shape, or workflow changes.
+- Relevant tests/checks pass, or any skipped checks are clearly explained.
+- `git diff --check` passes.
+
+## ADR Requirements
+
+Add a decision record in `docs/decisions/` for important tradeoffs. ADRs are required for:
+
+- Selecting the frontend, backend, database, auth, or deployment stack
+- Changing module boundaries or dependency direction
+- Creating schema policies that will affect future migrations
+- Introducing cross-cutting abstractions or shared infrastructure
+- Reversing an earlier recorded decision
+
+ADRs are not required for typo fixes, small documentation edits, or local implementation details that do not change project direction.
+
+## Testing Expectations
+
+The current repo is documentation-only, so validation is limited to Markdown review and git checks.
+
+Once application code exists:
+
+- Run the smallest relevant test set for the changed area.
+- Add tests for new business rules, data transformations, API behavior, and regression fixes.
+- Prefer integration tests for user flows that cross UI, API, and database boundaries.
+- Do not rely on manual testing alone for core workout logging, authentication, or analytics behavior.
+
+## Commit Style
+
+Use concise, imperative commit messages, for example:
+
+- `Add project workflow guardrails`
+- `Record database stack decision`
+- `Draft schema for workout sessions`
+
+Keep commits focused. A reader should understand why the change exists from the commit message and the surrounding docs.
+
+## Review Checklist
+
+Before merging or pushing important work, check:
+
+- Does this match the MVP requirements?
+- Does it follow the architecture boundaries?
+- Is an ADR needed, and if so, is it included?
+- Are names and concepts consistent with the glossary?
+- Are tests or checks included for the risk level?
+- Is setup or usage documentation still accurate?
+
+## Done Criteria
+
+A task is done when the change is implemented, documented, validated, committed, and pushed, with any remaining risk clearly stated.
