@@ -2,7 +2,7 @@
 
 ## Status
 
-Draft ERD-level PostgreSQL schema for the MVP. This is not a migration file. Actual SQL migrations come later and must preserve the rules in `docs/03-data-model-notes.md`.
+ERD-level PostgreSQL schema for the MVP. The initial SQL migrations in `apps/api/db/migrations` implement this draft and must preserve the rules in `docs/03-data-model-notes.md`.
 
 ## Goals
 
@@ -240,8 +240,5 @@ Cardio C1-C2 are deferred and intentionally unsupported by the first schema pass
 
 ## Follow-Up Decisions
 
-- Choose the migration runner.
-- Choose the password hashing library.
-- Choose the exact API contract format in `docs/05-api-contract.md`.
 - Decide whether email verification and password reset belong in MVP auth.
 - Decide whether `workout_type` should become a constrained lookup once workout splits are implemented.

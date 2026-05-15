@@ -64,6 +64,7 @@ Before final handoff, confirm:
    - No migrations, endpoints, auth, UI, or business logic yet.
 
 2. Second implementation batch: database migration foundation
+   - Status: implemented in `apps/api/db/migrations`; local up/down verification still requires Node, pnpm, Docker, and PostgreSQL tooling.
    - Configure `node-pg-migrate`.
    - Add migration commands.
    - Add first schema migration based on `docs/04-schema-draft.md`.

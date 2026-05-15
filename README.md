@@ -2,7 +2,7 @@
 
 Gym Progress Tracker is a planned web app for logging strength workouts, tracking exercise progress, and reviewing weekly training volume.
 
-The repository is in the first implementation foundation phase. It contains the project documentation, workflow rules, architecture decisions, pnpm workspace metadata, shared TypeScript tooling, local PostgreSQL setup, and minimal app-owned tooling files. Database migrations, API endpoints, auth, and UI screens are still deferred to later focused implementation commits.
+The repository is in the first implementation foundation phase. It contains the project documentation, workflow rules, architecture decisions, pnpm workspace metadata, shared TypeScript tooling, local PostgreSQL setup, minimal app-owned tooling files, and initial PostgreSQL migrations. API endpoints, auth, and UI screens are still deferred to later focused implementation commits.
 
 ## Current Status
 
@@ -12,7 +12,8 @@ The repository is in the first implementation foundation phase. It contains the 
 - The accepted stack is TypeScript, PostgreSQL, Next.js App Router, Fastify, pnpm workspaces, Kysely, Zod, `node-pg-migrate`, Argon2, DB-backed sessions, and Docker Compose Postgres.
 - The root pnpm workspace, TypeScript config, lint config, Docker Compose Postgres service, and `.env.example` are present.
 - `apps/api` and `apps/web` exist with package and TypeScript tooling foundations only.
-- No database migrations, auth, API endpoints, or UI screens have been implemented yet.
+- Initial database schema and muscle group seed migrations are present under `apps/api/db/migrations`.
+- No auth, API endpoints, or UI screens have been implemented yet.
 
 ## Key Documents
 
@@ -67,6 +68,18 @@ Start local PostgreSQL with:
 ```sh
 cp .env.example .env
 pnpm db:start
+```
+
+Run pending database migrations with:
+
+```sh
+pnpm migrate:up
+```
+
+Roll back one migration with:
+
+```sh
+pnpm migrate:down
 ```
 
 Stop local PostgreSQL with:
