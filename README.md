@@ -2,7 +2,7 @@
 
 Gym Progress Tracker is a planned web app for logging strength workouts, tracking exercise progress, and reviewing weekly training volume.
 
-The repository is currently in the foundation and specification phase. It intentionally contains documentation, workflow rules, and architecture decisions only. Application code, database migrations, workspace files, and app folders will be added later in focused implementation commits.
+The repository is in the first implementation foundation phase. It contains the project documentation, workflow rules, architecture decisions, pnpm workspace metadata, shared TypeScript tooling, and local PostgreSQL setup. Database migrations, API endpoints, auth, and UI screens are still deferred to later focused implementation commits.
 
 ## Current Status
 
@@ -10,7 +10,8 @@ The repository is currently in the foundation and specification phase. It intent
 - Repository hygiene checks run through GitHub Actions.
 - MVP requirements, query needs, data model notes, schema draft, and API contract are documented.
 - The accepted stack is TypeScript, PostgreSQL, Next.js App Router, Fastify, pnpm workspaces, Kysely, Zod, `node-pg-migrate`, Argon2, DB-backed sessions, and Docker Compose Postgres.
-- No app implementation has started yet.
+- The root pnpm workspace, TypeScript config, lint config, Docker Compose Postgres service, and `.env.example` are present.
+- No database migrations, auth, API endpoints, or UI screens have been implemented yet.
 
 ## Key Documents
 
@@ -44,11 +45,31 @@ Remaining larger decisions:
 
 ## Local Checks
 
-For docs-only changes, run:
+After installing Node.js and pnpm, install workspace dependencies:
 
 ```sh
+pnpm install
+```
+
+For the current tooling foundation, run:
+
+```sh
+pnpm type-check
+pnpm lint
+pnpm build
 git diff --check
 git status --short
 ```
 
-Build, lint, type-check, and test commands will be added after the TypeScript workspace exists.
+Start local PostgreSQL with:
+
+```sh
+cp .env.example .env
+pnpm db:start
+```
+
+Stop local PostgreSQL with:
+
+```sh
+pnpm db:stop
+```
