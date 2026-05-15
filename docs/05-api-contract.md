@@ -206,7 +206,7 @@ Behavior:
 
 - Sets the auth session cookie.
 - Returns `409` if email or username already exists.
-- Password hashing library is decided later.
+- Passwords are hashed with Argon2.
 
 ### `POST /api/v1/auth/login`
 

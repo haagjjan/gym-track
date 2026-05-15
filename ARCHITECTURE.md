@@ -35,6 +35,14 @@ ADR 0003 records the framework and tooling direction:
 - Zod for runtime validation and shared contract schemas
 - Owned email/password auth for the MVP, with API-managed users, sessions, and cookies
 
+ADR 0004 records the implementation-readiness direction:
+
+- `node-pg-migrate` for PostgreSQL migrations
+- Argon2 for password hashing
+- DB-backed opaque sessions through `user_sessions`
+- Secure HttpOnly cookies for auth transport
+- Docker Compose with the official PostgreSQL image for local development
+
 ## Architecture Principles
 
 - Build from user flows and query needs, not from speculative infrastructure.
@@ -127,9 +135,5 @@ Small implementation choices inside an already approved stack can be documented 
 
 ## Current Open Decisions
 
-- Migration tooling
-- Session storage details
-- Password hashing library
-- Local development environment setup
 - Deployment target
 - Application build, lint, type-check, and test CI jobs

@@ -28,4 +28,6 @@ Do not create empty `apps/`, `packages/`, or `infra/` folders yet. Create each f
 
 The project keeps one TypeScript ecosystem across web, API, shared contracts, scripts, and tests. Next.js owns frontend routing and UI conventions, while Fastify keeps the API boundary explicit. Kysely keeps database access close to SQL while still giving TypeScript help, and Zod provides runtime safety for user input, API payloads, environment variables, and shared contracts.
 
-The exact migration runner, session storage details, password hashing library, deployment target, and CI pipeline remain open decisions.
+ADR 0004 later selected `node-pg-migrate`, Argon2, DB-backed opaque sessions, and Docker Compose Postgres for local development.
+
+The deployment target and full application CI pipeline remain open decisions.

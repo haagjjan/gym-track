@@ -27,4 +27,4 @@ Do not create empty application folders yet. Create `apps/`, `packages/`, and `i
 
 The project can share TypeScript types across UI and API boundaries, use one main tooling ecosystem, and keep frontend/backend responsibilities separate. PostgreSQL gives strong relational modeling and query support for workout history and analytics.
 
-The exact frontend framework, API framework, migration tool, authentication approach, API contract format, and deployment target are still open decisions. They should each be recorded in later ADRs before implementation.
+Later ADRs selected the framework, API, migration, validation, auth, session, and local development tooling details. The deployment target remains open until the deployment phase.

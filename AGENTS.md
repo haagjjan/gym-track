@@ -61,7 +61,7 @@ Before handing work back:
 ## Current Constraints
 
 - The MVP requirements, schema draft, and API contract are documented but may evolve through focused docs updates or ADRs.
-- The accepted stack direction is TypeScript, PostgreSQL, Next.js App Router, Fastify, pnpm workspaces, Kysely, Zod, and owned email/password auth.
-- Migration tooling, password hashing library, session storage details, local development setup, and deployment target still need decisions before implementation reaches those areas.
+- The accepted stack direction is TypeScript, PostgreSQL, Next.js App Router, Fastify, pnpm workspaces, Kysely, Zod, `node-pg-migrate`, Argon2, DB-backed opaque sessions, and Docker Compose Postgres.
+- Deployment target and application build/lint/type/test CI still need later decisions.
 - Application source folders should not be added as empty scaffolding.
 - Database schema work should be driven by `docs/02-query-list.md`, `docs/03-data-model-notes.md`, and `docs/04-schema-draft.md`.

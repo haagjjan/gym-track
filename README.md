@@ -9,7 +9,7 @@ The repository is currently in the foundation and specification phase. It intent
 - GitHub remote is connected.
 - Repository hygiene checks run through GitHub Actions.
 - MVP requirements, query needs, data model notes, schema draft, and API contract are documented.
-- The accepted stack is TypeScript, PostgreSQL, Next.js App Router, Fastify, pnpm workspaces, Kysely, Zod, and owned email/password auth.
+- The accepted stack is TypeScript, PostgreSQL, Next.js App Router, Fastify, pnpm workspaces, Kysely, Zod, `node-pg-migrate`, Argon2, DB-backed sessions, and Docker Compose Postgres.
 - No app implementation has started yet.
 
 ## Key Documents
@@ -27,16 +27,19 @@ The repository is currently in the foundation and specification phase. It intent
 - `docs/05-api-contract.md` - MVP REST API contract
 - `docs/decisions/` - architecture decision records
 
-## Next Decisions
+## Implementation Readiness
 
-Before implementation starts, decide:
+Before implementation starts, the remaining work is to scaffold the project in small implementation commits:
 
-- migration tooling
-- password hashing library
-- session storage details
-- local development setup
+- root pnpm workspace and shared TypeScript tooling
+- Docker Compose Postgres configuration and `.env.example`
+- API migration setup with `node-pg-migrate`
+- initial Fastify and Next.js app foundations
+
+Remaining larger decisions:
+
 - deployment target
-- first TypeScript workspace scaffold plan
+- application build, lint, type-check, and test CI jobs after app code exists
 
 ## Local Checks
 
