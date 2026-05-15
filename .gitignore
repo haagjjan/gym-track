@@ -4,6 +4,7 @@
 # secrets
 .env
 .env.*
+!.env.example
 
 # editor/IDE
 .vscode/
@@ -11,3 +12,28 @@
 
 # logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# dependencies
+node_modules/
+.pnpm-store/
+
+# build output
+.next/
+out/
+dist/
+build/
+
+# tests and caches
+coverage/
+.turbo/
+.cache/
+
+# local data/runtime
+*.sqlite
+*.sqlite3
+tmp/
+temp/
