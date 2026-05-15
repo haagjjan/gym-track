@@ -1,4 +1,12 @@
 {
   "extends": "./tsconfig.base.json",
-  "files": []
+  "files": [],
+  "references": [
+    {
+      "path": "./apps/api"
+    },
+    {
+      "path": "./apps/web"
+    }
+  ]
 }

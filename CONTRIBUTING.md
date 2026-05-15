@@ -46,7 +46,7 @@ ADRs are not required for typo fixes, small documentation edits, or local implem
 
 ## Testing Expectations
 
-The current repo is documentation-only, so validation is limited to Markdown review and git checks.
+The current repo has a tooling foundation but no feature behavior yet, so validation is limited to install, type-check, lint, build, Markdown review, and git checks where the local toolchain is available.
 
 Once application code exists:
 

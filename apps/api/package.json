@@ -1,0 +1,22 @@
+{
+  "name": "@gym-progress-tracker/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc --build tsconfig.json --pretty false",
+    "lint": "eslint . --no-error-on-unmatched-pattern --max-warnings=0",
+    "type-check": "tsc --noEmit --project tsconfig.json --pretty false"
+  },
+  "dependencies": {
+    "fastify": "^5.2.1",
+    "kysely": "^0.27.6",
+    "pg": "^8.13.1",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "@types/pg": "^8.11.11",
+    "tsx": "^4.19.3"
+  }
+}

@@ -2,7 +2,7 @@
 
 ## Current State
 
-The repository currently contains product and data-planning documentation for a gym progress tracker. Application code has not been introduced yet.
+The repository currently contains product and data-planning documentation for a gym progress tracker plus the Phase 6 local development foundation. The pnpm workspace, shared TypeScript tooling, Docker Compose PostgreSQL setup, and minimal app-owned tooling files have been introduced. Database migrations, API endpoints, auth flows, UI screens, and business logic have not been introduced yet.
 
 The source-of-truth documents are:
 
@@ -53,7 +53,7 @@ ADR 0004 records the implementation-readiness direction:
 
 ## Planned Boundaries
 
-These boundaries become active once implementation begins:
+These boundaries apply as implementation grows:
 
 - UI owns user interaction, display state, form validation feedback, and navigation.
 - API/backend owns authentication, authorization, business rules, persistence workflows, and stable contracts for the UI.

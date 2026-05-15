@@ -2,7 +2,7 @@
 
 Gym Progress Tracker is a planned web app for logging strength workouts, tracking exercise progress, and reviewing weekly training volume.
 
-The repository is in the first implementation foundation phase. It contains the project documentation, workflow rules, architecture decisions, pnpm workspace metadata, shared TypeScript tooling, and local PostgreSQL setup. Database migrations, API endpoints, auth, and UI screens are still deferred to later focused implementation commits.
+The repository is in the first implementation foundation phase. It contains the project documentation, workflow rules, architecture decisions, pnpm workspace metadata, shared TypeScript tooling, local PostgreSQL setup, and minimal app-owned tooling files. Database migrations, API endpoints, auth, and UI screens are still deferred to later focused implementation commits.
 
 ## Current Status
 
@@ -11,6 +11,7 @@ The repository is in the first implementation foundation phase. It contains the 
 - MVP requirements, query needs, data model notes, schema draft, and API contract are documented.
 - The accepted stack is TypeScript, PostgreSQL, Next.js App Router, Fastify, pnpm workspaces, Kysely, Zod, `node-pg-migrate`, Argon2, DB-backed sessions, and Docker Compose Postgres.
 - The root pnpm workspace, TypeScript config, lint config, Docker Compose Postgres service, and `.env.example` are present.
+- `apps/api` and `apps/web` exist with package and TypeScript tooling foundations only.
 - No database migrations, auth, API endpoints, or UI screens have been implemented yet.
 
 ## Key Documents

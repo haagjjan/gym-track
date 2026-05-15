@@ -1,0 +1,19 @@
+{
+  "name": "@gym-progress-tracker/web",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "lint": "eslint . --no-error-on-unmatched-pattern --max-warnings=0",
+    "type-check": "tsc --noEmit --project tsconfig.json --pretty false"
+  },
+  "dependencies": {
+    "next": "^15.2.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.12",
+    "@types/react-dom": "^19.0.4"
+  }
+}
