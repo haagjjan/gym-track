@@ -6,6 +6,11 @@
   "scripts": {
     "build": "tsc --build tsconfig.json --pretty false",
     "lint": "eslint . --no-error-on-unmatched-pattern --max-warnings=0",
+    "migrate": "node-pg-migrate --config-file db/migrate.json --envPath ../../.env",
+    "migrate:create": "pnpm migrate create --migration-file-language sql",
+    "migrate:down": "pnpm migrate down",
+    "migrate:redo": "pnpm migrate redo",
+    "migrate:up": "pnpm migrate up",
     "type-check": "tsc --noEmit --project tsconfig.json --pretty false"
   },
   "dependencies": {
@@ -17,6 +22,8 @@
   "devDependencies": {
     "@types/node": "^22.13.10",
     "@types/pg": "^8.11.11",
+    "dotenv": "^16.4.7",
+    "node-pg-migrate": "^8.0.4",
     "tsx": "^4.19.3"
   }
 }

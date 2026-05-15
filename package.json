@@ -14,6 +14,11 @@
     "db:start": "docker compose up -d postgres",
     "db:stop": "docker compose down",
     "lint": "eslint . --no-error-on-unmatched-pattern --max-warnings=0",
+    "migrate": "pnpm --filter @gym-progress-tracker/api migrate",
+    "migrate:create": "pnpm --filter @gym-progress-tracker/api migrate:create",
+    "migrate:down": "pnpm --filter @gym-progress-tracker/api migrate:down",
+    "migrate:redo": "pnpm --filter @gym-progress-tracker/api migrate:redo",
+    "migrate:up": "pnpm --filter @gym-progress-tracker/api migrate:up",
     "type-check": "tsc --build --pretty false"
   },
   "devDependencies": {

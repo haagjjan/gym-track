@@ -1,0 +1,6 @@
+{
+  "migrationsDir": "db/migrations",
+  "migrationsTable": "schema_migrations",
+  "migrationFilenameFormat": "utc",
+  "migrationFileLanguage": "sql"
+}
