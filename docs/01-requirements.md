@@ -302,9 +302,9 @@ not good success metrics
 
 **Notes / Decisions**
 - Suggested ranges:
-  - reps: integer ≥ 0 (or ≥ 1 for working sets)
-  - weight: ≥ 0 (0 allowed for bodyweight)
-  - RIR: integer 0–10 (or 0–5 typical)
+  - reps: positive integer
+  - weight: positive metric value stored internally as kg
+  - RIR: integer 0–10
 - Recommended: auto-save each set to prevent data loss
 
 ### UF-14 — Edit or Delete a Set
@@ -327,7 +327,7 @@ not good success metrics
 1. User clicks trash icon
 2. System asks: **DELETE SET?**
 3. User confirms
-4. System deletes set
+4. System marks the set as deleted
 5. UI updates list (and optionally reorders display numbering)
 
 **Result / Postconditions**
@@ -339,7 +339,7 @@ not good success metrics
 
 **Notes / Decisions**
 - Recommended: set numbers are display-only (don’t store “set #” as primary truth)
-- MVP can hard-delete sets (soft delete later)
+- Persistence uses soft delete; the UI can hide deleted sets from active views
 
 ### UF-15 — End / Close Session
 
