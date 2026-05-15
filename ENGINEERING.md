@@ -34,6 +34,17 @@ Generated files, lockfiles, migrations, documentation, and framework-required co
 - Keep validation close to input boundaries such as API handlers, forms, environment variables, and database rows.
 - Keep business logic separate from framework glue so it can be tested without a browser or server.
 
+## Framework Rules
+
+- Use Next.js App Router conventions in `apps/web`.
+- Keep feature UI, hooks, actions, and client-side helpers close to the owning feature.
+- Use Fastify route modules in `apps/api`, grouped by feature/domain.
+- Keep Fastify request/reply glue thin; move business rules into small feature modules.
+- Use Zod at runtime boundaries: forms, API requests, API responses where useful, environment variables, and external inputs.
+- Use Kysely inside API/database modules for PostgreSQL queries.
+- Do not import Kysely, database clients, or server-only modules into `apps/web`.
+- Keep SQL migrations separate from TypeScript query code.
+
 ## Interface Rules
 
 Code against interfaces at boundaries, not everywhere.
@@ -71,6 +82,27 @@ docs/
 infra/
 ```
 
+Expected app-internal shape:
+
+```text
+apps/web/src/
+  features/
+    auth/
+    workouts/
+    exercises/
+    analytics/
+  shared/
+
+apps/api/src/
+  features/
+    auth/
+    workouts/
+    exercises/
+    analytics/
+  db/
+  shared/
+```
+
 Expected feature domains include:
 
 - `auth`
@@ -86,6 +118,7 @@ Avoid dumping-ground folders:
 - No giant `services` folder where unrelated business logic accumulates.
 - No global `components` folder for feature-specific UI.
 - Shared code must have at least two real consumers before it moves to a shared package.
+- Do not create empty app, package, feature, or infrastructure folders.
 
 Split modules before they become hard to scan. If a file needs a table of contents in your head, it is already too large.
 

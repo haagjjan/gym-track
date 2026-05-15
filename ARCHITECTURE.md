@@ -23,6 +23,15 @@ ADR 0002 records the current stack direction:
 - Separate app boundaries for web and API code
 - Markdown for project documentation and decision records
 
+ADR 0003 records the framework and tooling direction:
+
+- Next.js App Router for `apps/web`
+- Fastify for `apps/api`
+- pnpm workspaces for monorepo dependency management
+- Kysely for type-safe PostgreSQL queries
+- Zod for runtime validation and shared contract schemas
+- Owned email/password auth for the MVP, with API-managed users, sessions, and cookies
+
 ## Architecture Principles
 
 - Build from user flows and query needs, not from speculative infrastructure.
@@ -40,6 +49,7 @@ These boundaries become active once implementation begins:
 - Database owns durable data, relationships, constraints, indexes, and migrations.
 - Analytics/query layer owns derived workout statistics such as exercise progress, weekly working sets, and estimated one-rep-max calculations.
 - Documentation owns requirements, workflow rules, architecture decisions, and setup instructions.
+- Shared packages own cross-app contracts only after both web and API need them.
 
 ## Future Repo Shape
 
@@ -62,6 +72,31 @@ Within each app, organize by feature/domain first, then by technical role. Expec
 
 Avoid broad folders such as `misc`, oversized `utils`, unrelated `services`, or global feature-specific `components`. Shared code should move to `packages/shared` only after at least two real consumers exist.
 
+Expected app-internal shape:
+
+```text
+apps/web/src/
+  features/
+    auth/
+    workouts/
+    exercises/
+    analytics/
+  shared/
+
+apps/api/src/
+  features/
+    auth/
+    workouts/
+    exercises/
+    analytics/
+  db/
+  shared/
+```
+
+`apps/web` should follow Next.js App Router conventions for route files and layouts. Feature-specific UI stays near the feature; only reusable primitives move to shared UI folders.
+
+`apps/api` should expose Fastify routes through feature-owned modules. Database queries should flow through feature repositories or query modules using Kysely, not direct SQL strings scattered through route handlers.
+
 ## Dependency Rules
 
 - UI may depend on documented API contracts, not direct database access.
@@ -70,6 +105,8 @@ Avoid broad folders such as `misc`, oversized `utils`, unrelated `services`, or 
 - Analytics must define whether values are stored or computed.
 - Shared types or contracts should be introduced only when they reduce real duplication.
 - Cross-app types must live in `packages/shared` only when both apps actually need them.
+- Zod schemas should validate runtime boundaries such as API requests, forms, environment variables, and external inputs.
+- Kysely query code should stay inside API/database boundaries and must not leak into the web app.
 
 ## Decision Rules
 
@@ -87,9 +124,9 @@ Small implementation choices inside an already approved stack can be documented 
 
 ## Current Open Decisions
 
-- Frontend framework
-- Backend/API framework
 - Migration tooling
-- Authentication approach
+- Session storage details
+- Password hashing library
 - API contract format
 - Deployment target
+- CI pipeline
