@@ -25,11 +25,12 @@ The repository is currently in the foundation and specification phase. It intent
 - `docs/03-data-model-notes.md` - accepted data modeling rules
 - `docs/04-schema-draft.md` - MVP PostgreSQL schema draft
 - `docs/05-api-contract.md` - MVP REST API contract
+- `docs/06-implementation-start.md` - next-chat implementation prompt and staged rollout
 - `docs/decisions/` - architecture decision records
 
 ## Implementation Readiness
 
-Before implementation starts, the remaining work is to scaffold the project in small implementation commits:
+Use `docs/06-implementation-start.md` to start implementation in a new chat. The remaining work begins with small implementation commits:
 
 - root pnpm workspace and shared TypeScript tooling
 - Docker Compose Postgres configuration and `.env.example`

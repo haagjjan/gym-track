@@ -14,10 +14,11 @@ Read these files before implementing feature work:
 4. `docs/03-data-model-notes.md` - data model rules and tradeoffs
 5. `docs/04-schema-draft.md` - ERD-level MVP database schema draft
 6. `docs/05-api-contract.md` - MVP REST API contract
-7. `ENGINEERING.md` - TypeScript/PostgreSQL code quality rules
-8. `ARCHITECTURE.md` - module boundaries and dependency rules
-9. `CONTRIBUTING.md` - implementation workflow and review gates
-10. `docs/git-pipeline.md` - Git, PR, and repository check workflow
+7. `docs/06-implementation-start.md` - next-chat implementation prompt and staged rollout
+8. `ENGINEERING.md` - TypeScript/PostgreSQL code quality rules
+9. `ARCHITECTURE.md` - module boundaries and dependency rules
+10. `CONTRIBUTING.md` - implementation workflow and review gates
+11. `docs/git-pipeline.md` - Git, PR, and repository check workflow
 
 ## Working Rules
 

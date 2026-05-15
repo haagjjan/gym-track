@@ -53,6 +53,7 @@ jobs:
             "docs/03-data-model-notes.md"
             "docs/04-schema-draft.md"
             "docs/05-api-contract.md"
+            "docs/06-implementation-start.md"
             "docs/git-pipeline.md"
             "docs/decisions/README.md"
           )
