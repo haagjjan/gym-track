@@ -84,3 +84,5 @@ Start with a health slice:
 - Minimal web app shell that can be run independently.
 
 This proves the local stack without introducing auth, workouts, analytics, or placeholder feature systems.
+
+Status: implemented as the first runnable slice.

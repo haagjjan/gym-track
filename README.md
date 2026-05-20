@@ -2,7 +2,7 @@
 
 Gym Progress Tracker is a planned web app for logging strength workouts, tracking exercise progress, and reviewing weekly training volume.
 
-The repository is in the first implementation foundation phase. It contains the project documentation, workflow rules, architecture decisions, pnpm workspace metadata, shared TypeScript tooling, local PostgreSQL setup, minimal app-owned tooling files, and initial PostgreSQL migrations. API endpoints, auth, and UI screens are still deferred to later focused implementation commits.
+The repository is in the first implementation foundation phase. It contains the project documentation, workflow rules, architecture decisions, pnpm workspace metadata, shared TypeScript tooling, local PostgreSQL setup, initial PostgreSQL migrations, and a first runnable API/web slice. Auth and workout UI screens are still deferred to later focused implementation commits.
 
 ## Current Status
 
@@ -11,9 +11,11 @@ The repository is in the first implementation foundation phase. It contains the 
 - MVP requirements, query needs, data model notes, schema draft, and API contract are documented.
 - The accepted stack is TypeScript, PostgreSQL, Next.js App Router, Fastify, pnpm workspaces, Kysely, Zod, `node-pg-migrate`, Argon2, DB-backed sessions, and Docker Compose Postgres.
 - The root pnpm workspace, TypeScript config, lint config, Docker Compose Postgres service, and `.env.example` are present.
-- `apps/api` and `apps/web` exist with package and TypeScript tooling foundations only.
+- `apps/api` and `apps/web` exist with minimal runnable foundations.
 - Initial database schema and muscle group seed migrations are present under `apps/api/db/migrations`.
-- No auth, API endpoints, or UI screens have been implemented yet.
+- `apps/api` exposes `GET /api/v1/health` with a database connectivity check.
+- `apps/web` has a minimal App Router shell.
+- No auth, workout endpoints, analytics endpoints, or workout UI screens have been implemented yet.
 
 ## Key Documents
 
@@ -54,12 +56,10 @@ After installing Node.js and pnpm, install workspace dependencies:
 pnpm install
 ```
 
-For the current tooling foundation, run:
+For the current tooling foundation and first runnable slice, run:
 
 ```sh
-pnpm type-check
-pnpm lint
-pnpm build
+pnpm check
 git diff --check
 git status --short
 ```
@@ -81,6 +81,18 @@ Roll back one migration with:
 
 ```sh
 pnpm migrate:down
+```
+
+Start the API in development mode with:
+
+```sh
+pnpm dev:api
+```
+
+Start the web app in development mode with:
+
+```sh
+pnpm dev:web
 ```
 
 Stop local PostgreSQL with:

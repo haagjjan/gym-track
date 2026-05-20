@@ -1,16 +1,30 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "composite": true,
+    "allowJs": false,
+    "incremental": true,
     "jsx": "preserve",
-    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ES2022"
+    ],
     "noEmit": true,
     "plugins": [
       {
         "name": "next"
       }
-    ],
-    "tsBuildInfoFile": "../../node_modules/.cache/tsbuildinfo/web.tsbuildinfo"
+    ]
   },
-  "include": ["next.config.ts"]
+  "include": [
+    "next-env.d.ts",
+    ".next/types/**/*.ts",
+    "next.config.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules"
+  ],
+  "exclude": ["node_modules"]
 }

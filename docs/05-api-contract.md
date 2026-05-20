@@ -52,6 +52,36 @@ Common status codes:
 - `422 Unprocessable Entity` - validation error
 - `500 Internal Server Error` - unexpected server error
 
+## System Endpoints
+
+### `GET /api/v1/health`
+
+Returns API and database connectivity status.
+
+Response `200`:
+
+```json
+{
+  "data": {
+    "status": "ok",
+    "api": "ok",
+    "database": "ok"
+  }
+}
+```
+
+Returns `503` when the API process is running but the database check fails:
+
+```json
+{
+  "data": {
+    "status": "degraded",
+    "api": "ok",
+    "database": "degraded"
+  }
+}
+```
+
 ## Shared Shapes
 
 ### `User`

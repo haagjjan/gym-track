@@ -13,17 +13,21 @@
     "db:logs": "docker compose logs -f postgres",
     "db:start": "docker compose up -d postgres",
     "db:stop": "docker compose down",
+    "dev:api": "pnpm --filter @gym-progress-tracker/api dev",
+    "dev:web": "pnpm --filter @gym-progress-tracker/web dev",
     "lint": "eslint . --no-error-on-unmatched-pattern --max-warnings=0",
     "migrate": "pnpm --filter @gym-progress-tracker/api migrate",
     "migrate:create": "pnpm --filter @gym-progress-tracker/api migrate:create",
     "migrate:down": "pnpm --filter @gym-progress-tracker/api migrate:down",
     "migrate:redo": "pnpm --filter @gym-progress-tracker/api migrate:redo",
     "migrate:up": "pnpm --filter @gym-progress-tracker/api migrate:up",
-    "type-check": "tsc --build --pretty false"
+    "type-check": "pnpm -r --if-present type-check"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.5",
     "@eslint/js": "^9.22.0",
     "eslint": "^9.22.0",
+    "eslint-config-next": "^15.5.18",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.26.1"
   }
