@@ -12,6 +12,7 @@ The source-of-truth documents are:
 - `docs/03-data-model-notes.md` for data rules and modeling decisions
 - `docs/04-schema-draft.md` for the MVP database schema draft
 - `docs/05-api-contract.md` for the MVP REST API contract
+- `docs/07-implementation-pattern.md` for the API/web implementation pattern
 - `ENGINEERING.md` for TypeScript/PostgreSQL engineering standards
 - `docs/git-pipeline.md` for Git and repository check workflow
 - `docs/decisions/` for architecture decision records

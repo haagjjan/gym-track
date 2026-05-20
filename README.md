@@ -29,6 +29,7 @@ The repository is in the first implementation foundation phase. It contains the 
 - `docs/04-schema-draft.md` - MVP PostgreSQL schema draft
 - `docs/05-api-contract.md` - MVP REST API contract
 - `docs/06-implementation-start.md` - next-chat implementation prompt and staged rollout
+- `docs/07-implementation-pattern.md` - implementation pattern for API/web feature slices
 - `docs/decisions/` - architecture decision records
 
 ## Implementation Readiness
