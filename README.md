@@ -2,7 +2,7 @@
 
 Gym Progress Tracker is a planned web app for logging strength workouts, tracking exercise progress, and reviewing weekly training volume.
 
-The repository is in the first implementation foundation phase. It contains the project documentation, workflow rules, architecture decisions, pnpm workspace metadata, shared TypeScript tooling, local PostgreSQL setup, initial PostgreSQL migrations, and a first runnable API/web slice. Auth and workout UI screens are still deferred to later focused implementation commits.
+The repository is in the first implementation foundation phase. It contains the project documentation, workflow rules, architecture decisions, pnpm workspace metadata, shared TypeScript tooling, local PostgreSQL setup, initial PostgreSQL migrations, a first runnable API/web slice, and API auth foundation. Workout endpoints and workout UI screens are still deferred to later focused implementation commits.
 
 ## Current Status
 
@@ -14,8 +14,9 @@ The repository is in the first implementation foundation phase. It contains the 
 - `apps/api` and `apps/web` exist with minimal runnable foundations.
 - Initial database schema and muscle group seed migrations are present under `apps/api/db/migrations`.
 - `apps/api` exposes `GET /api/v1/health` with a database connectivity check.
+- `apps/api` exposes signup, login, logout, and current-user auth endpoints with Argon2 password hashing and DB-backed opaque sessions.
 - `apps/web` has a minimal App Router shell.
-- No auth, workout endpoints, analytics endpoints, or workout UI screens have been implemented yet.
+- No workout endpoints, analytics endpoints, or workout UI screens have been implemented yet.
 
 ## Key Documents
 
@@ -88,6 +89,14 @@ Start the API in development mode with:
 
 ```sh
 pnpm dev:api
+```
+
+With the API running, check auth manually with:
+
+```sh
+curl -i http://localhost:4000/api/v1/auth/signup \
+  -H "content-type: application/json" \
+  -d '{"email":"jan@example.com","username":"jan","password":"secret"}'
 ```
 
 Start the web app in development mode with:

@@ -2,7 +2,7 @@
 
 ## Current State
 
-The repository currently contains product and data-planning documentation for a gym progress tracker plus the local development, database migration, and first runnable app foundation. The pnpm workspace, shared TypeScript tooling, Docker Compose PostgreSQL setup, initial PostgreSQL migrations, Fastify health endpoint, database connectivity check, and minimal Next.js App Router shell have been introduced. Auth flows, workout endpoints, workout UI screens, analytics, and business logic have not been introduced yet.
+The repository currently contains product and data-planning documentation for a gym progress tracker plus the local development, database migration, and first runnable app foundation. The pnpm workspace, shared TypeScript tooling, Docker Compose PostgreSQL setup, initial PostgreSQL migrations, Fastify health endpoint, database connectivity check, API auth foundation, and minimal Next.js App Router shell have been introduced. Workout endpoints, workout UI screens, analytics, and workout business logic have not been introduced yet.
 
 The source-of-truth documents are:
 

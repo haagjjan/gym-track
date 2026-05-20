@@ -9,6 +9,9 @@ describe("readEnv", () => {
     assert.deepEqual(readEnv({ DATABASE_URL: databaseUrl }), {
       API_HOST: "0.0.0.0",
       API_PORT: 4000,
+      AUTH_COOKIE_NAME: "gym_progress_session",
+      AUTH_COOKIE_SECURE: false,
+      AUTH_SESSION_TTL_DAYS: 30,
       DATABASE_URL: databaseUrl
     });
   });
@@ -20,6 +23,19 @@ describe("readEnv", () => {
     });
 
     assert.equal(env.API_PORT, 4100);
+  });
+
+  it("parses auth cookie settings", () => {
+    const env = readEnv({
+      AUTH_COOKIE_NAME: "custom_session",
+      AUTH_COOKIE_SECURE: "true",
+      AUTH_SESSION_TTL_DAYS: "7",
+      DATABASE_URL: databaseUrl
+    });
+
+    assert.equal(env.AUTH_COOKIE_NAME, "custom_session");
+    assert.equal(env.AUTH_COOKIE_SECURE, true);
+    assert.equal(env.AUTH_SESSION_TTL_DAYS, 7);
   });
 
   it("rejects missing DATABASE_URL", () => {

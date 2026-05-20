@@ -5,7 +5,11 @@ import { buildServer } from "./server.js";
 
 const env = readEnv();
 const db = createDatabase(env.DATABASE_URL);
-const server = await buildServer(db);
+const server = await buildServer(db, {
+  cookieName: env.AUTH_COOKIE_NAME,
+  cookieSecure: env.AUTH_COOKIE_SECURE,
+  sessionTtlDays: env.AUTH_SESSION_TTL_DAYS
+});
 
 async function shutdown(): Promise<void> {
   await server.close();

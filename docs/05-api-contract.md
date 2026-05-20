@@ -941,7 +941,7 @@ Cardio is deferred from the MVP. Do not implement these endpoints in the first A
 - Required fields must be present and non-empty unless nullable.
 - `email` must be a valid email string.
 - `username` must be globally unique case-insensitively.
-- `password` rules are finalized with auth implementation details.
+- `password` must be 4-200 characters.
 - `setType` must be `warmup` or `working`.
 - `weightKg` must be positive and fit `numeric(6,2)`.
 - `reps` must be a positive integer.

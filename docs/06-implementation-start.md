@@ -79,6 +79,7 @@ Before final handoff, confirm:
    - No full auth or workout routes yet.
 
 4. Fourth implementation batch: auth foundation
+   - Status: API foundation implemented for signup, login, logout, and current-user lookup.
    - User signup, login, logout, and current-user routes.
    - Argon2 password hashing.
    - DB-backed opaque sessions with HttpOnly cookies.
