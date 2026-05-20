@@ -60,6 +60,7 @@ For the current tooling foundation and first runnable slice, run:
 
 ```sh
 pnpm check
+pnpm test
 git diff --check
 git status --short
 ```

@@ -40,6 +40,7 @@ Feature services:
 - Own business decisions and orchestration.
 - Use plain functions and explicit input/output types.
 - Stay independent of Fastify request/reply objects.
+- Depend on narrow interfaces for external boundaries that need focused tests.
 
 Repositories/query modules:
 

@@ -12,6 +12,7 @@
     "migrate:down": "pnpm migrate down",
     "migrate:redo": "pnpm migrate redo",
     "migrate:up": "pnpm migrate up",
+    "test": "node --import tsx --test \"src/**/*.test.ts\"",
     "type-check": "tsc --noEmit --project tsconfig.json --pretty false"
   },
   "dependencies": {

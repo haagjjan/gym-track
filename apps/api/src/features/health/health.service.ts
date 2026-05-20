@@ -1,5 +1,4 @@
-import { sql, type Kysely } from "kysely";
-import type { AppDatabase } from "../../db/database.js";
+import type { DatabaseHealthCheck } from "../../db/database-health.js";
 
 export type HealthStatus = "ok" | "degraded";
 
@@ -10,10 +9,10 @@ export interface HealthReport {
 }
 
 export async function getHealthReport(
-  db: Kysely<AppDatabase>
+  databaseHealth: DatabaseHealthCheck
 ): Promise<HealthReport> {
   try {
-    await sql`select 1`.execute(db);
+    await databaseHealth.check();
 
     return {
       status: "ok",

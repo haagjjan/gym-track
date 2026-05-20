@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "pnpm -r --if-present build",
-    "check": "pnpm type-check && pnpm lint && pnpm build",
+    "check": "pnpm type-check && pnpm lint && pnpm test && pnpm build",
     "db:logs": "docker compose logs -f postgres",
     "db:start": "docker compose up -d postgres",
     "db:stop": "docker compose down",
@@ -21,6 +21,7 @@
     "migrate:down": "pnpm --filter @gym-progress-tracker/api migrate:down",
     "migrate:redo": "pnpm --filter @gym-progress-tracker/api migrate:redo",
     "migrate:up": "pnpm --filter @gym-progress-tracker/api migrate:up",
+    "test": "pnpm -r --if-present test",
     "type-check": "pnpm -r --if-present type-check"
   },
   "devDependencies": {
