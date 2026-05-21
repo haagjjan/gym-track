@@ -1,0 +1,93 @@
+.authPage {
+  align-content: center;
+  display: grid;
+  gap: 28px;
+  grid-template-columns: minmax(0, 0.95fr) minmax(320px, 420px);
+  min-height: 100vh;
+  padding: 32px;
+}
+
+.authIntro,
+.authForm {
+  width: min(100%, 860px);
+}
+
+.authIntro {
+  align-self: center;
+}
+
+.authForm {
+  align-self: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+}
+
+.authCopy {
+  color: var(--muted);
+  font-size: 1.05rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.field span:first-child {
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.field input {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  min-height: 48px;
+  padding: 0 12px;
+}
+
+.field input:focus {
+  border-color: var(--brand);
+  outline: 3px solid rgba(47, 102, 85, 0.18);
+}
+
+.fieldError,
+.formError {
+  color: var(--danger);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.fieldError {
+  margin-top: 0;
+}
+
+.formError,
+.authSwitch {
+  margin: 0;
+}
+
+.authSwitch {
+  color: var(--muted);
+  line-height: 1.45;
+  text-align: center;
+}
+
+.authSwitch a {
+  color: var(--brand-strong);
+  font-weight: 800;
+}
+
+@media (max-width: 640px) {
+  .authPage {
+    grid-template-columns: 1fr;
+    padding: 20px;
+  }
+}

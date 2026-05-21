@@ -48,15 +48,16 @@ apps/
 |       `-- server.ts
 `-- web/
     `-- src/
-        `-- app/
+        |-- app/
+        `-- features/
 ```
 
 - `apps/api` owns the Fastify API, Kysely database access, migrations, API feature slices, and API tests.
 - `apps/api/src/features/<feature>` owns each API vertical slice. Current features are `auth` and `health`.
 - `apps/api/src/db` owns database connection and database health helpers.
 - `apps/api/src/shared` owns API-only shared boundaries such as environment validation.
-- `apps/web` owns the Next.js App Router app. It is still a minimal shell.
-- Web feature folders should be added only when real UI behavior exists.
+- `apps/web` owns the Next.js App Router app and the first auth UI slice.
+- `apps/web/src/features/auth` owns web auth forms, server auth helpers, and auth proxy helpers.
 
 ## Documentation
 

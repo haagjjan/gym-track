@@ -4,7 +4,7 @@
 
 - Phases 0-7 are implemented for the current foundation: repository setup, MVP docs, query/data/schema planning, stack decisions, local tooling, Docker PostgreSQL, and SQL migrations.
 - Phase 8 is in progress: the API contract exists, health and auth routes are implemented, and workout, exercise, set, and analytics endpoints remain.
-- Phase 9 has started only as a minimal Next.js shell. User-facing auth, workout, history, and analytics screens remain.
+- Phase 9 has started with a minimal Next.js shell and the first auth UI slice. Workout, history, and analytics screens remain.
 - Phase 10 has started with unit tests and `pnpm check`; broader integration/UI coverage and full CI are still future work.
 - Phases 11-12 are not started.
 
@@ -199,7 +199,7 @@ A clean, usable web app that covers core flows.
 - A user can complete the full workflow without using admin tools.
 
 ### Status
-- Not implemented beyond the minimal Next.js shell.
+- Started with signup, login, logout, and authenticated home state. Workout, history, and analytics screens remain.
 
 ---
 

@@ -100,4 +100,17 @@ The auth API follows the same feature-owned pattern:
 
 Auth route modules own HTTP validation and cookie transport, auth services own business flow, and auth repositories own Kysely persistence.
 
-Status: implemented for API signup, login, logout, and current-user lookup. Web auth screens are not implemented yet.
+Status: implemented for API signup, login, logout, and current-user lookup.
+
+## Web Auth Slice
+
+The first web auth slice uses Next.js route handlers as same-origin proxies to the Fastify API:
+
+- `POST /api/auth/signup`
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
+
+Browser code calls the Next route handlers to keep cookies same-origin and avoid adding CORS policy in the API. Route handlers forward cookies and status codes to the Fastify `/api/v1/auth/*` endpoints.
+
+Status: implemented for signup, login, logout, and authenticated home state.

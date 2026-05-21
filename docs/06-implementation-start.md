@@ -95,7 +95,7 @@ Before final handoff, confirm:
    - Query-backed analytics endpoints after core logging works.
 
 6. Sixth implementation batch: web MVP
-   - Status: not started beyond the minimal Next.js shell.
+   - Status: started with signup, login, logout, and authenticated home state.
    - Next.js app shell.
    - Auth screens.
    - Workout logging screen.

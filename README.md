@@ -15,7 +15,7 @@ The repository is in the first implementation foundation phase. It contains the 
 - Initial database schema and muscle group seed migrations are present under `apps/api/db/migrations`.
 - `apps/api` exposes `GET /api/v1/health` with a database connectivity check.
 - `apps/api` exposes signup, login, logout, and current-user auth endpoints with Argon2 password hashing and DB-backed opaque sessions.
-- `apps/web` has a minimal App Router shell.
+- `apps/web` has a minimal App Router shell with signup, login, logout, and authenticated home state.
 - No workout endpoints, analytics endpoints, or workout UI screens have been implemented yet.
 
 ## Key Documents
@@ -114,6 +114,14 @@ Start the web app in development mode with:
 ```sh
 pnpm dev:web
 ```
+
+With both the API and web app running, open:
+
+```text
+http://localhost:3000/signup
+```
+
+Create an account, refresh the home page, log out, then log in again from `/login`.
 
 Stop local PostgreSQL with:
 

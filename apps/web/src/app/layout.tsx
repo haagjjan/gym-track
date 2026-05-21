@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./styles.css";
+import "../features/auth/auth.css";
 
 export const metadata: Metadata = {
   title: "Gym Progress Tracker",
