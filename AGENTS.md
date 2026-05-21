@@ -16,10 +16,11 @@ Read these files before implementing feature work:
 6. `docs/04-schema-draft.md` - ERD-level MVP database schema draft
 7. `docs/05-api-contract.md` - MVP REST API contract
 8. `docs/07-implementation-pattern.md` - API/web feature-slice implementation pattern
-9. `ENGINEERING.md` - TypeScript/PostgreSQL code quality rules
-10. `ARCHITECTURE.md` - module boundaries and dependency rules
-11. `CONTRIBUTING.md` - implementation workflow and review gates
-12. `docs/git-pipeline.md` - Git, PR, and repository check workflow
+9. `docs/08-next-implementation-plan.md` - fresh-session handoff and next implementation blocks
+10. `ENGINEERING.md` - TypeScript/PostgreSQL code quality rules
+11. `ARCHITECTURE.md` - module boundaries and dependency rules
+12. `CONTRIBUTING.md` - implementation workflow and review gates
+13. `docs/git-pipeline.md` - Git, PR, and repository check workflow
 
 ## Working Rules
 
@@ -35,6 +36,7 @@ Read these files before implementing feature work:
 - Keep secrets out of the repo. Never commit `.env`, credentials, tokens, database dumps, or personal data.
 - Keep generated local artifacts out of commits. Cookie jars, `.DS_Store`, build output, caches, and TypeScript build metadata should stay ignored or be removed before handoff.
 - Use `docs/repository-structure.md` as the source of truth for where files belong before creating or moving folders.
+- Use `docs/08-next-implementation-plan.md` to choose the next implementation slice in a fresh session. Do not start later blocks from that file unless the user explicitly asks for them.
 
 ## Implementation Flow
 

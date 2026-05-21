@@ -71,6 +71,7 @@ docs/
 |-- 05-api-contract.md
 |-- 06-implementation-start.md
 |-- 07-implementation-pattern.md
+|-- 08-next-implementation-plan.md
 |-- git-pipeline.md
 |-- repository-structure.md
 `-- decisions/
@@ -80,6 +81,7 @@ docs/
 - `docs/01-requirements.md` through `docs/05-api-contract.md` are product, query, data, schema, and API source-of-truth docs.
 - `docs/06-implementation-start.md` records the original staged implementation handoff.
 - `docs/07-implementation-pattern.md` records the feature-slice pattern used by API and web work.
+- `docs/08-next-implementation-plan.md` records the current fresh-session handoff and remaining implementation blocks.
 - `docs/git-pipeline.md` records Git, PR, and check workflow.
 - `docs/decisions` contains ADRs. Add or update an ADR before changing stack, auth strategy, schema policy, API style, or deployment direction.
 

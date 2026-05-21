@@ -34,6 +34,7 @@ The repository is in the first implementation foundation phase. It contains the 
 - `docs/05-api-contract.md` - MVP REST API contract
 - `docs/06-implementation-start.md` - next-chat implementation prompt and staged rollout
 - `docs/07-implementation-pattern.md` - implementation pattern for API/web feature slices
+- `docs/08-next-implementation-plan.md` - fresh-session pickup plan for remaining MVP work
 - `docs/decisions/` - architecture decision records
 
 ## Repository Map
@@ -47,12 +48,17 @@ Use `docs/repository-structure.md` when you need to understand where files belon
 
 ## Next Implementation Slices
 
-The remaining work should continue in small implementation commits:
+The remaining work is structured in `docs/08-next-implementation-plan.md`. The recommended next slice is the Workout Sessions API.
 
-- workout MVP API endpoints for sessions, session exercises, sets, and exercise library
-- DB-backed integration tests for auth and workout flows
-- Next.js auth screens wired to the API
-- workout logging, history, detail, and analytics UI screens
+Implementation blocks:
+
+- Workout Sessions API
+- Exercise Library API
+- Workout Logging API
+- First Workout Logging UI
+- Workout History/Detail UI
+- Analytics API/UI
+- Quality, CI, and deployment readiness
 
 Remaining larger decisions:
 

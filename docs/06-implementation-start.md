@@ -2,11 +2,13 @@
 
 ## Purpose
 
-Use this document to start implementation in a new chat without losing the foundation decisions made so far.
+This is the historical implementation handoff for the foundation batches. Use `docs/08-next-implementation-plan.md` for current fresh-session implementation planning.
 
-This document records the staged implementation handoff that started the app foundation. The first batches have now moved beyond planning: Phase 6 tooling, Phase 7 migrations, the API health foundation, and the API auth foundation are implemented. Future work should continue from the current status in `README.md`, `docs/00-workflow.md`, and `docs/repository-structure.md`.
+This document records the staged implementation handoff that started the app foundation. The first batches have now moved beyond planning: Phase 6 tooling, Phase 7 migrations, the API health foundation, the API auth foundation, and the first auth UI slice are implemented. Future work should continue from the current status in `README.md`, `docs/00-workflow.md`, `docs/repository-structure.md`, and `docs/08-next-implementation-plan.md`.
 
-## Copy-Paste Prompt For Next Chat
+## Historical Copy-Paste Prompt
+
+The prompt below is preserved for context only. Do not use it for current implementation work; use `docs/08-next-implementation-plan.md` instead.
 
 ```md
 We are starting implementation for the Gym Progress Tracker.
