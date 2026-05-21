@@ -15,12 +15,12 @@ Implemented:
 - Fastify API startup, environment validation, Kysely database connection, and `GET /api/v1/health`.
 - API auth foundation: signup, login, logout, current user, Argon2 password hashing, DB-backed opaque sessions, and HttpOnly cookies.
 - Workout Sessions API: create, list, detail, and end authenticated workout sessions.
+- Exercise Library API: list selectable exercises and create or restore shared global exercises.
 - First web auth UI slice: `/signup`, `/login`, logout, authenticated home state, and same-origin Next auth proxy routes.
 - Repository structure documentation and implementation pattern documentation.
 
 Not implemented:
 
-- Exercise library API endpoints.
 - Session exercise and set logging endpoints.
 - Workout logging UI.
 - Workout history/detail UI.
@@ -29,11 +29,11 @@ Not implemented:
 
 ## Recommended Next Slice
 
-Start with **Exercise Library API**.
+Start with **Workout Logging API**.
 
-Reason: auth now identifies the user and workout sessions can be created/read through the API. Exercise selection is the next dependency before session exercise and set logging can work.
+Reason: auth, workout sessions, and exercise selection now exist through the API. Session exercise and set logging are the next dependency before a real workout logging UI can work.
 
-Do not start with analytics or a broader UI pass before exercises and workout logging child records can be created through the API.
+Do not start with analytics or a broader UI pass before workout logging child records can be created through the API.
 
 ## Implementation Blocks
 
@@ -70,7 +70,7 @@ Non-goals:
 
 ### 2. Exercise Library API
 
-Status: recommended next slice.
+Status: implemented.
 
 Goal: let authenticated users list selectable exercises and add globally unique exercises.
 
@@ -96,6 +96,8 @@ Non-goals:
 - Do not implement workout logging UI or analytics in this block.
 
 ### 3. Workout Logging API
+
+Status: recommended next slice.
 
 Goal: let authenticated users add exercises and sets to their own workout sessions.
 
@@ -220,7 +222,7 @@ Rules:
 Use this prompt when starting the next implementation session:
 
 ```md
-We are continuing the Gym Progress Tracker after the Workout Sessions API slice.
+We are continuing the Gym Progress Tracker after the Exercise Library API slice.
 
 First read:
 - AGENTS.md
@@ -237,9 +239,9 @@ First read:
 - docs/07-implementation-pattern.md
 - docs/08-next-implementation-plan.md
 
-Implement the next recommended slice only: Exercise Library API.
+Implement the next recommended slice only: Workout Logging API.
 
-Do not implement session exercise endpoints, set endpoints, UI screens, analytics, CI, deployment, or schema changes unless the docs prove they are required for the exercise library API.
+Do not implement UI screens, analytics, CI, deployment, or schema changes unless the docs prove they are required for the workout logging API.
 
 Before handoff, run relevant checks, confirm `git diff --check`, keep the diff focused, commit, and push.
 ```

@@ -44,6 +44,7 @@ apps/
 |       |-- db/
 |       |-- features/
 |       |   |-- auth/
+|       |   |-- exercises/
 |       |   |-- health/
 |       |   `-- workouts/
 |       |-- shared/
@@ -56,7 +57,7 @@ apps/
 ```
 
 - `apps/api` owns the Fastify API, Kysely database access, migrations, API feature slices, and API tests.
-- `apps/api/src/features/<feature>` owns each API vertical slice. Current features are `auth`, `health`, and `workouts`.
+- `apps/api/src/features/<feature>` owns each API vertical slice. Current features are `auth`, `exercises`, `health`, and `workouts`.
 - `apps/api/src/db` owns database connection and database health helpers.
 - `apps/api/src/shared` owns API-only shared boundaries such as environment validation.
 - `apps/web` owns the Next.js App Router app and the first auth UI slice.

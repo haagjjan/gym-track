@@ -4,7 +4,7 @@
 
 This is the historical implementation handoff for the foundation batches. Use `docs/08-next-implementation-plan.md` for current fresh-session implementation planning.
 
-This document records the staged implementation handoff that started the app foundation. The first batches have now moved beyond planning: Phase 6 tooling, Phase 7 migrations, the API health foundation, the API auth foundation, the first auth UI slice, and the Workout Sessions API slice are implemented. Future work should continue from the current status in `README.md`, `docs/00-workflow.md`, `docs/repository-structure.md`, and `docs/08-next-implementation-plan.md`.
+This document records the staged implementation handoff that started the app foundation. The first batches have now moved beyond planning: Phase 6 tooling, Phase 7 migrations, the API health foundation, the API auth foundation, the first auth UI slice, the Workout Sessions API slice, and the Exercise Library API slice are implemented. Future work should continue from the current status in `README.md`, `docs/00-workflow.md`, `docs/repository-structure.md`, and `docs/08-next-implementation-plan.md`.
 
 ## Historical Copy-Paste Prompt
 
@@ -90,7 +90,7 @@ Before final handoff, confirm:
    - Integration tests for auth/session behavior.
 
 5. Fifth implementation batch: workout MVP API
-   - Status: started. Workout Sessions API is implemented; exercise library, session exercises, sets, and analytics remain.
+   - Status: started. Workout Sessions API and Exercise Library API are implemented; session exercises, sets, and analytics remain.
    - Workout sessions, session exercises, sets, and exercise library.
    - Soft delete behavior.
    - Ordering behavior.

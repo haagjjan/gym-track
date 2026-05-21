@@ -21,6 +21,7 @@ db/
   database.ts
 features/
   auth/
+  exercises/
   health/
     health.routes.ts
     health.service.ts
@@ -128,3 +129,14 @@ The workout sessions API follows the same feature-owned pattern:
 Workout routes own auth checks, request validation, and HTTP response mapping. Workout services own business decisions such as default timestamps, one-open-session conflicts, ownership/not-found handling, and end-time validation. Workout repositories own Kysely persistence and user-scoped workout queries.
 
 Status: implemented for creating, listing, viewing, and ending authenticated workout sessions.
+
+## Exercise Library API Slice
+
+The exercise library API follows the same feature-owned pattern:
+
+- `GET /api/v1/exercises`
+- `POST /api/v1/exercises`
+
+Exercise routes own auth checks, request validation, and HTTP response mapping. Exercise services own business decisions such as name conflicts, muscle group validation, and soft-deleted exercise restoration. Exercise repositories own Kysely persistence and selectable exercise queries.
+
+Status: implemented for listing selectable exercises and creating or restoring shared global exercises.

@@ -8,6 +8,9 @@ import { argon2PasswordHasher } from "./features/auth/password.js";
 import { cryptoSessionTokenGenerator } from "./features/auth/session-token.js";
 import { createDatabaseHealthCheck } from "./db/database-health.js";
 import type { AppDatabase } from "./db/database.js";
+import { createExerciseRepository } from "./features/exercises/exercise.repository.js";
+import { registerExerciseRoutes } from "./features/exercises/exercise.routes.js";
+import { createExerciseService } from "./features/exercises/exercise.service.js";
 import { registerHealthRoutes } from "./features/health/health.routes.js";
 import { createWorkoutRepository } from "./features/workouts/workout.repository.js";
 import { registerWorkoutRoutes } from "./features/workouts/workout.routes.js";
@@ -36,6 +39,9 @@ export async function buildServer(
   const workoutService = createWorkoutService({
     repository: createWorkoutRepository(db)
   });
+  const exerciseService = createExerciseService({
+    repository: createExerciseRepository(db)
+  });
 
   await server.register(cookie);
   await registerHealthRoutes(server, databaseHealth);
@@ -51,6 +57,11 @@ export async function buildServer(
     authService,
     cookieName: authConfig.cookieName,
     workoutService
+  });
+  await registerExerciseRoutes(server, {
+    authService,
+    cookieName: authConfig.cookieName,
+    exerciseService
   });
 
   return server;

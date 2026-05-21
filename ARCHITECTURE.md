@@ -2,7 +2,7 @@
 
 ## Current State
 
-The repository currently contains product and data-planning documentation for a gym progress tracker plus the local development, database migration, and first runnable app foundation. The pnpm workspace, shared TypeScript tooling, Docker Compose PostgreSQL setup, initial PostgreSQL migrations, Fastify health endpoint, database connectivity check, API auth foundation, workout session API foundation, and first Next.js auth UI slice have been introduced. Workout logging child endpoints, workout UI screens, analytics, and broader workout business logic have not been introduced yet.
+The repository currently contains product and data-planning documentation for a gym progress tracker plus the local development, database migration, and first runnable app foundation. The pnpm workspace, shared TypeScript tooling, Docker Compose PostgreSQL setup, initial PostgreSQL migrations, Fastify health endpoint, database connectivity check, API auth foundation, workout session API foundation, exercise library API foundation, and first Next.js auth UI slice have been introduced. Workout logging child endpoints, workout UI screens, analytics, and broader workout business logic have not been introduced yet.
 
 The source-of-truth documents are:
 
@@ -80,7 +80,7 @@ docs/
 
 Root tooling, local infrastructure, and documentation live at the repository root. The current repo map is documented in `docs/repository-structure.md`.
 
-Within each app, organize by feature/domain first, then by technical role. Current API features are `auth`, `health`, and `workouts`. Expected future domains include `exercises`, `analytics`, and `users`.
+Within each app, organize by feature/domain first, then by technical role. Current API features are `auth`, `health`, `workouts`, and `exercises`. Expected future domains include `analytics` and `users`.
 
 Avoid broad folders such as `misc`, oversized `utils`, unrelated `services`, or global feature-specific `components`. Shared code should move to `packages/shared` only after at least two real consumers exist.
 

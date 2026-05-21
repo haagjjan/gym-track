@@ -792,7 +792,8 @@ Response `201`:
 
 Behavior:
 
-- Returns `409` if an exercise with the same case-insensitive name exists.
+- Returns `409` if an active exercise with the same case-insensitive name exists.
+- Returns `404` if any referenced muscle group does not exist.
 - If the existing record is soft-deleted, implementation should restore/reuse it instead of creating a duplicate.
 
 ### `GET /api/v1/muscle-groups`
