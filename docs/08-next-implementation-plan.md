@@ -16,12 +16,12 @@ Implemented:
 - API auth foundation: signup, login, logout, current user, Argon2 password hashing, DB-backed opaque sessions, and HttpOnly cookies.
 - Workout Sessions API: create, list, detail, and end authenticated workout sessions.
 - Exercise Library API: list selectable exercises and create or restore shared global exercises.
+- Workout Logging API: add, reorder, and remove session exercises, plus add, update, and remove sets.
 - First web auth UI slice: `/signup`, `/login`, logout, authenticated home state, and same-origin Next auth proxy routes.
 - Repository structure documentation and implementation pattern documentation.
 
 Not implemented:
 
-- Session exercise and set logging endpoints.
 - Workout logging UI.
 - Workout history/detail UI.
 - Analytics API and UI.
@@ -29,11 +29,11 @@ Not implemented:
 
 ## Recommended Next Slice
 
-Start with **Workout Logging API**.
+Start with **First Workout Logging UI**.
 
-Reason: auth, workout sessions, and exercise selection now exist through the API. Session exercise and set logging are the next dependency before a real workout logging UI can work.
+Reason: auth, workout sessions, exercise selection, session exercise logging, and set logging now exist through the API. A real workout logging screen is the next step that lets a signed-in user complete the core MVP workflow through the browser.
 
-Do not start with analytics or a broader UI pass before workout logging child records can be created through the API.
+Do not start with analytics or a broad redesign before the core workout logging flow is usable in the web app.
 
 ## Implementation Blocks
 
@@ -97,7 +97,7 @@ Non-goals:
 
 ### 3. Workout Logging API
 
-Status: recommended next slice.
+Status: implemented.
 
 Goal: let authenticated users add exercises and sets to their own workout sessions.
 
@@ -127,6 +127,8 @@ Non-goals:
 - Do not implement charts or weekly volume in this block.
 
 ### 4. First Workout Logging UI
+
+Status: recommended next slice.
 
 Goal: let a signed-in user start a workout and log real exercise/set data through the API.
 
@@ -222,7 +224,7 @@ Rules:
 Use this prompt when starting the next implementation session:
 
 ```md
-We are continuing the Gym Progress Tracker after the Exercise Library API slice.
+We are continuing the Gym Progress Tracker after the Workout Logging API slice.
 
 First read:
 - AGENTS.md
@@ -239,9 +241,9 @@ First read:
 - docs/07-implementation-pattern.md
 - docs/08-next-implementation-plan.md
 
-Implement the next recommended slice only: Workout Logging API.
+Implement the next recommended slice only: First Workout Logging UI.
 
-Do not implement UI screens, analytics, CI, deployment, or schema changes unless the docs prove they are required for the workout logging API.
+Do not implement analytics, CI, deployment, or schema changes unless the docs prove they are required for the first workout logging UI.
 
 Before handoff, run relevant checks, confirm `git diff --check`, keep the diff focused, commit, and push.
 ```

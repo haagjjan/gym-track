@@ -140,3 +140,18 @@ The exercise library API follows the same feature-owned pattern:
 Exercise routes own auth checks, request validation, and HTTP response mapping. Exercise services own business decisions such as name conflicts, muscle group validation, and soft-deleted exercise restoration. Exercise repositories own Kysely persistence and selectable exercise queries.
 
 Status: implemented for listing selectable exercises and creating or restoring shared global exercises.
+
+## Workout Logging API Slice
+
+The workout logging API stays inside the `workouts` feature because every mutation is owned through a workout session:
+
+- `POST /api/v1/workouts/:workoutId/exercises`
+- `PATCH /api/v1/workouts/:workoutId/exercises/reorder`
+- `DELETE /api/v1/workouts/:workoutId/exercises/:sessionExerciseId`
+- `POST /api/v1/workouts/:workoutId/exercises/:sessionExerciseId/sets`
+- `PATCH /api/v1/sets/:setId`
+- `DELETE /api/v1/sets/:setId`
+
+Workout logging routes own auth checks, request validation, and HTTP response mapping. Workout logging services own ordering decisions, ownership/not-found handling, and set mutation decisions. Workout logging repositories own Kysely transactions for position shifting, reordering, soft deletes, and set-order compaction.
+
+Status: implemented for adding, reordering, and removing session exercises, plus adding, updating, and removing sets.

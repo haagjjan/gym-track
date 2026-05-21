@@ -3,7 +3,7 @@
 ## Current Progress
 
 - Phases 0-7 are implemented for the current foundation: repository setup, MVP docs, query/data/schema planning, stack decisions, local tooling, Docker PostgreSQL, and SQL migrations.
-- Phase 8 is in progress: the API contract exists, health, auth, workout session, and exercise library routes are implemented, and workout logging, set, and analytics endpoints remain.
+- Phase 8 is in progress: the API contract exists, health, auth, workout session, exercise library, workout logging, and set routes are implemented, and analytics endpoints remain.
 - Phase 9 has started with a minimal Next.js shell and the first auth UI slice. Workout, history, and analytics screens remain.
 - Phase 10 has started with unit tests and `pnpm check`; broader integration/UI coverage and full CI are still future work.
 - Phases 11-12 are not started.
@@ -178,7 +178,7 @@ Define a stable interface between UI and DB.
 - Each endpoint maps to a query from Phase 2.
 
 ### Status
-- In progress. Health, auth, workout session, and exercise library foundations are implemented. Workout logging, set editing, and analytics endpoints remain.
+- In progress. Health, auth, workout session, exercise library, workout logging, and set editing foundations are implemented. Analytics endpoints remain.
 
 ---
 
@@ -217,7 +217,7 @@ Stop regressions and build confidence.
 - Core flows are tested and breakages are caught early.
 
 ### Status
-- Started. API health/auth unit tests and root `pnpm check` exist. Broader API/database integration tests, UI tests, and full CI remain.
+- Started. API health/auth/workout/exercise/logging unit tests and root `pnpm check` exist. Broader API/database integration tests, UI tests, and full CI remain.
 
 ---
 

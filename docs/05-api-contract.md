@@ -2,7 +2,7 @@
 
 ## Status
 
-Draft Markdown REST contract for the MVP. This is not an OpenAPI file and does not create implementation schemas. Zod/OpenAPI generation is deferred until the TypeScript workspace exists.
+Draft Markdown REST contract for the MVP. This is not an OpenAPI file and does not create implementation schemas. Zod/OpenAPI generation is deferred.
 
 ## Global Conventions
 
@@ -552,6 +552,8 @@ Response `201`:
 Behavior:
 
 - Appends to the end if `position` is omitted.
+- Provided `position` must be in the active compact range `1..activeCount+1`.
+- Existing active exercise positions are shifted to keep positions compact.
 - Returns `404` if the workout or exercise is not available.
 
 ### `PATCH /api/v1/workouts/:workoutId/exercises/reorder`
@@ -585,6 +587,13 @@ Response `200`:
   }
 }
 ```
+
+Behavior:
+
+- Request items must include every active session exercise for the workout exactly once.
+- Positions must be unique and compact in the range `1..N`.
+- Invalid ordering returns `409`.
+- Unknown or foreign session exercise IDs return `404`.
 
 ### `DELETE /api/v1/workouts/:workoutId/exercises/:sessionExerciseId`
 
@@ -649,6 +658,7 @@ Behavior:
 
 - Appends to the end of the set list.
 - `weightKg` accepts a decimal string or JSON number, but responses use a decimal string.
+- `restTimeSeconds` may be omitted or null.
 
 ### `PATCH /api/v1/sets/:setId`
 
@@ -687,6 +697,11 @@ Response `200`:
   }
 }
 ```
+
+Behavior:
+
+- Accepts one or more editable set fields.
+- Preserves `setOrder`.
 
 ### `DELETE /api/v1/sets/:setId`
 

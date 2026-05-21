@@ -12,6 +12,9 @@ import { createExerciseRepository } from "./features/exercises/exercise.reposito
 import { registerExerciseRoutes } from "./features/exercises/exercise.routes.js";
 import { createExerciseService } from "./features/exercises/exercise.service.js";
 import { registerHealthRoutes } from "./features/health/health.routes.js";
+import { createWorkoutLoggingRepository } from "./features/workouts/workout-logging.repository.js";
+import { registerWorkoutLoggingRoutes } from "./features/workouts/workout-logging.routes.js";
+import { createWorkoutLoggingService } from "./features/workouts/workout-logging.service.js";
 import { createWorkoutRepository } from "./features/workouts/workout.repository.js";
 import { registerWorkoutRoutes } from "./features/workouts/workout.routes.js";
 import { createWorkoutService } from "./features/workouts/workout.service.js";
@@ -39,6 +42,9 @@ export async function buildServer(
   const workoutService = createWorkoutService({
     repository: createWorkoutRepository(db)
   });
+  const workoutLoggingService = createWorkoutLoggingService({
+    repository: createWorkoutLoggingRepository(db)
+  });
   const exerciseService = createExerciseService({
     repository: createExerciseRepository(db)
   });
@@ -57,6 +63,11 @@ export async function buildServer(
     authService,
     cookieName: authConfig.cookieName,
     workoutService
+  });
+  await registerWorkoutLoggingRoutes(server, {
+    authService,
+    cookieName: authConfig.cookieName,
+    loggingService: workoutLoggingService
   });
   await registerExerciseRoutes(server, {
     authService,
