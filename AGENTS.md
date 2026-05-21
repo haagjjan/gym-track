@@ -4,21 +4,22 @@ This file defines how Codex and other coding agents must work in this repo.
 
 ## Project Context
 
-This project is a gym progress tracker web app. The current repo is in the planning and architecture phase, before application code has been introduced.
+This project is a gym progress tracker web app. The repo has moved from planning into the first implementation foundation: pnpm workspace tooling, local PostgreSQL, SQL migrations, Fastify API foundation, API auth foundation, and a minimal Next.js shell exist. Workout API endpoints, workout UI screens, analytics behavior, and deployment are still future implementation work.
 
 Read these files before implementing feature work:
 
-1. `docs/00-workflow.md` - project roadmap and phase order
-2. `docs/01-requirements.md` - MVP product requirements and user flows
-3. `docs/02-query-list.md` - DB-driven query requirements
-4. `docs/03-data-model-notes.md` - data model rules and tradeoffs
-5. `docs/04-schema-draft.md` - ERD-level MVP database schema draft
-6. `docs/05-api-contract.md` - MVP REST API contract
-7. `docs/06-implementation-start.md` - next-chat implementation prompt and staged rollout
-8. `ENGINEERING.md` - TypeScript/PostgreSQL code quality rules
-9. `ARCHITECTURE.md` - module boundaries and dependency rules
-10. `CONTRIBUTING.md` - implementation workflow and review gates
-11. `docs/git-pipeline.md` - Git, PR, and repository check workflow
+1. `docs/repository-structure.md` - current repo map and local-only file rules
+2. `docs/00-workflow.md` - project roadmap and phase progress
+3. `docs/01-requirements.md` - MVP product requirements and user flows
+4. `docs/02-query-list.md` - DB-driven query requirements
+5. `docs/03-data-model-notes.md` - data model rules and tradeoffs
+6. `docs/04-schema-draft.md` - ERD-level MVP database schema draft
+7. `docs/05-api-contract.md` - MVP REST API contract
+8. `docs/07-implementation-pattern.md` - API/web feature-slice implementation pattern
+9. `ENGINEERING.md` - TypeScript/PostgreSQL code quality rules
+10. `ARCHITECTURE.md` - module boundaries and dependency rules
+11. `CONTRIBUTING.md` - implementation workflow and review gates
+12. `docs/git-pipeline.md` - Git, PR, and repository check workflow
 
 ## Working Rules
 
@@ -32,6 +33,8 @@ Read these files before implementing feature work:
 - Explain any intentional violation of size, interface, or folder-structure rules in the handoff.
 - Update documentation in the same change when behavior, workflow, data shape, API contracts, or architecture changes.
 - Keep secrets out of the repo. Never commit `.env`, credentials, tokens, database dumps, or personal data.
+- Keep generated local artifacts out of commits. Cookie jars, `.DS_Store`, build output, caches, and TypeScript build metadata should stay ignored or be removed before handoff.
+- Use `docs/repository-structure.md` as the source of truth for where files belong before creating or moving folders.
 
 ## Implementation Flow
 
@@ -63,6 +66,6 @@ Before handing work back:
 
 - The MVP requirements, schema draft, and API contract are documented but may evolve through focused docs updates or ADRs.
 - The accepted stack direction is TypeScript, PostgreSQL, Next.js App Router, Fastify, pnpm workspaces, Kysely, Zod, `node-pg-migrate`, Argon2, DB-backed opaque sessions, and Docker Compose Postgres.
-- Deployment target and application build/lint/type/test CI still need later decisions.
+- Deployment target and full application CI still need later decisions.
 - Application source folders should not be added as empty scaffolding.
 - Database schema work should be driven by `docs/02-query-list.md`, `docs/03-data-model-notes.md`, and `docs/04-schema-draft.md`.

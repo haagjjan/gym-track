@@ -20,6 +20,7 @@ Inside `apps/api/src`:
 db/
   database.ts
 features/
+  auth/
   health/
     health.routes.ts
     health.service.ts
@@ -87,3 +88,16 @@ Start with a health slice:
 This proves the local stack without introducing auth, workouts, analytics, or placeholder feature systems.
 
 Status: implemented as the first runnable slice.
+
+## Auth Foundation Slice
+
+The auth API follows the same feature-owned pattern:
+
+- `POST /api/v1/auth/signup`
+- `POST /api/v1/auth/login`
+- `POST /api/v1/auth/logout`
+- `GET /api/v1/auth/me`
+
+Auth route modules own HTTP validation and cookie transport, auth services own business flow, and auth repositories own Kysely persistence.
+
+Status: implemented for API signup, login, logout, and current-user lookup. Web auth screens are not implemented yet.

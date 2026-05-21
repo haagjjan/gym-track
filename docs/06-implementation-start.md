@@ -4,7 +4,7 @@
 
 Use this document to start implementation in a new chat without losing the foundation decisions made so far.
 
-The first implementation batch must stay limited to Phase 6: local development environment and root tooling foundation.
+This document records the staged implementation handoff that started the app foundation. The first batches have now moved beyond planning: Phase 6 tooling, Phase 7 migrations, the API health foundation, and the API auth foundation are implemented. Future work should continue from the current status in `README.md`, `docs/00-workflow.md`, and `docs/repository-structure.md`.
 
 ## Copy-Paste Prompt For Next Chat
 
@@ -58,13 +58,14 @@ Before final handoff, confirm:
 ## Step-By-Step Implementation Strategy
 
 1. First implementation batch: Phase 6 only
+   - Status: implemented.
    - Root `package.json`, `pnpm-workspace.yaml`, and base TypeScript config.
    - Minimal `apps/api` and `apps/web` folders only with real tool-owned files.
    - Docker Compose Postgres and `.env.example`.
    - No migrations, endpoints, auth, UI, or business logic yet.
 
 2. Second implementation batch: database migration foundation
-   - Status: implemented in `apps/api/db/migrations`; local up/down verification still requires Node, pnpm, Docker, and PostgreSQL tooling.
+   - Status: implemented in `apps/api/db/migrations`.
    - Configure `node-pg-migrate`.
    - Add migration commands.
    - Add first schema migration based on `docs/04-schema-draft.md`.
@@ -72,6 +73,7 @@ Before final handoff, confirm:
    - Verify migrate up/down locally.
 
 3. Third implementation batch: API foundation
+   - Status: implemented for server startup, environment validation, Kysely database connection, and health.
    - Fastify server skeleton.
    - Environment validation with Zod.
    - Database connection boundary.
@@ -86,12 +88,14 @@ Before final handoff, confirm:
    - Integration tests for auth/session behavior.
 
 5. Fifth implementation batch: workout MVP API
+   - Status: not started.
    - Workout sessions, session exercises, sets, and exercise library.
    - Soft delete behavior.
    - Ordering behavior.
    - Query-backed analytics endpoints after core logging works.
 
 6. Sixth implementation batch: web MVP
+   - Status: not started beyond the minimal Next.js shell.
    - Next.js app shell.
    - Auth screens.
    - Workout logging screen.
@@ -113,3 +117,5 @@ Before final handoff, confirm:
 - Local Postgres setup is documented through `.env.example` and Compose config.
 - Basic tooling commands exist and pass, or skipped checks are clearly explained.
 - Commits are small, specific, and pushed.
+
+Status: completed by the foundation implementation batches.

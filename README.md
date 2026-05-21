@@ -21,9 +21,10 @@ The repository is in the first implementation foundation phase. It contains the 
 ## Key Documents
 
 - `AGENTS.md` - working rules for Codex and coding agents
-- `ARCHITECTURE.md` - architecture boundaries and future repo shape
+- `ARCHITECTURE.md` - architecture boundaries and dependency rules
 - `ENGINEERING.md` - TypeScript/PostgreSQL engineering standards
 - `CONTRIBUTING.md` - contribution workflow and review gates
+- `docs/repository-structure.md` - current repo map and local-only file rules
 - `docs/git-pipeline.md` - Git branch, PR, and repository check workflow
 - `docs/00-workflow.md` - project roadmap
 - `docs/01-requirements.md` - MVP requirements and user flows
@@ -35,19 +36,28 @@ The repository is in the first implementation foundation phase. It contains the 
 - `docs/07-implementation-pattern.md` - implementation pattern for API/web feature slices
 - `docs/decisions/` - architecture decision records
 
-## Implementation Readiness
+## Repository Map
 
-Use `docs/06-implementation-start.md` to start implementation in a new chat. The remaining work begins with small implementation commits:
+Use `docs/repository-structure.md` when you need to understand where files belong. In short:
 
-- root pnpm workspace and shared TypeScript tooling
-- Docker Compose Postgres configuration and `.env.example`
-- API migration setup with `node-pg-migrate`
-- initial Fastify and Next.js app foundations
+- `apps/api` owns Fastify routes, auth, health, database access, migrations, and API tests.
+- `apps/web` owns the Next.js app. It is currently a minimal shell.
+- `docs` owns requirements, API contracts, workflow, implementation pattern, and ADRs.
+- Root config files own workspace tooling, TypeScript, linting, Compose, and local setup.
+
+## Next Implementation Slices
+
+The remaining work should continue in small implementation commits:
+
+- workout MVP API endpoints for sessions, session exercises, sets, and exercise library
+- DB-backed integration tests for auth and workout flows
+- Next.js auth screens wired to the API
+- workout logging, history, detail, and analytics UI screens
 
 Remaining larger decisions:
 
 - deployment target
-- application build, lint, type-check, and test CI jobs after app code exists
+- full application build, lint, type-check, and test CI jobs
 
 ## Local Checks
 

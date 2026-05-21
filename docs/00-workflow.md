@@ -1,5 +1,13 @@
 # Gym Progress Tracker – Full Workflow Roadmap
 
+## Current Progress
+
+- Phases 0-7 are implemented for the current foundation: repository setup, MVP docs, query/data/schema planning, stack decisions, local tooling, Docker PostgreSQL, and SQL migrations.
+- Phase 8 is in progress: the API contract exists, health and auth routes are implemented, and workout, exercise, set, and analytics endpoints remain.
+- Phase 9 has started only as a minimal Next.js shell. User-facing auth, workout, history, and analytics screens remain.
+- Phase 10 has started with unit tests and `pnpm check`; broader integration/UI coverage and full CI are still future work.
+- Phases 11-12 are not started.
+
 ## Phase 0 — Project Setup & Working Style
 
 ### Goal
@@ -102,9 +110,12 @@ Turn queries into tables, relationships, constraints, and indexes.
 Pick a stack that you can implement and ship.
 
 ### Decisions
-- Database: MySQL or PostgreSQL
-- Backend: e.g. Node/Express, Python/FastAPI, etc.
-- Frontend: e.g. React, Next.js, etc.
+- Database: PostgreSQL
+- Backend/API: Fastify on TypeScript
+- Frontend: Next.js App Router
+- Workspace/tooling: pnpm workspaces, strict TypeScript, ESLint
+- Database access/migrations: Kysely and `node-pg-migrate`
+- Auth: owned email/password auth with Argon2 and DB-backed opaque sessions
 
 ### “Done” check
 - You can run a server locally, connect to DB, and build API endpoints.
@@ -125,6 +136,9 @@ Make it reproducible like a real team project.
 ### “Done” check
 - A fresh clone can be set up with 3–5 commands.
 
+### Status
+- Implemented with pnpm workspace tooling, Docker Compose PostgreSQL, `.env.example`, and migration commands.
+
 ---
 
 ## Phase 7 — Implement DB Migrations (Schema in SQL)
@@ -139,6 +153,9 @@ Create real tables using migration files (not manual DB editing).
 
 ### “Done” check
 - `migrate up` creates schema from scratch; `migrate down` can rollback.
+
+### Status
+- Implemented for the core schema and muscle group seed migrations under `apps/api/db/migrations`.
 
 ---
 
@@ -160,6 +177,9 @@ Define a stable interface between UI and DB.
 ### “Done” check
 - Each endpoint maps to a query from Phase 2.
 
+### Status
+- In progress. Health and auth foundations are implemented. Workout logging, exercise library, set editing, and analytics endpoints remain.
+
 ---
 
 ## Phase 9 — UI MVP
@@ -178,6 +198,9 @@ A clean, usable web app that covers core flows.
 ### “Done” check
 - A user can complete the full workflow without using admin tools.
 
+### Status
+- Not implemented beyond the minimal Next.js shell.
+
 ---
 
 ## Phase 10 — Testing & Quality Basics
@@ -192,6 +215,9 @@ Stop regressions and build confidence.
 
 ### “Done” check
 - Core flows are tested and breakages are caught early.
+
+### Status
+- Started. API health/auth unit tests and root `pnpm check` exist. Broader API/database integration tests, UI tests, and full CI remain.
 
 ---
 

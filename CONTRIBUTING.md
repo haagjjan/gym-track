@@ -46,7 +46,7 @@ ADRs are not required for typo fixes, small documentation edits, or local implem
 
 ## Testing Expectations
 
-The current repo has a tooling foundation but no feature behavior yet, so validation is limited to install, type-check, lint, build, Markdown review, and git checks where the local toolchain is available.
+The current repo has tooling, migrations, API health/auth foundations, and a minimal web shell. Validation should include install when dependencies change, type-check, lint, tests, build, Markdown review, and git checks where the local toolchain is available.
 
 Once application code exists:
 
@@ -84,6 +84,7 @@ Before merging or pushing important work, check:
 - Are names and concepts consistent with the glossary?
 - Are tests or checks included for the risk level?
 - Is setup or usage documentation still accurate?
+- Is the repo structure still reflected in `docs/repository-structure.md`?
 
 ## Done Criteria
 

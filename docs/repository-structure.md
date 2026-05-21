@@ -1,0 +1,105 @@
+# Repository Structure
+
+This file is the map for where things live in the Gym Progress Tracker repo. Keep existing paths stable unless a cleanup explicitly updates every reference.
+
+## Root
+
+```text
+.
+|-- .env.example
+|-- .github/
+|-- AGENTS.md
+|-- ARCHITECTURE.md
+|-- CONTRIBUTING.md
+|-- ENGINEERING.md
+|-- README.md
+|-- apps/
+|-- compose.yaml
+|-- docs/
+|-- eslint.config.mjs
+|-- package.json
+|-- pnpm-lock.yaml
+|-- pnpm-workspace.yaml
+|-- tsconfig.base.json
+`-- tsconfig.json
+```
+
+- `README.md` is the human starting point.
+- `AGENTS.md` is the working rulebook for coding agents.
+- `ARCHITECTURE.md` defines module boundaries and dependency direction.
+- `ENGINEERING.md` defines TypeScript, PostgreSQL, structure, and testing rules.
+- `CONTRIBUTING.md` defines the implementation and review workflow.
+- `compose.yaml` owns local infrastructure, currently PostgreSQL.
+- Root TypeScript, ESLint, package, and pnpm files own shared tooling.
+
+## Applications
+
+```text
+apps/
+|-- api/
+|   |-- db/
+|   |   |-- migrate.json
+|   |   `-- migrations/
+|   `-- src/
+|       |-- db/
+|       |-- features/
+|       |-- shared/
+|       |-- main.ts
+|       `-- server.ts
+`-- web/
+    `-- src/
+        `-- app/
+```
+
+- `apps/api` owns the Fastify API, Kysely database access, migrations, API feature slices, and API tests.
+- `apps/api/src/features/<feature>` owns each API vertical slice. Current features are `auth` and `health`.
+- `apps/api/src/db` owns database connection and database health helpers.
+- `apps/api/src/shared` owns API-only shared boundaries such as environment validation.
+- `apps/web` owns the Next.js App Router app. It is still a minimal shell.
+- Web feature folders should be added only when real UI behavior exists.
+
+## Documentation
+
+```text
+docs/
+|-- 00-workflow.md
+|-- 01-requirements.md
+|-- 02-query-list.md
+|-- 03-data-model-notes.md
+|-- 04-schema-draft.md
+|-- 05-api-contract.md
+|-- 06-implementation-start.md
+|-- 07-implementation-pattern.md
+|-- git-pipeline.md
+|-- repository-structure.md
+`-- decisions/
+```
+
+- `docs/00-workflow.md` tracks the roadmap and current phase progress.
+- `docs/01-requirements.md` through `docs/05-api-contract.md` are product, query, data, schema, and API source-of-truth docs.
+- `docs/06-implementation-start.md` records the original staged implementation handoff.
+- `docs/07-implementation-pattern.md` records the feature-slice pattern used by API and web work.
+- `docs/git-pipeline.md` records Git, PR, and check workflow.
+- `docs/decisions` contains ADRs. Add or update an ADR before changing stack, auth strategy, schema policy, API style, or deployment direction.
+
+## Local-Only Files
+
+These files may exist locally but should not be committed:
+
+- `.env`
+- `.DS_Store`
+- `cookies.txt`
+- `node_modules/`
+- `apps/*/node_modules/`
+- `apps/web/.next/`
+- `*.tsbuildinfo`
+- log files, coverage output, caches, and temporary runtime files
+
+Use `.env.example` for shared environment variable documentation. Do not commit secrets, cookie jars, database dumps, or generated build output.
+
+## Future Growth
+
+- Add `apps/web/src/features/<feature>` when a real web workflow exists.
+- Add new `apps/api/src/features/<feature>` folders only for implemented API behavior.
+- Add `packages/shared` only after at least two real consumers need shared contracts or utilities.
+- Do not create empty app, package, feature, or infrastructure folders.

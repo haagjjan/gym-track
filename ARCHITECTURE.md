@@ -13,6 +13,7 @@ The source-of-truth documents are:
 - `docs/04-schema-draft.md` for the MVP database schema draft
 - `docs/05-api-contract.md` for the MVP REST API contract
 - `docs/07-implementation-pattern.md` for the API/web implementation pattern
+- `docs/repository-structure.md` for the current repo map and local-only file rules
 - `ENGINEERING.md` for TypeScript/PostgreSQL engineering standards
 - `docs/git-pipeline.md` for Git and repository check workflow
 - `docs/decisions/` for architecture decision records
@@ -63,31 +64,31 @@ These boundaries apply as implementation grows:
 - Documentation owns requirements, workflow rules, architecture decisions, and setup instructions.
 - Shared packages own cross-app contracts only after both web and API need them.
 
-## Future Repo Shape
+## Current Repo Shape
 
-Create application folders only when implementation begins and each folder has real files to own. Do not add empty scaffolding.
+Create folders only when each folder has real files to own. Do not add empty scaffolding.
 
-Expected future shape:
+Current shape:
 
 ```text
 apps/
   web/
   api/
-packages/
-  shared/
 docs/
   decisions/
-infra/
 ```
 
-Within each app, organize by feature/domain first, then by technical role. Expected domains include `auth`, `workouts`, `exercises`, `analytics`, and `users`.
+Root tooling, local infrastructure, and documentation live at the repository root. The current repo map is documented in `docs/repository-structure.md`.
+
+Within each app, organize by feature/domain first, then by technical role. Current API features are `auth` and `health`. Expected future domains include `workouts`, `exercises`, `analytics`, and `users`.
 
 Avoid broad folders such as `misc`, oversized `utils`, unrelated `services`, or global feature-specific `components`. Shared code should move to `packages/shared` only after at least two real consumers exist.
 
-Expected app-internal shape:
+Current and expected app-internal shape:
 
 ```text
 apps/web/src/
+  app/
   features/
     auth/
     workouts/
@@ -96,12 +97,13 @@ apps/web/src/
   shared/
 
 apps/api/src/
+  db/
   features/
     auth/
+    health/
     workouts/
     exercises/
     analytics/
-  db/
   shared/
 ```
 

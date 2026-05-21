@@ -2,7 +2,7 @@
 
 ## Status
 
-Foundation workflow for the repo before application code exists. This document defines how changes should move through Git and GitHub.
+Foundation workflow for the repo now that the local app foundation exists. This document defines how changes should move through Git and GitHub.
 
 ## Branch Workflow
 
@@ -11,7 +11,7 @@ Foundation workflow for the repo before application code exists. This document d
 - Keep each branch focused on one logical change.
 - Rebase or merge from `main` before opening a pull request if the branch is stale.
 
-Tiny documentation fixes may be committed directly to `main` while this is still a solo project. Once application code exists, implementation changes should go through a pull request.
+Tiny documentation fixes may be committed directly to `main` while this is still a solo project. Implementation changes should normally go through a pull request once the branch protection workflow is enabled.
 
 ## Commit Rules
 
@@ -39,21 +39,20 @@ Pull requests should stay reviewable. If a PR touches unrelated areas or becomes
 
 ## Required Checks
 
-The current foundation pipeline runs repository hygiene checks only:
+The current GitHub Actions pipeline still runs repository hygiene checks only:
 
 - `git diff --check`
 - required documentation file presence
 - guard against accidental app scaffolding without workspace config
 
-After the TypeScript workspace exists, add checks for:
+Local implementation work should run:
 
-- install
-- formatting
-- linting
-- type checking
-- unit tests
-- integration tests
-- build
+- `pnpm install` when dependencies change
+- `pnpm check`
+- `git diff --check`
+- `git status --short`
+
+A later dedicated CI slice should update GitHub Actions to install pnpm dependencies and run the real project checks on pushes and pull requests.
 
 ## Manual GitHub Settings
 
@@ -72,5 +71,6 @@ Before committing:
 - Run `git status --short`.
 - Confirm the diff includes only intended files.
 - Run `git diff --check`.
+- Run `pnpm check` for implementation or tooling changes.
 - Keep the commit message specific.
 - Push after a completed task unless intentionally keeping local-only work.
