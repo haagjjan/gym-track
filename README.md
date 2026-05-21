@@ -2,7 +2,7 @@
 
 Gym Progress Tracker is a planned web app for logging strength workouts, tracking exercise progress, and reviewing weekly training volume.
 
-The repository is in the first implementation foundation phase. It contains the project documentation, workflow rules, architecture decisions, pnpm workspace metadata, shared TypeScript tooling, local PostgreSQL setup, initial PostgreSQL migrations, a first runnable API/web slice, and API auth foundation. Workout endpoints and workout UI screens are still deferred to later focused implementation commits.
+The repository is in the first implementation foundation phase. It contains the project documentation, workflow rules, architecture decisions, pnpm workspace metadata, shared TypeScript tooling, local PostgreSQL setup, initial PostgreSQL migrations, a first runnable API/web slice, API auth foundation, and workout session API foundation. Workout logging child endpoints and workout UI screens are still deferred to later focused implementation commits.
 
 ## Current Status
 
@@ -15,8 +15,9 @@ The repository is in the first implementation foundation phase. It contains the 
 - Initial database schema and muscle group seed migrations are present under `apps/api/db/migrations`.
 - `apps/api` exposes `GET /api/v1/health` with a database connectivity check.
 - `apps/api` exposes signup, login, logout, and current-user auth endpoints with Argon2 password hashing and DB-backed opaque sessions.
+- `apps/api` exposes authenticated workout session create, list, detail, and end endpoints.
 - `apps/web` has a minimal App Router shell with signup, login, logout, and authenticated home state.
-- No workout endpoints, analytics endpoints, or workout UI screens have been implemented yet.
+- Exercise library endpoints, workout logging child endpoints, analytics endpoints, and workout UI screens are not implemented yet.
 
 ## Key Documents
 
@@ -48,11 +49,10 @@ Use `docs/repository-structure.md` when you need to understand where files belon
 
 ## Next Implementation Slices
 
-The remaining work is structured in `docs/08-next-implementation-plan.md`. The recommended next slice is the Workout Sessions API.
+The remaining work is structured in `docs/08-next-implementation-plan.md`. The recommended next slice is the Exercise Library API.
 
-Implementation blocks:
+Remaining implementation blocks:
 
-- Workout Sessions API
 - Exercise Library API
 - Workout Logging API
 - First Workout Logging UI

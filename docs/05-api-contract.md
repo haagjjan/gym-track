@@ -358,6 +358,8 @@ Query parameters:
 - `limit` integer, default `20`, max `100`
 - `offset` integer, default `0`
 
+Date-only values use UTC day bounds: `startDate=2026-05-15` starts at `2026-05-15T00:00:00.000Z`, and `endDate=2026-05-15` ends at `2026-05-15T23:59:59.999Z`. Timestamp values are treated as exact instants.
+
 Response `200`:
 
 ```json

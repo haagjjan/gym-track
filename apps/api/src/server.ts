@@ -9,6 +9,9 @@ import { cryptoSessionTokenGenerator } from "./features/auth/session-token.js";
 import { createDatabaseHealthCheck } from "./db/database-health.js";
 import type { AppDatabase } from "./db/database.js";
 import { registerHealthRoutes } from "./features/health/health.routes.js";
+import { createWorkoutRepository } from "./features/workouts/workout.repository.js";
+import { registerWorkoutRoutes } from "./features/workouts/workout.routes.js";
+import { createWorkoutService } from "./features/workouts/workout.service.js";
 
 export interface ServerAuthConfig {
   cookieName: string;
@@ -30,6 +33,9 @@ export async function buildServer(
     sessionTokens: cryptoSessionTokenGenerator,
     sessionTtlDays: authConfig.sessionTtlDays
   });
+  const workoutService = createWorkoutService({
+    repository: createWorkoutRepository(db)
+  });
 
   await server.register(cookie);
   await registerHealthRoutes(server, databaseHealth);
@@ -40,6 +46,11 @@ export async function buildServer(
       secure: authConfig.cookieSecure,
       maxAgeSeconds: authConfig.sessionTtlDays * 24 * 60 * 60
     }
+  });
+  await registerWorkoutRoutes(server, {
+    authService,
+    cookieName: authConfig.cookieName,
+    workoutService
   });
 
   return server;
