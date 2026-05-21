@@ -2,7 +2,7 @@
 
 ## Current State
 
-The repository currently contains product and data-planning documentation for a gym progress tracker plus the local development, database migration, and first runnable app foundation. The pnpm workspace, shared TypeScript tooling, Docker Compose PostgreSQL setup, initial PostgreSQL migrations, Fastify health endpoint, database connectivity check, API auth foundation, workout session API foundation, exercise library API foundation, workout logging API foundation, and first Next.js auth UI slice have been introduced. Workout UI screens, analytics, and broader workout business logic have not been introduced yet.
+The repository currently contains product and data-planning documentation for a gym progress tracker plus the local development, database migration, and first runnable app foundation. The pnpm workspace, shared TypeScript tooling, Docker Compose local app orchestration, initial PostgreSQL migrations, Fastify health endpoint, database connectivity check, API auth foundation, workout session API foundation, exercise library API foundation, workout logging API foundation, and first Next.js auth UI slice have been introduced. Workout UI screens, analytics, and broader workout business logic have not been introduced yet.
 
 The source-of-truth documents are:
 
@@ -44,6 +44,7 @@ ADR 0004 records the implementation-readiness direction:
 - DB-backed opaque sessions through `user_sessions`
 - Secure HttpOnly cookies for auth transport
 - Docker Compose with the official PostgreSQL image for local development
+- Docker Compose local orchestration for production-like API/web startup
 
 ## Architecture Principles
 

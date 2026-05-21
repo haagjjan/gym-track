@@ -21,6 +21,8 @@
     "migrate:down": "pnpm --filter @gym-progress-tracker/api migrate:down",
     "migrate:redo": "pnpm --filter @gym-progress-tracker/api migrate:redo",
     "migrate:up": "pnpm --filter @gym-progress-tracker/api migrate:up",
+    "start": "docker compose up --build",
+    "stop": "docker compose down",
     "test": "pnpm -r --if-present test",
     "type-check": "pnpm -r --if-present type-check"
   },

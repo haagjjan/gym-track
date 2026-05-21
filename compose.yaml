@@ -21,5 +21,61 @@ services:
       timeout: 5s
       retries: 10
 
+  migrate:
+    build:
+      context: .
+      target: migrate
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-gym_progress_tracker}:${POSTGRES_PASSWORD:-gym_progress_tracker_password}@postgres:5432/${POSTGRES_DB:-gym_progress_tracker}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      target: api
+    environment:
+      API_HOST: 0.0.0.0
+      API_PORT: 4000
+      AUTH_COOKIE_NAME: ${AUTH_COOKIE_NAME:-gym_progress_session}
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
+      AUTH_SESSION_TTL_DAYS: ${AUTH_SESSION_TTL_DAYS:-30}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-gym_progress_tracker}:${POSTGRES_PASSWORD:-gym_progress_tracker_password}@postgres:5432/${POSTGRES_DB:-gym_progress_tracker}
+    ports:
+      - "${API_PORT:-4000}:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://localhost:4000/api/v1/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))\""
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      target: web
+    environment:
+      API_BASE_URL: http://api:4000/api/v1
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:${API_PORT:-4000}/api/v1
+      WEB_HOST: 0.0.0.0
+      WEB_PORT: 3000
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   postgres_data:

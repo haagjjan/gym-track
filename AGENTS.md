@@ -4,7 +4,7 @@ This file defines how Codex and other coding agents must work in this repo.
 
 ## Project Context
 
-This project is a gym progress tracker web app. The repo has moved from planning into the first implementation foundation: pnpm workspace tooling, local PostgreSQL, SQL migrations, Fastify API foundation, API auth foundation, workout session API endpoints, exercise library API endpoints, workout logging API endpoints, and the first Next.js auth UI slice exist. Workout UI screens, analytics behavior, and deployment are still future implementation work.
+This project is a gym progress tracker web app. The repo has moved from planning into the first implementation foundation: pnpm workspace tooling, Docker Compose local app orchestration, SQL migrations, Fastify API foundation, API auth foundation, workout session API endpoints, exercise library API endpoints, workout logging API endpoints, and the first Next.js auth UI slice exist. Workout UI screens, analytics behavior, and deployment are still future implementation work.
 
 Read these files before implementing feature work:
 
@@ -67,7 +67,7 @@ Before handing work back:
 ## Current Constraints
 
 - The MVP requirements, schema draft, and API contract are documented but may evolve through focused docs updates or ADRs.
-- The accepted stack direction is TypeScript, PostgreSQL, Next.js App Router, Fastify, pnpm workspaces, Kysely, Zod, `node-pg-migrate`, Argon2, DB-backed opaque sessions, and Docker Compose Postgres.
+- The accepted stack direction is TypeScript, PostgreSQL, Next.js App Router, Fastify, pnpm workspaces, Kysely, Zod, `node-pg-migrate`, Argon2, DB-backed opaque sessions, and Docker Compose local app orchestration.
 - Deployment target and full application CI still need later decisions.
 - Application source folders should not be added as empty scaffolding.
 - Database schema work should be driven by `docs/02-query-list.md`, `docs/03-data-model-notes.md`, and `docs/04-schema-draft.md`.

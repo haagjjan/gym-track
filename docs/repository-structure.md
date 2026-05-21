@@ -7,10 +7,12 @@ This file is the map for where things live in the Gym Progress Tracker repo. Kee
 ```text
 .
 |-- .env.example
+|-- .dockerignore
 |-- .github/
 |-- AGENTS.md
 |-- ARCHITECTURE.md
 |-- CONTRIBUTING.md
+|-- Dockerfile
 |-- ENGINEERING.md
 |-- README.md
 |-- apps/
@@ -29,7 +31,8 @@ This file is the map for where things live in the Gym Progress Tracker repo. Kee
 - `ARCHITECTURE.md` defines module boundaries and dependency direction.
 - `ENGINEERING.md` defines TypeScript, PostgreSQL, structure, and testing rules.
 - `CONTRIBUTING.md` defines the implementation and review workflow.
-- `compose.yaml` owns local infrastructure, currently PostgreSQL.
+- `Dockerfile` owns local production-like API, web, and migration image targets.
+- `compose.yaml` owns local infrastructure and app orchestration for PostgreSQL, migrations, API, and web.
 - Root TypeScript, ESLint, package, and pnpm files own shared tooling.
 
 ## Applications
@@ -40,6 +43,7 @@ apps/
 |   |-- db/
 |   |   |-- migrate.json
 |   |   `-- migrations/
+|   |-- tsconfig.build.json
 |   `-- src/
 |       |-- db/
 |       |-- features/
@@ -57,6 +61,7 @@ apps/
 ```
 
 - `apps/api` owns the Fastify API, Kysely database access, migrations, API feature slices, and API tests.
+- `apps/api/tsconfig.build.json` owns the compiled API runtime build used by Docker.
 - `apps/api/src/features/<feature>` owns each API vertical slice. Current features are `auth`, `exercises`, `health`, and `workouts`.
 - `apps/api/src/db` owns database connection and database health helpers.
 - `apps/api/src/shared` owns API-only shared boundaries such as environment validation.
@@ -99,6 +104,7 @@ These files may exist locally but should not be committed:
 - `node_modules/`
 - `apps/*/node_modules/`
 - `apps/web/.next/`
+- `apps/api/dist/`
 - `*.tsbuildinfo`
 - log files, coverage output, caches, and temporary runtime files
 

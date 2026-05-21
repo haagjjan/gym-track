@@ -9,7 +9,7 @@ Use this file to start the next fresh implementation session without replanning 
 Implemented:
 
 - pnpm workspace, root TypeScript tooling, ESLint, and root `pnpm check`.
-- Docker Compose PostgreSQL and `.env.example`.
+- Docker Compose local app runner for PostgreSQL, migrations, API, and web, plus `.env.example`.
 - SQL migrations with `node-pg-migrate`.
 - Core schema and muscle group seed migrations.
 - Fastify API startup, environment validation, Kysely database connection, and `GET /api/v1/health`.

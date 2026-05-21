@@ -2,15 +2,15 @@
 
 Gym Progress Tracker is a planned web app for logging strength workouts, tracking exercise progress, and reviewing weekly training volume.
 
-The repository is in the first implementation foundation phase. It contains the project documentation, workflow rules, architecture decisions, pnpm workspace metadata, shared TypeScript tooling, local PostgreSQL setup, initial PostgreSQL migrations, a first runnable API/web slice, API auth foundation, workout session API foundation, exercise library API foundation, and workout logging API foundation. Workout UI screens are still deferred to later focused implementation commits.
+The repository is in the first implementation foundation phase. It contains the project documentation, workflow rules, architecture decisions, pnpm workspace metadata, shared TypeScript tooling, local PostgreSQL setup, a production-like Docker Compose local runner, initial PostgreSQL migrations, a first runnable API/web slice, API auth foundation, workout session API foundation, exercise library API foundation, and workout logging API foundation. Workout UI screens are still deferred to later focused implementation commits.
 
 ## Current Status
 
 - GitHub remote is connected.
 - Repository hygiene checks run through GitHub Actions.
 - MVP requirements, query needs, data model notes, schema draft, and API contract are documented.
-- The accepted stack is TypeScript, PostgreSQL, Next.js App Router, Fastify, pnpm workspaces, Kysely, Zod, `node-pg-migrate`, Argon2, DB-backed sessions, and Docker Compose Postgres.
-- The root pnpm workspace, TypeScript config, lint config, Docker Compose Postgres service, and `.env.example` are present.
+- The accepted stack is TypeScript, PostgreSQL, Next.js App Router, Fastify, pnpm workspaces, Kysely, Zod, `node-pg-migrate`, Argon2, DB-backed sessions, and Docker Compose for local orchestration.
+- The root pnpm workspace, TypeScript config, lint config, production-like Docker Compose app stack, and `.env.example` are present.
 - `apps/api` and `apps/web` exist with minimal runnable foundations.
 - Initial database schema and muscle group seed migrations are present under `apps/api/db/migrations`.
 - `apps/api` exposes `GET /api/v1/health` with a database connectivity check.
@@ -47,7 +47,7 @@ Use `docs/repository-structure.md` when you need to understand where files belon
 - `apps/api` owns Fastify routes, auth, health, database access, migrations, and API tests.
 - `apps/web` owns the Next.js app. It is currently a minimal shell.
 - `docs` owns requirements, API contracts, workflow, implementation pattern, and ADRs.
-- Root config files own workspace tooling, TypeScript, linting, Compose, and local setup.
+- Root config files own workspace tooling, TypeScript, linting, Docker, Compose, and local setup.
 
 ## Next Implementation Slices
 
@@ -64,6 +64,30 @@ Remaining larger decisions:
 
 - deployment target
 - full application build, lint, type-check, and test CI jobs
+
+## Run Locally
+
+With Docker running, start the full local app stack with:
+
+```sh
+pnpm start
+```
+
+This builds and runs PostgreSQL, migrations, the Fastify API, and the Next.js web app through Docker Compose. Open:
+
+```text
+http://localhost:3000/signup
+```
+
+Stop the stack with:
+
+```sh
+pnpm stop
+```
+
+This is production-like local startup, not hot reload. Re-run `pnpm start` after code changes that need rebuilding.
+
+If an older local dev server is already listening on port `3000`, stop it before opening the app so the browser reaches the Compose web container.
 
 ## Local Checks
 
@@ -82,7 +106,11 @@ git diff --check
 git status --short
 ```
 
-Start local PostgreSQL with:
+## Manual Development
+
+Use the lower-level commands when debugging an individual service or when you want API/web hot reload outside Docker.
+
+Start local PostgreSQL only:
 
 ```sh
 cp .env.example .env

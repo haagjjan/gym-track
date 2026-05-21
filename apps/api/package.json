@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc --noEmit --project tsconfig.json --pretty false",
+    "build": "tsc --project tsconfig.build.json --pretty false",
     "dev": "tsx watch src/main.ts",
     "lint": "eslint . --no-error-on-unmatched-pattern --max-warnings=0",
     "migrate": "node-pg-migrate --config-file db/migrate.json --envPath ../../.env",
@@ -12,6 +12,7 @@
     "migrate:down": "pnpm migrate down",
     "migrate:redo": "pnpm migrate redo",
     "migrate:up": "pnpm migrate up",
+    "start": "node dist/main.js",
     "test": "node --import tsx --test \"src/**/*.test.ts\"",
     "type-check": "tsc --noEmit --project tsconfig.json --pretty false"
   },
