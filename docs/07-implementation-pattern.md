@@ -24,6 +24,7 @@ features/
   health/
     health.routes.ts
     health.service.ts
+  workouts/
 shared/
   env.ts
 server.ts
@@ -114,3 +115,16 @@ The first web auth slice uses Next.js route handlers as same-origin proxies to t
 Browser code calls the Next route handlers to keep cookies same-origin and avoid adding CORS policy in the API. Route handlers forward cookies and status codes to the Fastify `/api/v1/auth/*` endpoints.
 
 Status: implemented for signup, login, logout, and authenticated home state.
+
+## Workout Sessions API Slice
+
+The workout sessions API follows the same feature-owned pattern:
+
+- `POST /api/v1/workouts`
+- `GET /api/v1/workouts`
+- `GET /api/v1/workouts/:workoutId`
+- `POST /api/v1/workouts/:workoutId/end`
+
+Workout routes own auth checks, request validation, and HTTP response mapping. Workout services own business decisions such as default timestamps, one-open-session conflicts, ownership/not-found handling, and end-time validation. Workout repositories own Kysely persistence and user-scoped workout queries.
+
+Status: implemented for creating, listing, viewing, and ending authenticated workout sessions.

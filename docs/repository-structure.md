@@ -43,6 +43,9 @@ apps/
 |   `-- src/
 |       |-- db/
 |       |-- features/
+|       |   |-- auth/
+|       |   |-- health/
+|       |   `-- workouts/
 |       |-- shared/
 |       |-- main.ts
 |       `-- server.ts

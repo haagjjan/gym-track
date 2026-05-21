@@ -73,7 +73,7 @@ After installing Node.js and pnpm, install workspace dependencies:
 pnpm install
 ```
 
-For the current tooling foundation and first runnable slice, run:
+For the current API/web foundation, run:
 
 ```sh
 pnpm check
@@ -113,6 +113,21 @@ With the API running, check auth manually with:
 curl -i http://localhost:4000/api/v1/auth/signup \
   -H "content-type: application/json" \
   -d '{"email":"jan@example.com","username":"jan","password":"secret"}'
+```
+
+After signup or login, keep the session cookie and smoke-test workout sessions with:
+
+```sh
+COOKIE_JAR=/tmp/gym-progress-cookies.txt
+USER_TAG=$(date +%s)
+
+curl -i -c "$COOKIE_JAR" http://localhost:4000/api/v1/auth/signup \
+  -H "content-type: application/json" \
+  -d "{\"email\":\"jan+$USER_TAG@example.com\",\"username\":\"jan_$USER_TAG\",\"password\":\"secret\"}"
+
+curl -s -b "$COOKIE_JAR" http://localhost:4000/api/v1/workouts \
+  -H "content-type: application/json" \
+  -d '{"workoutType":"upper","title":"Upper A","notes":null}'
 ```
 
 Start the web app in development mode with:
