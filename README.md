@@ -115,19 +115,51 @@ curl -i http://localhost:4000/api/v1/auth/signup \
   -d '{"email":"jan@example.com","username":"jan","password":"secret"}'
 ```
 
-After signup or login, keep the session cookie and smoke-test workout sessions with:
+After signup or login, keep the session cookie and smoke-test workout sessions plus workout logging with:
 
 ```sh
 COOKIE_JAR=/tmp/gym-progress-cookies.txt
 USER_TAG=$(date +%s)
+parse_json='let input = ""; process.stdin.on("data", (chunk) => input += chunk); process.stdin.on("end", () => console.log(JSON.parse(input).data[process.argv[1]][process.argv[2])));'
 
 curl -i -c "$COOKIE_JAR" http://localhost:4000/api/v1/auth/signup \
   -H "content-type: application/json" \
   -d "{\"email\":\"jan+$USER_TAG@example.com\",\"username\":\"jan_$USER_TAG\",\"password\":\"secret\"}"
 
-curl -s -b "$COOKIE_JAR" http://localhost:4000/api/v1/workouts \
+CHEST_ID=$(docker compose exec -T postgres psql \
+  -U gym_progress_tracker \
+  -d gym_progress_tracker \
+  -tAc "select id from muscle_groups where slug = 'chest';")
+
+WORKOUT_ID=$(curl -s -b "$COOKIE_JAR" http://localhost:4000/api/v1/workouts \
   -H "content-type: application/json" \
-  -d '{"workoutType":"upper","title":"Upper A","notes":null}'
+  -d '{"workoutType":"upper","title":"Upper A","notes":null}' \
+  | node -e "$parse_json" workout id)
+
+EXERCISE_ID=$(curl -s -b "$COOKIE_JAR" http://localhost:4000/api/v1/exercises \
+  -H "content-type: application/json" \
+  -d "{\"name\":\"Bench Press $USER_TAG\",\"equipment\":\"barbell\",\"exerciseType\":\"compound\",\"primaryMuscleGroupId\":\"$CHEST_ID\"}" \
+  | node -e "$parse_json" exercise id)
+
+SESSION_EXERCISE_ID=$(curl -s -b "$COOKIE_JAR" "http://localhost:4000/api/v1/workouts/$WORKOUT_ID/exercises" \
+  -H "content-type: application/json" \
+  -d "{\"exerciseId\":\"$EXERCISE_ID\"}" \
+  | node -e "$parse_json" sessionExercise id)
+
+SET_ID=$(curl -s -b "$COOKIE_JAR" "http://localhost:4000/api/v1/workouts/$WORKOUT_ID/exercises/$SESSION_EXERCISE_ID/sets" \
+  -H "content-type: application/json" \
+  -d '{"setType":"working","weightKg":"80.00","reps":8,"rir":2,"restTimeSeconds":120}' \
+  | node -e "$parse_json" set id)
+
+curl -s -b "$COOKIE_JAR" -X PATCH "http://localhost:4000/api/v1/sets/$SET_ID" \
+  -H "content-type: application/json" \
+  -d '{"reps":9,"rir":1}'
+
+curl -s -b "$COOKIE_JAR" "http://localhost:4000/api/v1/workouts/$WORKOUT_ID"
+
+curl -s -b "$COOKIE_JAR" -X POST "http://localhost:4000/api/v1/workouts/$WORKOUT_ID/end" \
+  -H "content-type: application/json" \
+  -d '{}'
 ```
 
 Start the web app in development mode with:

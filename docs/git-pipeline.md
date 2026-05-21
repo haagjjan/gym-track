@@ -11,7 +11,7 @@ Foundation workflow for the repo now that the local app foundation exists. This 
 - Keep each branch focused on one logical change.
 - Rebase or merge from `main` before opening a pull request if the branch is stale.
 
-Tiny documentation fixes may be committed directly to `main` while this is still a solo project. Implementation changes should normally go through a pull request once the branch protection workflow is enabled.
+Tiny documentation fixes may be committed directly to `main` while this is still a solo project. Implementation changes should normally go through a pull request once the branch protection workflow is enabled, unless the user explicitly asks for a focused direct commit and push to `main`.
 
 ## Commit Rules
 
@@ -25,7 +25,7 @@ Tiny documentation fixes may be committed directly to `main` while this is still
 
 ## Pull Request Rules
 
-Pull requests are required for implementation work once app code exists.
+Pull requests are the default for implementation work once branch protection is enabled. Focused direct commits to `main` are acceptable during solo development when explicitly requested.
 
 Every pull request should include:
 
