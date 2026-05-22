@@ -19,21 +19,21 @@ Implemented:
 - Workout Logging API: add, reorder, and remove session exercises, plus add, update, and remove sets.
 - First web auth UI slice: `/signup`, `/login`, logout, authenticated home state, and same-origin Next auth proxy routes.
 - First Workout Logging UI: start/resume workout entry point, workout logging page, exercise picker/create flow, set editing controls, exercise reorder, and end workout action.
+- Workout History And Detail UI: authenticated `/workouts` history list, linked workout detail view, pagination, and empty/loading/error states.
 - Repository structure documentation and implementation pattern documentation.
 
 Not implemented:
 
-- Workout history/detail UI.
 - Analytics API and UI.
 - Full application CI, deployment, monitoring, backups, email verification, and password reset.
 
 ## Recommended Next Slice
 
-Start with **Workout History And Detail UI**.
+Start with **Analytics API And UI**.
 
-Reason: auth and workout logging can now be completed through the browser. A history list and detail view are the next step so users can inspect completed sessions without using API calls.
+Reason: auth, workout logging, and workout history/detail can now be completed through the browser. Analytics is the next MVP gap for exercise progress and weekly muscle volume.
 
-Do not start with analytics or a broad redesign before users can browse their logged workouts.
+Do not start with deployment or a broad redesign before the analytics queries and UI are implemented.
 
 ## Implementation Blocks
 
@@ -156,7 +156,7 @@ Non-goals:
 
 ### 5. Workout History And Detail UI
 
-Status: recommended next slice.
+Status: implemented.
 
 Goal: let a signed-in user inspect past workouts.
 
@@ -180,6 +180,8 @@ Non-goals:
 - Do not implement analytics summaries in this block unless already available through the API.
 
 ### 6. Analytics API And UI
+
+Status: recommended next slice.
 
 Goal: compute progress and weekly volume from raw workout data.
 
@@ -227,7 +229,7 @@ Rules:
 Use this prompt when starting the next implementation session:
 
 ```md
-We are continuing the Gym Progress Tracker after the First Workout Logging UI slice.
+We are continuing the Gym Progress Tracker after the Workout History And Detail UI slice.
 
 First read:
 - AGENTS.md
@@ -244,9 +246,9 @@ First read:
 - docs/07-implementation-pattern.md
 - docs/08-next-implementation-plan.md
 
-Implement the next recommended slice only: Workout History And Detail UI.
+Implement the next recommended slice only: Analytics API And UI.
 
-Do not implement analytics, CI, deployment, or schema changes unless the docs prove they are required for the workout history/detail UI.
+Do not implement CI, deployment, or schema changes unless the docs prove they are required for the analytics API/UI.
 
 Before handoff, run relevant checks, confirm `git diff --check`, keep the diff focused, commit, and push.
 ```

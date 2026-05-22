@@ -171,3 +171,16 @@ The first workout logging UI follows the same web feature-slice pattern:
 Browser code continues to call Next route handlers first so auth cookies stay same-origin and the API does not need CORS.
 
 Status: implemented for starting/resuming workouts, adding or creating exercises, editing sets, reordering exercise blocks, and ending workouts.
+
+## Web Workout History Slice
+
+The workout history UI follows the same web feature-slice pattern:
+
+- Authenticated `/workouts` history page.
+- History list backed by the existing same-origin workout API proxy.
+- Rows link to the editable `/workouts/:workoutId` detail page.
+- Empty, loading, error, and pagination states stay inside the workouts web feature.
+
+Browser code continues to call Next route handlers first so auth cookies stay same-origin and the API does not need CORS.
+
+Status: implemented for viewing workout history and opening workout detail.

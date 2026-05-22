@@ -4,6 +4,7 @@ import "./styles.css";
 import "../features/auth/auth.css";
 import "../features/workouts/workout.css";
 import "../features/workouts/workout-forms.css";
+import "../features/workouts/workout-history.css";
 
 export const metadata: Metadata = {
   title: "Gym Progress Tracker",

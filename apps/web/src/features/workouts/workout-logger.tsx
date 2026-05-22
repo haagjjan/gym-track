@@ -147,9 +147,14 @@ export function WorkoutLogger({ workoutId }: WorkoutLoggerProps): ReactNode {
     <main className="workoutPage">
       <header className="workoutHeader">
         <div>
-          <Link className="backLink" href="/">
-            Home
-          </Link>
+          <nav className="pageNav" aria-label="Workout navigation">
+            <Link className="backLink" href="/">
+              Home
+            </Link>
+            <Link className="backLink" href="/workouts">
+              History
+            </Link>
+          </nav>
           <p className="eyebrow">{workout?.isOpen ? "Open workout" : "Closed workout"}</p>
           <h1>{workout?.title ?? "Workout"}</h1>
           <p className="leadText">{workout ? formatStartedAt(workout.startedAt) : "Loading"}</p>

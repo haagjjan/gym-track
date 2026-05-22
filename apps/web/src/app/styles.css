@@ -154,6 +154,15 @@ h1 {
   padding: 18px;
 }
 
+.areaTileLink {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.areaTileLink:hover {
+  border-color: var(--brand);
+}
+
 .areaTile span {
   color: var(--ink);
   display: block;

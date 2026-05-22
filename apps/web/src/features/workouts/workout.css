@@ -39,8 +39,14 @@
   color: var(--brand-strong);
   display: inline-block;
   font-weight: 800;
-  margin-bottom: 18px;
   text-decoration: none;
+}
+
+.pageNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 18px;
 }
 
 .workoutStats {

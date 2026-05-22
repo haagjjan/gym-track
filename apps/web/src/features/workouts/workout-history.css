@@ -1,0 +1,132 @@
+.historyList {
+  display: grid;
+  gap: 12px;
+  margin-inline: auto;
+  width: min(100%, 1080px);
+}
+
+.historyRow {
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  display: grid;
+  gap: 16px;
+  grid-template-columns: auto minmax(180px, 1fr) minmax(420px, 1.5fr);
+  min-height: 108px;
+  padding: 16px;
+  text-decoration: none;
+}
+
+.historyRow:hover {
+  border-color: var(--brand);
+}
+
+.historyMain {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.historyMain h2,
+.historyMain p,
+.historyMeta dd {
+  margin: 0;
+}
+
+.historyMain h2 {
+  font-size: 1.2rem;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.historyMain p,
+.historyMeta dt {
+  color: var(--muted);
+}
+
+.historyMeta {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+}
+
+.historyMeta div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.historyMeta dt {
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.historyMeta dd {
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.statusBadge {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.82rem;
+  font-weight: 800;
+  justify-content: center;
+  min-height: 32px;
+  min-width: 72px;
+  padding: 0 12px;
+}
+
+.statusOpen {
+  background: #e6efe9;
+  border: 1px solid #b7c9bf;
+  color: var(--brand-strong);
+}
+
+.statusClosed {
+  background: #f6ead5;
+  border: 1px solid #ddc289;
+  color: #715019;
+}
+
+.emptyHistory {
+  align-items: start;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.emptyHistory p {
+  color: var(--muted);
+  margin: 0;
+}
+
+.loadMoreAction {
+  justify-self: start;
+  margin-top: 6px;
+}
+
+@media (max-width: 900px) {
+  .historyRow {
+    align-items: start;
+    grid-template-columns: 1fr;
+  }
+
+  .historyMeta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .historyMeta {
+    grid-template-columns: 1fr;
+  }
+}

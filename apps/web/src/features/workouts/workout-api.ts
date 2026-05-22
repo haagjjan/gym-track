@@ -38,8 +38,34 @@ interface CreateExerciseInput {
 
 type UpdateSetInput = Partial<AddSetInput>;
 
-export async function listWorkouts(): Promise<ApiResult<ListWorkoutsPayload>> {
-  return requestApi<ListWorkoutsPayload>("/api/workouts?limit=20&offset=0");
+interface ListWorkoutsOptions {
+  endDate?: string;
+  limit?: number;
+  offset?: number;
+  signal?: AbortSignal;
+  startDate?: string;
+}
+
+export async function listWorkouts(
+  options: ListWorkoutsOptions = {}
+): Promise<ApiResult<ListWorkoutsPayload>> {
+  const params = new URLSearchParams({
+    limit: String(options.limit ?? 20),
+    offset: String(options.offset ?? 0)
+  });
+
+  if (options.startDate) {
+    params.set("startDate", options.startDate);
+  }
+
+  if (options.endDate) {
+    params.set("endDate", options.endDate);
+  }
+
+  return requestApi<ListWorkoutsPayload>(
+    `/api/workouts?${params.toString()}`,
+    withSignal(options.signal)
+  );
 }
 
 export async function createWorkout(): Promise<ApiResult<{ workout: WorkoutDetail }>> {
