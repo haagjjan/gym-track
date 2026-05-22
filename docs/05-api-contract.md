@@ -815,6 +815,8 @@ Behavior:
 
 Lists seeded muscle groups.
 
+Requires authentication.
+
 Response `200`:
 
 ```json

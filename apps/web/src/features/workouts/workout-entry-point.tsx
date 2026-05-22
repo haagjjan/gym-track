@@ -1,0 +1,105 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import type { ReactNode } from "react";
+import { useState, useTransition } from "react";
+import { createWorkout, listWorkouts } from "./workout-api";
+import type { WorkoutSummary } from "./workout-types";
+
+export function WorkoutEntryPoint(): ReactNode {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  function handleClick(): void {
+    setError(null);
+    startTransition(async () => {
+      const workout = await findOrCreateOpenWorkout();
+
+      if (!workout.ok) {
+        setError(workout.message);
+        return;
+      }
+
+      router.push(`/workouts/${workout.value.id}`);
+      router.refresh();
+    });
+  }
+
+  return (
+    <section className="workoutEntry" aria-label="Workout entry">
+      <button className="primaryAction" type="button" onClick={handleClick} disabled={isPending}>
+        {isPending ? "Opening" : "Start or resume workout"}
+      </button>
+      {error ? (
+        <p className="inlineError" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
+type OpenWorkoutResult =
+  | { ok: true; value: WorkoutSummary }
+  | { ok: false; message: string };
+
+async function findOrCreateOpenWorkout(): Promise<OpenWorkoutResult> {
+  const existing = await getOpenWorkout();
+
+  if (existing) {
+    return { ok: true, value: existing };
+  }
+
+  const created = await createWorkout();
+
+  if (created.ok) {
+    return { ok: true, value: toSummary(created.data.workout) };
+  }
+
+  if (created.code === "OPEN_WORKOUT_EXISTS") {
+    const racedWorkout = await getOpenWorkout();
+
+    if (racedWorkout) {
+      return { ok: true, value: racedWorkout };
+    }
+  }
+
+  return {
+    ok: false,
+    message: created.message
+  };
+}
+
+async function getOpenWorkout(): Promise<WorkoutSummary | null> {
+  const result = await listWorkouts();
+
+  if (!result.ok) {
+    return null;
+  }
+
+  return result.data.items.find((workout) => workout.isOpen) ?? null;
+}
+
+function toSummary(workout: {
+  id: string;
+  startedAt: string;
+  endedAt: string | null;
+  isOpen: boolean;
+  workoutType: string | null;
+  title: string | null;
+  notes: string | null;
+  exercises: unknown[];
+}): WorkoutSummary {
+  return {
+    id: workout.id,
+    startedAt: workout.startedAt,
+    endedAt: workout.endedAt,
+    isOpen: workout.isOpen,
+    workoutType: workout.workoutType,
+    title: workout.title,
+    notes: workout.notes,
+    totalExercises: workout.exercises.length,
+    totalSets: 0
+  };
+}

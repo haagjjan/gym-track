@@ -29,6 +29,10 @@ export interface ExerciseShape {
   updatedAt: string;
 }
 
+export interface MuscleGroupList {
+  items: MuscleGroupShape[];
+}
+
 export interface ExerciseList {
   items: ExerciseShape[];
   pagination: {
@@ -44,6 +48,7 @@ export type ExerciseResult<T> =
 
 export interface ExerciseService {
   listExercises(input: ListExercisesQuery): Promise<ExerciseList>;
+  listMuscleGroups(): Promise<MuscleGroupList>;
   createExercise(
     userId: string,
     input: CreateExerciseRequest
@@ -75,6 +80,13 @@ export function createExerciseService(options: ExerciseServiceOptions): Exercise
           offset: input.offset,
           total: result.total
         }
+      };
+    },
+    async listMuscleGroups() {
+      const items = await options.repository.listMuscleGroups();
+
+      return {
+        items: items.map(toMuscleGroupShape)
       };
     },
     async createExercise(userId, input) {

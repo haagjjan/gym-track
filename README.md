@@ -2,7 +2,7 @@
 
 Gym Progress Tracker is a planned web app for logging strength workouts, tracking exercise progress, and reviewing weekly training volume.
 
-The repository is in the first implementation foundation phase. It contains the project documentation, workflow rules, architecture decisions, pnpm workspace metadata, shared TypeScript tooling, local PostgreSQL setup, a production-like Docker Compose local runner, initial PostgreSQL migrations, a first runnable API/web slice, API auth foundation, workout session API foundation, exercise library API foundation, and workout logging API foundation. Workout UI screens are still deferred to later focused implementation commits.
+The repository is in the first implementation foundation phase. It contains the project documentation, workflow rules, architecture decisions, pnpm workspace metadata, shared TypeScript tooling, local PostgreSQL setup, a production-like Docker Compose local runner, initial PostgreSQL migrations, a first runnable API/web slice, API auth foundation, workout session API foundation, exercise library API foundation, workout logging API foundation, and the first workout logging UI. Workout history and analytics screens are still deferred to later focused implementation commits.
 
 ## Current Status
 
@@ -17,9 +17,10 @@ The repository is in the first implementation foundation phase. It contains the 
 - `apps/api` exposes signup, login, logout, and current-user auth endpoints with Argon2 password hashing and DB-backed opaque sessions.
 - `apps/api` exposes authenticated workout session create, list, detail, and end endpoints.
 - `apps/api` exposes authenticated exercise library list and create endpoints.
+- `apps/api` exposes authenticated seeded muscle group lookup for exercise creation.
 - `apps/api` exposes authenticated workout logging child endpoints for session exercises and sets.
-- `apps/web` has a minimal App Router shell with signup, login, logout, and authenticated home state.
-- Analytics endpoints and workout UI screens are not implemented yet.
+- `apps/web` has signup, login, logout, authenticated home state, and a first workout logging flow for starting/resuming workouts, picking or creating exercises, editing sets, reordering exercises, and ending workouts.
+- Analytics endpoints, workout history/detail screens, and analytics screens are not implemented yet.
 
 ## Key Documents
 
@@ -45,17 +46,16 @@ The repository is in the first implementation foundation phase. It contains the 
 Use `docs/repository-structure.md` when you need to understand where files belong. In short:
 
 - `apps/api` owns Fastify routes, auth, health, database access, migrations, and API tests.
-- `apps/web` owns the Next.js app. It is currently a minimal shell.
+- `apps/web` owns the Next.js app, including auth and workout logging UI slices.
 - `docs` owns requirements, API contracts, workflow, implementation pattern, and ADRs.
 - Root config files own workspace tooling, TypeScript, linting, Docker, Compose, and local setup.
 
 ## Next Implementation Slices
 
-The remaining work is structured in `docs/08-next-implementation-plan.md`. The recommended next slice is the First Workout Logging UI.
+The remaining work is structured in `docs/08-next-implementation-plan.md`. The recommended next slice is Workout History/Detail UI.
 
 Remaining implementation blocks:
 
-- First Workout Logging UI
 - Workout History/Detail UI
 - Analytics API/UI
 - Quality, CI, and deployment readiness
@@ -203,6 +203,8 @@ http://localhost:3000/signup
 ```
 
 Create an account, refresh the home page, log out, then log in again from `/login`.
+
+After signing in, use the home page action to start or resume a workout. The workout logging page lets you add exercises, create a missing exercise with a seeded muscle group, add/edit/delete sets, reorder exercise blocks, and end the workout.
 
 Stop local PostgreSQL with:
 

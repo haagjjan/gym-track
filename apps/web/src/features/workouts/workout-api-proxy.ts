@@ -2,11 +2,9 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getApiBaseUrl } from "../../shared/api-base-url";
 
-type AuthProxyTarget = "signup" | "login" | "logout" | "me";
-
-export async function proxyAuthRequest(
+export async function proxyWorkoutApiRequest(
   request: NextRequest,
-  target: AuthProxyTarget
+  targetPath: string
 ): Promise<NextResponse> {
   try {
     const init: RequestInit = {
@@ -14,12 +12,13 @@ export async function proxyAuthRequest(
       headers: buildForwardHeaders(request),
       cache: "no-store"
     };
+    const body = await getRequestBody(request);
 
-    if (shouldForwardBody(request.method)) {
-      init.body = await request.text();
+    if (body !== undefined) {
+      init.body = body;
     }
 
-    const upstream = await fetch(`${getApiBaseUrl()}/auth/${target}`, init);
+    const upstream = await fetch(buildApiUrl(request, targetPath), init);
 
     return await toProxyResponse(upstream);
   } catch {
@@ -33,6 +32,12 @@ export async function proxyAuthRequest(
       { status: 502 }
     );
   }
+}
+
+function buildApiUrl(request: NextRequest, targetPath: string): string {
+  const path = targetPath.replace(/^\/+/, "");
+
+  return `${getApiBaseUrl()}/${path}${request.nextUrl.search}`;
 }
 
 function buildForwardHeaders(request: NextRequest): Headers {
@@ -53,22 +58,23 @@ function buildForwardHeaders(request: NextRequest): Headers {
   return headers;
 }
 
-function shouldForwardBody(method: string): boolean {
-  return method !== "GET" && method !== "HEAD";
+async function getRequestBody(request: NextRequest): Promise<string | undefined> {
+  if (request.method === "GET" || request.method === "HEAD") {
+    return undefined;
+  }
+
+  const body = await request.text();
+
+  return body.length > 0 ? body : undefined;
 }
 
 async function toProxyResponse(upstream: Response): Promise<NextResponse> {
   const body = await upstream.text();
   const responseHeaders = new Headers();
   const contentType = upstream.headers.get("content-type");
-  const setCookie = upstream.headers.get("set-cookie");
 
   if (contentType) {
     responseHeaders.set("content-type", contentType);
-  }
-
-  if (setCookie) {
-    responseHeaders.set("set-cookie", setCookie);
   }
 
   return new NextResponse(body, {

@@ -136,10 +136,11 @@ The exercise library API follows the same feature-owned pattern:
 
 - `GET /api/v1/exercises`
 - `POST /api/v1/exercises`
+- `GET /api/v1/muscle-groups`
 
 Exercise routes own auth checks, request validation, and HTTP response mapping. Exercise services own business decisions such as name conflicts, muscle group validation, and soft-deleted exercise restoration. Exercise repositories own Kysely persistence and selectable exercise queries.
 
-Status: implemented for listing selectable exercises and creating or restoring shared global exercises.
+Status: implemented for listing selectable exercises, creating or restoring shared global exercises, and listing seeded muscle groups.
 
 ## Workout Logging API Slice
 
@@ -155,3 +156,18 @@ The workout logging API stays inside the `workouts` feature because every mutati
 Workout logging routes own auth checks, request validation, and HTTP response mapping. Workout logging services own ordering decisions, ownership/not-found handling, and set mutation decisions. Workout logging repositories own Kysely transactions for position shifting, reordering, soft deletes, and set-order compaction.
 
 Status: implemented for adding, reordering, and removing session exercises, plus adding, updating, and removing sets.
+
+## Web Workout Logging Slice
+
+The first workout logging UI follows the same web feature-slice pattern:
+
+- Authenticated home action to start or resume an open workout.
+- `/workouts/:workoutId` logging page.
+- Same-origin Next route handlers for workout, exercise, muscle group, and set API calls.
+- Exercise picker backed by the exercise library API.
+- Inline exercise creation backed by the exercise library API and seeded muscle group lookup.
+- Set add, edit, and delete controls backed by workout logging API endpoints.
+
+Browser code continues to call Next route handlers first so auth cookies stay same-origin and the API does not need CORS.
+
+Status: implemented for starting/resuming workouts, adding or creating exercises, editing sets, reordering exercise blocks, and ending workouts.

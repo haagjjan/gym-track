@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { getApiBaseUrl } from "./api-base-url";
+import { getApiBaseUrl } from "../../shared/api-base-url";
 import { isAuthUser, type AuthUser } from "./auth-types";
 
 interface CurrentUserPayload {

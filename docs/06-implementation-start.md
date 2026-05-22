@@ -4,7 +4,7 @@
 
 This is the historical implementation handoff for the foundation batches. Use `docs/08-next-implementation-plan.md` for current fresh-session implementation planning.
 
-This document records the staged implementation handoff that started the app foundation. The first batches have now moved beyond planning: Phase 6 tooling, Phase 7 migrations, the production-like local Compose runner, the API health foundation, the API auth foundation, the first auth UI slice, the Workout Sessions API slice, the Exercise Library API slice, and the Workout Logging API slice are implemented. Future work should continue from the current status in `README.md`, `docs/00-workflow.md`, `docs/repository-structure.md`, and `docs/08-next-implementation-plan.md`.
+This document records the staged implementation handoff that started the app foundation. The first batches have now moved beyond planning: Phase 6 tooling, Phase 7 migrations, the production-like local Compose runner, the API health foundation, the API auth foundation, the first auth UI slice, the Workout Sessions API slice, the Exercise Library API slice, the Workout Logging API slice, and the first Workout Logging UI slice are implemented. Future work should continue from the current status in `README.md`, `docs/00-workflow.md`, `docs/repository-structure.md`, and `docs/08-next-implementation-plan.md`.
 
 ## Historical Copy-Paste Prompt
 
@@ -90,14 +90,14 @@ Before final handoff, confirm:
    - Integration tests for auth/session behavior.
 
 5. Fifth implementation batch: workout MVP API
-   - Status: started. Workout Sessions API, Exercise Library API, and Workout Logging API are implemented; analytics remain.
+   - Status: started. Workout Sessions API, Exercise Library API, muscle group lookup, and Workout Logging API are implemented; analytics remain.
    - Workout sessions, session exercises, sets, and exercise library.
    - Soft delete behavior.
    - Ordering behavior.
    - Query-backed analytics endpoints after core logging works.
 
 6. Sixth implementation batch: web MVP
-   - Status: started with signup, login, logout, and authenticated home state.
+   - Status: started with signup, login, logout, authenticated home state, and first workout logging UI.
    - Next.js app shell.
    - Auth screens.
    - Workout logging screen.

@@ -17,6 +17,20 @@ export async function registerExerciseRoutes(
   server: FastifyInstance,
   options: ExerciseRouteOptions
 ): Promise<void> {
+  server.get("/api/v1/muscle-groups", async (request, reply) => {
+    const user = await authenticate(request, reply, options);
+
+    if (!user) {
+      return;
+    }
+
+    const result = await options.exerciseService.listMuscleGroups();
+
+    return reply.send({
+      data: result
+    });
+  });
+
   server.get("/api/v1/exercises", async (request, reply) => {
     const user = await authenticate(request, reply, options);
 

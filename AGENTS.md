@@ -4,7 +4,7 @@ This file defines how Codex and other coding agents must work in this repo.
 
 ## Project Context
 
-This project is a gym progress tracker web app. The repo has moved from planning into the first implementation foundation: pnpm workspace tooling, Docker Compose local app orchestration, SQL migrations, Fastify API foundation, API auth foundation, workout session API endpoints, exercise library API endpoints, workout logging API endpoints, and the first Next.js auth UI slice exist. Workout UI screens, analytics behavior, and deployment are still future implementation work.
+This project is a gym progress tracker web app. The repo has moved from planning into the first implementation foundation: pnpm workspace tooling, Docker Compose local app orchestration, SQL migrations, Fastify API foundation, API auth foundation, workout session API endpoints, exercise library and muscle group lookup API endpoints, workout logging API endpoints, the first Next.js auth UI slice, and the first workout logging UI slice exist. Workout history/detail screens, analytics behavior, and deployment are still future implementation work.
 
 Read these files before implementing feature work:
 

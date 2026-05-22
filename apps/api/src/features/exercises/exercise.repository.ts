@@ -63,6 +63,7 @@ export type CreateExerciseResult =
 
 export interface ExerciseRepository {
   listExercises(filters: ExerciseListFilters): Promise<ExerciseListResult>;
+  listMuscleGroups(): Promise<MuscleGroupRecord[]>;
   findExerciseByName(name: string): Promise<ExistingExerciseRecord | null>;
   findMuscleGroupsByIds(ids: string[]): Promise<MuscleGroupRecord[]>;
   createExercise(input: NewExercise): Promise<CreateExerciseResult>;
@@ -83,6 +84,15 @@ export function createExerciseRepository(db: Kysely<AppDatabase>): ExerciseRepos
         items: rows.map((row) => toExerciseRecord(row, secondaryMuscles.get(row.id) ?? [])),
         total
       };
+    },
+    async listMuscleGroups() {
+      const rows = await db
+        .selectFrom("muscle_groups")
+        .select(muscleGroupSelection)
+        .orderBy("sort_order", "asc")
+        .execute();
+
+      return rows.map(toMuscleGroupRecord);
     },
     async findExerciseByName(name) {
       const row = await db

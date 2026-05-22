@@ -37,6 +37,10 @@ class FakeExerciseRepository implements ExerciseRepository {
     };
   }
 
+  public async listMuscleGroups(): Promise<MuscleGroupRecord[]> {
+    return this.muscleGroups;
+  }
+
   public async findExerciseByName(): Promise<ExistingExerciseRecord | null> {
     return this.existingExercise;
   }
@@ -103,6 +107,29 @@ describe("exercise service", () => {
       total: 1
     });
     assert.equal(result.items[0]?.primaryMuscleGroup.name, "Chest");
+  });
+
+  it("lists muscle groups in API shape", async () => {
+    const service = createExerciseService({
+      repository: new FakeExerciseRepository(),
+      now: () => now
+    });
+    const result = await service.listMuscleGroups();
+
+    assert.deepEqual(result, {
+      items: [
+        {
+          id: chest.id,
+          slug: "chest",
+          name: "Chest"
+        },
+        {
+          id: triceps.id,
+          slug: "triceps",
+          name: "Triceps"
+        }
+      ]
+    });
   });
 
   it("creates a user-scoped exercise with secondary muscles", async () => {

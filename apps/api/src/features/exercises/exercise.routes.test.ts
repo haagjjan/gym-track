@@ -12,7 +12,8 @@ import type {
   ExerciseList,
   ExerciseResult,
   ExerciseService,
-  ExerciseShape
+  ExerciseShape,
+  MuscleGroupList
 } from "./exercise.service.js";
 
 const chestId = "11111111-1111-4111-8111-111111111111";
@@ -40,6 +41,7 @@ const exercise: ExerciseShape = {
 };
 
 class FakeExerciseService implements ExerciseService {
+  public listMuscleGroupsCalled = false;
   public listCall: ListExercisesQuery | null = null;
   public createCall: { userId: string; input: CreateExerciseRequest } | null = null;
 
@@ -60,6 +62,25 @@ class FakeExerciseService implements ExerciseService {
         offset: input.offset,
         total: 1
       }
+    };
+  }
+
+  public async listMuscleGroups(): Promise<MuscleGroupList> {
+    this.listMuscleGroupsCalled = true;
+
+    return {
+      items: [
+        {
+          id: chestId,
+          slug: "chest",
+          name: "Chest"
+        },
+        {
+          id: tricepsId,
+          slug: "triceps",
+          name: "Triceps"
+        }
+      ]
     };
   }
 
@@ -111,10 +132,14 @@ describe("exercise routes", () => {
     const service = new FakeExerciseService();
     const server = await buildExerciseServer(service, false);
     const response = await server.inject("/api/v1/exercises");
+    const muscleGroupsResponse = await server.inject("/api/v1/muscle-groups");
 
     assert.equal(response.statusCode, 401);
     assert.equal(response.json().error.code, "UNAUTHORIZED");
+    assert.equal(muscleGroupsResponse.statusCode, 401);
+    assert.equal(muscleGroupsResponse.json().error.code, "UNAUTHORIZED");
     assert.equal(service.listCall, null);
+    assert.equal(service.listMuscleGroupsCalled, false);
   });
 
   it("lists exercises with parsed filters and pagination", async () => {
@@ -137,6 +162,31 @@ describe("exercise routes", () => {
     });
     assert.equal(service.listCall?.search, "bench");
     assert.equal(service.listCall?.primaryMuscleGroupId, chestId);
+  });
+
+  it("lists seeded muscle groups", async () => {
+    const service = new FakeExerciseService();
+    const server = await buildExerciseServer(service);
+    const response = await server.inject("/api/v1/muscle-groups");
+
+    assert.equal(response.statusCode, 200);
+    assert.deepEqual(response.json(), {
+      data: {
+        items: [
+          {
+            id: chestId,
+            slug: "chest",
+            name: "Chest"
+          },
+          {
+            id: tricepsId,
+            slug: "triceps",
+            name: "Triceps"
+          }
+        ]
+      }
+    });
+    assert.equal(service.listMuscleGroupsCalled, true);
   });
 
   it("returns validation errors for invalid list queries", async () => {

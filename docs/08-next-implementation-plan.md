@@ -15,25 +15,25 @@ Implemented:
 - Fastify API startup, environment validation, Kysely database connection, and `GET /api/v1/health`.
 - API auth foundation: signup, login, logout, current user, Argon2 password hashing, DB-backed opaque sessions, and HttpOnly cookies.
 - Workout Sessions API: create, list, detail, and end authenticated workout sessions.
-- Exercise Library API: list selectable exercises and create or restore shared global exercises.
+- Exercise Library API: list selectable exercises, create or restore shared global exercises, and list seeded muscle groups.
 - Workout Logging API: add, reorder, and remove session exercises, plus add, update, and remove sets.
 - First web auth UI slice: `/signup`, `/login`, logout, authenticated home state, and same-origin Next auth proxy routes.
+- First Workout Logging UI: start/resume workout entry point, workout logging page, exercise picker/create flow, set editing controls, exercise reorder, and end workout action.
 - Repository structure documentation and implementation pattern documentation.
 
 Not implemented:
 
-- Workout logging UI.
 - Workout history/detail UI.
 - Analytics API and UI.
 - Full application CI, deployment, monitoring, backups, email verification, and password reset.
 
 ## Recommended Next Slice
 
-Start with **First Workout Logging UI**.
+Start with **Workout History And Detail UI**.
 
-Reason: auth, workout sessions, exercise selection, session exercise logging, and set logging now exist through the API. A real workout logging screen is the next step that lets a signed-in user complete the core MVP workflow through the browser.
+Reason: auth and workout logging can now be completed through the browser. A history list and detail view are the next step so users can inspect completed sessions without using API calls.
 
-Do not start with analytics or a broad redesign before the core workout logging flow is usable in the web app.
+Do not start with analytics or a broad redesign before users can browse their logged workouts.
 
 ## Implementation Blocks
 
@@ -78,6 +78,7 @@ Implement:
 
 - `GET /api/v1/exercises`
 - `POST /api/v1/exercises`
+- `GET /api/v1/muscle-groups`
 
 Rules:
 
@@ -128,7 +129,7 @@ Non-goals:
 
 ### 4. First Workout Logging UI
 
-Status: recommended next slice.
+Status: implemented.
 
 Goal: let a signed-in user start a workout and log real exercise/set data through the API.
 
@@ -154,6 +155,8 @@ Non-goals:
 - Do not implement analytics charts or deployment in this block.
 
 ### 5. Workout History And Detail UI
+
+Status: recommended next slice.
 
 Goal: let a signed-in user inspect past workouts.
 
@@ -224,7 +227,7 @@ Rules:
 Use this prompt when starting the next implementation session:
 
 ```md
-We are continuing the Gym Progress Tracker after the Workout Logging API slice.
+We are continuing the Gym Progress Tracker after the First Workout Logging UI slice.
 
 First read:
 - AGENTS.md
@@ -241,9 +244,9 @@ First read:
 - docs/07-implementation-pattern.md
 - docs/08-next-implementation-plan.md
 
-Implement the next recommended slice only: First Workout Logging UI.
+Implement the next recommended slice only: Workout History And Detail UI.
 
-Do not implement analytics, CI, deployment, or schema changes unless the docs prove they are required for the first workout logging UI.
+Do not implement analytics, CI, deployment, or schema changes unless the docs prove they are required for the workout history/detail UI.
 
 Before handoff, run relevant checks, confirm `git diff --check`, keep the diff focused, commit, and push.
 ```

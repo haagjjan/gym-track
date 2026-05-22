@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getCurrentUser } from "../features/auth/server-auth";
 import { LogoutButton } from "../features/auth/logout-button";
 import type { AuthUser } from "../features/auth/auth-types";
+import { WorkoutEntryPoint } from "../features/workouts/workout-entry-point";
 
 const sections = [
   { label: "Session", detail: "Workout logging" },
@@ -53,6 +54,7 @@ function SignedInHome({ user }: { user: AuthUser }): ReactNode {
         </div>
         <LogoutButton />
       </section>
+      <WorkoutEntryPoint />
       <PrimaryAreaGrid />
     </main>
   );

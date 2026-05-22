@@ -1,0 +1,66 @@
+.compactField {
+  display: grid;
+  gap: 6px;
+}
+
+.compactField span:first-child {
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.compactField input,
+.compactField select {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  min-height: 42px;
+  padding: 0 10px;
+  width: 100%;
+}
+
+.compactField input:focus,
+.compactField select:focus {
+  border-color: var(--brand);
+  outline: 3px solid rgba(47, 102, 85, 0.18);
+}
+
+.createExerciseForm {
+  border-block-start: 1px solid var(--line);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(180px, 1.2fr) minmax(150px, 0.9fr) minmax(140px, 0.8fr) minmax(120px, 0.7fr) auto;
+  padding-top: 16px;
+}
+
+.setList {
+  display: grid;
+  gap: 10px;
+}
+
+.setRow,
+.setForm {
+  align-items: start;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: auto minmax(105px, 0.7fr) minmax(86px, 0.6fr) minmax(72px, 0.5fr) minmax(70px, 0.5fr) minmax(78px, 0.6fr) minmax(160px, 1fr) auto auto;
+}
+
+.setForm {
+  border-block-start: 1px solid var(--line);
+  grid-template-columns: minmax(105px, 0.7fr) minmax(86px, 0.6fr) minmax(72px, 0.5fr) minmax(70px, 0.5fr) minmax(78px, 0.6fr) minmax(160px, 1fr) auto;
+  padding-top: 14px;
+}
+
+.wideField {
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .createExerciseForm,
+  .setRow,
+  .setForm {
+    grid-template-columns: 1fr;
+  }
+}
