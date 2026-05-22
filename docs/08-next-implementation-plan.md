@@ -21,19 +21,20 @@ Implemented:
 - First Workout Logging UI: start/resume workout entry point, workout logging page, exercise picker/create flow, set editing controls, exercise reorder, and end workout action.
 - Workout History And Detail UI: authenticated `/workouts` history list, linked workout detail view, pagination, and empty/loading/error states.
 - Analytics API And UI: exercise progress endpoint and view, exercise summary endpoint and view, and weekly muscle volume endpoint and view.
+- Quality, CI, And Deployment Readiness: GitHub Actions runs real project checks, API database integration tests, Playwright web smoke tests, production auth cookies default secure, and ADR 0005 records the deployment target.
 - Repository structure documentation and implementation pattern documentation.
 
 Not implemented:
 
-- Full application CI, deployment, monitoring, backups, email verification, and password reset.
+- Deployment configuration, production monitoring, production backup verification, email verification, and password reset.
 
 ## Recommended Next Slice
 
-Start with **Quality, CI, And Deployment Readiness**.
+Start with **Deployment Configuration And Small-Batch Operations**.
 
-Reason: the core MVP browser flows now exist. The next gap is making checks, broader coverage, and deployment decisions ready for small-batch users.
+Reason: the core MVP browser flows and quality gates now exist. The next gap is turning the accepted deployment target into runnable hosted configuration and operational runbooks for tester data.
 
-Do not add deployment config without an ADR.
+Use ADR 0005 as the deployment target source of truth.
 
 ## Implementation Blocks
 
@@ -209,29 +210,56 @@ Non-goals:
 
 ### 7. Quality, CI, And Deployment Readiness
 
-Status: recommended next slice.
+Status: implemented.
 
 Goal: make the app safer to change and prepare it for small-batch users.
 
-Implement later:
+Implemented:
 
 - GitHub Actions workflow that installs pnpm dependencies and runs `pnpm check`.
 - Broader API/database integration tests.
 - UI smoke tests for auth and workout logging.
 - Deployment target decision and ADR.
-- Production environment, secure cookie defaults, backup plan, and basic monitoring.
+- Secure production cookie defaulting.
+
+Still future:
+
+- Deployment configuration.
+- Production environment values.
+- Backup restore verification.
+- Basic monitoring thresholds and alerts.
 
 Rules:
 
 - Do not add deployment config without an ADR.
 - Do not use local `.env.example` credentials for real hosted infrastructure.
 
+### 8. Deployment Configuration And Small-Batch Operations
+
+Status: recommended next slice.
+
+Goal: make the accepted Render target runnable for a small tester batch.
+
+Implement later:
+
+- Render service configuration or documented manual setup for web, API, migration job, and PostgreSQL.
+- Production environment variable checklist using real secrets, `AUTH_COOKIE_SECURE=true`, and deployed service URLs.
+- Migration/deploy order runbook.
+- Backup policy and first restore-test procedure.
+- Basic monitoring/log review checklist for API, web, and database health.
+
+Rules:
+
+- Follow ADR 0005.
+- Do not commit hosted credentials, production database URLs, or local `.env` files.
+- Do not change the application stack or deployment target without a new ADR.
+
 ## Fresh Session Prompt
 
 Use this prompt when starting the next implementation session:
 
 ```md
-We are continuing the Gym Progress Tracker after the Analytics API And UI slice.
+We are continuing the Gym Progress Tracker after the Quality, CI, And Deployment Readiness slice.
 
 First read:
 - AGENTS.md
@@ -248,9 +276,9 @@ First read:
 - docs/07-implementation-pattern.md
 - docs/08-next-implementation-plan.md
 
-Implement the next recommended slice only: Quality, CI, And Deployment Readiness.
+Implement the next recommended slice only: Deployment Configuration And Small-Batch Operations.
 
-Do not add deployment config without an ADR, and do not use local `.env.example` credentials for hosted infrastructure.
+Follow ADR 0005, do not commit hosted credentials, and do not use local `.env.example` credentials for hosted infrastructure.
 
 Before handoff, run relevant checks, confirm `git diff --check`, keep the diff focused, commit, and push.
 ```

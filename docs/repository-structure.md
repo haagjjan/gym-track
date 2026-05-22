@@ -20,6 +20,7 @@ This file is the map for where things live in the Gym Progress Tracker repo. Kee
 |-- docs/
 |-- eslint.config.mjs
 |-- package.json
+|-- playwright.config.ts
 |-- pnpm-lock.yaml
 |-- pnpm-workspace.yaml
 |-- tsconfig.base.json
@@ -33,7 +34,8 @@ This file is the map for where things live in the Gym Progress Tracker repo. Kee
 - `CONTRIBUTING.md` defines the implementation and review workflow.
 - `Dockerfile` owns local production-like API, web, and migration image targets.
 - `compose.yaml` owns local infrastructure and app orchestration for PostgreSQL, migrations, API, and web.
-- Root TypeScript, ESLint, package, and pnpm files own shared tooling.
+- Root TypeScript, ESLint, Playwright, package, and pnpm files own shared tooling.
+- `.github/workflows/repo-checks.yml` owns project CI checks, API database integration tests, and web smoke tests.
 
 ## Applications
 
@@ -56,6 +58,7 @@ apps/
 |       |-- main.ts
 |       `-- server.ts
 `-- web/
+    |-- e2e/
     `-- src/
         |-- app/
         |-- features/
@@ -70,7 +73,8 @@ apps/
 - `apps/api/src/features/<feature>` owns each API vertical slice. Current features are `analytics`, `auth`, `exercises`, `health`, and `workouts`.
 - `apps/api/src/db` owns database connection and database health helpers.
 - `apps/api/src/shared` owns API-only shared boundaries such as environment validation.
-- `apps/web` owns the Next.js App Router app plus the first auth, workout logging, workout history/detail, and analytics UI slices.
+- `apps/web` owns the Next.js App Router app plus the first auth, workout logging, workout history/detail, analytics UI slices, and Playwright smoke tests.
+- `apps/web/e2e` owns browser smoke tests for core UI flows that run against the local app stack.
 - `apps/web/src/features/analytics` owns the analytics UI, browser analytics API helpers, and same-origin analytics API proxy helpers.
 - `apps/web/src/features/auth` owns web auth forms, server auth helpers, and auth proxy helpers.
 - `apps/web/src/features/workouts` owns the workout logging and history/detail UI, browser workout API helpers, and same-origin workout API proxy helpers.
@@ -100,7 +104,7 @@ docs/
 - `docs/07-implementation-pattern.md` records the feature-slice pattern used by API and web work.
 - `docs/08-next-implementation-plan.md` records the current fresh-session handoff and remaining implementation blocks.
 - `docs/git-pipeline.md` records Git, PR, and check workflow.
-- `docs/decisions` contains ADRs. Add or update an ADR before changing stack, auth strategy, schema policy, API style, or deployment direction.
+- `docs/decisions` contains ADRs, including the accepted Render deployment target. Add or update an ADR before changing stack, auth strategy, schema policy, API style, or deployment direction.
 
 ## Local-Only Files
 
@@ -115,6 +119,7 @@ These files may exist locally but should not be committed:
 - `apps/api/dist/`
 - `*.tsbuildinfo`
 - log files, coverage output, caches, and temporary runtime files
+- Playwright reports and test results
 
 Use `.env.example` for shared environment variable documentation. Do not commit secrets, cookie jars, database dumps, or generated build output.
 

@@ -1,0 +1,49 @@
+import { expect, test } from "@playwright/test";
+
+test("signs up and logs a workout through the UI", async ({ page }) => {
+  const tag = `${Date.now()}${process.pid}`;
+  const username = `smoke_${tag}`;
+  const exerciseName = `Smoke Bench ${tag}`;
+
+  await page.goto("/signup");
+  await page.getByLabel("Email").fill(`${username}@example.com`);
+  await page.getByLabel("Username").fill(username);
+  await page.getByLabel("Password").fill("secret");
+  await page.getByRole("button", { name: "Save" }).click();
+
+  await expect(page.getByRole("heading", { name: `Welcome, ${username}` })).toBeVisible();
+
+  await page.getByRole("button", { name: "Start or resume workout" }).click();
+  await expect(page).toHaveURL(/\/workouts\/[0-9a-f-]+$/);
+  await expect(page.getByRole("heading", { name: "Workout" })).toBeVisible();
+
+  await page.locator(".createExerciseForm").getByLabel("Name").fill(exerciseName);
+  await page.locator(".createExerciseForm").getByLabel("Primary muscle").selectOption({ label: "Chest" });
+  await page.locator(".createExerciseForm").getByLabel("Equipment").fill("barbell");
+  await page.locator(".createExerciseForm").getByLabel("Type").selectOption("compound");
+  await page.getByRole("button", { name: "Create and add" }).click();
+
+  const exerciseBlock = page.locator(".sessionExercise", { hasText: exerciseName });
+  await expect(exerciseBlock.getByRole("heading", { name: exerciseName })).toBeVisible();
+
+  await exerciseBlock.getByLabel("Kg").fill("90");
+  await exerciseBlock.getByLabel("Reps").fill("5");
+  await exerciseBlock.getByLabel("RIR").fill("1");
+  await exerciseBlock.getByLabel("Rest").fill("120");
+  await exerciseBlock.getByRole("button", { name: "Add set" }).click();
+
+  await expect(exerciseBlock.locator(".setRow")).toHaveCount(1);
+  await expect(exerciseBlock.locator(".setRow").getByLabel("Reps")).toHaveValue("5");
+
+  await page.getByRole("button", { name: "End workout" }).click();
+  await expect(page.getByText("Closed workout")).toBeVisible();
+  await expect(page.getByRole("button", { name: "End workout" })).toBeDisabled();
+
+  await page.getByRole("link", { name: "History" }).click();
+  await expect(page).toHaveURL(/\/workouts$/);
+  await expect(page.locator(".historyRow").first()).toContainText("1 exercise");
+
+  await page.locator(".historyRow").first().click();
+  await expect(page.getByRole("heading", { name: exerciseName })).toBeVisible();
+  await expect(page.locator(".setRow").getByLabel("Kg")).toHaveValue("90.00");
+});

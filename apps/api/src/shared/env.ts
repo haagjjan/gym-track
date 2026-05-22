@@ -1,13 +1,22 @@
 import { z } from "zod";
 
-const envSchema = z.object({
+const rawEnvSchema = z.object({
   API_HOST: z.string().min(1).default("0.0.0.0"),
   API_PORT: z.coerce.number().int().positive().default(4000),
   AUTH_COOKIE_NAME: z.string().min(1).default("gym_progress_session"),
-  AUTH_COOKIE_SECURE: z.enum(["true", "false"]).default("false").transform((value) => value === "true"),
+  AUTH_COOKIE_SECURE: z.enum(["true", "false"]).optional(),
   AUTH_SESSION_TTL_DAYS: z.coerce.number().int().positive().default(30),
-  DATABASE_URL: z.string().url()
+  DATABASE_URL: z.string().url(),
+  NODE_ENV: z.enum(["development", "test", "production"]).default("development")
 });
+
+const envSchema = rawEnvSchema.transform((env) => ({
+  ...env,
+  AUTH_COOKIE_SECURE:
+    env.AUTH_COOKIE_SECURE === undefined
+      ? env.NODE_ENV === "production"
+      : env.AUTH_COOKIE_SECURE === "true"
+}));
 
 export type AppEnv = z.infer<typeof envSchema>;
 

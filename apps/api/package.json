@@ -14,6 +14,7 @@
     "migrate:up": "pnpm migrate up",
     "start": "node dist/main.js",
     "test": "node --import tsx --test \"src/**/*.test.ts\"",
+    "test:integration": "node --import tsx --test \"src/**/*.integration-test.ts\"",
     "type-check": "tsc --noEmit --project tsconfig.json --pretty false"
   },
   "dependencies": {

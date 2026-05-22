@@ -12,7 +12,8 @@ describe("readEnv", () => {
       AUTH_COOKIE_NAME: "gym_progress_session",
       AUTH_COOKIE_SECURE: false,
       AUTH_SESSION_TTL_DAYS: 30,
-      DATABASE_URL: databaseUrl
+      DATABASE_URL: databaseUrl,
+      NODE_ENV: "development"
     });
   });
 
@@ -36,6 +37,15 @@ describe("readEnv", () => {
     assert.equal(env.AUTH_COOKIE_NAME, "custom_session");
     assert.equal(env.AUTH_COOKIE_SECURE, true);
     assert.equal(env.AUTH_SESSION_TTL_DAYS, 7);
+  });
+
+  it("defaults secure auth cookies on in production", () => {
+    const env = readEnv({
+      DATABASE_URL: databaseUrl,
+      NODE_ENV: "production"
+    });
+
+    assert.equal(env.AUTH_COOKIE_SECURE, true);
   });
 
   it("rejects missing DATABASE_URL", () => {

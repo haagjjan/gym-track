@@ -46,7 +46,7 @@ ADRs are not required for typo fixes, small documentation edits, or local implem
 
 ## Testing Expectations
 
-The current repo has tooling, migrations, API health/auth foundations, and a minimal web shell. Validation should include install when dependencies change, type-check, lint, tests, build, Markdown review, and git checks where the local toolchain is available.
+The current repo has tooling, migrations, API health/auth/workout/exercise/analytics foundations, UI flows, CI, API database integration coverage, and a web smoke test. Validation should include install when dependencies change, type-check, lint, tests, build, Markdown review, and git checks where the local toolchain is available.
 
 Once application code exists:
 
@@ -54,6 +54,8 @@ Once application code exists:
 - Add tests for new business rules, data transformations, API behavior, and regression fixes.
 - Prefer integration tests for user flows that cross UI, API, and database boundaries.
 - Do not rely on manual testing alone for core workout logging, authentication, or analytics behavior.
+- Run `pnpm test:integration` when persistence behavior changes.
+- Run `pnpm smoke:web` when auth, routing, or core workout logging UI changes.
 
 ## Commit Style
 
@@ -83,6 +85,7 @@ Before merging or pushing important work, check:
 - Is an ADR needed, and if so, is it included?
 - Are names and concepts consistent with the glossary?
 - Are tests or checks included for the risk level?
+- Are API integration or web smoke tests updated when a core flow changes?
 - Is setup or usage documentation still accurate?
 - Is the repo structure still reflected in `docs/repository-structure.md`?
 

@@ -2,12 +2,12 @@
 
 Gym Progress Tracker is a planned web app for logging strength workouts, tracking exercise progress, and reviewing weekly training volume.
 
-The repository is in the first implementation foundation phase. It contains the project documentation, workflow rules, architecture decisions, pnpm workspace metadata, shared TypeScript tooling, local PostgreSQL setup, a production-like Docker Compose local runner, initial PostgreSQL migrations, a first runnable API/web slice, API auth foundation, workout session API foundation, exercise library API foundation, workout logging API foundation, analytics API foundation, the first workout logging UI, workout history/detail UI, and analytics UI.
+The repository is in the first implementation foundation phase. It contains the project documentation, workflow rules, architecture decisions, pnpm workspace metadata, shared TypeScript tooling, local PostgreSQL setup, a production-like Docker Compose local runner, initial PostgreSQL migrations, a first runnable API/web slice, API auth foundation, workout session API foundation, exercise library API foundation, workout logging API foundation, analytics API foundation, the first workout logging UI, workout history/detail UI, analytics UI, full project CI checks, API database integration coverage, web smoke coverage, and a recorded deployment target.
 
 ## Current Status
 
 - GitHub remote is connected.
-- Repository hygiene checks run through GitHub Actions.
+- Full project checks, API database integration tests, and a web smoke test run through GitHub Actions.
 - MVP requirements, query needs, data model notes, schema draft, and API contract are documented.
 - The accepted stack is TypeScript, PostgreSQL, Next.js App Router, Fastify, pnpm workspaces, Kysely, Zod, `node-pg-migrate`, Argon2, DB-backed sessions, and Docker Compose for local orchestration.
 - The root pnpm workspace, TypeScript config, lint config, production-like Docker Compose app stack, and `.env.example` are present.
@@ -21,7 +21,7 @@ The repository is in the first implementation foundation phase. It contains the 
 - `apps/api` exposes authenticated workout logging child endpoints for session exercises and sets.
 - `apps/api` exposes authenticated analytics endpoints for exercise progress, exercise summaries, and weekly muscle volume.
 - `apps/web` has signup, login, logout, authenticated home state, a first workout logging flow for starting/resuming workouts, picking or creating exercises, editing sets, reordering exercises, and ending workouts, plus workout history/detail and analytics screens.
-- Full application CI, deployment, monitoring, backups, email verification, and password reset are not implemented yet.
+- Deployment configuration, production monitoring, production backup verification, email verification, and password reset are not implemented yet.
 
 ## Key Documents
 
@@ -49,20 +49,20 @@ Use `docs/repository-structure.md` when you need to understand where files belon
 - `apps/api` owns Fastify routes, auth, health, database access, migrations, and API tests.
 - `apps/web` owns the Next.js app, including auth, workout logging, workout history/detail, and analytics UI slices.
 - `docs` owns requirements, API contracts, workflow, implementation pattern, and ADRs.
-- Root config files own workspace tooling, TypeScript, linting, Docker, Compose, and local setup.
+- Root config files own workspace tooling, TypeScript, linting, Docker, Compose, CI, Playwright smoke-test configuration, and local setup.
 
 ## Next Implementation Slices
 
-The remaining work is structured in `docs/08-next-implementation-plan.md`. The recommended next slice is Quality, CI, and deployment readiness.
+The remaining work is structured in `docs/08-next-implementation-plan.md`. The recommended next slice is deployment configuration and small-batch operations.
 
 Remaining implementation blocks:
 
-- Quality, CI, and deployment readiness
+- Deployment configuration and release runbook
 
 Remaining larger decisions:
 
-- deployment target
-- full application build, lint, type-check, and test CI jobs
+- monitoring alert thresholds
+- backup retention and restore-test cadence
 
 ## Run Locally
 
@@ -100,10 +100,14 @@ For the current API/web foundation, run:
 
 ```sh
 pnpm check
+pnpm test:integration
 pnpm test
+pnpm smoke:web
 git diff --check
 git status --short
 ```
+
+`pnpm test:integration` requires `INTEGRATION_DATABASE_URL` to point at a migrated PostgreSQL database. `pnpm smoke:web` requires the local web/API stack to be running and Playwright's Chromium browser to be installed.
 
 ## Manual Development
 

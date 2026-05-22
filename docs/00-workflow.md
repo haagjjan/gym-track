@@ -5,8 +5,8 @@
 - Phases 0-7 are implemented for the current foundation: repository setup, MVP docs, query/data/schema planning, stack decisions, local tooling, Docker Compose local app orchestration, and SQL migrations.
 - Phase 8 is implemented for the current MVP API foundation: health, auth, workout session, exercise library, muscle group lookup, workout logging, set, and analytics routes exist.
 - Phase 9 has started with a minimal Next.js shell, the first auth UI slice, the first workout logging UI slice, workout history/detail UI, and analytics UI.
-- Phase 10 has started with unit tests and `pnpm check`; broader integration/UI coverage and full CI are still future work.
-- Phases 11-12 are not started.
+- Phase 10 is implemented for the current foundation with unit tests, an API database integration flow, a Playwright web smoke flow, and GitHub Actions jobs that run project checks.
+- Phase 11 has started with an accepted deployment target ADR. Deployment configuration, production monitoring, and backup verification are still future work.
 
 ## Phase 0 — Project Setup & Working Style
 
@@ -217,7 +217,7 @@ Stop regressions and build confidence.
 - Core flows are tested and breakages are caught early.
 
 ### Status
-- Started. API health/auth/workout/exercise/logging unit tests and root `pnpm check` exist. Broader API/database integration tests, UI tests, and full CI remain.
+- Implemented for the current foundation. API health/auth/workout/exercise/logging/analytics unit tests, an API database integration test, a Playwright web smoke test, root `pnpm check`, and GitHub Actions jobs exist.
 
 ---
 
@@ -234,6 +234,9 @@ Run it online for a small set of testers.
 
 ### “Done” check
 - A user can sign up and use the app remotely.
+
+### Status
+- Started. ADR 0005 records Render Web Services plus Render PostgreSQL as the first small-batch deployment target. Deployment configuration, monitoring setup, and backup restore checks remain.
 
 ---
 

@@ -39,20 +39,24 @@ Pull requests should stay reviewable. If a PR touches unrelated areas or becomes
 
 ## Required Checks
 
-The current GitHub Actions pipeline still runs repository hygiene checks only:
+The GitHub Actions pipeline runs:
 
 - `git diff --check`
 - required documentation file presence
 - guard against accidental app scaffolding without workspace config
+- pnpm dependency install with a frozen lockfile
+- `pnpm check`
+- API database integration tests against PostgreSQL
+- Playwright web smoke tests against the local Docker Compose app stack
 
 Local implementation work should run:
 
 - `pnpm install` when dependencies change
 - `pnpm check`
+- `pnpm test:integration` when API persistence behavior changes
+- `pnpm smoke:web` when core browser flows or app routing change
 - `git diff --check`
 - `git status --short`
-
-A later dedicated CI slice should update GitHub Actions to install pnpm dependencies and run the real project checks on pushes and pull requests.
 
 ## Manual GitHub Settings
 
@@ -61,7 +65,7 @@ Configure GitHub manually after the first workflow run:
 - Create a branch protection rule or repository ruleset for `main`.
 - Require pull requests before merging implementation work.
 - Block force pushes to `main`.
-- Require the `repo-checks` status check.
+- Require the `Project checks`, `API database integration`, and `Web smoke` status checks.
 - Prefer linear history if it stays comfortable for solo development.
 
 ## Local Pre-Commit Checklist

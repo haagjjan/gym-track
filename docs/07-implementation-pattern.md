@@ -209,3 +209,15 @@ The analytics UI follows the same web feature-slice pattern:
 Browser code continues to call Next route handlers first so auth cookies stay same-origin and the API does not need CORS.
 
 Status: implemented for viewing exercise progress and weekly volume analytics.
+
+## Quality, CI, And Deployment Readiness Slice
+
+The quality slice keeps checks close to the existing app boundaries:
+
+- GitHub Actions installs pnpm dependencies with the lockfile and runs `pnpm check`.
+- API database integration tests use the real Fastify server, Kysely repositories, migrations, and PostgreSQL.
+- Web smoke tests use Playwright against the production-like Docker Compose app stack.
+- Production auth cookies default to secure when `NODE_ENV=production`, while local Compose can keep `AUTH_COOKIE_SECURE=false`.
+- Deployment target decisions live in ADRs before deployment config is added.
+
+Status: implemented for full project CI checks, one core API/database flow, one core browser smoke flow, secure production cookie defaulting, and the first deployment target ADR.

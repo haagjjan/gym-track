@@ -2,7 +2,7 @@
 
 ## Current State
 
-The repository currently contains product and data-planning documentation for a gym progress tracker plus the local development, database migration, and first runnable app foundation. The pnpm workspace, shared TypeScript tooling, Docker Compose local app orchestration, initial PostgreSQL migrations, Fastify health endpoint, database connectivity check, API auth foundation, workout session API foundation, exercise library and muscle group lookup API foundation, workout logging API foundation, analytics API foundation, first Next.js auth UI slice, first workout logging UI slice, workout history/detail screens, and analytics screens have been introduced. Deployment has not been introduced yet.
+The repository currently contains product and data-planning documentation for a gym progress tracker plus the local development, database migration, and first runnable app foundation. The pnpm workspace, shared TypeScript tooling, Docker Compose local app orchestration, initial PostgreSQL migrations, Fastify health endpoint, database connectivity check, API auth foundation, workout session API foundation, exercise library and muscle group lookup API foundation, workout logging API foundation, analytics API foundation, first Next.js auth UI slice, first workout logging UI slice, workout history/detail screens, analytics screens, full project CI checks, API database integration coverage, and a web smoke test have been introduced. The deployment target has been recorded, but deployment configuration has not been introduced yet.
 
 The source-of-truth documents are:
 
@@ -45,6 +45,13 @@ ADR 0004 records the implementation-readiness direction:
 - Secure HttpOnly cookies for auth transport
 - Docker Compose with the official PostgreSQL image for local development
 - Docker Compose local orchestration for production-like API/web startup
+
+ADR 0005 records the first deployment target:
+
+- Render Web Services for the Docker-backed web and API services
+- Render PostgreSQL for the first managed database
+- Migration jobs using the existing Docker migration target
+- Secure production environment variables, managed backups, and basic health/log monitoring before inviting testers
 
 ## Architecture Principles
 
@@ -139,5 +146,5 @@ Small implementation choices inside an already approved stack can be documented 
 
 ## Current Open Decisions
 
-- Deployment target
-- Application build, lint, type-check, and test CI jobs
+- Deployment configuration details
+- Production monitoring alert thresholds and backup retention settings

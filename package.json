@@ -23,12 +23,15 @@
     "migrate:up": "pnpm --filter @gym-progress-tracker/api migrate:up",
     "start": "docker compose up --build",
     "stop": "docker compose down",
+    "smoke:web": "playwright test",
     "test": "pnpm -r --if-present test",
+    "test:integration": "pnpm --filter @gym-progress-tracker/api test:integration",
     "type-check": "pnpm -r --if-present type-check"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
     "@eslint/js": "^9.22.0",
+    "@playwright/test": "^1.60.0",
     "eslint": "^9.22.0",
     "eslint-config-next": "^15.5.18",
     "typescript": "^5.8.3",

@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   repo-checks:
-    name: Repository hygiene
+    name: Project checks
     runs-on: ubuntu-latest
 
     steps:
@@ -54,7 +54,10 @@ jobs:
             "docs/04-schema-draft.md"
             "docs/05-api-contract.md"
             "docs/06-implementation-start.md"
+            "docs/07-implementation-pattern.md"
+            "docs/08-next-implementation-plan.md"
             "docs/git-pipeline.md"
+            "docs/repository-structure.md"
             "docs/decisions/README.md"
           )
 
@@ -75,3 +78,119 @@ jobs:
               exit 1
             fi
           fi
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run project checks
+        run: pnpm check
+
+  api-integration:
+    name: API database integration
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: gym_progress_tracker_test
+          POSTGRES_PASSWORD: gym_progress_tracker_password
+          POSTGRES_USER: gym_progress_tracker
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U gym_progress_tracker -d gym_progress_tracker_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://gym_progress_tracker:gym_progress_tracker_password@localhost:5432/gym_progress_tracker_test
+      INTEGRATION_DATABASE_URL: postgresql://gym_progress_tracker:gym_progress_tracker_password@localhost:5432/gym_progress_tracker_test
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Write migration environment
+        run: echo "DATABASE_URL=${DATABASE_URL}" > .env
+
+      - name: Run migrations
+        run: pnpm migrate:up
+
+      - name: Run API integration tests
+        run: pnpm test:integration
+
+  web-smoke:
+    name: Web smoke
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Start local app stack
+        run: docker compose up --build -d
+
+      - name: Wait for web
+        run: |
+          set -euo pipefail
+
+          for attempt in {1..60}; do
+            if curl -fsS http://localhost:3000/signup >/dev/null; then
+              exit 0
+            fi
+
+            sleep 2
+          done
+
+          docker compose ps
+          docker compose logs --no-color api web
+          exit 1
+
+      - name: Run web smoke tests
+        run: pnpm smoke:web
+
+      - name: Show app logs on failure
+        if: failure()
+        run: docker compose logs --no-color api web
+
+      - name: Stop local app stack
+        if: always()
+        run: docker compose down
