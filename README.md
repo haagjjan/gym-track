@@ -2,7 +2,7 @@
 
 Gym Progress Tracker is a planned web app for logging strength workouts, tracking exercise progress, and reviewing weekly training volume.
 
-The repository is in the first implementation foundation phase. It contains the project documentation, workflow rules, architecture decisions, pnpm workspace metadata, shared TypeScript tooling, local PostgreSQL setup, a production-like Docker Compose local runner, initial PostgreSQL migrations, a first runnable API/web slice, API auth foundation, workout session API foundation, exercise library API foundation, workout logging API foundation, analytics API foundation, the first workout logging UI, workout history/detail UI, analytics UI, full project CI checks, API database integration coverage, web smoke coverage, and a recorded deployment target.
+The repository is in the first implementation foundation phase. It contains the project documentation, workflow rules, architecture decisions, pnpm workspace metadata, shared TypeScript tooling, local PostgreSQL setup, a production-like Docker Compose local runner, initial PostgreSQL migrations, a first runnable API/web slice, API auth foundation, workout session API foundation, exercise library API foundation, workout logging API foundation, analytics API foundation, the first workout logging UI, workout history/detail UI, analytics UI, full project CI checks, API database integration coverage, web smoke coverage, a recorded deployment target, Render deployment configuration, and a small-batch operations runbook.
 
 ## Current Status
 
@@ -21,7 +21,7 @@ The repository is in the first implementation foundation phase. It contains the 
 - `apps/api` exposes authenticated workout logging child endpoints for session exercises and sets.
 - `apps/api` exposes authenticated analytics endpoints for exercise progress, exercise summaries, and weekly muscle volume.
 - `apps/web` has signup, login, logout, authenticated home state, a first workout logging flow for starting/resuming workouts, picking or creating exercises, editing sets, reordering exercises, and ending workouts, plus workout history/detail and analytics screens.
-- Deployment configuration, production monitoring, production backup verification, email verification, and password reset are not implemented yet.
+- Hosted production credentials, custom domains, email verification, and password reset are not implemented yet.
 
 ## Key Documents
 
@@ -40,6 +40,7 @@ The repository is in the first implementation foundation phase. It contains the 
 - `docs/06-implementation-start.md` - next-chat implementation prompt and staged rollout
 - `docs/07-implementation-pattern.md` - implementation pattern for API/web feature slices
 - `docs/08-next-implementation-plan.md` - fresh-session pickup plan for remaining MVP work
+- `docs/deployment-runbook.md` - Render deployment and small-batch operations checklist
 - `docs/decisions/` - architecture decision records
 
 ## Repository Map
@@ -49,20 +50,33 @@ Use `docs/repository-structure.md` when you need to understand where files belon
 - `apps/api` owns Fastify routes, auth, health, database access, migrations, and API tests.
 - `apps/web` owns the Next.js app, including auth, workout logging, workout history/detail, and analytics UI slices.
 - `docs` owns requirements, API contracts, workflow, implementation pattern, and ADRs.
-- Root config files own workspace tooling, TypeScript, linting, Docker, Compose, CI, Playwright smoke-test configuration, and local setup.
+- Root config files own workspace tooling, TypeScript, linting, Docker, Compose, CI, Playwright smoke-test configuration, Render Blueprint configuration, and local setup.
 
 ## Next Implementation Slices
 
-The remaining work is structured in `docs/08-next-implementation-plan.md`. The recommended next slice is deployment configuration and small-batch operations.
+The remaining work is structured in `docs/08-next-implementation-plan.md`. The recommended next slice is small-batch launch execution.
 
 Remaining implementation blocks:
 
-- Deployment configuration and release runbook
+- Small-batch launch execution
 
 Remaining larger decisions:
 
-- monitoring alert thresholds
-- backup retention and restore-test cadence
+- custom domain strategy
+- monitoring alert thresholds beyond the small-batch checklist
+- backup retention and restore-test cadence after the first tester batch
+
+## Deploy To Render
+
+ADR 0005 records Render as the first small-batch deployment target. The checked-in `render.yaml` defines Docker-backed Render services for web and API plus a Render PostgreSQL database.
+
+Before deploying real tester data, read:
+
+```text
+docs/deployment-runbook.md
+```
+
+Never use `.env.example` credentials for hosted infrastructure, and do not commit production database URLs or secrets.
 
 ## Run Locally
 

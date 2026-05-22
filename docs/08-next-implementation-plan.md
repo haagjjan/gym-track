@@ -22,19 +22,20 @@ Implemented:
 - Workout History And Detail UI: authenticated `/workouts` history list, linked workout detail view, pagination, and empty/loading/error states.
 - Analytics API And UI: exercise progress endpoint and view, exercise summary endpoint and view, and weekly muscle volume endpoint and view.
 - Quality, CI, And Deployment Readiness: GitHub Actions runs real project checks, API database integration tests, Playwright web smoke tests, production auth cookies default secure, and ADR 0005 records the deployment target.
+- Deployment Configuration And Small-Batch Operations: Render Blueprint, Render API/web Dockerfiles, API pre-deploy migrations, production environment checklist, backup/restore checklist, and monitoring checklist.
 - Repository structure documentation and implementation pattern documentation.
 
 Not implemented:
 
-- Deployment configuration, production monitoring, production backup verification, email verification, and password reset.
+- Hosted production credentials, custom domains, first tester launch execution, email verification, and password reset.
 
 ## Recommended Next Slice
 
-Start with **Deployment Configuration And Small-Batch Operations**.
+Start with **Small-Batch Launch Execution**.
 
-Reason: the core MVP browser flows and quality gates now exist. The next gap is turning the accepted deployment target into runnable hosted configuration and operational runbooks for tester data.
+Reason: the repo now has core MVP flows, quality gates, and Render configuration. The next gap is executing the first hosted launch outside the repo and recording any required follow-up work.
 
-Use ADR 0005 as the deployment target source of truth.
+Use ADR 0005 and `docs/deployment-runbook.md` as the deployment source of truth.
 
 ## Implementation Blocks
 
@@ -236,11 +237,11 @@ Rules:
 
 ### 8. Deployment Configuration And Small-Batch Operations
 
-Status: recommended next slice.
+Status: implemented.
 
 Goal: make the accepted Render target runnable for a small tester batch.
 
-Implement later:
+Implemented:
 
 - Render service configuration or documented manual setup for web, API, migration job, and PostgreSQL.
 - Production environment variable checklist using real secrets, `AUTH_COOKIE_SECURE=true`, and deployed service URLs.
@@ -254,12 +255,32 @@ Rules:
 - Do not commit hosted credentials, production database URLs, or local `.env` files.
 - Do not change the application stack or deployment target without a new ADR.
 
+### 9. Small-Batch Launch Execution
+
+Status: recommended next slice.
+
+Goal: perform the first hosted launch using the checked-in Render configuration and document any launch-specific follow-ups.
+
+Implement later:
+
+- Create the Render Blueprint from `render.yaml`.
+- Confirm hosted API health and web smoke flow.
+- Perform the first backup export and restore test into a non-production database.
+- Configure Render notifications for deploy failures, health failures, service restarts, database storage, and database connections.
+- Record only non-secret launch notes or follow-up docs in the repo.
+
+Rules:
+
+- Do not commit hosted credentials, production database URLs, tester personal data, or backup artifacts.
+- Do not change Render service names in `render.yaml` after launch unless references are updated together and the migration is documented.
+- Do not invite testers until the restore test and health checks pass.
+
 ## Fresh Session Prompt
 
 Use this prompt when starting the next implementation session:
 
 ```md
-We are continuing the Gym Progress Tracker after the Quality, CI, And Deployment Readiness slice.
+We are continuing the Gym Progress Tracker after the Deployment Configuration And Small-Batch Operations slice.
 
 First read:
 - AGENTS.md
@@ -276,9 +297,9 @@ First read:
 - docs/07-implementation-pattern.md
 - docs/08-next-implementation-plan.md
 
-Implement the next recommended slice only: Deployment Configuration And Small-Batch Operations.
+Implement the next recommended slice only: Small-Batch Launch Execution.
 
-Follow ADR 0005, do not commit hosted credentials, and do not use local `.env.example` credentials for hosted infrastructure.
+Follow ADR 0005 and `docs/deployment-runbook.md`. Do not commit hosted credentials, production database URLs, tester personal data, or backup artifacts.
 
 Before handoff, run relevant checks, confirm `git diff --check`, keep the diff focused, commit, and push.
 ```

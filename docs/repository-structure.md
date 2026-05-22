@@ -13,6 +13,8 @@ This file is the map for where things live in the Gym Progress Tracker repo. Kee
 |-- ARCHITECTURE.md
 |-- CONTRIBUTING.md
 |-- Dockerfile
+|-- Dockerfile.render-api
+|-- Dockerfile.render-web
 |-- ENGINEERING.md
 |-- README.md
 |-- apps/
@@ -23,6 +25,7 @@ This file is the map for where things live in the Gym Progress Tracker repo. Kee
 |-- playwright.config.ts
 |-- pnpm-lock.yaml
 |-- pnpm-workspace.yaml
+|-- render.yaml
 |-- tsconfig.base.json
 `-- tsconfig.json
 ```
@@ -33,7 +36,9 @@ This file is the map for where things live in the Gym Progress Tracker repo. Kee
 - `ENGINEERING.md` defines TypeScript, PostgreSQL, structure, and testing rules.
 - `CONTRIBUTING.md` defines the implementation and review workflow.
 - `Dockerfile` owns local production-like API, web, and migration image targets.
+- `Dockerfile.render-api` and `Dockerfile.render-web` own Render service images because Render Blueprints build from Dockerfile paths instead of Compose targets.
 - `compose.yaml` owns local infrastructure and app orchestration for PostgreSQL, migrations, API, and web.
+- `render.yaml` owns Render Blueprint configuration for the small-batch deployment target.
 - Root TypeScript, ESLint, Playwright, package, and pnpm files own shared tooling.
 - `.github/workflows/repo-checks.yml` owns project CI checks, API database integration tests, and web smoke tests.
 
@@ -93,6 +98,7 @@ docs/
 |-- 06-implementation-start.md
 |-- 07-implementation-pattern.md
 |-- 08-next-implementation-plan.md
+|-- deployment-runbook.md
 |-- git-pipeline.md
 |-- repository-structure.md
 `-- decisions/
@@ -103,6 +109,7 @@ docs/
 - `docs/06-implementation-start.md` records the original staged implementation handoff.
 - `docs/07-implementation-pattern.md` records the feature-slice pattern used by API and web work.
 - `docs/08-next-implementation-plan.md` records the current fresh-session handoff and remaining implementation blocks.
+- `docs/deployment-runbook.md` records Render deployment, migration, backup, restore-test, and monitoring steps for small-batch users.
 - `docs/git-pipeline.md` records Git, PR, and check workflow.
 - `docs/decisions` contains ADRs, including the accepted Render deployment target. Add or update an ADR before changing stack, auth strategy, schema policy, API style, or deployment direction.
 

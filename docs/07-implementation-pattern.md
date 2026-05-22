@@ -221,3 +221,15 @@ The quality slice keeps checks close to the existing app boundaries:
 - Deployment target decisions live in ADRs before deployment config is added.
 
 Status: implemented for full project CI checks, one core API/database flow, one core browser smoke flow, secure production cookie defaulting, and the first deployment target ADR.
+
+## Deployment Configuration And Small-Batch Operations Slice
+
+The first deployment configuration follows ADR 0005 and keeps hosted setup explicit:
+
+- `render.yaml` owns the Render Blueprint for web, API, and PostgreSQL.
+- Render-specific Dockerfiles mirror the local API and web Docker targets because the Blueprint builds Dockerfile paths directly.
+- API migrations run with `node-pg-migrate` as an API pre-deploy command.
+- The web service reaches the API over Render private networking through `API_INTERNAL_HOSTPORT`.
+- `docs/deployment-runbook.md` records the first deploy checklist, production environment values, release order, backup/restore checks, and monitoring review.
+
+Status: implemented for Render configuration and small-batch operations documentation.

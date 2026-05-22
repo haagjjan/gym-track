@@ -2,7 +2,7 @@
 
 ## Current State
 
-The repository currently contains product and data-planning documentation for a gym progress tracker plus the local development, database migration, and first runnable app foundation. The pnpm workspace, shared TypeScript tooling, Docker Compose local app orchestration, initial PostgreSQL migrations, Fastify health endpoint, database connectivity check, API auth foundation, workout session API foundation, exercise library and muscle group lookup API foundation, workout logging API foundation, analytics API foundation, first Next.js auth UI slice, first workout logging UI slice, workout history/detail screens, analytics screens, full project CI checks, API database integration coverage, and a web smoke test have been introduced. The deployment target has been recorded, but deployment configuration has not been introduced yet.
+The repository currently contains product and data-planning documentation for a gym progress tracker plus the local development, database migration, first runnable app foundation, and deployment readiness path. The pnpm workspace, shared TypeScript tooling, Docker Compose local app orchestration, initial PostgreSQL migrations, Fastify health endpoint, database connectivity check, API auth foundation, workout session API foundation, exercise library and muscle group lookup API foundation, workout logging API foundation, analytics API foundation, first Next.js auth UI slice, first workout logging UI slice, workout history/detail screens, analytics screens, full project CI checks, API database integration coverage, web smoke test, Render deployment Blueprint, and small-batch operations runbook have been introduced.
 
 The source-of-truth documents are:
 
@@ -50,7 +50,7 @@ ADR 0005 records the first deployment target:
 
 - Render Web Services for the Docker-backed web and API services
 - Render PostgreSQL for the first managed database
-- Migration jobs using the existing Docker migration target
+- API pre-deploy migrations using `node-pg-migrate`
 - Secure production environment variables, managed backups, and basic health/log monitoring before inviting testers
 
 ## Architecture Principles
@@ -146,5 +146,6 @@ Small implementation choices inside an already approved stack can be documented 
 
 ## Current Open Decisions
 
-- Deployment configuration details
-- Production monitoring alert thresholds and backup retention settings
+- Custom domain strategy
+- Production monitoring alert thresholds beyond the small-batch checklist
+- Backup retention and restore-test cadence after the first tester batch

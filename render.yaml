@@ -1,0 +1,66 @@
+previews:
+  generation: manual
+
+services:
+  - type: web
+    name: gym-progress-tracker-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile.render-api
+    dockerContext: .
+    plan: starter
+    region: oregon
+    autoDeployTrigger: checksPass
+    healthCheckPath: /api/v1/health
+    preDeployCommand: cd apps/api && pnpm exec node-pg-migrate --config-file db/migrate.json up
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      - key: API_HOST
+        value: 0.0.0.0
+      - key: API_PORT
+        value: "10000"
+      - key: AUTH_COOKIE_NAME
+        value: gym_progress_session
+      - key: AUTH_COOKIE_SECURE
+        value: "true"
+      - key: AUTH_SESSION_TTL_DAYS
+        value: "30"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: gym-progress-tracker-db
+          property: connectionString
+
+  - type: web
+    name: gym-progress-tracker-web
+    runtime: docker
+    dockerfilePath: ./Dockerfile.render-web
+    dockerContext: .
+    plan: starter
+    region: oregon
+    autoDeployTrigger: checksPass
+    healthCheckPath: /signup
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      - key: WEB_HOST
+        value: 0.0.0.0
+      - key: WEB_PORT
+        value: "10000"
+      - key: API_INTERNAL_HOSTPORT
+        fromService:
+          type: web
+          name: gym-progress-tracker-api
+          property: hostport
+
+databases:
+  - name: gym-progress-tracker-db
+    plan: basic-256mb
+    region: oregon
+    databaseName: gym_progress_tracker
+    user: gym_progress_tracker
+    postgresMajorVersion: "17"
+    ipAllowList: []

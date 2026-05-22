@@ -16,13 +16,13 @@ Use Render as the first small-batch deployment target:
 
 - Run `apps/web` as a Docker-backed Render Web Service using the existing `web` Docker target.
 - Run `apps/api` as a Docker-backed Render Web Service using the existing `api` Docker target.
-- Run database migrations as a Render job or one-off service using the existing `migrate` Docker target before API deploys that require schema changes.
+- Run database migrations before API deploys that require schema changes.
 - Use Render PostgreSQL for the first managed database.
-- Set `API_BASE_URL` on the web service to the deployed API `/api/v1` URL.
+- Connect the web service to the API over Render private networking.
 - Set `AUTH_COOKIE_SECURE=true` and production-only secrets through Render environment variables, not checked-in files.
 - Enable managed PostgreSQL backups and service health/log monitoring before inviting testers.
 
-Do not add Render configuration files in this ADR. Deployment config should be added in a later focused slice after the target is recorded and the required runtime variables are known.
+The implementation uses Render-specific Dockerfiles that mirror the local Docker targets because Render Blueprints build from a Dockerfile path and do not select a Docker Compose target. Migrations run through the API service `preDeployCommand`, with one-off jobs reserved for manual repair or operator tasks.
 
 ## Consequences
 

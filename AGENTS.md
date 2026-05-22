@@ -4,7 +4,7 @@ This file defines how Codex and other coding agents must work in this repo.
 
 ## Project Context
 
-This project is a gym progress tracker web app. The repo has moved from planning into the first implementation foundation: pnpm workspace tooling, Docker Compose local app orchestration, SQL migrations, Fastify API foundation, API auth foundation, workout session API endpoints, exercise library and muscle group lookup API endpoints, workout logging API endpoints, analytics API endpoints, the first Next.js auth UI slice, the first workout logging UI slice, workout history/detail screens, analytics screens, full project CI checks, API database integration coverage, and a web smoke test exist. The deployment target is recorded, but deployment configuration is still future implementation work.
+This project is a gym progress tracker web app. The repo has moved from planning into the first implementation foundation: pnpm workspace tooling, Docker Compose local app orchestration, SQL migrations, Fastify API foundation, API auth foundation, workout session API endpoints, exercise library and muscle group lookup API endpoints, workout logging API endpoints, analytics API endpoints, the first Next.js auth UI slice, the first workout logging UI slice, workout history/detail screens, analytics screens, full project CI checks, API database integration coverage, a web smoke test, Render deployment configuration, and a small-batch operations runbook exist.
 
 Read these files before implementing feature work:
 
@@ -68,6 +68,6 @@ Before handing work back:
 
 - The MVP requirements, schema draft, and API contract are documented but may evolve through focused docs updates or ADRs.
 - The accepted stack direction is TypeScript, PostgreSQL, Next.js App Router, Fastify, pnpm workspaces, Kysely, Zod, `node-pg-migrate`, Argon2, DB-backed opaque sessions, and Docker Compose local app orchestration.
-- Deployment target and full application CI still need later decisions.
+- Deployment target and full application CI decisions are recorded. Hosted production credentials, custom domains, and tester operations remain outside the repo.
 - Application source folders should not be added as empty scaffolding.
 - Database schema work should be driven by `docs/02-query-list.md`, `docs/03-data-model-notes.md`, and `docs/04-schema-draft.md`.

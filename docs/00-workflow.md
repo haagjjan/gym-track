@@ -6,7 +6,7 @@
 - Phase 8 is implemented for the current MVP API foundation: health, auth, workout session, exercise library, muscle group lookup, workout logging, set, and analytics routes exist.
 - Phase 9 has started with a minimal Next.js shell, the first auth UI slice, the first workout logging UI slice, workout history/detail UI, and analytics UI.
 - Phase 10 is implemented for the current foundation with unit tests, an API database integration flow, a Playwright web smoke flow, and GitHub Actions jobs that run project checks.
-- Phase 11 has started with an accepted deployment target ADR. Deployment configuration, production monitoring, and backup verification are still future work.
+- Phase 11 has started with an accepted deployment target ADR, Render Blueprint, deployment runbook, backup/restore checklist, and monitoring checklist. Hosted production credentials, custom domains, and first tester launch execution are still future work.
 
 ## Phase 0 — Project Setup & Working Style
 
@@ -236,7 +236,7 @@ Run it online for a small set of testers.
 - A user can sign up and use the app remotely.
 
 ### Status
-- Started. ADR 0005 records Render Web Services plus Render PostgreSQL as the first small-batch deployment target. Deployment configuration, monitoring setup, and backup restore checks remain.
+- Started. ADR 0005 records Render Web Services plus Render PostgreSQL as the first small-batch deployment target. `render.yaml` defines the Render services/database, and `docs/deployment-runbook.md` records deployment, migration, backup, restore-test, and monitoring steps. Hosted credentials, custom domains, and the first tester launch remain.
 
 ---
 
