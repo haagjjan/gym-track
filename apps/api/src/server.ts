@@ -1,6 +1,9 @@
 import cookie from "@fastify/cookie";
 import fastify, { type FastifyInstance } from "fastify";
 import type { Kysely } from "kysely";
+import { createAnalyticsRepository } from "./features/analytics/analytics.repository.js";
+import { registerAnalyticsRoutes } from "./features/analytics/analytics.routes.js";
+import { createAnalyticsService } from "./features/analytics/analytics.service.js";
 import { createAuthRepository } from "./features/auth/auth.repository.js";
 import { registerAuthRoutes } from "./features/auth/auth.routes.js";
 import { createAuthService } from "./features/auth/auth.service.js";
@@ -48,6 +51,9 @@ export async function buildServer(
   const exerciseService = createExerciseService({
     repository: createExerciseRepository(db)
   });
+  const analyticsService = createAnalyticsService({
+    repository: createAnalyticsRepository(db)
+  });
 
   await server.register(cookie);
   await registerHealthRoutes(server, databaseHealth);
@@ -73,6 +79,11 @@ export async function buildServer(
     authService,
     cookieName: authConfig.cookieName,
     exerciseService
+  });
+  await registerAnalyticsRoutes(server, {
+    authService,
+    cookieName: authConfig.cookieName,
+    analyticsService
   });
 
   return server;

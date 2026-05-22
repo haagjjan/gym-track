@@ -908,6 +908,8 @@ Response `200`:
 }
 ```
 
+When no matching sets exist, numeric totals return zero, `averageRir` returns `null`, and `bestTopSet` returns `null`.
+
 ### `GET /api/v1/analytics/weekly-volume`
 
 Returns weekly working-set counts by primary muscle group.

@@ -47,6 +47,7 @@ apps/
 |   `-- src/
 |       |-- db/
 |       |-- features/
+|       |   |-- analytics/
 |       |   |-- auth/
 |       |   |-- exercises/
 |       |   |-- health/
@@ -58,6 +59,7 @@ apps/
     `-- src/
         |-- app/
         |-- features/
+        |   |-- analytics/
         |   |-- auth/
         |   `-- workouts/
         `-- shared/
@@ -65,10 +67,11 @@ apps/
 
 - `apps/api` owns the Fastify API, Kysely database access, migrations, API feature slices, and API tests.
 - `apps/api/tsconfig.build.json` owns the compiled API runtime build used by Docker.
-- `apps/api/src/features/<feature>` owns each API vertical slice. Current features are `auth`, `exercises`, `health`, and `workouts`.
+- `apps/api/src/features/<feature>` owns each API vertical slice. Current features are `analytics`, `auth`, `exercises`, `health`, and `workouts`.
 - `apps/api/src/db` owns database connection and database health helpers.
 - `apps/api/src/shared` owns API-only shared boundaries such as environment validation.
-- `apps/web` owns the Next.js App Router app plus the first auth, workout logging, and workout history/detail UI slices.
+- `apps/web` owns the Next.js App Router app plus the first auth, workout logging, workout history/detail, and analytics UI slices.
+- `apps/web/src/features/analytics` owns the analytics UI, browser analytics API helpers, and same-origin analytics API proxy helpers.
 - `apps/web/src/features/auth` owns web auth forms, server auth helpers, and auth proxy helpers.
 - `apps/web/src/features/workouts` owns the workout logging and history/detail UI, browser workout API helpers, and same-origin workout API proxy helpers.
 - `apps/web/src/shared` owns web-only helpers with at least two feature consumers, currently API base URL resolution.

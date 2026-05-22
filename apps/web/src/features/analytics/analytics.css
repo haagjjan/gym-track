@@ -1,0 +1,184 @@
+.analyticsPage {
+  display: grid;
+  gap: 22px;
+  min-height: 100vh;
+  padding: 28px;
+}
+
+.analyticsHeader,
+.analyticsPanel,
+.analyticsMessage {
+  margin-inline: auto;
+  width: min(100%, 1080px);
+}
+
+.analyticsHeader {
+  align-items: end;
+  border-block-start: 5px solid var(--accent);
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.analyticsPanel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 18px;
+  padding: 18px;
+}
+
+.analyticsPanelHeader {
+  align-items: end;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
+}
+
+.analyticsPanelHeader h2,
+.weeklyVolumeWeek h3 {
+  color: var(--ink);
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.analyticsPanelHeader h2 {
+  font-size: 1.45rem;
+}
+
+.exerciseSelect {
+  min-width: 0;
+}
+
+.analyticsMetrics {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.analyticsMetric {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  min-height: 84px;
+  padding: 14px;
+}
+
+.analyticsMetric span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.analyticsMetric strong {
+  color: var(--ink);
+  font-size: 1.1rem;
+  overflow-wrap: anywhere;
+}
+
+.progressChart,
+.weeklyVolumeList {
+  display: grid;
+  gap: 10px;
+}
+
+.progressBarRow,
+.volumeBarRow {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 82px minmax(120px, 1fr) 92px;
+}
+
+.volumeBarRow {
+  grid-template-columns: minmax(110px, 160px) minmax(120px, 1fr) 44px;
+}
+
+.progressBarRow > span,
+.volumeBarRow > span {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.progressBarRow strong,
+.volumeBarRow strong {
+  color: var(--ink);
+}
+
+.progressTrack {
+  background: #e6efe9;
+  border: 1px solid #b7c9bf;
+  border-radius: 999px;
+  height: 16px;
+  overflow: hidden;
+}
+
+.progressTrack span {
+  background: var(--brand);
+  display: block;
+  height: 100%;
+}
+
+.analyticsTableWrap {
+  overflow-x: auto;
+}
+
+.analyticsTable {
+  border-collapse: collapse;
+  min-width: 640px;
+  width: 100%;
+}
+
+.analyticsTable th,
+.analyticsTable td {
+  border-bottom: 1px solid var(--line);
+  padding: 10px;
+  text-align: left;
+}
+
+.analyticsTable th {
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+}
+
+.weeklyVolumeWeek {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.weeklyVolumeWeek h3 {
+  font-size: 1rem;
+}
+
+@media (max-width: 900px) {
+  .analyticsHeader,
+  .analyticsPanelHeader {
+    align-items: start;
+    grid-template-columns: 1fr;
+  }
+
+  .analyticsMetrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .analyticsPage {
+    padding: 20px;
+  }
+
+  .analyticsMetrics,
+  .progressBarRow,
+  .volumeBarRow {
+    grid-template-columns: 1fr;
+  }
+}

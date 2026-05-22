@@ -184,3 +184,28 @@ The workout history UI follows the same web feature-slice pattern:
 Browser code continues to call Next route handlers first so auth cookies stay same-origin and the API does not need CORS.
 
 Status: implemented for viewing workout history and opening workout detail.
+
+## Analytics API Slice
+
+The analytics API follows the same feature-owned pattern:
+
+- `GET /api/v1/analytics/exercises/:exerciseId/progress`
+- `GET /api/v1/analytics/exercises/:exerciseId/summary`
+- `GET /api/v1/analytics/weekly-volume`
+
+Analytics routes own auth checks, query validation, and response mapping. Analytics services compute estimated one-rep max, exercise summaries, and weekly volume from raw set rows. Analytics repositories own user-scoped Kysely reads and exclude soft-deleted workout data.
+
+Status: implemented for exercise progress, exercise summary, and weekly muscle volume.
+
+## Web Analytics Slice
+
+The analytics UI follows the same web feature-slice pattern:
+
+- Authenticated `/analytics` page.
+- Same-origin Next route handlers for analytics API calls.
+- Exercise selector backed by the exercise library API.
+- Exercise progress chart/table, exercise summary metrics, and weekly muscle volume bars.
+
+Browser code continues to call Next route handlers first so auth cookies stay same-origin and the API does not need CORS.
+
+Status: implemented for viewing exercise progress and weekly volume analytics.

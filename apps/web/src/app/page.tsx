@@ -55,18 +55,20 @@ function SignedInHome({ user }: { user: AuthUser }): ReactNode {
         <LogoutButton />
       </section>
       <WorkoutEntryPoint />
-      <PrimaryAreaGrid enableHistoryLink />
+      <PrimaryAreaGrid enableAppLinks />
     </main>
   );
 }
 
-function PrimaryAreaGrid({ enableHistoryLink = false }: { enableHistoryLink?: boolean }): ReactNode {
+function PrimaryAreaGrid({ enableAppLinks = false }: { enableAppLinks?: boolean }): ReactNode {
   return (
     <section className="sectionPanel" aria-label="Primary areas">
       <div className="sectionGrid">
-        {sections.map((section) =>
-          section.label === "History" && enableHistoryLink ? (
-            <Link key={section.label} className="areaTile areaTileLink" href="/workouts">
+        {sections.map((section) => {
+          const href = sectionHref(section.label);
+
+          return href && enableAppLinks ? (
+            <Link key={section.label} className="areaTile areaTileLink" href={href}>
               <span>{section.label}</span>
               <p>{section.detail}</p>
             </Link>
@@ -75,9 +77,21 @@ function PrimaryAreaGrid({ enableHistoryLink = false }: { enableHistoryLink?: bo
               <span>{section.label}</span>
               <p>{section.detail}</p>
             </article>
-          )
-        )}
+          );
+        })}
       </div>
     </section>
   );
+}
+
+function sectionHref(label: string): string | null {
+  if (label === "History") {
+    return "/workouts";
+  }
+
+  if (label === "Progress" || label === "Volume") {
+    return "/analytics";
+  }
+
+  return null;
 }

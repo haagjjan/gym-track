@@ -20,20 +20,20 @@ Implemented:
 - First web auth UI slice: `/signup`, `/login`, logout, authenticated home state, and same-origin Next auth proxy routes.
 - First Workout Logging UI: start/resume workout entry point, workout logging page, exercise picker/create flow, set editing controls, exercise reorder, and end workout action.
 - Workout History And Detail UI: authenticated `/workouts` history list, linked workout detail view, pagination, and empty/loading/error states.
+- Analytics API And UI: exercise progress endpoint and view, exercise summary endpoint and view, and weekly muscle volume endpoint and view.
 - Repository structure documentation and implementation pattern documentation.
 
 Not implemented:
 
-- Analytics API and UI.
 - Full application CI, deployment, monitoring, backups, email verification, and password reset.
 
 ## Recommended Next Slice
 
-Start with **Analytics API And UI**.
+Start with **Quality, CI, And Deployment Readiness**.
 
-Reason: auth, workout logging, and workout history/detail can now be completed through the browser. Analytics is the next MVP gap for exercise progress and weekly muscle volume.
+Reason: the core MVP browser flows now exist. The next gap is making checks, broader coverage, and deployment decisions ready for small-batch users.
 
-Do not start with deployment or a broad redesign before the analytics queries and UI are implemented.
+Do not add deployment config without an ADR.
 
 ## Implementation Blocks
 
@@ -181,7 +181,7 @@ Non-goals:
 
 ### 6. Analytics API And UI
 
-Status: recommended next slice.
+Status: implemented.
 
 Goal: compute progress and weekly volume from raw workout data.
 
@@ -209,6 +209,8 @@ Non-goals:
 
 ### 7. Quality, CI, And Deployment Readiness
 
+Status: recommended next slice.
+
 Goal: make the app safer to change and prepare it for small-batch users.
 
 Implement later:
@@ -229,7 +231,7 @@ Rules:
 Use this prompt when starting the next implementation session:
 
 ```md
-We are continuing the Gym Progress Tracker after the Workout History And Detail UI slice.
+We are continuing the Gym Progress Tracker after the Analytics API And UI slice.
 
 First read:
 - AGENTS.md
@@ -246,9 +248,9 @@ First read:
 - docs/07-implementation-pattern.md
 - docs/08-next-implementation-plan.md
 
-Implement the next recommended slice only: Analytics API And UI.
+Implement the next recommended slice only: Quality, CI, And Deployment Readiness.
 
-Do not implement CI, deployment, or schema changes unless the docs prove they are required for the analytics API/UI.
+Do not add deployment config without an ADR, and do not use local `.env.example` credentials for hosted infrastructure.
 
 Before handoff, run relevant checks, confirm `git diff --check`, keep the diff focused, commit, and push.
 ```

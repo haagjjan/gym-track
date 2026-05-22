@@ -3,8 +3,8 @@
 ## Current Progress
 
 - Phases 0-7 are implemented for the current foundation: repository setup, MVP docs, query/data/schema planning, stack decisions, local tooling, Docker Compose local app orchestration, and SQL migrations.
-- Phase 8 is in progress: the API contract exists, health, auth, workout session, exercise library, muscle group lookup, workout logging, and set routes are implemented, and analytics endpoints remain.
-- Phase 9 has started with a minimal Next.js shell, the first auth UI slice, the first workout logging UI slice, and workout history/detail UI. Analytics screens remain.
+- Phase 8 is implemented for the current MVP API foundation: health, auth, workout session, exercise library, muscle group lookup, workout logging, set, and analytics routes exist.
+- Phase 9 has started with a minimal Next.js shell, the first auth UI slice, the first workout logging UI slice, workout history/detail UI, and analytics UI.
 - Phase 10 has started with unit tests and `pnpm check`; broader integration/UI coverage and full CI are still future work.
 - Phases 11-12 are not started.
 
@@ -178,7 +178,7 @@ Define a stable interface between UI and DB.
 - Each endpoint maps to a query from Phase 2.
 
 ### Status
-- In progress. Health, auth, workout session, exercise library, muscle group lookup, workout logging, and set editing foundations are implemented. Analytics endpoints remain.
+- Implemented for the current MVP foundation. Health, auth, workout session, exercise library, muscle group lookup, workout logging, set editing, and analytics endpoints exist.
 
 ---
 
@@ -199,7 +199,7 @@ A clean, usable web app that covers core flows.
 - A user can complete the full workflow without using admin tools.
 
 ### Status
-- Started with signup, login, logout, authenticated home state, first workout logging UI, and workout history/detail UI. Analytics screens remain.
+- Started with signup, login, logout, authenticated home state, first workout logging UI, workout history/detail UI, and analytics UI.
 
 ---
 
