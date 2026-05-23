@@ -16,6 +16,10 @@ Tiny documentation fixes may be committed directly to `main` while this is still
 ## Commit Rules
 
 - Keep commits small and specific.
+- Prefer many reviewable commits over one large end-of-task commit.
+- Commit at natural boundaries such as asset/data definitions, implementation wiring, styles, tests, and docs.
+- Avoid commits that touch more than 3 files unless the files are mechanically coupled, such as a package manifest and lockfile.
+- Split changes before committing when a commit would add hundreds of lines or combine unrelated behavior.
 - Use concise imperative messages, for example:
   - `Record session storage decision`
   - `Add API scaffold`
@@ -74,6 +78,7 @@ Before committing:
 
 - Run `git status --short`.
 - Confirm the diff includes only intended files.
+- Stage intentionally, file by file or hunk by hunk, instead of defaulting to `git add -A`.
 - Run `git diff --check`.
 - Run `pnpm check` for implementation or tooling changes.
 - Keep the commit message specific.
