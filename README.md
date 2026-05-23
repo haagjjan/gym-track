@@ -20,7 +20,7 @@ The repository is in the first implementation foundation phase. It contains the 
 - `apps/api` exposes authenticated seeded muscle group lookup for exercise creation.
 - `apps/api` exposes authenticated workout logging child endpoints for session exercises and sets.
 - `apps/api` exposes authenticated analytics endpoints for completed exercise progress navigation, exercise progress, exercise summaries, and weekly muscle volume.
-- `apps/web` has signup, login, logout, authenticated home state, a first workout logging flow for starting/resuming workouts, picking or creating exercises, editing sets, reordering exercises, and ending workouts, plus workout history/detail, Progress, and Weekly Volume screens.
+- `apps/web` has signup, login, logout, authenticated home state, a first workout logging flow for starting/resuming workouts, picking or creating exercises, editing sets, reordering exercises, and ending workouts, plus workout history/detail, Progress, and anatomical Weekly Volume screens.
 - CSV workout import/export, hosted production credentials, custom domains, email verification, and password reset are not implemented yet.
 
 ## Key Documents
