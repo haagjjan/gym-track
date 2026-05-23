@@ -429,6 +429,8 @@ First read:
 - ARCHITECTURE.md
 - ENGINEERING.md
 - CONTRIBUTING.md
+- docs/git-pipeline.md
+- docs/deployment-runbook.md
 - docs/repository-structure.md
 - docs/00-workflow.md
 - docs/02-query-list.md
