@@ -24,7 +24,7 @@ Implemented:
 - Quality, CI, And Deployment Readiness: GitHub Actions runs real project checks, API database integration tests, Playwright web smoke tests, production auth cookies default secure, and ADR 0005 records the deployment target.
 - Deployment Configuration And Small-Batch Operations: Render Blueprint, Render API/web Dockerfiles, API pre-deploy migrations, production environment checklist, backup/restore checklist, and monitoring checklist.
 - Logging Infrastructure: Fastify/Pino logger configuration, `LOG_LEVEL`, local pretty logs, production JSON logs, test log suppression, and redaction for cookies, authorization headers, and session token fields.
-- UI And Analytics Rework: separate Progress and Weekly Volume routes, completed-exercise progress navigation, `recharts` weight/reps progress chart, and a first 2D weekly muscle-map view.
+- UI And Analytics Rework: separate Progress and Weekly Volume routes, completed-exercise progress navigation, `recharts` weight/reps progress chart, and a first anatomical 2D SVG weekly muscle-map view.
 - Repository structure documentation and implementation pattern documentation.
 
 Not implemented:
