@@ -7,7 +7,12 @@ import { getWeeklyVolume } from "./analytics-api";
 import { dateRange } from "./analytics-date-range";
 import { AnalyticsHeader } from "./analytics-header";
 import type { WeeklyVolumePayload } from "./analytics-types";
-import { currentWeekTotals, WeeklyBodyMap, type WeeklyMuscleTotal } from "./weekly-body-map";
+import {
+  firstMuscleSlug,
+  selectedWeeklyMuscle,
+  WeeklyBodyMap,
+  type WeeklyMuscleTotal
+} from "./weekly-body-map";
 
 export function WeeklyVolumePage(): ReactNode {
   const [volume, setVolume] = useState<WeeklyVolumePayload | null>(null);
@@ -15,8 +20,10 @@ export function WeeklyVolumePage(): ReactNode {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const range = useMemo(() => dateRange(7), []);
-  const totals = useMemo(() => currentWeekTotals(volume ?? { weeks: [] }), [volume]);
-  const selected = totals.get(selectedSlug) ?? firstMuscle(totals);
+  const selected = useMemo(
+    () => selectedWeeklyMuscle(volume ?? { weeks: [] }, selectedSlug),
+    [selectedSlug, volume]
+  );
 
   const loadWeeklyVolume = useCallback(async (signal: AbortSignal): Promise<void> => {
     const result = await getWeeklyVolume({ ...range, signal }).catch(() => null);
@@ -33,7 +40,7 @@ export function WeeklyVolumePage(): ReactNode {
     }
 
     setVolume(result.data);
-    setSelectedSlug(result.data.weeks.at(-1)?.items[0]?.muscleGroup.slug ?? "chest");
+    setSelectedSlug(firstMuscleSlug(result.data));
   }, [range]);
 
   useEffect(() => {
@@ -95,31 +102,35 @@ function MuscleStats({ selected }: { selected: WeeklyMuscleTotal | null }): Reac
       <section>
         <h3>Exercises</h3>
         <div className="statList">
-          {selected.exercises.map((exercise) => (
-            <p key={exercise.id}>
-              <span>{exercise.name}</span>
-              <strong>{exercise.workingSets}</strong>
-            </p>
-          ))}
+          {selected.exercises.length > 0 ? (
+            selected.exercises.map((exercise) => (
+              <p key={exercise.id}>
+                <span>{exercise.name}</span>
+                <strong>{exercise.workingSets}</strong>
+              </p>
+            ))
+          ) : (
+            <p className="mutedText">No exercises this week.</p>
+          )}
         </div>
       </section>
       <section>
         <h3>Recent sessions</h3>
         <div className="statList">
-          {selected.recentSessions.map((session) => (
-            <Link key={session.workoutId} href={`/workouts/${session.workoutId}`}>
-              <span>{shortDate(session.sessionDate)}</span>
-              <strong>{session.workingSets}</strong>
-            </Link>
-          ))}
+          {selected.recentSessions.length > 0 ? (
+            selected.recentSessions.map((session) => (
+              <Link key={session.workoutId} href={`/workouts/${session.workoutId}`}>
+                <span>{shortDate(session.sessionDate)}</span>
+                <strong>{session.workingSets}</strong>
+              </Link>
+            ))
+          ) : (
+            <p className="mutedText">No sessions this week.</p>
+          )}
         </div>
       </section>
     </aside>
   );
-}
-
-function firstMuscle(totals: Map<string, WeeklyMuscleTotal>): WeeklyMuscleTotal | null {
-  return totals.values().next().value ?? null;
 }
 
 function shortDate(value: string): string {
