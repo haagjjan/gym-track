@@ -315,6 +315,13 @@ Implement:
 - Focus on logged-in app screens: Home, workout logging/detail, workout history, and analytics.
 - Improve navigation, spacing, hierarchy, mobile behavior, form ergonomics, empty states, and error states.
 - Replace the current progress bar list with a real time-series chart.
+    - on the x axis is the date
+    - on the y axis is the weight and the reps
+    - therefore there are two graphs
+        - The first one drawn by a solid line is the Weight
+        - The second one drawn by a dotted line is the reps
+        - The reps graph is non continuous.
+            - whenever the weight changes, the reps graph makes a jump (most of the time automatically) and changes color.
 - Add `recharts` for analytics charts:
   - exercise progress line chart over time.
   - selectable metric: estimated 1RM, weight, reps.
