@@ -55,5 +55,8 @@ test("signs up and logs a workout through the UI", async ({ page }) => {
   await page.goto("/weekly-volume");
   await expect(page.getByRole("heading", { name: "Muscle heat map" })).toBeVisible();
   await expect(page.getByLabel("Weekly volume body map")).toBeVisible();
+  await expect(page.locator("svg.bodyMap rect")).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Chest" })).toBeVisible();
+  await page.getByRole("button", { name: /Back, 0 working sets/ }).click();
+  await expect(page.getByRole("heading", { name: "Back" })).toBeVisible();
 });
