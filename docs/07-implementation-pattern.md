@@ -260,7 +260,7 @@ The UI rework should polish the existing app screens without introducing a full 
 - Prefer a real interactive 3D body map when it fits the slice; otherwise ship a clear 2D front/back muscle map first and keep the implementation ready to replace with 3D later.
 - Use `recharts` for conventional Progress charts. Use Three.js only if the Weekly Volume body map is implemented as a real 3D scene.
 
-Status: implemented for separate `/progress` and `/weekly-volume` destinations, completed-exercise progress navigation, `recharts` weight/reps progress charts, and a first 2D weekly muscle-map view.
+Status: implemented for separate `/progress` and `/weekly-volume` destinations, completed-exercise progress navigation, `recharts` weight/reps progress charts, and a first anatomical 2D SVG weekly muscle-map view.
 
 ## CSV Workout Import/Export Slice
 
