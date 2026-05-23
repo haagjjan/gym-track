@@ -46,4 +46,14 @@ test("signs up and logs a workout through the UI", async ({ page }) => {
   await page.locator(".historyRow").first().click();
   await expect(page.getByRole("heading", { name: exerciseName })).toBeVisible();
   await expect(page.locator(".setRow").getByLabel("Kg")).toHaveValue("90.00");
+
+  await page.goto("/progress");
+  await expect(page.getByRole("heading", { name: "Exercise progress" })).toBeVisible();
+  await expect(page.getByRole("button", { name: new RegExp(exerciseName) })).toBeVisible();
+  await expect(page.getByLabel("Weight and reps over time")).toBeVisible();
+
+  await page.goto("/weekly-volume");
+  await expect(page.getByRole("heading", { name: "Muscle heat map" })).toBeVisible();
+  await expect(page.getByLabel("Weekly volume body map")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Chest" })).toBeVisible();
 });

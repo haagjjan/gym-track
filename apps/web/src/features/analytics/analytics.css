@@ -29,6 +29,20 @@
   padding: 18px;
 }
 
+.analyticsSplit {
+  align-items: start;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+  margin-inline: auto;
+  width: min(100%, 1180px);
+}
+
+.progressDetailPanel,
+.bodyVolumePanel {
+  width: 100%;
+}
+
 .analyticsPanelHeader {
   align-items: end;
   display: grid;
@@ -36,8 +50,13 @@
   grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
 }
 
+.compactHeader {
+  grid-template-columns: 1fr;
+}
+
 .analyticsPanelHeader h2,
-.weeklyVolumeWeek h3 {
+.muscleStats h2,
+.muscleStats h3 {
   color: var(--ink);
   letter-spacing: 0;
   margin: 0;
@@ -47,8 +66,92 @@
   font-size: 1.45rem;
 }
 
-.exerciseSelect {
-  min-width: 0;
+.exerciseLibraryPanel {
+  position: sticky;
+  top: 18px;
+}
+
+.exerciseChoiceList,
+.muscleAccordion,
+.muscleGroupSection {
+  display: grid;
+  gap: 8px;
+}
+
+.exerciseChoice,
+.muscleGroupSection > button,
+.segmentedControl button {
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.exerciseChoice {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  display: grid;
+  gap: 4px;
+  min-height: 62px;
+  padding: 10px 12px;
+  text-align: left;
+  width: 100%;
+}
+
+.exerciseChoice[data-selected="true"] {
+  border-color: var(--brand);
+  box-shadow: inset 4px 0 0 var(--brand);
+}
+
+.exerciseChoice span,
+.muscleGroupSection > button span {
+  font-weight: 800;
+}
+
+.exerciseChoice small,
+.listSubhead {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.listSubhead {
+  font-size: 0.76rem;
+  margin: 8px 0 0;
+  text-transform: uppercase;
+}
+
+.muscleGroupSection > button {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  display: flex;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 0 12px;
+}
+
+.segmentedControl {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.segmentedControl button {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-weight: 800;
+  min-height: 38px;
+  min-width: 48px;
+  padding: 0 10px;
+}
+
+.segmentedControl button[aria-pressed="true"] {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #ffffff;
 }
 
 .analyticsMetrics {
@@ -80,47 +183,24 @@
   overflow-wrap: anywhere;
 }
 
-.progressChart,
-.weeklyVolumeList {
-  display: grid;
-  gap: 10px;
+.timeSeriesScroller {
+  overflow-x: auto;
+  padding-bottom: 6px;
 }
 
-.progressBarRow,
-.volumeBarRow {
-  align-items: center;
-  display: grid;
-  gap: 12px;
-  grid-template-columns: 82px minmax(120px, 1fr) 92px;
+.timeSeriesCanvas {
+  min-width: 760px;
 }
 
-.volumeBarRow {
-  grid-template-columns: minmax(110px, 160px) minmax(120px, 1fr) 44px;
-}
-
-.progressBarRow > span,
-.volumeBarRow > span {
-  color: var(--muted);
-  font-weight: 800;
-}
-
-.progressBarRow strong,
-.volumeBarRow strong {
+.chartTooltip {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 12px 28px rgba(24, 33, 31, 0.14);
   color: var(--ink);
-}
-
-.progressTrack {
-  background: #e6efe9;
-  border: 1px solid #b7c9bf;
-  border-radius: 999px;
-  height: 16px;
-  overflow: hidden;
-}
-
-.progressTrack span {
-  background: var(--brand);
-  display: block;
-  height: 100%;
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
 }
 
 .analyticsTableWrap {
@@ -146,17 +226,93 @@
   text-transform: uppercase;
 }
 
-.weeklyVolumeWeek {
+.bodyVolumeGrid {
+  align-items: start;
+  display: grid;
+  gap: 22px;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+}
+
+.bodyMapWrap {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(245, 248, 246, 0.92)),
+    #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  min-height: 420px;
+  overflow: hidden;
+}
+
+.bodyMap {
+  display: block;
+  height: auto;
+  width: 100%;
+}
+
+.bodyOutline ellipse,
+.bodyOutline path {
+  fill: none;
+  stroke: #87928b;
+  stroke-width: 2;
+}
+
+.bodyOutline text {
+  fill: var(--muted);
+  font-size: 14px;
+  font-weight: 800;
+  text-anchor: middle;
+}
+
+.muscleRegion {
+  cursor: pointer;
+  stroke: #6f7b75;
+  stroke-width: 1.4;
+}
+
+.muscleRegion:hover,
+.muscleRegion:focus,
+.muscleRegion[data-selected="true"] {
+  outline: none;
+  stroke: var(--ink);
+  stroke-width: 3;
+}
+
+.bodyMapLabel {
+  fill: #18211f;
+  font-size: 11px;
+  font-weight: 800;
+  pointer-events: none;
+  text-anchor: middle;
+}
+
+.muscleStats {
   background: #ffffff;
   border: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
-  gap: 10px;
-  padding: 14px;
+  gap: 16px;
+  padding: 16px;
 }
 
-.weeklyVolumeWeek h3 {
-  font-size: 1rem;
+.singleMetric {
+  grid-template-columns: 1fr;
+}
+
+.statList {
+  display: grid;
+  gap: 8px;
+}
+
+.statList p,
+.statList a {
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  min-height: 34px;
+  text-decoration: none;
 }
 
 @media (max-width: 900px) {
@@ -169,6 +325,19 @@
   .analyticsMetrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .analyticsSplit,
+  .bodyVolumeGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .exerciseLibraryPanel {
+    position: static;
+  }
+
+  .segmentedControl {
+    justify-content: start;
+  }
 }
 
 @media (max-width: 640px) {
@@ -176,9 +345,7 @@
     padding: 20px;
   }
 
-  .analyticsMetrics,
-  .progressBarRow,
-  .volumeBarRow {
+  .analyticsMetrics {
     grid-template-columns: 1fr;
   }
 }

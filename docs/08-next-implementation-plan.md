@@ -24,19 +24,20 @@ Implemented:
 - Quality, CI, And Deployment Readiness: GitHub Actions runs real project checks, API database integration tests, Playwright web smoke tests, production auth cookies default secure, and ADR 0005 records the deployment target.
 - Deployment Configuration And Small-Batch Operations: Render Blueprint, Render API/web Dockerfiles, API pre-deploy migrations, production environment checklist, backup/restore checklist, and monitoring checklist.
 - Logging Infrastructure: Fastify/Pino logger configuration, `LOG_LEVEL`, local pretty logs, production JSON logs, test log suppression, and redaction for cookies, authorization headers, and session token fields.
+- UI And Analytics Rework: separate Progress and Weekly Volume routes, completed-exercise progress navigation, `recharts` weight/reps progress chart, and a first 2D weekly muscle-map view.
 - Repository structure documentation and implementation pattern documentation.
 
 Not implemented:
 
-- UI/analytics polish, CSV workout import/export, hosted production credentials, custom domains, first tester launch execution, email verification, and password reset.
+- CSV workout import/export, hosted production credentials, custom domains, first tester launch execution, email verification, and password reset.
 
 ## Recommended Next Slice
 
-Start with **UI And Analytics Rework**.
+Start with **CSV Workout Import/Export**.
 
-Reason: the repo now has core MVP flows, quality gates, Render configuration, and safer API logs, but the app should feel clearer for testers and show progress analytics in a real chart before hosted launch execution.
+Reason: the repo now has core MVP flows, quality gates, Render configuration, safer API logs, and clearer Progress/Weekly Volume screens. Users still need a way to import old workout history and export their logged data before tester launch.
 
-After UI/analytics polish, complete CSV workout import/export before resuming hosted launch execution.
+After CSV workout import/export, resume hosted launch execution.
 
 ## Implementation Blocks
 
@@ -258,7 +259,7 @@ Rules:
 
 ### 9. Small-Batch Launch Execution
 
-Status: deferred until UI/analytics polish and CSV import/export are implemented.
+Status: deferred until CSV import/export is implemented.
 
 Goal: perform the first hosted launch using the checked-in Render configuration and document any launch-specific follow-ups.
 
@@ -306,7 +307,7 @@ Non-goals:
 
 ### 11. UI And Analytics Rework
 
-Status: recommended next slice.
+Status: implemented.
 
 Goal: make the app feel ready for testers and make progress analytics visually useful.
 
@@ -363,7 +364,7 @@ Non-goals:
 
 ### 12. CSV Workout Import/Export
 
-Status: planned after UI and analytics rework.
+Status: recommended next slice.
 
 Goal: let users import old workout history and export their logged workout data using one canonical CSV format.
 
@@ -420,7 +421,7 @@ Non-goals:
 Use this prompt when starting the next implementation session:
 
 ```md
-We are continuing the Gym Progress Tracker after the Logging Infrastructure slice.
+We are continuing the Gym Progress Tracker after the UI And Analytics Rework slice.
 
 First read:
 - AGENTS.md
@@ -437,9 +438,9 @@ First read:
 - docs/07-implementation-pattern.md
 - docs/08-next-implementation-plan.md
 
-Implement the next recommended slice only: UI And Analytics Rework.
+Implement the next recommended slice only: CSV Workout Import/Export.
 
-Do not add CSV import/export, hosted launch execution, monitoring infrastructure, external observability services, schema changes, or a broad UI framework in this slice.
+Do not add hosted launch execution, monitoring infrastructure, external observability services, schema changes unless proven necessary, or arbitrary legacy CSV mapping in this slice.
 
 Before handoff, run relevant checks, confirm `git diff --check`, keep the diff focused, commit, and push.
 ```

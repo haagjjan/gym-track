@@ -1,13 +1,21 @@
 import type {
   AnalyticsRepository,
   AnalyticsSetRecord,
-  WeeklyVolumeSetRecord
+  CompletedExerciseRecord
 } from "./analytics.repository.js";
 import type {
   ExerciseProgressQuery,
   ExerciseSummaryQuery,
   WeeklyVolumeQuery
 } from "./analytics.schemas.js";
+import {
+  toMuscleGroupShape,
+  toWeeklyVolume,
+  type MuscleGroupShape,
+  type WeeklyVolume
+} from "./analytics-weekly-volume.js";
+
+export type { WeeklyVolume } from "./analytics-weekly-volume.js";
 
 export interface ExerciseProgressItem {
   workoutId: string;
@@ -46,26 +54,21 @@ export interface BestTopSet {
   estimatedOneRepMaxKg: string;
 }
 
-export interface WeeklyVolume {
-  weeks: WeeklyVolumeWeek[];
+export interface CompletedExerciseList {
+  items: CompletedExercise[];
 }
 
-export interface WeeklyVolumeWeek {
-  weekStart: string;
-  weekEnd: string;
-  items: WeeklyVolumeItem[];
-}
-
-export interface WeeklyVolumeItem {
-  muscleGroup: {
-    id: string;
-    slug: string;
-    name: string;
-  };
-  workingSets: number;
+export interface CompletedExercise {
+  id: string;
+  name: string;
+  primaryMuscleGroup: MuscleGroupShape;
+  secondaryMuscleGroups: MuscleGroupShape[];
+  lastDoneAt: string;
+  totalSets: number;
 }
 
 export interface AnalyticsService {
+  listCompletedExercises(userId: string): Promise<CompletedExerciseList>;
   getExerciseProgress(
     userId: string,
     exerciseId: string,
@@ -85,6 +88,13 @@ interface AnalyticsServiceOptions {
 
 export function createAnalyticsService(options: AnalyticsServiceOptions): AnalyticsService {
   return {
+    async listCompletedExercises(userId) {
+      const rows = await options.repository.findCompletedExercises(userId);
+
+      return {
+        items: rows.map(toCompletedExercise)
+      };
+    },
     async getExerciseProgress(userId, exerciseId, input) {
       const rows = await options.repository.findExerciseSets({
         userId,
@@ -138,6 +148,17 @@ function toProgressItem(row: AnalyticsSetRecord): ExerciseProgressItem {
   };
 }
 
+function toCompletedExercise(record: CompletedExerciseRecord): CompletedExercise {
+  return {
+    id: record.exercise.id,
+    name: record.exercise.name,
+    primaryMuscleGroup: toMuscleGroupShape(record.exercise.primaryMuscleGroup),
+    secondaryMuscleGroups: record.exercise.secondaryMuscleGroups.map(toMuscleGroupShape),
+    lastDoneAt: record.lastDoneAt.toISOString(),
+    totalSets: record.totalSets
+  };
+}
+
 function toExerciseSummary(exerciseId: string, rows: AnalyticsSetRecord[]): ExerciseSummary {
   const totalVolume = rows.reduce((total, row) => total + Number(row.weightKg) * row.reps, 0);
   const totalRir = rows.reduce((total, row) => total + row.rir, 0);
@@ -181,63 +202,6 @@ function compareTopSets(left: AnalyticsSetRecord, right: AnalyticsSetRecord): nu
   return Number(right.weightKg) - Number(left.weightKg);
 }
 
-function toWeeklyVolume(rows: WeeklyVolumeSetRecord[]): WeeklyVolume {
-  const weeks = new Map<string, Map<string, WeeklyVolumeItem & { sortOrder: number }>>();
-
-  for (const row of rows) {
-    const weekStart = utcWeekStart(row.sessionDate);
-    const week = weeks.get(weekStart) ?? new Map<string, WeeklyVolumeItem & { sortOrder: number }>();
-    const current = week.get(row.muscleGroup.id);
-
-    week.set(row.muscleGroup.id, {
-      muscleGroup: {
-        id: row.muscleGroup.id,
-        slug: row.muscleGroup.slug,
-        name: row.muscleGroup.name
-      },
-      workingSets: (current?.workingSets ?? 0) + 1,
-      sortOrder: row.muscleGroup.sortOrder
-    });
-    weeks.set(weekStart, week);
-  }
-
-  return {
-    weeks: [...weeks.entries()].map(([weekStart, items]) => ({
-      weekStart,
-      weekEnd: addUtcDays(weekStart, 6),
-      items: [...items.values()]
-        .sort((left, right) => left.sortOrder - right.sortOrder)
-        .map(toWeeklyVolumeItem)
-    }))
-  };
-}
-
 export function estimatedOneRepMaxKg(weightKg: string, reps: number): string {
   return (Number(weightKg) * (1 + reps / 30)).toFixed(2);
-}
-
-function utcWeekStart(date: Date): string {
-  const utcDate = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
-  const daysSinceMonday = (utcDate.getUTCDay() + 6) % 7;
-
-  utcDate.setUTCDate(utcDate.getUTCDate() - daysSinceMonday);
-
-  return utcDate.toISOString().slice(0, 10);
-}
-
-function addUtcDays(dateOnly: string, days: number): string {
-  const date = new Date(`${dateOnly}T00:00:00.000Z`);
-
-  date.setUTCDate(date.getUTCDate() + days);
-
-  return date.toISOString().slice(0, 10);
-}
-
-function toWeeklyVolumeItem(
-  item: WeeklyVolumeItem & { sortOrder: number }
-): WeeklyVolumeItem {
-  return {
-    muscleGroup: item.muscleGroup,
-    workingSets: item.workingSets
-  };
 }

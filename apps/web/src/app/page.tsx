@@ -90,7 +90,7 @@ function sectionHref(label: string): string | null {
   }
 
   if (label === "Progress" || label === "Volume") {
-    return "/analytics";
+    return label === "Progress" ? "/progress" : "/weekly-volume";
   }
 
   return null;

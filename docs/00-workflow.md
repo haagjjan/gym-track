@@ -6,7 +6,7 @@
 - Phase 8 is implemented for the current MVP API foundation: health, auth, workout session, exercise library, muscle group lookup, workout logging, set, and analytics routes exist.
 - Phase 9 has started with a minimal Next.js shell, the first auth UI slice, the first workout logging UI slice, workout history/detail UI, and analytics UI.
 - Phase 10 is implemented for the current foundation with unit tests, an API database integration flow, a Playwright web smoke flow, and GitHub Actions jobs that run project checks.
-- Phase 11 has started with an accepted deployment target ADR, Render Blueprint, deployment runbook, backup/restore checklist, monitoring checklist, and structured API logging. UI/analytics polish, CSV workout import/export, hosted production credentials, custom domains, and first tester launch execution are still future work.
+- Phase 11 has started with an accepted deployment target ADR, Render Blueprint, deployment runbook, backup/restore checklist, monitoring checklist, structured API logging, and Progress/Weekly Volume UI rework. CSV workout import/export, hosted production credentials, custom domains, and first tester launch execution are still future work.
 
 ## Phase 0 — Project Setup & Working Style
 
@@ -236,14 +236,13 @@ Run it online for a small set of testers.
 - A user can sign up and use the app remotely.
 
 ### Status
-- Started. ADR 0005 records Render Web Services plus Render PostgreSQL as the first small-batch deployment target. `render.yaml` defines the Render services/database, and `docs/deployment-runbook.md` records deployment, migration, backup, restore-test, and monitoring steps. Fastify/Pino structured logging is configured for API services. UI/analytics polish, CSV import/export, hosted credentials, custom domains, and the first tester launch remain.
+- Started. ADR 0005 records Render Web Services plus Render PostgreSQL as the first small-batch deployment target. `render.yaml` defines the Render services/database, and `docs/deployment-runbook.md` records deployment, migration, backup, restore-test, and monitoring steps. Fastify/Pino structured logging is configured for API services, and Progress/Weekly Volume screens are split for tester clarity. CSV import/export, hosted credentials, custom domains, and the first tester launch remain.
 
 ---
 
 ## Phase 12 — Iteration & v1 Improvements
 
 ### Likely next upgrades
-- UI and analytics rework before tester launch
 - Workout history import/export (CSV)
 - Better muscle attribution (secondary muscles + weighting)
 - Templates (saved workouts)

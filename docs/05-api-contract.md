@@ -836,6 +836,45 @@ Response `200`:
 
 ## Analytics Endpoints
 
+### `GET /api/v1/analytics/exercises`
+
+Returns exercises the current user has logged, sorted by most recently trained first. This supports the Progress exercise list and excludes exercises that have never appeared in the user's workout history.
+
+Response `200`:
+
+```json
+{
+  "data": {
+    "items": [
+      {
+        "id": "uuid",
+        "name": "Bench Press",
+        "primaryMuscleGroup": {
+          "id": "uuid",
+          "slug": "chest",
+          "name": "Chest"
+        },
+        "secondaryMuscleGroups": [
+          {
+            "id": "uuid",
+            "slug": "triceps",
+            "name": "Triceps"
+          }
+        ],
+        "lastDoneAt": "2026-05-15T10:00:00Z",
+        "totalSets": 24
+      }
+    ]
+  }
+}
+```
+
+Behavior:
+
+- User-scoped; another user's workout history is not visible.
+- Sorts by `lastDoneAt` descending.
+- Counts non-deleted sets from non-deleted workout data.
+
 ### `GET /api/v1/analytics/exercises/:exerciseId/progress`
 
 Returns raw set history for an exercise over a time range.
@@ -936,7 +975,21 @@ Response `200`:
               "slug": "chest",
               "name": "Chest"
             },
-            "workingSets": 12
+            "workingSets": 12,
+            "exercises": [
+              {
+                "id": "uuid",
+                "name": "Bench Press",
+                "workingSets": 8
+              }
+            ],
+            "recentSessions": [
+              {
+                "workoutId": "uuid",
+                "sessionDate": "2026-05-15T10:00:00Z",
+                "workingSets": 4
+              }
+            ]
           }
         ]
       }
@@ -949,6 +1002,7 @@ Behavior:
 
 - Counts working sets only.
 - Uses the exercise primary muscle group only.
+- Includes per-muscle exercise totals and recent contributing sessions for the Weekly Volume detail panel.
 - Excludes soft-deleted workouts, session exercises, and sets.
 
 ## Deferred Endpoints

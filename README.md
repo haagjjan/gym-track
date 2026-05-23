@@ -19,9 +19,9 @@ The repository is in the first implementation foundation phase. It contains the 
 - `apps/api` exposes authenticated exercise library list and create endpoints.
 - `apps/api` exposes authenticated seeded muscle group lookup for exercise creation.
 - `apps/api` exposes authenticated workout logging child endpoints for session exercises and sets.
-- `apps/api` exposes authenticated analytics endpoints for exercise progress, exercise summaries, and weekly muscle volume.
-- `apps/web` has signup, login, logout, authenticated home state, a first workout logging flow for starting/resuming workouts, picking or creating exercises, editing sets, reordering exercises, and ending workouts, plus workout history/detail and analytics screens.
-- UI/analytics polish, CSV workout import/export, hosted production credentials, custom domains, email verification, and password reset are not implemented yet.
+- `apps/api` exposes authenticated analytics endpoints for completed exercise progress navigation, exercise progress, exercise summaries, and weekly muscle volume.
+- `apps/web` has signup, login, logout, authenticated home state, a first workout logging flow for starting/resuming workouts, picking or creating exercises, editing sets, reordering exercises, and ending workouts, plus workout history/detail, Progress, and Weekly Volume screens.
+- CSV workout import/export, hosted production credentials, custom domains, email verification, and password reset are not implemented yet.
 
 ## Key Documents
 
@@ -54,11 +54,10 @@ Use `docs/repository-structure.md` when you need to understand where files belon
 
 ## Next Implementation Slices
 
-The remaining work is structured in `docs/08-next-implementation-plan.md`. The recommended next slice is UI and analytics rework.
+The remaining work is structured in `docs/08-next-implementation-plan.md`. The recommended next slice is CSV workout import/export.
 
 Remaining implementation blocks:
 
-- UI and analytics rework
 - CSV workout import/export
 - Small-batch launch execution
 
@@ -70,9 +69,6 @@ Remaining larger decisions:
 
 Planned pre-launch improvements:
 
-- Progress and Weekly Volume should become distinct app destinations instead of one combined analytics screen.
-- Progress should become an exercise-first view with a real weight/reps time-series chart.
-- Weekly Volume should become a muscle-map view where trained muscles are colored by weekly working-set volume.
 - Workout history import/export should use one canonical CSV format before supporting arbitrary legacy CSV layouts.
 
 ## Deploy To Render
@@ -232,7 +228,7 @@ http://localhost:3000/signup
 
 Create an account, refresh the home page, log out, then log in again from `/login`.
 
-After signing in, use the home page action to start or resume a workout. The workout logging page lets you add exercises, create a missing exercise with a seeded muscle group, add/edit/delete sets, reorder exercise blocks, and end the workout. Use the History tile or open `/workouts` to review past sessions and open workout detail. The current analytics UI is still combined under `/analytics`; the next UI rework plans separate Progress and Weekly Volume destinations.
+After signing in, use the home page action to start or resume a workout. The workout logging page lets you add exercises, create a missing exercise with a seeded muscle group, add/edit/delete sets, reorder exercise blocks, and end the workout. Use the History tile or open `/workouts` to review past sessions and open workout detail. Use Progress or open `/progress` for exercise trends, and use Volume or open `/weekly-volume` for weekly muscle volume.
 
 Stop local PostgreSQL with:
 

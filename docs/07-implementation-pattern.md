@@ -208,7 +208,7 @@ The analytics UI follows the same web feature-slice pattern:
 
 Browser code continues to call Next route handlers first so auth cookies stay same-origin and the API does not need CORS.
 
-Status: implemented for viewing exercise progress and weekly volume analytics.
+Status: implemented for the first combined analytics UI; superseded by the UI rework's separate Progress and Weekly Volume destinations.
 
 ## Quality, CI, And Deployment Readiness Slice
 
@@ -260,7 +260,7 @@ The UI rework should polish the existing app screens without introducing a full 
 - Prefer a real interactive 3D body map when it fits the slice; otherwise ship a clear 2D front/back muscle map first and keep the implementation ready to replace with 3D later.
 - Use `recharts` for conventional Progress charts. Use Three.js only if the Weekly Volume body map is implemented as a real 3D scene.
 
-Status: recommended after logging.
+Status: implemented for separate `/progress` and `/weekly-volume` destinations, completed-exercise progress navigation, `recharts` weight/reps progress charts, and a first 2D weekly muscle-map view.
 
 ## CSV Workout Import/Export Slice
 

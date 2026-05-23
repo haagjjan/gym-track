@@ -1,5 +1,6 @@
 import type {
   ApiErrorPayload,
+  ListCompletedExercisesPayload,
   ExerciseProgressPayload,
   ExerciseSummaryPayload,
   ListExercisesPayload,
@@ -30,6 +31,15 @@ export async function listExercises(
   signal?: AbortSignal
 ): Promise<ApiResult<ListExercisesPayload>> {
   return requestApi<ListExercisesPayload>("/api/exercises?limit=100&offset=0", withSignal(signal));
+}
+
+export async function listCompletedExercises(
+  signal?: AbortSignal
+): Promise<ApiResult<ListCompletedExercisesPayload>> {
+  return requestApi<ListCompletedExercisesPayload>(
+    "/api/analytics/exercises",
+    withSignal(signal)
+  );
 }
 
 export async function getExerciseProgress(

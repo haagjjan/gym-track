@@ -19,6 +19,18 @@ export async function registerAnalyticsRoutes(
   server: FastifyInstance,
   options: AnalyticsRouteOptions
 ): Promise<void> {
+  server.get("/api/v1/analytics/exercises", async (request, reply) => {
+    const user = await authenticate(request, reply, options);
+
+    if (!user) {
+      return;
+    }
+
+    const result = await options.analyticsService.listCompletedExercises(user.id);
+
+    return reply.send({ data: result });
+  });
+
   server.get("/api/v1/analytics/exercises/:exerciseId/progress", async (request, reply) => {
     const user = await authenticate(request, reply, options);
 

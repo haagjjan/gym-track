@@ -6,6 +6,7 @@ import type { AuthService, PublicUser } from "../auth/auth.service.js";
 import { registerAnalyticsRoutes } from "./analytics.routes.js";
 import type {
   AnalyticsService,
+  CompletedExerciseList,
   ExerciseProgress,
   ExerciseSummary,
   WeeklyVolume
@@ -26,6 +27,7 @@ const user: PublicUser = {
 };
 
 class FakeAnalyticsService implements AnalyticsService {
+  public listCall: { userId: string } | null = null;
   public progressCall:
     | { userId: string; exerciseId: string; input: ExerciseProgressQuery }
     | null = null;
@@ -33,6 +35,12 @@ class FakeAnalyticsService implements AnalyticsService {
     | { userId: string; exerciseId: string; input: ExerciseSummaryQuery }
     | null = null;
   public weeklyCall: { userId: string; input: WeeklyVolumeQuery } | null = null;
+
+  public async listCompletedExercises(userId: string): Promise<CompletedExerciseList> {
+    this.listCall = { userId };
+
+    return { items: [] };
+  }
 
   public async getExerciseProgress(
     userId: string,
@@ -110,6 +118,16 @@ describe("analytics routes", () => {
     assert.equal(response.statusCode, 401);
     assert.equal(response.json().error.code, "UNAUTHORIZED");
     assert.equal(service.progressCall, null);
+  });
+
+  it("lists completed exercises for progress navigation", async () => {
+    const service = new FakeAnalyticsService();
+    const server = await buildAnalyticsServer(service);
+    const response = await server.inject("/api/v1/analytics/exercises");
+
+    assert.equal(response.statusCode, 200);
+    assert.deepEqual(response.json(), { data: { items: [] } });
+    assert.equal(service.listCall?.userId, "user-1");
   });
 
   it("parses exercise progress query parameters", async () => {

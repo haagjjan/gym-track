@@ -16,6 +16,12 @@ export interface Exercise {
   id: string;
   name: string;
   primaryMuscleGroup: MuscleGroup;
+  secondaryMuscleGroups: MuscleGroup[];
+}
+
+export interface CompletedExercise extends Exercise {
+  lastDoneAt: string;
+  totalSets: number;
 }
 
 export interface ListExercisesPayload {
@@ -25,6 +31,10 @@ export interface ListExercisesPayload {
     offset: number;
     total: number;
   };
+}
+
+export interface ListCompletedExercisesPayload {
+  items: CompletedExercise[];
 }
 
 export interface ExerciseProgressItem {
@@ -69,6 +79,16 @@ export interface WeeklyVolumePayload {
     items: {
       muscleGroup: MuscleGroup;
       workingSets: number;
+      exercises: {
+        id: string;
+        name: string;
+        workingSets: number;
+      }[];
+      recentSessions: {
+        workoutId: string;
+        sessionDate: string;
+        workingSets: number;
+      }[];
     }[];
   }[];
 }

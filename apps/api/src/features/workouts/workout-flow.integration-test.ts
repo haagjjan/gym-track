@@ -71,6 +71,14 @@ interface ExerciseSummaryPayload {
   } | null;
 }
 
+interface CompletedExercisesPayload {
+  items: {
+    id: string;
+    lastDoneAt: string;
+    totalSets: number;
+  }[];
+}
+
 describe("workout API database flow", { skip: databaseUrl ? false : "INTEGRATION_DATABASE_URL is not set" }, () => {
   const db = createDatabase(databaseUrl ?? "postgresql://unused");
 
@@ -112,6 +120,11 @@ describe("workout API database flow", { skip: databaseUrl ? false : "INTEGRATION
       assert.equal(summary.totalReps, 6);
       assert.equal(summary.totalVolumeKg, "540.00");
       assert.equal(summary.bestTopSet?.estimatedOneRepMaxKg, "108.00");
+
+      const completedExercises = await listCompletedExercises(server, firstUser.cookie);
+      assert.equal(completedExercises.items[0]?.id, exerciseId);
+      assert.equal(completedExercises.items[0]?.totalSets, 1);
+      assert.match(completedExercises.items[0]?.lastDoneAt ?? "", /^\d{4}-\d{2}-\d{2}T/);
 
       const secondUser = await signup(server, `${tag}_other`);
       const hidden = await server.inject({
@@ -318,6 +331,21 @@ async function getExerciseSummary(
   assert.equal(response.statusCode, 200);
 
   return readData<ExerciseSummaryPayload>(response);
+}
+
+async function listCompletedExercises(
+  server: FastifyInstance,
+  cookie: string
+): Promise<CompletedExercisesPayload> {
+  const response = await server.inject({
+    method: "GET",
+    url: "/api/v1/analytics/exercises",
+    cookies: authCookies(cookie)
+  });
+
+  assert.equal(response.statusCode, 200);
+
+  return readData<CompletedExercisesPayload>(response);
 }
 
 function authCookies(cookie: string): Record<string, string> {
