@@ -21,7 +21,7 @@ The repository is in the first implementation foundation phase. It contains the 
 - `apps/api` exposes authenticated workout logging child endpoints for session exercises and sets.
 - `apps/api` exposes authenticated analytics endpoints for exercise progress, exercise summaries, and weekly muscle volume.
 - `apps/web` has signup, login, logout, authenticated home state, a first workout logging flow for starting/resuming workouts, picking or creating exercises, editing sets, reordering exercises, and ending workouts, plus workout history/detail and analytics screens.
-- Hosted production credentials, custom domains, email verification, and password reset are not implemented yet.
+- Structured logging configuration, UI/analytics polish, CSV workout import/export, hosted production credentials, custom domains, email verification, and password reset are not implemented yet.
 
 ## Key Documents
 
@@ -54,10 +54,13 @@ Use `docs/repository-structure.md` when you need to understand where files belon
 
 ## Next Implementation Slices
 
-The remaining work is structured in `docs/08-next-implementation-plan.md`. The recommended next slice is small-batch launch execution.
+The remaining work is structured in `docs/08-next-implementation-plan.md`. The recommended next slice is logging infrastructure.
 
 Remaining implementation blocks:
 
+- Logging infrastructure
+- UI and analytics rework
+- CSV workout import/export
 - Small-batch launch execution
 
 Remaining larger decisions:
@@ -65,6 +68,12 @@ Remaining larger decisions:
 - custom domain strategy
 - monitoring alert thresholds beyond the small-batch checklist
 - backup retention and restore-test cadence after the first tester batch
+
+Planned pre-launch improvements:
+
+- API logs should use Fastify/Pino structured logging with safe redaction, local pretty output, and production JSON logs.
+- Analytics should move from the current progress bar list to a real time-series chart, with focused polish across the existing app UI.
+- Workout history import/export should use one canonical CSV format before supporting arbitrary legacy CSV layouts.
 
 ## Deploy To Render
 

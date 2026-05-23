@@ -233,3 +233,40 @@ The first deployment configuration follows ADR 0005 and keeps hosted setup expli
 - `docs/deployment-runbook.md` records the first deploy checklist, production environment values, release order, backup/restore checks, and monitoring review.
 
 Status: implemented for Render configuration and small-batch operations documentation.
+
+## Logging Infrastructure Slice
+
+The logging slice should configure Fastify's existing Pino logger instead of adding a separate logger stack:
+
+- `LOG_LEVEL` controls runtime verbosity and defaults to `info`.
+- Local development uses `pino-pretty`; production uses structured JSON logs.
+- Test logging should be disabled or reduced.
+- Sensitive values such as cookies, authorization headers, and session tokens must be redacted.
+- Route code should use request-scoped logs only where the event helps debug auth, workout, analytics, import/export, or deployment issues.
+
+Status: planned before hosted launch execution.
+
+## UI And Analytics Rework Slice
+
+The UI rework should polish the existing app screens without introducing a full design system:
+
+- Keep feature UI in the existing auth, workouts, and analytics feature folders unless reuse is real.
+- Improve logged-in Home, workout logging/detail, workout history, and analytics flows.
+- Replace the progress bar list with a `recharts` time-series chart.
+- Use best working set per workout session as the default chart mode, while keeping the all-sets table.
+- Keep weekly volume readable as a chart/table pair.
+
+Status: planned after logging.
+
+## CSV Workout Import/Export Slice
+
+The CSV slice should add one canonical workout-history CSV format:
+
+- API endpoints are `GET /api/v1/workouts/export.csv` and `POST /api/v1/workouts/import.csv`.
+- Web route handlers proxy those endpoints through the existing same-origin pattern.
+- Use `papaparse` for CSV parsing and unparsing.
+- Validate the whole file before writing and reject malformed files with row-level errors.
+- Create or reuse global exercises by case-insensitive name and require known primary muscle group slugs.
+- Do not partially import on validation failure.
+
+Status: planned after UI and analytics rework.

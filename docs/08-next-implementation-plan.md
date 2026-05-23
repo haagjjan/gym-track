@@ -27,15 +27,15 @@ Implemented:
 
 Not implemented:
 
-- Hosted production credentials, custom domains, first tester launch execution, email verification, and password reset.
+- Structured logging configuration, UI/analytics polish, CSV workout import/export, hosted production credentials, custom domains, first tester launch execution, email verification, and password reset.
 
 ## Recommended Next Slice
 
-Start with **Small-Batch Launch Execution**.
+Start with **Logging Infrastructure**.
 
-Reason: the repo now has core MVP flows, quality gates, and Render configuration. The next gap is executing the first hosted launch outside the repo and recording any required follow-up work.
+Reason: the repo now has core MVP flows, quality gates, and Render configuration, but the app should have cleaner request logs before tester launch and follow-up debugging.
 
-Use ADR 0005 and `docs/deployment-runbook.md` as the deployment source of truth.
+After logging, complete UI/analytics polish and CSV workout import/export before resuming hosted launch execution.
 
 ## Implementation Blocks
 
@@ -257,7 +257,7 @@ Rules:
 
 ### 9. Small-Batch Launch Execution
 
-Status: recommended next slice.
+Status: deferred until logging, UI/analytics polish, and CSV import/export are implemented.
 
 Goal: perform the first hosted launch using the checked-in Render configuration and document any launch-specific follow-ups.
 
@@ -274,6 +274,118 @@ Rules:
 - Do not commit hosted credentials, production database URLs, tester personal data, or backup artifacts.
 - Do not change Render service names in `render.yaml` after launch unless references are updated together and the migration is documented.
 - Do not invite testers until the restore test and health checks pass.
+
+### 10. Logging Infrastructure
+
+Status: recommended next slice.
+
+Goal: make API logs cleaner, safer, and more useful before hosted tester debugging starts.
+
+Implement:
+
+- Use Fastify's existing Pino logger foundation; do not introduce a separate logger stack.
+- Add structured logger configuration with:
+  - `LOG_LEVEL`, default `info`.
+  - local pretty logging via `pino-pretty`.
+  - production JSON logs.
+  - test logging disabled or reduced.
+  - redaction for cookies, authorization headers, and session tokens.
+- Replace ad hoc server logging patterns with request-scoped structured logs where useful.
+- Document logging behavior in `README.md`, `ARCHITECTURE.md`, and `docs/07-implementation-pattern.md`.
+
+Tests/checks:
+
+- Unit-test environment parsing for logger config.
+- Add a route/server test confirming redacted request logging config is wired.
+- Run `pnpm check` and `git diff --check`.
+
+Non-goals:
+
+- Do not add external log shipping, observability SaaS, metrics, or tracing in this slice.
+
+### 11. UI And Analytics Rework
+
+Status: planned after logging.
+
+Goal: make the app feel ready for testers and make progress analytics visually useful.
+
+Implement:
+
+- Rework the existing app UI without adding a full design system or broad UI framework.
+- Focus on logged-in app screens: Home, workout logging/detail, workout history, and analytics.
+- Improve navigation, spacing, hierarchy, mobile behavior, form ergonomics, empty states, and error states.
+- Replace the current progress bar list with a real time-series chart.
+- Add `recharts` for analytics charts:
+  - exercise progress line chart over time.
+  - selectable metric: estimated 1RM, weight, reps.
+  - default chart mode: best working set per workout session.
+  - keep table view for all sets.
+- Keep weekly volume as a readable chart/table pair.
+
+Tests/checks:
+
+- Update Playwright smoke coverage for core navigation and analytics rendering.
+- Run `pnpm check`, `pnpm smoke:web`, and `git diff --check`.
+- Browser-check analytics on desktop and mobile viewports.
+
+Non-goals:
+
+- Do not rebuild the whole app around a new UI framework.
+- Do not add stored aggregate analytics tables.
+
+### 12. CSV Workout Import/Export
+
+Status: planned after UI and analytics rework.
+
+Goal: let users import old workout history and export their logged workout data using one canonical CSV format.
+
+Implement:
+
+- Add authenticated CSV export/import for workout history.
+- Add API endpoints:
+  - `GET /api/v1/workouts/export.csv`
+  - `POST /api/v1/workouts/import.csv`
+- Add same-origin web proxy routes for both endpoints.
+- Use `papaparse` for CSV parsing and unparsing.
+- Document the canonical CSV columns:
+  - `workout_started_at`
+  - `workout_ended_at`
+  - `workout_type`
+  - `workout_title`
+  - `workout_notes`
+  - `exercise_name`
+  - `primary_muscle_group_slug`
+  - `equipment`
+  - `exercise_type`
+  - `exercise_position`
+  - `set_order`
+  - `set_type`
+  - `weight_kg`
+  - `reps`
+  - `rir`
+  - `rest_time_seconds`
+  - `set_note`
+
+Import rules:
+
+- Parse and validate the whole file before writing.
+- Create or reuse global exercises by case-insensitive name.
+- Require known `primary_muscle_group_slug`.
+- Create closed workout sessions from CSV rows.
+- Reject malformed files with row-level validation errors.
+- Do not partially import on validation failure.
+
+Tests/checks:
+
+- Add API unit tests for CSV validation and grouping.
+- Add API database integration test for import then export round trip.
+- Add web smoke test for downloading export/template and uploading import.
+- Run `pnpm check`, `pnpm test:integration`, `pnpm smoke:web`, and `git diff --check`.
+
+Non-goals:
+
+- Do not support arbitrary legacy CSV shapes in the first CSV slice.
+- Do not add database schema changes unless implementation proves they are required.
 
 ## Fresh Session Prompt
 
@@ -297,9 +409,9 @@ First read:
 - docs/07-implementation-pattern.md
 - docs/08-next-implementation-plan.md
 
-Implement the next recommended slice only: Small-Batch Launch Execution.
+Implement the next recommended slice only: Logging Infrastructure.
 
-Follow ADR 0005 and `docs/deployment-runbook.md`. Do not commit hosted credentials, production database URLs, tester personal data, or backup artifacts.
+Use Fastify's existing Pino logger foundation. Do not add external log shipping, metrics, tracing, UI rework, CSV import/export, or hosted launch execution in this slice.
 
 Before handoff, run relevant checks, confirm `git diff --check`, keep the diff focused, commit, and push.
 ```

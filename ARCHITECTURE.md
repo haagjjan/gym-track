@@ -53,6 +53,12 @@ ADR 0005 records the first deployment target:
 - API pre-deploy migrations using `node-pg-migrate`
 - Secure production environment variables, managed backups, and basic health/log monitoring before inviting testers
 
+Near-term pre-launch implementation should improve operational clarity and tester usability before hosted launch execution:
+
+- API logging should stay on Fastify's Pino foundation with environment-specific configuration and safe redaction.
+- UI and analytics polish should improve the existing app screens without introducing a full design system or broad UI framework.
+- CSV workout import/export should use one canonical format first, with arbitrary legacy CSV mapping deferred until there is real need.
+
 ## Architecture Principles
 
 - Build from user flows and query needs, not from speculative infrastructure.
