@@ -39,6 +39,7 @@ services:
     environment:
       API_HOST: 0.0.0.0
       API_PORT: 4000
+      LOG_LEVEL: ${LOG_LEVEL:-info}
       AUTH_COOKIE_NAME: ${AUTH_COOKIE_NAME:-gym_progress_session}
       AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
       AUTH_SESSION_TTL_DAYS: ${AUTH_SESSION_TTL_DAYS:-30}

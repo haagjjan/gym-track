@@ -21,6 +21,7 @@ import { createWorkoutLoggingService } from "./features/workouts/workout-logging
 import { createWorkoutRepository } from "./features/workouts/workout.repository.js";
 import { registerWorkoutRoutes } from "./features/workouts/workout.routes.js";
 import { createWorkoutService } from "./features/workouts/workout.service.js";
+import type { ApiLogger } from "./shared/logger.js";
 
 export interface ServerAuthConfig {
   cookieName: string;
@@ -30,10 +31,11 @@ export interface ServerAuthConfig {
 
 export async function buildServer(
   db: Kysely<AppDatabase>,
-  authConfig: ServerAuthConfig
+  authConfig: ServerAuthConfig,
+  logger: ApiLogger = false
 ): Promise<FastifyInstance> {
   const server = fastify({
-    logger: true
+    logger
   });
   const databaseHealth = createDatabaseHealthCheck(db);
   const authService = createAuthService({

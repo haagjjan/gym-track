@@ -77,7 +77,7 @@ apps/
 - `apps/api/tsconfig.build.json` owns the compiled API runtime build used by Docker.
 - `apps/api/src/features/<feature>` owns each API vertical slice. Current features are `analytics`, `auth`, `exercises`, `health`, and `workouts`.
 - `apps/api/src/db` owns database connection and database health helpers.
-- `apps/api/src/shared` owns API-only shared boundaries such as environment validation.
+- `apps/api/src/shared` owns API-only shared boundaries such as environment validation and logger configuration.
 - `apps/web` owns the Next.js App Router app plus the first auth, workout logging, workout history/detail, analytics UI slices, and Playwright smoke tests.
 - `apps/web/e2e` owns browser smoke tests for core UI flows that run against the local app stack.
 - `apps/web/src/features/analytics` owns the analytics UI, browser analytics API helpers, and same-origin analytics API proxy helpers.

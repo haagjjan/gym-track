@@ -21,6 +21,8 @@ services:
         value: 0.0.0.0
       - key: API_PORT
         value: "10000"
+      - key: LOG_LEVEL
+        value: info
       - key: AUTH_COOKIE_NAME
         value: gym_progress_session
       - key: AUTH_COOKIE_SECURE

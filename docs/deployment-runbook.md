@@ -59,6 +59,7 @@ The Blueprint manages these non-secret values:
 | API | `PORT` | `10000` |
 | API | `API_HOST` | `0.0.0.0` |
 | API | `API_PORT` | `10000` |
+| API | `LOG_LEVEL` | `info` |
 | API | `AUTH_COOKIE_NAME` | `gym_progress_session` |
 | API | `AUTH_COOKIE_SECURE` | `true` |
 | API | `AUTH_SESSION_TTL_DAYS` | `30` |

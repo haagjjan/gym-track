@@ -13,6 +13,7 @@ describe("readEnv", () => {
       AUTH_COOKIE_SECURE: false,
       AUTH_SESSION_TTL_DAYS: 30,
       DATABASE_URL: databaseUrl,
+      LOG_LEVEL: "info",
       NODE_ENV: "development"
     });
   });
@@ -46,6 +47,24 @@ describe("readEnv", () => {
     });
 
     assert.equal(env.AUTH_COOKIE_SECURE, true);
+  });
+
+  it("parses LOG_LEVEL", () => {
+    const env = readEnv({
+      DATABASE_URL: databaseUrl,
+      LOG_LEVEL: "debug"
+    });
+
+    assert.equal(env.LOG_LEVEL, "debug");
+  });
+
+  it("rejects unsupported LOG_LEVEL values", () => {
+    assert.throws(() =>
+      readEnv({
+        DATABASE_URL: databaseUrl,
+        LOG_LEVEL: "verbose"
+      })
+    );
   });
 
   it("rejects missing DATABASE_URL", () => {

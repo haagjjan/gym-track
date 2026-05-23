@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const logLevelSchema = z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]);
+
 const rawEnvSchema = z.object({
   API_HOST: z.string().min(1).default("0.0.0.0"),
   API_PORT: z.coerce.number().int().positive().default(4000),
@@ -7,6 +9,7 @@ const rawEnvSchema = z.object({
   AUTH_COOKIE_SECURE: z.enum(["true", "false"]).optional(),
   AUTH_SESSION_TTL_DAYS: z.coerce.number().int().positive().default(30),
   DATABASE_URL: z.string().url(),
+  LOG_LEVEL: logLevelSchema.default("info"),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development")
 });
 

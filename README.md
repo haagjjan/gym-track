@@ -2,7 +2,7 @@
 
 Gym Progress Tracker is a planned web app for logging strength workouts, tracking exercise progress, and reviewing weekly training volume.
 
-The repository is in the first implementation foundation phase. It contains the project documentation, workflow rules, architecture decisions, pnpm workspace metadata, shared TypeScript tooling, local PostgreSQL setup, a production-like Docker Compose local runner, initial PostgreSQL migrations, a first runnable API/web slice, API auth foundation, workout session API foundation, exercise library API foundation, workout logging API foundation, analytics API foundation, the first workout logging UI, workout history/detail UI, analytics UI, full project CI checks, API database integration coverage, web smoke coverage, a recorded deployment target, Render deployment configuration, and a small-batch operations runbook.
+The repository is in the first implementation foundation phase. It contains the project documentation, workflow rules, architecture decisions, pnpm workspace metadata, shared TypeScript tooling, local PostgreSQL setup, a production-like Docker Compose local runner, initial PostgreSQL migrations, a first runnable API/web slice, API auth foundation, workout session API foundation, exercise library API foundation, workout logging API foundation, analytics API foundation, the first workout logging UI, workout history/detail UI, analytics UI, full project CI checks, API database integration coverage, web smoke coverage, a recorded deployment target, Render deployment configuration, a small-batch operations runbook, and structured API logging configuration.
 
 ## Current Status
 
@@ -21,7 +21,7 @@ The repository is in the first implementation foundation phase. It contains the 
 - `apps/api` exposes authenticated workout logging child endpoints for session exercises and sets.
 - `apps/api` exposes authenticated analytics endpoints for exercise progress, exercise summaries, and weekly muscle volume.
 - `apps/web` has signup, login, logout, authenticated home state, a first workout logging flow for starting/resuming workouts, picking or creating exercises, editing sets, reordering exercises, and ending workouts, plus workout history/detail and analytics screens.
-- Structured logging configuration, UI/analytics polish, CSV workout import/export, hosted production credentials, custom domains, email verification, and password reset are not implemented yet.
+- UI/analytics polish, CSV workout import/export, hosted production credentials, custom domains, email verification, and password reset are not implemented yet.
 
 ## Key Documents
 
@@ -54,11 +54,10 @@ Use `docs/repository-structure.md` when you need to understand where files belon
 
 ## Next Implementation Slices
 
-The remaining work is structured in `docs/08-next-implementation-plan.md`. The recommended next slice is logging infrastructure.
+The remaining work is structured in `docs/08-next-implementation-plan.md`. The recommended next slice is UI and analytics rework.
 
 Remaining implementation blocks:
 
-- Logging infrastructure
 - UI and analytics rework
 - CSV workout import/export
 - Small-batch launch execution
@@ -71,7 +70,6 @@ Remaining larger decisions:
 
 Planned pre-launch improvements:
 
-- API logs should use Fastify/Pino structured logging with safe redaction, local pretty output, and production JSON logs.
 - Analytics should move from the current progress bar list to a real time-series chart, with focused polish across the existing app UI.
 - Workout history import/export should use one canonical CSV format before supporting arbitrary legacy CSV layouts.
 
@@ -160,6 +158,8 @@ Start the API in development mode with:
 ```sh
 pnpm dev:api
 ```
+
+API logging uses Fastify's Pino logger. `LOG_LEVEL` defaults to `info`; local development uses `pino-pretty`, production emits structured JSON logs, and test server instances keep logging disabled unless a test opts in. Cookies, authorization headers, and session token fields are redacted from request-scoped logs.
 
 With the API running, check auth manually with:
 

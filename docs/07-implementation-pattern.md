@@ -236,7 +236,7 @@ Status: implemented for Render configuration and small-batch operations document
 
 ## Logging Infrastructure Slice
 
-The logging slice should configure Fastify's existing Pino logger instead of adding a separate logger stack:
+The logging slice configures Fastify's existing Pino logger instead of adding a separate logger stack:
 
 - `LOG_LEVEL` controls runtime verbosity and defaults to `info`.
 - Local development uses `pino-pretty`; production uses structured JSON logs.
@@ -244,7 +244,7 @@ The logging slice should configure Fastify's existing Pino logger instead of add
 - Sensitive values such as cookies, authorization headers, and session tokens must be redacted.
 - Route code should use request-scoped logs only where the event helps debug auth, workout, analytics, import/export, or deployment issues.
 
-Status: planned before hosted launch execution.
+Status: implemented for API startup logging configuration, safe redaction, local pretty logs, production JSON logs, and quiet default tests.
 
 ## UI And Analytics Rework Slice
 
@@ -256,7 +256,7 @@ The UI rework should polish the existing app screens without introducing a full 
 - Use best working set per workout session as the default chart mode, while keeping the all-sets table.
 - Keep weekly volume readable as a chart/table pair.
 
-Status: planned after logging.
+Status: recommended after logging.
 
 ## CSV Workout Import/Export Slice
 

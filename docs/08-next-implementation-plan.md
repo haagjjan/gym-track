@@ -23,19 +23,20 @@ Implemented:
 - Analytics API And UI: exercise progress endpoint and view, exercise summary endpoint and view, and weekly muscle volume endpoint and view.
 - Quality, CI, And Deployment Readiness: GitHub Actions runs real project checks, API database integration tests, Playwright web smoke tests, production auth cookies default secure, and ADR 0005 records the deployment target.
 - Deployment Configuration And Small-Batch Operations: Render Blueprint, Render API/web Dockerfiles, API pre-deploy migrations, production environment checklist, backup/restore checklist, and monitoring checklist.
+- Logging Infrastructure: Fastify/Pino logger configuration, `LOG_LEVEL`, local pretty logs, production JSON logs, test log suppression, and redaction for cookies, authorization headers, and session token fields.
 - Repository structure documentation and implementation pattern documentation.
 
 Not implemented:
 
-- Structured logging configuration, UI/analytics polish, CSV workout import/export, hosted production credentials, custom domains, first tester launch execution, email verification, and password reset.
+- UI/analytics polish, CSV workout import/export, hosted production credentials, custom domains, first tester launch execution, email verification, and password reset.
 
 ## Recommended Next Slice
 
-Start with **Logging Infrastructure**.
+Start with **UI And Analytics Rework**.
 
-Reason: the repo now has core MVP flows, quality gates, and Render configuration, but the app should have cleaner request logs before tester launch and follow-up debugging.
+Reason: the repo now has core MVP flows, quality gates, Render configuration, and safer API logs, but the app should feel clearer for testers and show progress analytics in a real chart before hosted launch execution.
 
-After logging, complete UI/analytics polish and CSV workout import/export before resuming hosted launch execution.
+After UI/analytics polish, complete CSV workout import/export before resuming hosted launch execution.
 
 ## Implementation Blocks
 
@@ -257,7 +258,7 @@ Rules:
 
 ### 9. Small-Batch Launch Execution
 
-Status: deferred until logging, UI/analytics polish, and CSV import/export are implemented.
+Status: deferred until UI/analytics polish and CSV import/export are implemented.
 
 Goal: perform the first hosted launch using the checked-in Render configuration and document any launch-specific follow-ups.
 
@@ -277,7 +278,7 @@ Rules:
 
 ### 10. Logging Infrastructure
 
-Status: recommended next slice.
+Status: implemented.
 
 Goal: make API logs cleaner, safer, and more useful before hosted tester debugging starts.
 
@@ -305,7 +306,7 @@ Non-goals:
 
 ### 11. UI And Analytics Rework
 
-Status: planned after logging.
+Status: recommended next slice.
 
 Goal: make the app feel ready for testers and make progress analytics visually useful.
 
@@ -399,7 +400,7 @@ Non-goals:
 Use this prompt when starting the next implementation session:
 
 ```md
-We are continuing the Gym Progress Tracker after the Deployment Configuration And Small-Batch Operations slice.
+We are continuing the Gym Progress Tracker after the Logging Infrastructure slice.
 
 First read:
 - AGENTS.md
@@ -416,9 +417,9 @@ First read:
 - docs/07-implementation-pattern.md
 - docs/08-next-implementation-plan.md
 
-Implement the next recommended slice only: Logging Infrastructure.
+Implement the next recommended slice only: UI And Analytics Rework.
 
-Use Fastify's existing Pino logger foundation. Do not add external log shipping, metrics, tracing, UI rework, CSV import/export, or hosted launch execution in this slice.
+Do not add CSV import/export, hosted launch execution, monitoring infrastructure, external observability services, schema changes, or a broad UI framework in this slice.
 
 Before handoff, run relevant checks, confirm `git diff --check`, keep the diff focused, commit, and push.
 ```
