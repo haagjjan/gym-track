@@ -239,7 +239,6 @@
     #ffffff;
   border: 1px solid var(--line);
   border-radius: 8px;
-  min-height: 420px;
   overflow: hidden;
 }
 
@@ -249,40 +248,50 @@
   width: 100%;
 }
 
-.bodyOutline ellipse,
-.bodyOutline path {
-  fill: none;
-  stroke: #87928b;
+.bodyOutline {
+  fill: #fbfaf5;
+  pointer-events: none;
+  stroke: #8b948e;
+  stroke-linejoin: round;
   stroke-width: 2;
 }
 
-.bodyOutline text {
+.bodyFigureLabel {
   fill: var(--muted);
   font-size: 14px;
   font-weight: 800;
   text-anchor: middle;
 }
 
-.muscleRegion {
+.muscleRegionGroup {
   cursor: pointer;
-  stroke: #6f7b75;
-  stroke-width: 1.4;
+  outline: none;
+  pointer-events: bounding-box;
 }
 
-.muscleRegion:hover,
-.muscleRegion:focus,
-.muscleRegion[data-selected="true"] {
-  outline: none;
+.muscleRegion {
+  stroke: #6f7b75;
+  stroke-linejoin: round;
+  stroke-width: 1.4;
+  transition:
+    filter 140ms ease,
+    stroke-width 140ms ease;
+}
+
+.muscleRegionGroup:hover .muscleRegion,
+.muscleRegionGroup:focus-visible .muscleRegion,
+.muscleRegionGroup[data-selected="true"] .muscleRegion {
+  filter: saturate(1.2);
   stroke: var(--ink);
   stroke-width: 3;
 }
 
-.bodyMapLabel {
-  fill: #18211f;
-  font-size: 11px;
-  font-weight: 800;
+.anatomyLine {
+  fill: none;
   pointer-events: none;
-  text-anchor: middle;
+  stroke: rgba(62, 72, 68, 0.52);
+  stroke-linecap: round;
+  stroke-width: 1.2;
 }
 
 .muscleStats {
@@ -348,4 +357,5 @@
   .analyticsMetrics {
     grid-template-columns: 1fr;
   }
+
 }
