@@ -251,10 +251,14 @@ Status: implemented for API startup logging configuration, safe redaction, local
 The UI rework should polish the existing app screens without introducing a full design system:
 
 - Keep feature UI in the existing auth, workouts, and analytics feature folders unless reuse is real.
-- Improve logged-in Home, workout logging/detail, workout history, and analytics flows.
-- Replace the progress bar list with a `recharts` time-series chart.
-- Use best working set per workout session as the default chart mode, while keeping the all-sets table.
-- Keep weekly volume readable as a chart/table pair.
+- Improve logged-in Home, workout logging/detail, workout history, Progress, and Weekly Volume flows.
+- Treat Progress and Weekly Volume as distinct app destinations rather than one mixed analytics page; target `/progress` and `/weekly-volume` for the rework unless implementation discovers a stronger existing route constraint.
+- Progress is exercise-first: start with completed exercises, support last-done and muscle-group filtering, then open a selected exercise into a time-series view.
+- Progress charts use date on the x axis and both weight and reps on the y axis: weight as a solid line, reps as a dotted non-continuous line that restarts or changes color when weight changes.
+- Progress supports 1 week, 2 weeks, 4 weeks, 3 months, 1 year, and all-entry windows, with 2 weeks as the default.
+- Weekly Volume is muscle-map-first: show an anatomical body with separated muscles, color trained muscles from light yellow through red to deep violet as weekly working sets increase, and show selected-muscle stats next to the figure.
+- Prefer a real interactive 3D body map when it fits the slice; otherwise ship a clear 2D front/back muscle map first and keep the implementation ready to replace with 3D later.
+- Use `recharts` for conventional Progress charts. Use Three.js only if the Weekly Volume body map is implemented as a real 3D scene.
 
 Status: recommended after logging.
 

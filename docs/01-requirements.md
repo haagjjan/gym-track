@@ -434,16 +434,21 @@ not good success metrics
 
 - **Goal:** User views logged sets for an exercise over a time range  
 - **Actor:** Logged-in user  
-- **Trigger:** User opens **PROGRESS** and selects exercise  
+- **Trigger:** User opens **PROGRESS**
 - **Preconditions:**
   - User is logged in
 
 **Main success path**
 1. User clicks **PROGRESS**
-2. User selects an exercise (search/picker)
-3. User selects time range (default: last 30 days)
-4. System loads sets within range
-5. System displays sets chronologically or grouped by session
+2. System shows exercises the user has actually logged, sorted by last done newest first
+3. User optionally filters the list by muscle group
+4. When filtering by muscle group, system starts with collapsed muscle-group sections
+5. User expands a muscle group
+6. System lists primary-muscle exercises first, then secondary-muscle exercises
+7. User selects an exercise
+8. User selects time range (default: 2 weeks)
+9. System loads sets within range
+10. System displays sets chronologically or grouped by session
 
 **Result / Postconditions**
 - User sees full set history in selected period
@@ -454,6 +459,7 @@ not good success metrics
 
 **Notes / Decisions**
 - Recommended: toggle “include warmups” (default off)
+- Progress should be visually and navigationally distinct from Weekly Volume.
 
 
 ### UF-41 — View Exercise Progress (Chart View)
@@ -467,13 +473,14 @@ not good success metrics
 **Main success path**
 1. User clicks **CHART**
 2. System renders graphs:
-   - X - Axis Time
-   - Y - Axis Reps & Weigth
-   - Show two graphs 
-    - Time x Reps
-    - Time x Weight
-   - optional: One Rep Max
-3. User toggles “all sets” vs “best set per session” (optional MVP)
+   - X axis is date
+   - Y axis shows weight and reps
+   - Weight is a solid line
+   - Reps are a dotted, non-continuous line
+   - When weight changes, the reps line jumps or restarts and changes color
+3. User scrolls left to inspect older entries
+4. System prevents scrolling earlier than the first logged entry for the exercise
+5. User switches time windows: 1 week, 2 weeks, 4 weeks, 3 months, 1 year, or all entries
 
 **Result / Postconditions**
 - User sees a clear visual trend for the exercise
@@ -483,7 +490,8 @@ not good success metrics
 - API/network error → **FAILED TO LOAD CHART DATA** + retry
 
 **Notes / Decisions**
-- MVP decision: choose default chart mode (all working sets OR best-set-per-session)
+- Default time window is 2 weeks.
+- Keep all-set table/history available near the chart.
 
 
 ### UF-50 — View Weekly Volume per Muscle Group
@@ -496,10 +504,12 @@ not good success metrics
 
 **Main success path**
 1. User clicks **WEEKLY VOLUME**
-2. System shows current week totals (Mon–Sun)
-3. User selects certain muscle groups to display (multi-select) or all muscle groups
-4. System adds all working sets per muscle group from exercise metadata
-5. System displays totals (table and/or simple chart)
+2. System shows an anatomical body figure with separated muscles
+3. System colors muscles trained in the selected week
+4. Color intensity increases with weekly working-set count: light yellow, then red, then deep violet
+5. User clicks a muscle
+6. System shows the selected muscle's weekly volume stats beside the body figure
+7. Stats include weekly working sets, related exercises, and recent contributing sessions
 
 **Result / Postconditions**
 - User can see weekly working-set totals per selected muscle groups
@@ -512,6 +522,8 @@ not good success metrics
 **Notes / Decisions**
 - Recommended: “weekly” = ISO week (Mon–Sun)
 - Recommended: count only **working sets**, exclude warmups
+- Weekly Volume should be visually and navigationally distinct from Progress.
+- Prefer an interactive 3D body map if feasible; a clear 2D front/back body map is acceptable for the first pass.
 
 
 ### UF-60 — Log Out
@@ -574,11 +586,17 @@ not good success metrics
 - **FR-20:** The user shall be able to view progress for a specified exercise over a selected time range.
 - **FR-21:** The user shall be able to view all sets (with reps/weight/RIR/type) for that exercise in the selected time range.
 - **FR-22:** The user shall be able to view a chart for exercise progress (weight/reps; optional RIR/estimated 1RM).
+- **FR-23:** The progress view shall start from exercises the user has logged, sorted by last done by default.
+- **FR-24:** The progress exercise list shall be filterable by muscle group, with primary-muscle exercises listed before secondary-muscle exercises.
+- **FR-25:** The progress chart shall support 1 week, 2 weeks, 4 weeks, 3 months, 1 year, and all-entry windows, defaulting to 2 weeks.
 
 ### Weekly volume
 - **FR-30:** The user shall be able to view weekly working-set counts per muscle group.
 - **FR-31:** The user shall be able to view weekly working-set counts per exercise (optional: within muscle group view).
 - **FR-32:** The user shall be able to filter/select which muscle groups are displayed.
+- **FR-33:** The weekly volume view shall show an anatomical body visualization with separated muscles.
+- **FR-34:** The weekly volume body visualization shall color trained muscles from light yellow through red to deep violet as weekly working-set volume increases.
+- **FR-35:** The user shall be able to select a muscle and view its weekly volume details beside the body visualization.
 
 
 ## 9. Acceptance Criteria (sample set)
@@ -601,12 +619,12 @@ not good success metrics
 ### AC-04 Progress chart
 - Given I have multiple logged sets for an exercise across dates  
 - When I open the chart view  
-- Then reps and weight are plotted over time  
+- Then weight is plotted as a solid line and reps are plotted as a dotted non-continuous line over time
 
 ### AC-05 Weekly sets summary
 - Given I have logged sessions in a time period  
 - When I open weekly sets  
-- Then weekly totals per muscle group match the logged working sets according to the “weekly” definition  
+- Then trained muscles are colored on the body map and weekly totals per muscle group match the logged working sets according to the “weekly” definition
 
 ### AC-06 Add exercise to shared library
 - Given I am logged in  

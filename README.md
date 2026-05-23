@@ -70,7 +70,9 @@ Remaining larger decisions:
 
 Planned pre-launch improvements:
 
-- Analytics should move from the current progress bar list to a real time-series chart, with focused polish across the existing app UI.
+- Progress and Weekly Volume should become distinct app destinations instead of one combined analytics screen.
+- Progress should become an exercise-first view with a real weight/reps time-series chart.
+- Weekly Volume should become a muscle-map view where trained muscles are colored by weekly working-set volume.
 - Workout history import/export should use one canonical CSV format before supporting arbitrary legacy CSV layouts.
 
 ## Deploy To Render
@@ -230,7 +232,7 @@ http://localhost:3000/signup
 
 Create an account, refresh the home page, log out, then log in again from `/login`.
 
-After signing in, use the home page action to start or resume a workout. The workout logging page lets you add exercises, create a missing exercise with a seeded muscle group, add/edit/delete sets, reorder exercise blocks, and end the workout. Use the History tile or open `/workouts` to review past sessions and open workout detail. Use the Progress or Volume tiles, or open `/analytics`, to review exercise progress and weekly muscle volume.
+After signing in, use the home page action to start or resume a workout. The workout logging page lets you add exercises, create a missing exercise with a seeded muscle group, add/edit/delete sets, reorder exercise blocks, and end the workout. Use the History tile or open `/workouts` to review past sessions and open workout detail. The current analytics UI is still combined under `/analytics`; the next UI rework plans separate Progress and Weekly Volume destinations.
 
 Stop local PostgreSQL with:
 

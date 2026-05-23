@@ -313,33 +313,53 @@ Goal: make the app feel ready for testers and make progress analytics visually u
 Implement:
 
 - Rework the existing app UI without adding a full design system or broad UI framework.
-- Focus on logged-in app screens: Home, workout logging/detail, workout history, and analytics.
+- Focus on logged-in app screens: Home, workout logging/detail, workout history, Progress, and Weekly Volume.
 - Improve navigation, spacing, hierarchy, mobile behavior, form ergonomics, empty states, and error states.
-- Replace the current progress bar list with a real time-series chart.
-    - on the x axis is the date
-    - on the y axis is the weight and the reps
-    - therefore there are two graphs
-        - The first one drawn by a solid line is the Weight
-        - The second one drawn by a dotted line is the reps
-        - The reps graph is non continuous.
-            - whenever the weight changes, the reps graph makes a jump (most of the time automatically) and changes color.
-- Add `recharts` for analytics charts:
-  - exercise progress line chart over time.
-  - selectable metric: estimated 1RM, weight, reps.
-  - default chart mode: best working set per workout session.
-  - keep table view for all sets.
-- Keep weekly volume as a readable chart/table pair.
+- Split the current combined analytics screen into two clearly different logged-in destinations:
+  - Progress: exercise-first progress tracking. Target route: `/progress`.
+  - Weekly Volume: muscle-map weekly training volume. Target route: `/weekly-volume`.
+  - Keep any shared analytics helpers behind those views, but do not keep Progress and Weekly Volume as one mixed `/analytics` screen.
+- Progress must start with the list of exercises the user has actually done, not an empty chart-first screen.
+- Progress exercise list rules:
+  - Default sort/filter is last done, newest first.
+  - The list must be filterable by muscle group.
+  - When filtering by muscle group, start collapsed by muscle-group headings.
+  - Expanding a muscle group first lists exercises where the selected muscle group is primary.
+  - Below primary exercises, list exercises where the selected muscle group is secondary.
+- Clicking an exercise opens that exercise's progress graph.
+- Progress graph rules:
+  - X axis is date.
+  - Y axis shows both weight and reps.
+  - Weight is drawn as a solid line.
+  - Reps are drawn as a dotted, non-continuous line.
+  - Whenever weight changes, the reps line should visually jump or restart and change color.
+  - The graph should horizontally scroll left to inspect older history.
+  - Users must not be able to scroll earlier than the first logged entry for that exercise.
+  - Supported time windows: 1 week, 2 weeks, 4 weeks, 3 months, 1 year, and all entries.
+  - Default time window is 2 weeks.
+- Weekly Volume should not look like the Progress view.
+- Weekly Volume should center on an anatomical human body visualization:
+  - Show separated muscle regions on a front/back body figure.
+  - Prefer an interactive 3D body if it can be implemented cleanly in the slice; otherwise use an inspectable 2D front/back muscle map as the first pass.
+  - Muscles trained during the selected week gain color.
+  - Color intensity increases with working-set count.
+  - Color scale starts light yellow, moves through red, and ends at deep violet for high volume.
+  - Clicking a muscle selects it.
+  - The selected muscle's weekly volume stats appear beside the body figure, on the right on desktop and below/on a dedicated panel on narrow screens.
+- Weekly Volume stats should include at least weekly working sets, related exercises, and recent sessions contributing to that muscle.
+- Add charting/visualization dependencies only where needed for the chosen implementation. Use `recharts` for conventional time-series charts; use Three.js only if the weekly body map is implemented as a real 3D scene.
 
 Tests/checks:
 
-- Update Playwright smoke coverage for core navigation and analytics rendering.
+- Update Playwright smoke coverage for core navigation plus Progress and Weekly Volume rendering.
 - Run `pnpm check`, `pnpm smoke:web`, and `git diff --check`.
-- Browser-check analytics on desktop and mobile viewports.
+- Browser-check Progress and Weekly Volume on desktop and mobile viewports.
 
 Non-goals:
 
 - Do not rebuild the whole app around a new UI framework.
 - Do not add stored aggregate analytics tables.
+- Do not implement CSV import/export in this slice.
 
 ### 12. CSV Workout Import/Export
 
