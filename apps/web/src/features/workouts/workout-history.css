@@ -5,6 +5,61 @@
   width: min(100%, 1080px);
 }
 
+.csvPanel {
+  align-items: start;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-inline: auto;
+  padding: 18px;
+  width: min(100%, 1080px);
+}
+
+.csvPanel h2,
+.csvPanel p {
+  margin: 0;
+}
+
+.csvPanel h2 {
+  font-size: 1.2rem;
+  letter-spacing: 0;
+  margin-bottom: 6px;
+}
+
+.csvPanel p {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.csvActions,
+.csvImportForm {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.csvImportForm label {
+  color: var(--muted);
+  display: grid;
+  font-size: 0.88rem;
+  font-weight: 800;
+  gap: 6px;
+}
+
+.csvImportForm input {
+  max-width: 260px;
+}
+
+.inlineSuccess {
+  color: var(--brand-strong);
+  font-weight: 800;
+  grid-column: 1 / -1;
+}
+
 .historyRow {
   align-items: center;
   background: var(--panel);
@@ -115,6 +170,10 @@
 }
 
 @media (max-width: 900px) {
+  .csvPanel {
+    grid-template-columns: 1fr;
+  }
+
   .historyRow {
     align-items: start;
     grid-template-columns: 1fr;

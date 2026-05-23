@@ -25,19 +25,20 @@ Implemented:
 - Deployment Configuration And Small-Batch Operations: Render Blueprint, Render API/web Dockerfiles, API pre-deploy migrations, production environment checklist, backup/restore checklist, and monitoring checklist.
 - Logging Infrastructure: Fastify/Pino logger configuration, `LOG_LEVEL`, local pretty logs, production JSON logs, test log suppression, and redaction for cookies, authorization headers, and session token fields.
 - UI And Analytics Rework: separate Progress and Weekly Volume routes, completed-exercise progress navigation, `recharts` weight/reps progress chart, and a first anatomical 2D SVG weekly muscle-map view.
+- CSV Workout Import/Export: authenticated canonical CSV export/import API endpoints, same-origin web proxy routes and history UI controls, whole-file validation with row-level errors, and transaction-backed imports.
 - Repository structure documentation and implementation pattern documentation.
 
 Not implemented:
 
-- CSV workout import/export, hosted production credentials, custom domains, first tester launch execution, email verification, and password reset.
+- Hosted production credentials, custom domains, first tester launch execution, email verification, and password reset.
 
 ## Recommended Next Slice
 
-Start with **CSV Workout Import/Export**.
+Start with **Small-Batch Launch Execution**.
 
-Reason: the repo now has core MVP flows, quality gates, Render configuration, safer API logs, and clearer Progress/Weekly Volume screens. Users still need a way to import old workout history and export their logged data before tester launch.
+Reason: the repo now has core MVP flows, quality gates, Render configuration, safer API logs, clearer Progress/Weekly Volume screens, and a canonical CSV data portability path.
 
-After CSV workout import/export, resume hosted launch execution.
+After small-batch launch execution, resume iteration from tester feedback.
 
 ## Implementation Blocks
 
@@ -259,11 +260,11 @@ Rules:
 
 ### 9. Small-Batch Launch Execution
 
-Status: deferred until CSV import/export is implemented.
+Status: recommended next slice.
 
 Goal: perform the first hosted launch using the checked-in Render configuration and document any launch-specific follow-ups.
 
-Implement later:
+Implement:
 
 - Create the Render Blueprint from `render.yaml`.
 - Confirm hosted API health and web smoke flow.
@@ -364,7 +365,7 @@ Non-goals:
 
 ### 12. CSV Workout Import/Export
 
-Status: recommended next slice.
+Status: implemented.
 
 Goal: let users import old workout history and export their logged workout data using one canonical CSV format.
 
@@ -421,7 +422,7 @@ Non-goals:
 Use this prompt when starting the next implementation session:
 
 ```md
-We are continuing the Gym Progress Tracker after the UI And Analytics Rework slice.
+We are continuing the Gym Progress Tracker after the CSV Workout Import/Export slice.
 
 First read:
 - AGENTS.md
@@ -440,9 +441,9 @@ First read:
 - docs/07-implementation-pattern.md
 - docs/08-next-implementation-plan.md
 
-Implement the next recommended slice only: CSV Workout Import/Export.
+Implement the next recommended slice only: Small-Batch Launch Execution.
 
-Do not add hosted launch execution, monitoring infrastructure, external observability services, schema changes unless proven necessary, or arbitrary legacy CSV mapping in this slice.
+Do not commit hosted credentials, production database URLs, tester personal data, backup artifacts, custom domain changes, or application stack changes.
 
 Before handoff, run relevant checks, confirm `git diff --check`, keep the diff focused, commit, and push.
 ```

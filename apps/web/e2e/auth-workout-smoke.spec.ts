@@ -43,6 +43,28 @@ test("signs up and logs a workout through the UI", async ({ page }) => {
   await expect(page).toHaveURL(/\/workouts$/);
   await expect(page.locator(".historyRow").first()).toContainText("1 exercise");
 
+  const importedExerciseName = `CSV Row ${tag}`;
+  const csv = [
+    "workout_started_at,workout_ended_at,workout_type,workout_title,workout_notes,exercise_name,primary_muscle_group_slug,equipment,exercise_type,exercise_position,set_order,set_type,weight_kg,reps,rir,rest_time_seconds,set_note",
+    `2026-05-20T08:00:00.000Z,2026-05-20T09:00:00.000Z,upper,CSV Upper,,${importedExerciseName},chest,dumbbell,compound,1,1,working,42.50,10,2,60,Smoke import`
+  ].join("\n");
+
+  await page.setInputFiles('input[name="workoutCsv"]', {
+    name: "workouts.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from(csv)
+  });
+  await page.getByRole("button", { name: "Import", exact: true }).click();
+  await expect(page.getByText("Imported 1 workout from 1 row.")).toBeVisible();
+  await expect(page.getByText("CSV Upper")).toBeVisible();
+
+  const download = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("link", { name: "Export CSV" }).click()
+  ]).then(([file]) => file);
+
+  expect(download.suggestedFilename()).toBe("gym-workouts.csv");
+
   await page.locator(".historyRow").first().click();
   await expect(page.getByRole("heading", { name: exerciseName })).toBeVisible();
   await expect(page.locator(".setRow").getByLabel("Kg")).toHaveValue("90.00");

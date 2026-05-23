@@ -78,11 +78,11 @@ apps/
 - `apps/api/src/features/<feature>` owns each API vertical slice. Current features are `analytics`, `auth`, `exercises`, `health`, and `workouts`.
 - `apps/api/src/db` owns database connection and database health helpers.
 - `apps/api/src/shared` owns API-only shared boundaries such as environment validation and logger configuration.
-- `apps/web` owns the Next.js App Router app plus the first auth, workout logging, workout history/detail, analytics UI slices, and Playwright smoke tests.
+- `apps/web` owns the Next.js App Router app plus the first auth, workout logging, workout history/detail, CSV import/export, analytics UI slices, and Playwright smoke tests.
 - `apps/web/e2e` owns browser smoke tests for core UI flows that run against the local app stack.
 - `apps/web/src/features/analytics` owns the Progress and Weekly Volume UI, browser analytics API helpers, and same-origin analytics API proxy helpers.
 - `apps/web/src/features/auth` owns web auth forms, server auth helpers, and auth proxy helpers.
-- `apps/web/src/features/workouts` owns the workout logging and history/detail UI, browser workout API helpers, and same-origin workout API proxy helpers.
+- `apps/web/src/features/workouts` owns the workout logging, history/detail, CSV import/export UI, browser workout API helpers, and same-origin workout API proxy helpers.
 - `apps/web/src/shared` owns web-only helpers with at least two feature consumers, currently API base URL resolution.
 
 ## Documentation

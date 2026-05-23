@@ -273,4 +273,4 @@ The CSV slice should add one canonical workout-history CSV format:
 - Create or reuse global exercises by case-insensitive name and require known primary muscle group slugs.
 - Do not partially import on validation failure.
 
-Status: planned after UI and analytics rework.
+Status: implemented for authenticated canonical CSV workout-history export/import, same-origin web proxy routes, whole-file validation with row-level errors, global exercise reuse/creation by case-insensitive name, and no partial import on validation failure.

@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState, useTransition } from "react";
 import { LogoutButton } from "../auth/logout-button";
-import { listWorkouts } from "./workout-api";
+import { importWorkoutCsv, listWorkouts } from "./workout-api";
 import type { ListWorkoutsPayload, WorkoutSummary } from "./workout-types";
 import { formatStartedAt } from "./workout-view-model";
 
@@ -69,6 +69,8 @@ export function WorkoutHistory(): ReactNode {
         <LogoutButton />
       </header>
 
+      <CsvPortabilityPanel onImported={() => loadWorkouts(0)} />
+
       <section className="historyList" aria-label="Workout history">
         {error ? (
           <p className="formError" role="alert">
@@ -103,6 +105,71 @@ export function WorkoutHistory(): ReactNode {
         ) : null}
       </section>
     </main>
+  );
+}
+
+function CsvPortabilityPanel({ onImported }: { onImported: () => void }): ReactNode {
+  const [isPending, startTransition] = useTransition();
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>): void {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const file = new FormData(form).get("workoutCsv");
+
+    if (!(file instanceof File) || file.size === 0) {
+      setError("Choose a CSV file to import.");
+      return;
+    }
+
+    setError(null);
+    setMessage(null);
+    startTransition(async () => {
+      const result = await importWorkoutCsv(file).catch(() => null);
+
+      if (!result || !result.ok) {
+        setError(formatImportError(result));
+        return;
+      }
+
+      form.reset();
+      const workoutNoun = result.data.importedWorkouts === 1 ? "workout" : "workouts";
+      const rowNoun = result.data.importedRows === 1 ? "row" : "rows";
+      setMessage(
+        `Imported ${result.data.importedWorkouts} ${workoutNoun} from ${result.data.importedRows} ${rowNoun}.`
+      );
+      onImported();
+    });
+  }
+
+  return (
+    <section className="csvPanel" aria-label="CSV import and export">
+      <div>
+        <h2>CSV data</h2>
+        <p>Export your closed workout sets or import the canonical workout-history CSV format.</p>
+      </div>
+      <div className="csvActions">
+        <a className="secondaryLink" href="/api/workouts/export.csv">
+          Export CSV
+        </a>
+        <form className="csvImportForm" onSubmit={handleSubmit}>
+          <label>
+            Import CSV
+            <input name="workoutCsv" type="file" accept=".csv,text/csv" />
+          </label>
+          <button className="primaryAction" type="submit" disabled={isPending}>
+            {isPending ? "Importing" : "Import"}
+          </button>
+        </form>
+      </div>
+      {message ? <p className="inlineSuccess">{message}</p> : null}
+      {error ? (
+        <p className="formError" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </section>
   );
 }
 
@@ -160,4 +227,24 @@ function formatDuration(startedAt: string, endedAt: string | null): string {
   }
 
   return `${hours} hr ${remainingMinutes} min`;
+}
+
+function formatImportError(
+  result:
+    | {
+        ok: false;
+        message: string;
+        fields: Record<string, string[]> | undefined;
+      }
+    | null
+): string {
+  if (!result) {
+    return "CSV import failed.";
+  }
+
+  const rowErrors = Object.entries(result.fields ?? {})
+    .flatMap(([row, messages]) => messages.map((message) => `${row}: ${message}`))
+    .slice(0, 3);
+
+  return rowErrors.length > 0 ? rowErrors.join(" ") : result.message;
 }

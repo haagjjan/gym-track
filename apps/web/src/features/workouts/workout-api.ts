@@ -46,6 +46,11 @@ interface ListWorkoutsOptions {
   startDate?: string;
 }
 
+interface CsvImportPayload {
+  importedRows: number;
+  importedWorkouts: number;
+}
+
 export async function listWorkouts(
   options: ListWorkoutsOptions = {}
 ): Promise<ApiResult<ListWorkoutsPayload>> {
@@ -184,6 +189,23 @@ export async function deleteSet(setId: string): Promise<ApiResult<unknown>> {
   return requestApi(`/api/sets/${setId}`, {
     method: "DELETE"
   });
+}
+
+export async function importWorkoutCsv(file: File): Promise<ApiResult<CsvImportPayload>> {
+  const response = await fetch("/api/workouts/import.csv", {
+    method: "POST",
+    headers: {
+      "content-type": "text/csv"
+    },
+    body: await file.text()
+  });
+  const payload = await readJson(response);
+
+  if (!response.ok) {
+    return toApiError(response.status, payload);
+  }
+
+  return { ok: true, data: (payload as { data: CsvImportPayload }).data };
 }
 
 async function requestApi<T>(

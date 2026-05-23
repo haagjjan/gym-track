@@ -511,6 +511,69 @@ Response `200`:
 }
 ```
 
+## Workout CSV Endpoints
+
+CSV import/export uses one canonical row-per-set workout-history format. The columns are:
+
+```text
+workout_started_at,workout_ended_at,workout_type,workout_title,workout_notes,exercise_name,primary_muscle_group_slug,equipment,exercise_type,exercise_position,set_order,set_type,weight_kg,reps,rir,rest_time_seconds,set_note
+```
+
+### `GET /api/v1/workouts/export.csv`
+
+Exports the current user's closed, non-deleted workout sets as `text/csv`.
+
+Behavior:
+
+- Requires authentication.
+- Uses the canonical header above.
+- Excludes open workouts, soft-deleted workouts, soft-deleted exercise blocks, and soft-deleted sets.
+- Returns the header row when there are no closed workout sets to export.
+
+### `POST /api/v1/workouts/import.csv`
+
+Imports closed workout sessions from the canonical CSV format.
+
+Request:
+
+- Content type: `text/csv`
+- Body: CSV text using the canonical columns above.
+
+Response `201`:
+
+```json
+{
+  "data": {
+    "importedRows": 1,
+    "importedWorkouts": 1
+  }
+}
+```
+
+Behavior:
+
+- Requires authentication.
+- Validates the entire CSV before writing.
+- Creates closed workout sessions from CSV rows.
+- Creates or reuses global exercises by case-insensitive `exercise_name`.
+- Requires `primary_muscle_group_slug` to match a seeded muscle group.
+- Requires compact `exercise_position` and `set_order` values starting at `1`.
+- Does not partially import when validation fails.
+
+Validation response `422`:
+
+```json
+{
+  "error": {
+    "code": "CSV_VALIDATION_ERROR",
+    "message": "CSV could not be imported.",
+    "fields": {
+      "row 2": ["weight_kg: Expected a positive kg value with up to 2 decimals."]
+    }
+  }
+}
+```
+
 ## Workout Exercise Endpoints
 
 ### `POST /api/v1/workouts/:workoutId/exercises`

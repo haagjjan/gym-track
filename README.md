@@ -1,8 +1,8 @@
 # Gym Progress Tracker
 
-Gym Progress Tracker is a planned web app for logging strength workouts, tracking exercise progress, and reviewing weekly training volume.
+Gym Progress Tracker is a planned web app for logging strength workouts, tracking exercise progress, reviewing weekly training volume, and moving workout history through CSV files.
 
-The repository is in the first implementation foundation phase. It contains the project documentation, workflow rules, architecture decisions, pnpm workspace metadata, shared TypeScript tooling, local PostgreSQL setup, a production-like Docker Compose local runner, initial PostgreSQL migrations, a first runnable API/web slice, API auth foundation, workout session API foundation, exercise library API foundation, workout logging API foundation, analytics API foundation, the first workout logging UI, workout history/detail UI, analytics UI, full project CI checks, API database integration coverage, web smoke coverage, a recorded deployment target, Render deployment configuration, a small-batch operations runbook, and structured API logging configuration.
+The repository is in the first implementation foundation phase. It contains the project documentation, workflow rules, architecture decisions, pnpm workspace metadata, shared TypeScript tooling, local PostgreSQL setup, a production-like Docker Compose local runner, initial PostgreSQL migrations, a first runnable API/web slice, API auth foundation, workout session API foundation, exercise library API foundation, workout logging API foundation, analytics API foundation, CSV workout import/export, the first workout logging UI, workout history/detail UI, analytics UI, full project CI checks, API database integration coverage, web smoke coverage, a recorded deployment target, Render deployment configuration, a small-batch operations runbook, and structured API logging configuration.
 
 ## Current Status
 
@@ -20,8 +20,9 @@ The repository is in the first implementation foundation phase. It contains the 
 - `apps/api` exposes authenticated seeded muscle group lookup for exercise creation.
 - `apps/api` exposes authenticated workout logging child endpoints for session exercises and sets.
 - `apps/api` exposes authenticated analytics endpoints for completed exercise progress navigation, exercise progress, exercise summaries, and weekly muscle volume.
-- `apps/web` has signup, login, logout, authenticated home state, a first workout logging flow for starting/resuming workouts, picking or creating exercises, editing sets, reordering exercises, and ending workouts, plus workout history/detail, Progress, and anatomical Weekly Volume screens.
-- CSV workout import/export, hosted production credentials, custom domains, email verification, and password reset are not implemented yet.
+- `apps/api` exposes authenticated canonical CSV workout-history import/export endpoints.
+- `apps/web` has signup, login, logout, authenticated home state, a first workout logging flow for starting/resuming workouts, picking or creating exercises, editing sets, reordering exercises, and ending workouts, plus workout history/detail, CSV import/export controls, Progress, and anatomical Weekly Volume screens.
+- Hosted production credentials, custom domains, email verification, and password reset are not implemented yet.
 
 ## Key Documents
 
@@ -54,11 +55,10 @@ Use `docs/repository-structure.md` when you need to understand where files belon
 
 ## Next Implementation Slices
 
-The remaining work is structured in `docs/08-next-implementation-plan.md`. The recommended next slice is CSV workout import/export.
+The remaining work is structured in `docs/08-next-implementation-plan.md`. The recommended next slice is small-batch launch execution.
 
 Remaining implementation blocks:
 
-- CSV workout import/export
 - Small-batch launch execution
 
 Remaining larger decisions:
@@ -67,9 +67,7 @@ Remaining larger decisions:
 - monitoring alert thresholds beyond the small-batch checklist
 - backup retention and restore-test cadence after the first tester batch
 
-Planned pre-launch improvements:
-
-- Workout history import/export should use one canonical CSV format before supporting arbitrary legacy CSV layouts.
+CSV workout import/export uses one canonical workout-history format before supporting arbitrary legacy CSV layouts.
 
 ## Deploy To Render
 
@@ -228,7 +226,7 @@ http://localhost:3000/signup
 
 Create an account, refresh the home page, log out, then log in again from `/login`.
 
-After signing in, use the home page action to start or resume a workout. The workout logging page lets you add exercises, create a missing exercise with a seeded muscle group, add/edit/delete sets, reorder exercise blocks, and end the workout. Use the History tile or open `/workouts` to review past sessions and open workout detail. Use Progress or open `/progress` for exercise trends, and use Volume or open `/weekly-volume` for weekly muscle volume.
+After signing in, use the home page action to start or resume a workout. The workout logging page lets you add exercises, create a missing exercise with a seeded muscle group, add/edit/delete sets, reorder exercise blocks, and end the workout. Use the History tile or open `/workouts` to review past sessions, open workout detail, export closed workout sets as CSV, or import the canonical workout-history CSV format. Use Progress or open `/progress` for exercise trends, and use Volume or open `/weekly-volume` for weekly muscle volume.
 
 Stop local PostgreSQL with:
 

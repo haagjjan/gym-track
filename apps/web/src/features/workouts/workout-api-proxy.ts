@@ -41,11 +41,12 @@ function buildApiUrl(request: NextRequest, targetPath: string): string {
 }
 
 function buildForwardHeaders(request: NextRequest): Headers {
-  const headers = new Headers({
-    accept: "application/json"
-  });
+  const headers = new Headers();
+  const accept = request.headers.get("accept");
   const contentType = request.headers.get("content-type");
   const cookie = request.headers.get("cookie");
+
+  headers.set("accept", accept ?? "application/json");
 
   if (contentType) {
     headers.set("content-type", contentType);
@@ -72,9 +73,14 @@ async function toProxyResponse(upstream: Response): Promise<NextResponse> {
   const body = await upstream.text();
   const responseHeaders = new Headers();
   const contentType = upstream.headers.get("content-type");
+  const contentDisposition = upstream.headers.get("content-disposition");
 
   if (contentType) {
     responseHeaders.set("content-type", contentType);
+  }
+
+  if (contentDisposition) {
+    responseHeaders.set("content-disposition", contentDisposition);
   }
 
   return new NextResponse(body, {

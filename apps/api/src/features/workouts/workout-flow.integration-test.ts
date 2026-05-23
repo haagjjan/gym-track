@@ -79,6 +79,11 @@ interface CompletedExercisesPayload {
   }[];
 }
 
+interface CsvImportPayload {
+  importedRows: number;
+  importedWorkouts: number;
+}
+
 describe("workout API database flow", { skip: databaseUrl ? false : "INTEGRATION_DATABASE_URL is not set" }, () => {
   const db = createDatabase(databaseUrl ?? "postgresql://unused");
 
@@ -125,6 +130,18 @@ describe("workout API database flow", { skip: databaseUrl ? false : "INTEGRATION
       assert.equal(completedExercises.items[0]?.id, exerciseId);
       assert.equal(completedExercises.items[0]?.totalSets, 1);
       assert.match(completedExercises.items[0]?.lastDoneAt ?? "", /^\d{4}-\d{2}-\d{2}T/);
+
+      const importedExerciseName = `${exercisePrefix}${tag} CSV`;
+      const importSummary = await importWorkoutCsv(server, firstUser.cookie, importedExerciseName);
+
+      assert.equal(importSummary.importedRows, 1);
+      assert.equal(importSummary.importedWorkouts, 1);
+
+      const csv = await exportWorkoutCsv(server, firstUser.cookie);
+
+      assert.match(csv, /workout_started_at,workout_ended_at/);
+      assert.match(csv, new RegExp(importedExerciseName));
+      assert.match(csv, /primary_muscle_group_slug/);
 
       const secondUser = await signup(server, `${tag}_other`);
       const hidden = await server.inject({
@@ -346,6 +363,42 @@ async function listCompletedExercises(
   assert.equal(response.statusCode, 200);
 
   return readData<CompletedExercisesPayload>(response);
+}
+
+async function importWorkoutCsv(
+  server: FastifyInstance,
+  cookie: string,
+  exerciseName: string
+): Promise<CsvImportPayload> {
+  const response = await server.inject({
+    method: "POST",
+    url: "/api/v1/workouts/import.csv",
+    cookies: authCookies(cookie),
+    headers: {
+      "content-type": "text/csv"
+    },
+    payload: [
+      "workout_started_at,workout_ended_at,workout_type,workout_title,workout_notes,exercise_name,primary_muscle_group_slug,equipment,exercise_type,exercise_position,set_order,set_type,weight_kg,reps,rir,rest_time_seconds,set_note",
+      `2026-05-20T08:00:00.000Z,2026-05-20T09:00:00.000Z,upper,CSV Upper,,${exerciseName},chest,barbell,compound,1,1,working,75.00,8,2,90,Imported set`
+    ].join("\n")
+  });
+
+  assert.equal(response.statusCode, 201);
+
+  return readData<CsvImportPayload>(response);
+}
+
+async function exportWorkoutCsv(server: FastifyInstance, cookie: string): Promise<string> {
+  const response = await server.inject({
+    method: "GET",
+    url: "/api/v1/workouts/export.csv",
+    cookies: authCookies(cookie)
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.match(response.headers["content-type"] as string, /^text\/csv/);
+
+  return response.body;
 }
 
 function authCookies(cookie: string): Record<string, string> {
