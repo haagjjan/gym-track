@@ -69,6 +69,8 @@ Keep commits focused. A reader should understand why the change exists from the 
 
 Prefer several small commits over one broad commit when the work naturally separates into decisions, docs, tooling, schema, and implementation.
 
+Before committing, use the commit split gate in `docs/git-pipeline.md`. Passing checks are not a reason to collapse API work, web work, tests, and docs into one commit. If the staged diff needs multiple explanations, split it before committing.
+
 ## Review Checklist
 
 Before merging or pushing important work, check:
@@ -76,6 +78,7 @@ Before merging or pushing important work, check:
 - Does this match the MVP requirements?
 - Does it follow the architecture boundaries?
 - Does it follow the branch and PR workflow in `docs/git-pipeline.md`?
+- Does the commit history split the work at natural boundaries rather than one broad end-of-task commit?
 - Does it follow the TypeScript/PostgreSQL rules in `ENGINEERING.md`?
 - Are files, functions, components, and classes still small enough to scan?
 - Is duplication being handled at the right time, without premature abstraction?

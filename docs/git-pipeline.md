@@ -20,12 +20,41 @@ Tiny documentation fixes may be committed directly to `main` while this is still
 - Commit at natural boundaries such as asset/data definitions, implementation wiring, styles, tests, and docs.
 - Avoid commits that touch more than 3 files unless the files are mechanically coupled, such as a package manifest and lockfile.
 - Split changes before committing when a commit would add hundreds of lines or combine unrelated behavior.
+- Passing checks do not make a broad commit acceptable. Validation proves the working tree is good; it does not decide commit boundaries.
 - Use concise imperative messages, for example:
   - `Record session storage decision`
   - `Add API scaffold`
   - `Create initial schema migration`
 - Avoid generic messages such as `update`, `changes`, or `fix stuff`.
 - Do not mix unrelated docs, tooling, schema, and implementation changes in one commit.
+
+## Commit Split Gate
+
+Before staging or committing, pause and inspect:
+
+```sh
+git diff --stat
+git diff --name-only
+```
+
+Split the work into multiple commits when any of these are true:
+
+- The diff touches API implementation, web implementation, tests, and docs together.
+- The diff changes more than 3 files that are not mechanically coupled.
+- The diff adds or removes hundreds of lines.
+- The staged files need different explanations in the commit message.
+- A reviewer would naturally want to inspect part of the change without the rest.
+
+Use separate commits for natural boundaries, for example:
+
+- dependencies and lockfile changes
+- data/schema/migration changes
+- API contracts, routes, services, and repositories
+- web route handlers, UI, and styles
+- tests and smoke coverage
+- documentation updates
+
+Only keep a larger commit when the files are mechanically inseparable and the commit message can honestly explain the whole staged diff in one sentence. If an agent is about to make a large commit, it must stop, report the proposed split, and ask before continuing.
 
 ## Pull Request Rules
 
@@ -78,8 +107,11 @@ Before committing:
 
 - Run `git status --short`.
 - Confirm the diff includes only intended files.
+- Run `git diff --stat` and `git diff --name-only`.
+- Decide the commit split before staging. If the staged diff crosses natural boundaries, unstage and split it.
 - Stage intentionally, file by file or hunk by hunk, instead of defaulting to `git add -A`.
 - Run `git diff --check`.
+- Run `git diff --cached --stat` and confirm the staged commit is small enough to review.
 - Run `pnpm check` for implementation or tooling changes.
 - Keep the commit message specific.
 - Push after a completed task unless intentionally keeping local-only work.
