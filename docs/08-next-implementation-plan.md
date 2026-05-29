@@ -4,89 +4,88 @@
 
 Use this file to start the next fresh implementation session without replanning the project. This is a handoff plan only; do not implement these blocks unless the user explicitly asks for the next slice.
 
+This document is intentionally product-first. The next work is not about adding more feature categories. The next work is about making the existing app feel usable, focused, and trustworthy during real gym usage.
+
 ## Current Status
 
-Not implemented:
+Implemented foundation:
+
+- Core MVP API routes exist for auth, workout sessions, exercises, muscle groups, workout logging, set editing, history, analytics, and CSV import/export.
+- Core web screens exist for auth, home, workout logging, history/detail, progress, weekly volume, and CSV controls.
+- Project quality gates, tests, CI, Render deployment configuration, deployment runbook, backup/restore checklist, and structured API logging exist.
+
+Not implemented / not ready:
 
 - Hosted production credentials, custom domains, first tester launch execution, email verification, and password reset.
+- Product/UX hardening after screenshot audit: focused workout logging, separated add-exercise flow, faster set input flow, active workout save/recovery state, workout naming/session-type V1, repeated-session preload, dashboard rebuild, history cleanup, progress chart simplification, stronger empty/error/loading states, mobile pass, CSV import cleanup, and weekly volume refinement.
+
+## Product Audit Conclusion
+
+The app is technically broad enough for an MVP, but it is not yet good enough for tester launch.
+
+The main issue is not missing backend functionality. The main issue is that the core gym flow still feels too much like a developer-built database UI. A real user in the gym needs a focused, fast, mobile-first flow:
+
+- Start or resume workout quickly.
+- See only the exercise they are currently doing.
+- Log a set with large, obvious controls.
+- Correct mistakes without losing context.
+- Add exercises without being overwhelmed by a giant library grid.
+- End the workout and later understand history/progress without decoding messy screens.
+
+Do not continue toward launch until the tester-launch blockers in this file are resolved.
 
 ## Recommended Next Slice
 
-Start with **Small-Batch Launch Execution**.
+Start with **UX Slice 1: Active Workout Logging Redesign**.
 
-Reason: the repo now has core MVP flows, quality gates, Render configuration, safer API logs, clearer Progress/Weekly Volume screens, and a canonical CSV data portability path.
+Reason: the screenshot/product audit showed that the app has the right technical feature categories, but the core gym-use flow is not yet good enough for testers. The workout screen currently feels too implementation-driven and shows too much at once. Before launch execution, make the active workout experience usable in a real gym: one active exercise expanded, inactive exercises collapsed, large mobile-friendly set inputs, fast correction of previous sets, and clear save behavior.
 
-After small-batch launch execution, resume iteration from tester feedback.
+After UX Slice 1, continue through the UX hardening slices below. Do not proceed to Small-Batch Launch Execution until the tester-launch blockers are resolved.
 
-## Implementation Blocks
+## UX Hardening Sequence From Product Audit
 
-### 1. Hosted production credentials and launch setup
+Recommended implementation order:
 
-Goal: finish the last operational pieces needed for a small tester batch.
+1. Active Workout Logging Redesign.
+2. Separate Add-Exercise Flow.
+3. Improve Current Set Input Flow.
+4. Active Workout Recovery / Save Status.
+5. Workout Names / Session Type V1.
+6. Reuse Last Workout Structure.
+7. Dashboard Rebuild.
+8. History Cleanup.
+9. Progress Chart Simplification.
+10. Empty/Error/Loading States.
+11. Mobile Pass.
+12. CSV Import Cleanup.
+13. Weekly Volume Refinement.
+14. Small-Batch Launch Execution.
+15. Auth Hardening Follow-Up.
 
-Implement:
+Tester-launch blockers:
 
-- Hosted production credentials and environment values.
-- Custom domain decisions, if required before inviting testers.
-- First tester launch execution.
+- Active workout logging must be usable on mobile.
+- Exercise selection must not clutter the logging screen.
+- Users must be able to resume/recover open workouts safely.
+- Home must clearly show Start/Resume as the primary action.
+- Workout names/session types must make history scannable.
+- Progress charts must not show cluttered duplicate legends.
+- Empty, loading, and error states must exist for the main flows.
+- CSV import must not silently pollute the UI with broken data if testers will import old workouts.
 
-Rules:
+Features to avoid until after tester feedback:
 
-- Do not commit hosted credentials or production database URLs.
-- Keep launch setup aligned with ADR 0005 and the runbook.
+- Infinite wheel input pickers.
+- Advanced template editor.
+- Complex analytics and PR prediction.
+- Social/sharing features.
+- Integrations.
+- AI workout suggestions.
+- Full offline-first architecture.
+- Detailed muscle-science model beyond what is needed for useful volume/progress views.
+- Dashboard customization.
+- Gamification.
 
-Tests/checks:
+## Implementation Slices
 
-- Validate deployment and environment values against the runbook.
-- Re-run browser smoke checks against the deployed stack before inviting testers.
-
-### 2. Auth hardening follow-up
-
-Goal: close the last product gaps around account access.
-
-Implement:
-
-- Email verification.
-- Password reset.
-
-Rules:
-
-- Keep the current owned email/password auth and opaque-session approach unless a new ADR changes it.
-- Add any required API/UI contract updates in the same change.
-
-Tests/checks:
-
-- Add focused auth tests for the new flows.
-- Run `pnpm check` and the relevant browser smoke coverage.
-
-
-## Fresh Session Prompt
-
-Use this prompt when starting the next implementation session:
-
-```md
-We are continuing the Gym Progress Tracker from the current MVP foundation.
-
-First read:
-- AGENTS.md
-- README.md
-- ARCHITECTURE.md
-- ENGINEERING.md
-- CONTRIBUTING.md
-- docs/git-pipeline.md
-- docs/deployment-runbook.md
-- docs/repository-structure.md
-- docs/00-workflow.md
-- docs/02-query-list.md
-- docs/03-data-model-notes.md
-- docs/04-schema-draft.md
-- docs/05-api-contract.md
-- docs/07-implementation-pattern.md
-- docs/08-next-implementation-plan.md
-
-Implement the next recommended slice only: Small-Batch Launch Execution.
-
-Do not commit hosted credentials, production database URLs, tester personal data, backup artifacts, custom domain changes, or application stack changes.
-
-Before handoff, run relevant checks, confirm `git diff --check`, keep the diff focused, commit, and push.
-```
+The detailed slice blocks follow in later commits to keep each doc change small and reviewable.
