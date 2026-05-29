@@ -14,7 +14,7 @@ import {
 import { ExercisePicker } from "./exercise-picker";
 import { SessionExercisePanel } from "./session-exercise-panel";
 import type { WorkoutDetail } from "./workout-types";
-import { formatStartedAt, moveSessionExercise, sortWorkout } from "./workout-view-model";
+import { chooseActiveExerciseId, findFallbackExerciseId, formatStartedAt, moveSessionExercise, sortWorkout } from "./workout-view-model";
 
 interface WorkoutLoggerProps {
   workoutId: string;
@@ -22,21 +22,26 @@ interface WorkoutLoggerProps {
 
 export function WorkoutLogger({ workoutId }: WorkoutLoggerProps): ReactNode {
   const [workout, setWorkout] = useState<WorkoutDetail | null>(null);
+  const [activeSessionExerciseId, setActiveSessionExerciseId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  const refreshWorkout = useCallback(async () => {
+  const refreshWorkout = useCallback(async (): Promise<WorkoutDetail | null> => {
     const result = await getWorkout(workoutId).catch(() => null);
 
     if (!result || !result.ok) {
       setError(result?.message ?? "The workout could not be loaded.");
       setIsLoading(false);
-      return;
+      return null;
     }
 
-    setWorkout(sortWorkout(result.data.workout));
+    const sortedWorkout = sortWorkout(result.data.workout);
+
+    setWorkout(sortedWorkout);
+    setActiveSessionExerciseId((current) => chooseActiveExerciseId(sortedWorkout, current));
     setIsLoading(false);
+    return sortedWorkout;
   }, [workoutId]);
 
   useEffect(() => {
@@ -53,7 +58,10 @@ export function WorkoutLogger({ workoutId }: WorkoutLoggerProps): ReactNode {
         return;
       }
 
-      setWorkout(sortWorkout(result.data.workout));
+      const sortedWorkout = sortWorkout(result.data.workout);
+
+      setWorkout(sortedWorkout);
+      setActiveSessionExerciseId((current) => chooseActiveExerciseId(sortedWorkout, current));
       setIsLoading(false);
     }).catch(() => {
       if (!controller.signal.aborted) {
@@ -84,7 +92,10 @@ export function WorkoutLogger({ workoutId }: WorkoutLoggerProps): ReactNode {
         return;
       }
 
-      setWorkout(sortWorkout(result.data.workout));
+      const sortedWorkout = sortWorkout(result.data.workout);
+
+      setWorkout(sortedWorkout);
+      setActiveSessionExerciseId((current) => chooseActiveExerciseId(sortedWorkout, current));
     });
   }
 
@@ -97,12 +108,19 @@ export function WorkoutLogger({ workoutId }: WorkoutLoggerProps): ReactNode {
       return false;
     }
 
-    await refreshWorkout();
+    const refreshedWorkout = await refreshWorkout();
+    const newestExercise = refreshedWorkout?.exercises.at(-1);
+
+    if (newestExercise) {
+      setActiveSessionExerciseId(newestExercise.id);
+    }
+
     return true;
   }
 
   async function handleDeleteExercise(sessionExerciseId: string): Promise<void> {
     setError(null);
+    const fallbackExerciseId = findFallbackExerciseId(workout, sessionExerciseId);
     const result = await deleteSessionExercise(workoutId, sessionExerciseId);
 
     if (!result.ok) {
@@ -110,7 +128,11 @@ export function WorkoutLogger({ workoutId }: WorkoutLoggerProps): ReactNode {
       return;
     }
 
-    await refreshWorkout();
+    const refreshedWorkout = await refreshWorkout();
+
+    if (activeSessionExerciseId === sessionExerciseId) {
+      setActiveSessionExerciseId(chooseActiveExerciseId(refreshedWorkout, fallbackExerciseId));
+    }
   }
 
   async function handleMoveExercise(
@@ -193,6 +215,7 @@ export function WorkoutLogger({ workoutId }: WorkoutLoggerProps): ReactNode {
           <section className="sessionExerciseList" aria-label="Logged exercises">
             {workout.exercises.map((item, index) => (
               <SessionExercisePanel
+                isActive={item.id === activeSessionExerciseId}
                 canMoveDown={index < workout.exercises.length - 1}
                 canMoveUp={index > 0}
                 item={item}
@@ -201,6 +224,7 @@ export function WorkoutLogger({ workoutId }: WorkoutLoggerProps): ReactNode {
                 onDeleteExercise={handleDeleteExercise}
                 onMoveExercise={handleMoveExercise}
                 onRefresh={refreshWorkout}
+                onSelectExercise={setActiveSessionExerciseId}
                 onShowError={setError}
               />
             ))}

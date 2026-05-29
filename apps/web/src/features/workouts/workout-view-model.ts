@@ -42,3 +42,39 @@ export function formatStartedAt(value: string): string {
     timeStyle: "short"
   }).format(new Date(value));
 }
+
+export function chooseActiveExerciseId(
+  workout: WorkoutDetail | null,
+  preferredExerciseId: string | null
+): string | null {
+  if (!workout || workout.exercises.length === 0) {
+    return null;
+  }
+
+  if (preferredExerciseId && workout.exercises.some((item) => item.id === preferredExerciseId)) {
+    return preferredExerciseId;
+  }
+
+  return workout.exercises[0]?.id ?? null;
+}
+
+export function findFallbackExerciseId(
+  workout: WorkoutDetail | null,
+  removedExerciseId: string
+): string | null {
+  if (!workout) {
+    return null;
+  }
+
+  const removedIndex = workout.exercises.findIndex((item) => item.id === removedExerciseId);
+
+  if (removedIndex < 0) {
+    return null;
+  }
+
+  return (
+    workout.exercises[removedIndex + 1]?.id ??
+    workout.exercises[removedIndex - 1]?.id ??
+    null
+  );
+}
