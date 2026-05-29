@@ -2,16 +2,12 @@
 
 import type { FormEvent, ReactNode } from "react";
 import { useState, useTransition } from "react";
-import { z, type ZodError } from "zod";
 import { addSet, deleteSet, updateSet } from "./workout-api";
-import { setFormSchema } from "./workout-form-schemas";
-import type { SetType, WorkoutSet } from "./workout-types";
-
-type SetField = "note" | "reps" | "restTimeSeconds" | "rir" | "setType" | "weightKg";
-type SetFieldErrors = Partial<Record<SetField, string>>;
+import { parseSetForm, SetFields, type SetFieldErrors } from "./set-form-fields";
+import type { WorkoutSet } from "./workout-types";
 
 interface SetEditorProps {
-  onRefresh: () => Promise<void>;
+  onRefresh: () => Promise<unknown>;
   onShowError: (message: string) => void;
 }
 
@@ -57,8 +53,8 @@ export function AddSetForm({
   return (
     <form className="setForm" onSubmit={handleSubmit} noValidate>
       <SetFields fieldErrors={fieldErrors} />
-      <button className="secondaryAction" type="submit" disabled={isPending}>
-        Add set
+      <button className="primaryAction saveSetAction" type="submit" disabled={isPending}>
+        Save set
       </button>
     </form>
   );
@@ -69,6 +65,7 @@ export function EditableSetRow({
   onRefresh,
   onShowError
 }: SetEditorProps & { set: WorkoutSet }): ReactNode {
+  const [isEditing, setIsEditing] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [fieldErrors, setFieldErrors] = useState<SetFieldErrors>({});
 
@@ -92,6 +89,7 @@ export function EditableSetRow({
       }
 
       await onRefresh();
+      setIsEditing(false);
     });
   }
 
@@ -108,12 +106,50 @@ export function EditableSetRow({
     });
   }
 
+  if (!isEditing) {
+    return (
+      <div className="setSummaryRow">
+        <span className="setOrder">{set.setOrder}</span>
+        <div className="setSummaryText">
+          <strong>{formatSetHeadline(set)}</strong>
+          <span>{formatSetDetail(set)}</span>
+        </div>
+        <div className="setSummaryActions">
+          <button
+            className="smallAction"
+            type="button"
+            onClick={() => setIsEditing(true)}
+            disabled={isPending}
+          >
+            Edit
+          </button>
+          <button
+            className="dangerAction"
+            type="button"
+            onClick={handleDelete}
+            disabled={isPending}
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <form className="setRow" onSubmit={handleSubmit} noValidate>
+    <form className="setRow setRowEditing" onSubmit={handleSubmit} noValidate>
       <span className="setOrder">{set.setOrder}</span>
       <SetFields fieldErrors={fieldErrors} set={set} />
       <button className="smallAction" type="submit" disabled={isPending}>
         Save
+      </button>
+      <button
+        className="smallAction"
+        type="button"
+        onClick={() => setIsEditing(false)}
+        disabled={isPending}
+      >
+        Cancel
       </button>
       <button className="dangerAction" type="button" onClick={handleDelete} disabled={isPending}>
         Delete
@@ -122,115 +158,13 @@ export function EditableSetRow({
   );
 }
 
-function SetFields({
-  fieldErrors,
-  set
-}: {
-  fieldErrors: SetFieldErrors;
-  set?: WorkoutSet;
-}): ReactNode {
-  return (
-    <>
-      <SetTypeField defaultValue={set?.setType ?? "working"} error={fieldErrors.setType} />
-      <TextField label="Kg" name="weightKg" error={fieldErrors.weightKg} value={set?.weightKg} />
-      <TextField label="Reps" name="reps" error={fieldErrors.reps} value={set?.reps} />
-      <TextField label="RIR" name="rir" error={fieldErrors.rir} value={set?.rir ?? 2} />
-      <TextField
-        label="Rest"
-        name="restTimeSeconds"
-        error={fieldErrors.restTimeSeconds}
-        value={set?.restTimeSeconds}
-      />
-      <TextField label="Note" name="note" error={fieldErrors.note} value={set?.note} wide />
-    </>
-  );
+function formatSetHeadline(set: WorkoutSet): string {
+  return `${set.weightKg} kg x ${set.reps}`;
 }
 
-function SetTypeField({
-  defaultValue,
-  error
-}: {
-  defaultValue: SetType;
-  error: string | undefined;
-}): ReactNode {
-  return (
-    <label className="compactField">
-      <span>Type</span>
-      <select name="setType" defaultValue={defaultValue}>
-        <option value="working">Working</option>
-        <option value="warmup">Warmup</option>
-      </select>
-      <FieldError message={error} />
-    </label>
-  );
-}
+function formatSetDetail(set: WorkoutSet): string {
+  const rest = set.restTimeSeconds === null ? "" : `, ${set.restTimeSeconds}s rest`;
+  const note = set.note ? `, ${set.note}` : "";
 
-function TextField({
-  error,
-  label,
-  name,
-  value,
-  wide = false
-}: {
-  error: string | undefined;
-  label: string;
-  name: SetField;
-  value: number | string | null | undefined;
-  wide?: boolean;
-}): ReactNode {
-  return (
-    <label className={wide ? "compactField wideField" : "compactField"}>
-      <span>{label}</span>
-      <input name={name} type="text" defaultValue={value ?? ""} />
-      <FieldError message={error} />
-    </label>
-  );
-}
-
-type ParseSetResult =
-  | { ok: true; value: z.infer<typeof setFormSchema> }
-  | { ok: false; errors: SetFieldErrors };
-
-function parseSetForm(formData: FormData): ParseSetResult {
-  const parsed = setFormSchema.safeParse({
-    setType: String(formData.get("setType") ?? "working") as SetType,
-    weightKg: String(formData.get("weightKg") ?? ""),
-    reps: String(formData.get("reps") ?? ""),
-    rir: String(formData.get("rir") ?? ""),
-    restTimeSeconds: String(formData.get("restTimeSeconds") ?? ""),
-    note: String(formData.get("note") ?? "")
-  });
-
-  return parsed.success
-    ? { ok: true, value: parsed.data }
-    : { ok: false, errors: toSetFieldErrors(parsed.error) };
-}
-
-function FieldError({ message }: { message: string | undefined }): ReactNode {
-  return message ? <span className="fieldError">{message}</span> : null;
-}
-
-function toSetFieldErrors(error: ZodError): SetFieldErrors {
-  const errors: SetFieldErrors = {};
-
-  for (const issue of error.issues) {
-    const fieldName = issue.path[0];
-
-    if (isSetField(fieldName) && !errors[fieldName]) {
-      errors[fieldName] = issue.message;
-    }
-  }
-
-  return errors;
-}
-
-function isSetField(value: unknown): value is SetField {
-  return (
-    value === "note" ||
-    value === "reps" ||
-    value === "restTimeSeconds" ||
-    value === "rir" ||
-    value === "setType" ||
-    value === "weightKg"
-  );
+  return `RIR ${set.rir}, ${set.setType}${rest}${note}`;
 }
