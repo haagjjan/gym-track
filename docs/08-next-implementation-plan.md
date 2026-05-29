@@ -360,3 +360,397 @@ Tests/checks:
 - `pnpm lint`
 - `pnpm test`
 - Manual create/name/history check.
+
+### UX Slice 6. Reuse Last Workout Structure
+
+Status: planned after UX Slice 5.
+
+Goal: starting a repeated workout should be fast without building a full template editor.
+
+Product quality target:
+
+- A user who trains `Push A` repeatedly should not rebuild the exercise list every time.
+- Starting a known session type should preload the useful structure while still creating a fresh workout.
+
+Implement:
+
+- When selecting an existing workout name/session type, preload the exercise list from the most recent workout with that name/type.
+- Optionally preload set structure as empty planned rows if it fits existing behavior.
+- Optionally show previous best/recent values as hints, not completed sets.
+- Do not preload completed set data as completed sets.
+- Allow the user to add/remove/reorder exercises after preload.
+
+UI/UX requirements:
+
+- The user must understand that this is a new workout, not editing the old one.
+- Preloaded exercises should appear ready for logging.
+- There should be a clear way to start empty instead.
+
+Rules:
+
+- This is template-like behavior, not a full template system.
+- Do not build drag-and-drop template editing.
+- Keep user control: user can remove/add exercises after preload.
+- Avoid large schema changes unless needed.
+
+Acceptance criteria:
+
+- User starts `Push A` again and sees the previous exercise list ready for logging.
+- The new workout contains no falsely completed sets.
+- User can still start an empty workout.
+- Preload behavior is predictable and documented in the UI.
+
+Tests/checks:
+
+- `pnpm type-check`
+- `pnpm lint`
+- `pnpm test`
+- Manual create `Push A`, finish it, start `Push A` again, verify preload.
+
+### UX Slice 7. Dashboard Rebuild
+
+Status: planned after core workout flow improvements.
+
+Goal: make Home a useful dashboard, not only a navigation menu.
+
+Product quality target:
+
+- The dashboard should answer: `What should I do now?`
+- The primary action should be obvious within the first few seconds.
+- Returning users should see current training context, not only navigation cards.
+
+Implement:
+
+- Primary CTA: `Resume workout` if an open workout exists, otherwise `Start workout`.
+- Last workout summary with name/date/duration/exercises/sets if available.
+- Recent progress highlight if data exists.
+- Weekly volume preview if data exists.
+- Keep navigation cards secondary.
+- Add clear first-time empty state.
+- Improve card hierarchy, spacing, and copy so the page feels intentional.
+
+UI/UX requirements:
+
+- Home must not feel like a sloppy menu screen.
+- Primary CTA should visually dominate.
+- Secondary navigation should be available but not compete with the primary action.
+- Empty state should guide the user to start their first workout.
+- The page should be readable and balanced on desktop and mobile.
+
+Rules:
+
+- Do not redesign auth.
+- Do not add complex analytics.
+- Use existing data sources where possible.
+- Do not add dashboard customization.
+
+Acceptance criteria:
+
+- First-time user understands what to do.
+- Returning user sees the next likely action immediately.
+- Active workout dominates the dashboard if one exists.
+- Dashboard is readable on mobile and desktop.
+- Home no longer looks like only four implementation-category cards.
+
+Tests/checks:
+
+- `pnpm type-check`
+- `pnpm lint`
+- `pnpm test`
+- Manual no-data, active-workout, and past-workout checks.
+
+### UX Slice 8. History Cleanup
+
+Status: planned after dashboard rebuild.
+
+Goal: make many past workouts scannable.
+
+Product quality target:
+
+- A user with weeks or months of data should quickly recognize workouts.
+- History cards should communicate useful training context, not just database status.
+
+Implement:
+
+- Use meaningful workout names where available.
+- Improve workout card summaries.
+- Make open/closed state obvious.
+- Show date, duration, exercise count, set count, and possibly top exercises.
+- Add basic search/filter only if easy and contained.
+- Keep CSV import/export controls visually separated from normal history browsing if they remain on this page.
+
+UI/UX requirements:
+
+- Cards should be easy to scan vertically.
+- Open workouts should look different from closed workouts.
+- Import/export controls should not visually dominate normal history use.
+- Empty history should tell the user to start their first workout.
+
+Rules:
+
+- Do not build a complex calendar/history analytics system yet.
+- Do not change CSV behavior in this slice unless needed for visual separation.
+- Do not add advanced filters unless they are simple and contained.
+
+Acceptance criteria:
+
+- User can identify past workouts quickly.
+- Generic `Workout` repetition is reduced when names exist.
+- Open workouts are visually obvious.
+- History remains usable at 390px width.
+
+Tests/checks:
+
+- `pnpm type-check`
+- `pnpm lint`
+- Manual history check with many workouts.
+
+### UX Slice 9. Progress Chart Simplification
+
+Status: planned after history cleanup.
+
+Goal: make progress charts decision-useful instead of visually cluttered.
+
+Product quality target:
+
+- A chart should answer one clear question at a time.
+- The user should understand the selected metric in roughly five seconds.
+- The chart should not show duplicated legends or unexplained technical labels.
+
+Implement:
+
+- Remove duplicate/repeated legend labels such as repeated `Reps after weight change` entries.
+- Default to one primary metric or one clear chart mode.
+- Add chart mode selector if multiple metrics remain.
+- Add summary above the chart: best set, last trained, trend, and volume where available.
+- Add low-data empty state.
+- Keep raw data table available below the chart if already present.
+- Make time range filters clear and visually secondary to the selected metric.
+
+UI/UX requirements:
+
+- No cluttered multi-line legend by default.
+- Chart label/copy should use training language, not implementation language.
+- Low-data state should explain that more logged workouts are needed.
+- Mobile chart should avoid horizontal overflow or provide intentional scroll only where needed.
+
+Rules:
+
+- Do not change raw workout data.
+- Do not add advanced analytics or prediction.
+- Do not redesign Weekly Volume in this slice.
+
+Acceptance criteria:
+
+- No duplicate legend labels.
+- Chart meaning is understandable in roughly 5 seconds.
+- Time range filters still work.
+- Mobile chart does not accidentally overflow horizontally.
+- One-data-point and no-data cases are handled gracefully.
+
+Tests/checks:
+
+- `pnpm type-check`
+- `pnpm lint`
+- `pnpm test`
+- Manual checks with no data, one data point, few data points, and many data points.
+
+### UX Slice 10. Empty/Error/Loading States
+
+Status: planned before tester launch.
+
+Goal: make the app understandable and recoverable when data is missing, loading, or failing.
+
+Product quality target:
+
+- No main page should look blank, broken, or confusing when data is missing.
+- Failed actions should explain what happened and what the user can do.
+- Loading states should feel intentional, not like layout bugs.
+
+Implement states for:
+
+- No workouts.
+- No active workout.
+- No exercises.
+- No progress data.
+- No weekly volume data.
+- Failed login.
+- Failed workout save.
+- Failed set save.
+- Failed import.
+- Loading workout/history/progress/weekly volume.
+
+UI/UX requirements:
+
+- Empty states should include a short explanation and a next action.
+- Error states should avoid technical jargon where possible.
+- Loading states should preserve layout stability.
+- Recovery actions should be explicit: retry, go back, start workout, add exercise, etc.
+
+Rules:
+
+- Do not create fake data.
+- Empty states should guide the next action.
+- Error states should explain what happened and what the user can do.
+- Do not add global toast infrastructure unless the app already has a suitable pattern or the slice needs it.
+
+Acceptance criteria:
+
+- No major page appears blank or broken when data is missing.
+- Failed actions are visible and recoverable where practical.
+- Loading states do not look like broken pages.
+- Core error/empty states are readable on mobile.
+
+Tests/checks:
+
+- `pnpm type-check`
+- `pnpm lint`
+- Manual no-data and failed-request checks where practical.
+
+### UX Slice 11. Mobile Pass
+
+Status: planned before tester launch.
+
+Goal: verify and fix the core app at phone widths because gym usage is mobile-first.
+
+Product quality target:
+
+- The app must be genuinely usable on a phone in the gym.
+- The user should not need precise tiny taps.
+- Desktop layout should not be the only design target.
+
+Check/fix:
+
+- Home.
+- Active workout logging.
+- Add exercise flow.
+- Workout history/detail.
+- Progress chart.
+- Weekly Volume.
+- CSV controls if still visible on small screens.
+
+UI/UX requirements:
+
+- Main tap targets should be roughly 44px or larger.
+- Avoid accidental horizontal overflow in form-heavy screens.
+- Inputs should not become cramped tables on mobile.
+- Important actions should be reachable and clearly separated.
+- Text should remain readable without zooming.
+
+Rules:
+
+- Prioritize real usability over desktop visual symmetry.
+- Avoid horizontal scrolling except where intentionally used for charts.
+- Do not introduce a new UI framework.
+- Do not use this slice to add new features.
+
+Acceptance criteria:
+
+- Core workout flow works at 390px and 430px widths.
+- Main tap targets are roughly 44px or larger.
+- No accidental horizontal overflow in form-heavy screens.
+- User can log a workout one-handed without precise tiny clicks.
+- Dashboard, history, progress, and weekly volume remain readable on mobile.
+
+Tests/checks:
+
+- `pnpm type-check`
+- `pnpm lint`
+- `pnpm smoke:web` if available.
+- Manual browser checks at 390px, 430px, and 1440px.
+
+### UX Slice 12. CSV Import Cleanup
+
+Status: planned before or shortly after tester launch depending on whether testers will import data.
+
+Goal: prevent bad imported data from silently polluting the main UI.
+
+Product quality target:
+
+- Importing data should feel controlled and reversible enough to trust.
+- Bad CSV rows should not create ugly or broken exercise names in the main app.
+- Users should understand what was imported and what failed.
+
+Implement:
+
+- Import preview if not already present.
+- Clear validation summary.
+- Invalid row report.
+- Unknown exercise/muscle handling.
+- Duplicate detection if easy and contained.
+- Clear success state after import.
+- Keep export discoverable but not visually dominant in normal history browsing.
+
+UI/UX requirements:
+
+- Import copy should clearly explain expected CSV format.
+- Validation errors should name the row/field problem where practical.
+- Partial imports should be avoided unless the UI clearly explains what happened.
+- The user should not have to inspect the database/UI manually to know whether import worked.
+
+Rules:
+
+- Keep canonical CSV format intact.
+- Do not support arbitrary legacy CSV shapes yet.
+- Do not store tester personal data in repo docs.
+
+Acceptance criteria:
+
+- User sees what will be imported.
+- Failed rows explain why they failed.
+- Malformed CSV does not partially import silently.
+- Main UI does not silently receive broken exercise names from invalid input.
+- Export still works after import cleanup.
+
+Tests/checks:
+
+- `pnpm type-check`
+- `pnpm lint`
+- `pnpm test`
+- CSV import/export round-trip test if available.
+
+### UX Slice 13. Weekly Volume Refinement
+
+Status: planned after higher-priority tester blockers unless Weekly Volume is central to tester feedback.
+
+Goal: make the muscle heatmap useful, not just visually interesting.
+
+Product quality target:
+
+- The user should understand what the colors mean and what action to take.
+- The heatmap should answer: which muscles did I train enough, too little, or not at all?
+
+Implement:
+
+- Clear selected week range.
+- Working set counts per muscle.
+- Related exercises and recent sessions for selected muscle.
+- Previous-week comparison if easy.
+- Better little-data state.
+- Clarify primary/secondary muscle limitations if the data model still only supports primary attribution.
+
+UI/UX requirements:
+
+- Color scale/legend should be understandable.
+- Selecting a muscle should reveal useful details, not just a name.
+- No-data and low-data weeks should be explained.
+- The view should remain usable on mobile.
+
+Rules:
+
+- Do not rebuild the body map as 3D yet.
+- Do not add complex muscle-science modeling.
+- Keep primary/secondary muscle attribution limitations explicit if still present.
+
+Acceptance criteria:
+
+- User understands what the colors mean.
+- User can select a muscle and see contributing exercises/sessions.
+- Low-volume/no-volume weeks are clearly explained.
+- Mobile layout remains readable.
+
+Tests/checks:
+
+- `pnpm type-check`
+- `pnpm lint`
+- Manual weekly-volume check with no data, low data, and high data.
