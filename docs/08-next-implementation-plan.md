@@ -88,7 +88,6 @@ Features to avoid until after tester feedback:
 
 ## Implementation Slices
 
-The detailed slice blocks follow in later commits to keep each doc change small and reviewable.
 
 ### UX Slice 1. Active Workout Logging Redesign
 
