@@ -86,8 +86,28 @@ Features to avoid until after tester feedback:
 - Dashboard customization.
 - Gamification.
 
-## Implementation Slices
+## Implementation Rules For All UX Slices
 
+Apply these rules to every UX slice unless the slice explicitly says otherwise:
+
+- Keep each slice small and shippable. Do not combine multiple slices just because nearby files are open.
+- Product quality is part of the acceptance criteria. Passing tests is not enough if the UI still feels confusing, cramped, or implementation-driven.
+- Treat mobile usability as critical for all gym-use flows. Check at 390px and 430px when the slice touches workout logging, exercise selection, dashboard, history, progress, or weekly volume.
+- Preserve existing backend/API contracts unless the selected slice explicitly requires a contract change.
+- Prefer simple, understandable UI over clever interactions.
+- Do not add new feature categories while fixing UX quality.
+- Keep copy plain and user-facing. Avoid internal wording such as `sessionExerciseId`, `mutation`, `payload`, `record`, or `entity` in the UI.
+- After each slice, update this document only if the implementation order, blockers, or acceptance criteria changed.
+
+Definition of done before tester launch:
+
+- A tester can start or resume a workout, add exercises, log sets, correct mistakes, finish the workout, find it in history, and understand basic progress on mobile without help.
+- The home screen makes the next action obvious.
+- No core screen appears blank, broken, or confusing in common no-data/loading/error states.
+- Progress charts do not require decoding cluttered legends.
+- CSV import does not silently create broken visible data if tester import is part of the test.
+
+## Implementation Slices
 
 ### UX Slice 1. Active Workout Logging Redesign
 
@@ -147,6 +167,7 @@ Acceptance criteria:
 - User can log a set, edit a previous set, delete a set, switch active exercise, and reorder exercises.
 - Empty exercises remain editable but do not dominate the page unless selected.
 - Existing smoke coverage is updated for add exercise, save set, add second exercise, switch active exercise, edit previous set, delete set, and reorder exercises.
+- The final UI still feels visually calm: one obvious active exercise, no giant uncontrolled form wall, no tiny crowded button clusters on mobile.
 
 Tests/checks:
 
@@ -203,6 +224,7 @@ Acceptance criteria:
 - Search/add flow works at 390px without horizontal scrolling.
 - Empty search state explains what to do.
 - After adding, the newly added exercise becomes the active exercise.
+- The add flow feels like a temporary focused task, not a second full page competing with workout logging.
 
 Tests/checks:
 
@@ -450,6 +472,7 @@ Acceptance criteria:
 - Active workout dominates the dashboard if one exists.
 - Dashboard is readable on mobile and desktop.
 - Home no longer looks like only four implementation-category cards.
+- The dashboard communicates product purpose and next action within roughly 10 seconds for a new user.
 
 Tests/checks:
 
@@ -546,6 +569,7 @@ Acceptance criteria:
 - Time range filters still work.
 - Mobile chart does not accidentally overflow horizontally.
 - One-data-point and no-data cases are handled gracefully.
+- The chart answers one training question at a time; it must not combine so many metrics that the legend becomes the main thing the user sees.
 
 Tests/checks:
 
@@ -773,6 +797,7 @@ Rules:
 - Do not commit hosted credentials, production database URLs, tester personal data, or backup artifacts.
 - Do not change Render service names in `render.yaml` after launch unless references are updated together and the migration is documented.
 - Do not invite testers until the restore test and health checks pass.
+- Do not invite testers if the core mobile workout logging flow still feels cramped, unclear, or hard to recover from after mistakes.
 
 Tests/checks:
 
