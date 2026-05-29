@@ -754,3 +754,81 @@ Tests/checks:
 - `pnpm type-check`
 - `pnpm lint`
 - Manual weekly-volume check with no data, low data, and high data.
+
+### Launch Slice 14. Small-Batch Launch Execution
+
+Status: blocked until tester-launch blockers from the UX audit are resolved.
+
+Goal: finish the last operational pieces needed for a small tester batch.
+
+Implement:
+
+- Create the Render Blueprint from `render.yaml`.
+- Confirm hosted API health and web smoke flow.
+- Perform the first backup export and restore test into a non-production database.
+- Configure Render notifications for deploy failures, health failures, service restarts, database storage, and database connections.
+- Record only non-secret launch notes or follow-up docs in the repo.
+
+Rules:
+
+- Do not commit hosted credentials, production database URLs, tester personal data, or backup artifacts.
+- Do not change Render service names in `render.yaml` after launch unless references are updated together and the migration is documented.
+- Do not invite testers until the restore test and health checks pass.
+
+Tests/checks:
+
+- Validate deployment and environment values against the runbook.
+- Re-run browser smoke checks against the deployed stack before inviting testers.
+
+### Launch Slice 15. Auth Hardening Follow-Up
+
+Status: planned after core UX hardening or before public launch, depending on tester needs.
+
+Goal: close the last product gaps around account access.
+
+Implement:
+
+- Email verification.
+- Password reset.
+
+Rules:
+
+- Keep the current owned email/password auth and opaque-session approach unless a new ADR changes it.
+- Add any required API/UI contract updates in the same change.
+
+Tests/checks:
+
+- Add focused auth tests for the new flows.
+- Run `pnpm check` and the relevant browser smoke coverage.
+
+## Fresh Session Prompt
+
+Use this prompt when starting the next implementation session:
+
+```md
+We are continuing the Gym Progress Tracker from the current MVP foundation.
+
+First read:
+- AGENTS.md
+- README.md
+- ARCHITECTURE.md
+- ENGINEERING.md
+- CONTRIBUTING.md
+- docs/git-pipeline.md
+- docs/deployment-runbook.md
+- docs/repository-structure.md
+- docs/00-workflow.md
+- docs/02-query-list.md
+- docs/03-data-model-notes.md
+- docs/04-schema-draft.md
+- docs/05-api-contract.md
+- docs/07-implementation-pattern.md
+- docs/08-next-implementation-plan.md
+
+Implement the next recommended slice only: UX Slice 1. Active Workout Logging Redesign.
+Use the UX Hardening Sequence From Product Audit as the current product priority. Do not proceed to Small-Batch Launch Execution until the tester-launch blockers listed there are resolved.
+
+Do not commit hosted credentials, production database URLs, tester personal data, backup artifacts, custom domain changes, application stack changes, backend/API contract changes, database migrations, or unrelated dashboard/history/progress/CSV/auth/deployment edits unless the selected UX slice explicitly requires them.
+
+Before handoff, run relevant checks, confirm `git diff --check`, keep the diff focused, commit, and push.
+```
