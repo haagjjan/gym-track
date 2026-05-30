@@ -22,7 +22,6 @@ Have a repo that feels like a real project from day 1: versioned, documented, re
 - `mkdir`, `cd`, `git init`, `git add`, `git commit`
 
 ### Notes
-- Use short commits often.
 
 ---
 

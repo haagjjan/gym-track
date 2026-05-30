@@ -20,7 +20,6 @@ Read these files before implementing feature work:
 10. `ENGINEERING.md` - TypeScript/PostgreSQL code quality rules
 11. `ARCHITECTURE.md` - module boundaries and dependency rules
 12. `CONTRIBUTING.md` - implementation workflow and review gates
-13. `docs/git-pipeline.md` - Git, PR, and repository check workflow
 
 ## Working Rules
 
@@ -59,8 +58,6 @@ Before handing work back:
 
 - `git status --short` should show only intended changes.
 - If committing, inspect `git diff --stat`, `git diff --name-only`, and `git diff --cached --stat` before `git commit`.
-- Split commits at natural boundaries from `docs/git-pipeline.md`; do not make one broad end-of-task commit just because all checks pass.
-- If a staged commit touches API, web, tests, and docs together or adds/removes hundreds of lines, stop and split it, or ask the user before committing.
 - `git diff --check` must pass.
 - Relevant tests or checks must be run when a toolchain exists.
 - New files must have a clear purpose and owner.

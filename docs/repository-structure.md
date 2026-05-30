@@ -110,7 +110,6 @@ docs/
 - `docs/07-implementation-pattern.md` records the feature-slice pattern used by API and web work.
 - `docs/08-next-implementation-plan.md` records the current fresh-session handoff and remaining implementation blocks.
 - `docs/deployment-runbook.md` records Render deployment, migration, backup, restore-test, and monitoring steps for small-batch users.
-- `docs/git-pipeline.md` records Git, PR, and check workflow.
 - `docs/decisions` contains ADRs, including the accepted Render deployment target. Add or update an ADR before changing stack, auth strategy, schema policy, API style, or deployment direction.
 
 ## Local-Only Files

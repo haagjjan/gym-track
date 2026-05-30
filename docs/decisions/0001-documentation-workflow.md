@@ -14,7 +14,7 @@ Use root-level workflow documents plus ADRs:
 
 - `AGENTS.md` defines Codex-specific working rules.
 - `ARCHITECTURE.md` defines boundaries, dependency direction, and open architecture decisions.
-- `CONTRIBUTING.md` defines the implementation, validation, review, commit, and push workflow.
+- `CONTRIBUTING.md` defines the implementation, validation, and review workflow.
 - `docs/decisions/` stores ADRs for important technical and product tradeoffs.
 
 Major decisions about stack, database, auth, API style, deployment, schema policy, or module boundaries must be recorded as ADRs before implementation.

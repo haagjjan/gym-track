@@ -19,7 +19,6 @@ First, read these docs before changing files:
 - ARCHITECTURE.md
 - ENGINEERING.md
 - CONTRIBUTING.md
-- docs/git-pipeline.md
 - docs/00-workflow.md
 - docs/01-requirements.md
 - docs/02-query-list.md
@@ -42,14 +41,7 @@ Scope:
 - Add basic install/build/type-check/lint scripts if practical.
 - Do not implement database schema migrations yet.
 - Do not implement auth, API endpoints, UI screens, business logic, or generated placeholder systems.
-- Keep commits small and specific.
 - Run relevant checks before handoff.
-- Push commits to `origin/main` after successful verification.
-
-Expected commit shape:
-1. `Scaffold pnpm workspace`
-2. `Add local Postgres development setup`
-3. `Add initial app tooling foundations`
 
 Before final handoff, confirm:
 - `git diff --check` passes.

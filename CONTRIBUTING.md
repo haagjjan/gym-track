@@ -4,8 +4,6 @@ This repo should stay easy to reason about. Changes are expected to be small, re
 
 Read `ENGINEERING.md` before implementing application code. It defines the TypeScript, SQL, size, structure, interface, DRY, and testing rules for this project.
 
-Read `docs/git-pipeline.md` before opening implementation pull requests. It defines the branch, commit, PR, and GitHub checks workflow.
-
 ## Standard Workflow
 
 1. Read the relevant docs before changing files.
@@ -16,9 +14,7 @@ Read `docs/git-pipeline.md` before opening implementation pull requests. It defi
 6. Add or update tests when behavior changes.
 7. Run relevant checks.
 8. Commit with a focused message.
-9. Push implementation work to a feature branch and open a pull request.
-
-Tiny documentation fixes may still be committed directly to `main` while this is a solo project, but implementation work should use the PR workflow.
+Tiny documentation fixes may still be committed directly to `main` while this is a solo project.
 
 ## Change Gates
 
@@ -67,18 +63,12 @@ Use concise, imperative commit messages, for example:
 
 Keep commits focused. A reader should understand why the change exists from the commit message and the surrounding docs.
 
-Prefer several small commits over one broad commit when the work naturally separates into decisions, docs, tooling, schema, and implementation.
-
-Before committing, use the commit split gate in `docs/git-pipeline.md`. Passing checks are not a reason to collapse API work, web work, tests, and docs into one commit. If the staged diff needs multiple explanations, split it before committing.
-
 ## Review Checklist
 
 Before merging or pushing important work, check:
 
 - Does this match the MVP requirements?
 - Does it follow the architecture boundaries?
-- Does it follow the branch and PR workflow in `docs/git-pipeline.md`?
-- Does the commit history split the work at natural boundaries rather than one broad end-of-task commit?
 - Does it follow the TypeScript/PostgreSQL rules in `ENGINEERING.md`?
 - Are files, functions, components, and classes still small enough to scan?
 - Is duplication being handled at the right time, without premature abstraction?

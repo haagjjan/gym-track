@@ -31,7 +31,6 @@ The repository is in the first implementation foundation phase. It contains the 
 - `ENGINEERING.md` - TypeScript/PostgreSQL engineering standards
 - `CONTRIBUTING.md` - contribution workflow and review gates
 - `docs/repository-structure.md` - current repo map and local-only file rules
-- `docs/git-pipeline.md` - Git branch, PR, and repository check workflow
 - `docs/00-workflow.md` - project roadmap
 - `docs/01-requirements.md` - MVP requirements and user flows
 - `docs/02-query-list.md` - DB-driven query requirements
