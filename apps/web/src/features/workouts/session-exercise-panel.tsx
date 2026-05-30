@@ -2,32 +2,39 @@
 
 import type { ReactNode } from "react";
 import { useTransition } from "react";
+import type { SetDraft, SetDraftField } from "./workout-set-drafts";
 import type { SessionExercise, WorkoutSet } from "./workout-types";
 import { AddSetForm, EditableSetRow } from "./set-editor";
 
 interface SessionExercisePanelProps {
   canMoveDown: boolean;
   canMoveUp: boolean;
+  draft: SetDraft;
   isActive: boolean;
   item: SessionExercise;
   workoutId: string;
   onDeleteExercise: (sessionExerciseId: string) => Promise<void>;
+  onDraftChange: (sessionExerciseId: string, field: SetDraftField, value: string) => void;
   onMoveExercise: (sessionExerciseId: string, direction: "down" | "up") => Promise<void>;
   onRefresh: () => Promise<unknown>;
   onSelectExercise: (sessionExerciseId: string) => void;
+  onSetSaved: (sessionExerciseId: string, set: WorkoutSet) => void;
   onShowError: (message: string) => void;
 }
 
 export function SessionExercisePanel({
   canMoveDown,
   canMoveUp,
+  draft,
   isActive,
   item,
   workoutId,
   onDeleteExercise,
+  onDraftChange,
   onMoveExercise,
   onRefresh,
   onSelectExercise,
+  onSetSaved,
   onShowError
 }: SessionExercisePanelProps): ReactNode {
   const [isPending, startTransition] = useTransition();
@@ -84,7 +91,7 @@ export function SessionExercisePanel({
         </div>
       </header>
 
-      {!isActive ? <ExerciseSummary summary={summary} /> : null}
+      {!isActive ? <ExerciseSummary hasStartedDraft={draft.isStarted} summary={summary} /> : null}
 
       {isActive ? (
         <>
@@ -93,7 +100,7 @@ export function SessionExercisePanel({
             <strong>{summary.setCountLabel}</strong>
           </div>
 
-          <div className="setList">
+          <div className="setList" aria-label={`${item.exercise.name} previous sets`}>
             {item.sets.map((set) => (
               <EditableSetRow
                 key={set.id}
@@ -108,9 +115,12 @@ export function SessionExercisePanel({
           </div>
 
           <AddSetForm
+            draft={draft}
             sessionExerciseId={item.id}
             workoutId={workoutId}
+            onDraftChange={(field, value) => onDraftChange(item.id, field, value)}
             onRefresh={onRefresh}
+            onSetSaved={(set) => onSetSaved(item.id, set)}
             onShowError={onShowError}
           />
         </>
@@ -124,18 +134,27 @@ interface ExerciseSummaryValue {
   setCountLabel: string;
 }
 
-function ExerciseSummary({ summary }: { summary: ExerciseSummaryValue }): ReactNode {
+function ExerciseSummary({
+  hasStartedDraft,
+  summary
+}: {
+  hasStartedDraft: boolean;
+  summary: ExerciseSummaryValue;
+}): ReactNode {
   return (
-    <dl className="exerciseSummary">
-      <div>
-        <dt>Sets</dt>
-        <dd>{summary.setCountLabel}</dd>
-      </div>
-      <div>
-        <dt>Last set</dt>
-        <dd>{summary.lastSetLabel}</dd>
-      </div>
-    </dl>
+    <>
+      <dl className="exerciseSummary">
+        <div>
+          <dt>Sets</dt>
+          <dd>{summary.setCountLabel}</dd>
+        </div>
+        <div>
+          <dt>Last set</dt>
+          <dd>{summary.lastSetLabel}</dd>
+        </div>
+      </dl>
+      {hasStartedDraft ? <p className="draftIndicator">Draft set started</p> : null}
+    </>
   );
 }
 
@@ -154,10 +173,17 @@ function formatSetCount(count: number): string {
 }
 
 function formatSetSummary(set: WorkoutSet): string {
-  const rest = set.restTimeSeconds === null ? "" : `, ${set.restTimeSeconds}s rest`;
-  const note = set.note ? `, ${set.note}` : "";
+  const parts = [`Last: ${set.weightKg} kg × ${set.reps}`, `RIR ${set.rir}`];
 
-  return `${set.weightKg} kg x ${set.reps}, RIR ${set.rir} (${set.setType}${rest}${note})`;
+  if (set.setType === "warmup") {
+    parts.push("warmup");
+  }
+
+  if (set.restTimeSeconds !== null) {
+    parts.push(`${set.restTimeSeconds}s rest`);
+  }
+
+  return parts.join(" · ");
 }
 
 function MoveButton({

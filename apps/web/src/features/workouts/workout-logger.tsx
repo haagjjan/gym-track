@@ -4,15 +4,10 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { LogoutButton } from "../auth/logout-button";
-import {
-  addSessionExercise,
-  deleteSessionExercise,
-  endWorkout,
-  getWorkout,
-  reorderSessionExercises
-} from "./workout-api";
+import { addSessionExercise, deleteSessionExercise, endWorkout, getWorkout, reorderSessionExercises } from "./workout-api";
 import { ExercisePicker } from "./exercise-picker";
 import { SessionExercisePanel } from "./session-exercise-panel";
+import { useSetDrafts } from "./use-set-drafts";
 import type { WorkoutDetail } from "./workout-types";
 import { chooseActiveExerciseId, findFallbackExerciseId, formatStartedAt, moveSessionExercise, sortWorkout } from "./workout-view-model";
 
@@ -26,6 +21,7 @@ export function WorkoutLogger({ workoutId }: WorkoutLoggerProps): ReactNode {
   const [isLoading, setIsLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const { clearSetDraft, getSetDraft, handleDraftChange, handleSetSaved } = useSetDrafts(workout);
 
   const refreshWorkout = useCallback(async (): Promise<WorkoutDetail | null> => {
     const result = await getWorkout(workoutId).catch(() => null);
@@ -129,6 +125,7 @@ export function WorkoutLogger({ workoutId }: WorkoutLoggerProps): ReactNode {
     }
 
     const refreshedWorkout = await refreshWorkout();
+    clearSetDraft(sessionExerciseId);
 
     if (activeSessionExerciseId === sessionExerciseId) {
       setActiveSessionExerciseId(chooseActiveExerciseId(refreshedWorkout, fallbackExerciseId));
@@ -170,12 +167,8 @@ export function WorkoutLogger({ workoutId }: WorkoutLoggerProps): ReactNode {
       <header className="workoutHeader">
         <div>
           <nav className="pageNav" aria-label="Workout navigation">
-            <Link className="backLink" href="/">
-              Home
-            </Link>
-            <Link className="backLink" href="/workouts">
-              History
-            </Link>
+            <Link className="backLink" href="/">Home</Link>
+            <Link className="backLink" href="/workouts">History</Link>
           </nav>
           <p className="eyebrow">{workout?.isOpen ? "Open workout" : "Closed workout"}</p>
           <h1>{workout?.title ?? "Workout"}</h1>
@@ -218,13 +211,16 @@ export function WorkoutLogger({ workoutId }: WorkoutLoggerProps): ReactNode {
                 isActive={item.id === activeSessionExerciseId}
                 canMoveDown={index < workout.exercises.length - 1}
                 canMoveUp={index > 0}
+                draft={getSetDraft(item.id)}
                 item={item}
                 key={item.id}
                 workoutId={workout.id}
                 onDeleteExercise={handleDeleteExercise}
+                onDraftChange={handleDraftChange}
                 onMoveExercise={handleMoveExercise}
                 onRefresh={refreshWorkout}
                 onSelectExercise={setActiveSessionExerciseId}
+                onSetSaved={handleSetSaved}
                 onShowError={setError}
               />
             ))}

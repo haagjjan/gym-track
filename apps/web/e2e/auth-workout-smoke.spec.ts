@@ -5,6 +5,7 @@ test("signs up and logs a workout through the UI", async ({ page }) => {
   const username = `smoke_${tag}`;
   const exerciseName = `Smoke Bench ${tag}`;
   const accessoryExerciseName = `Smoke Curl ${tag}`;
+  const draftExerciseName = `Smoke Pressdown ${tag}`;
 
   await page.goto("/signup");
   await page.getByLabel("Email").fill(`${username}@example.com`);
@@ -46,14 +47,23 @@ test("signs up and logs a workout through the UI", async ({ page }) => {
   await expect(accessoryBlock).toHaveClass(/sessionExerciseActive/);
   await expect(exerciseBlock.locator(".setForm")).toHaveCount(0);
   await expect(exerciseBlock).toContainText("1 set logged");
-  await expect(exerciseBlock).toContainText("90.00 kg x 5");
+  await expect(exerciseBlock).toContainText("Last: 90.00 kg × 5 · RIR 1 · 120s rest");
 
   await accessoryBlock.getByLabel("Kg").fill("30");
   await accessoryBlock.getByLabel("Reps").fill("12");
   await accessoryBlock.getByLabel("RIR").fill("3");
   await accessoryBlock.getByLabel("Rest").fill("60");
+  await exerciseBlock.getByRole("button", { name: "Open/Edit" }).click();
+  await expect(accessoryBlock).toContainText("Draft set started");
+  await accessoryBlock.getByRole("button", { name: "Open/Edit" }).click();
+  await expect(accessoryBlock.getByLabel("Kg")).toHaveValue("30");
+  await expect(accessoryBlock.getByLabel("Reps")).toHaveValue("12");
+  await expect(accessoryBlock.getByLabel("RIR")).toHaveValue("3");
+  await expect(accessoryBlock.getByLabel("Rest")).toHaveValue("60");
+
   await accessoryBlock.getByRole("button", { name: "Save set" }).click();
   await expect(accessoryBlock.locator(".setSummaryRow")).toHaveCount(1);
+  await expect(accessoryBlock.getByLabel("Kg")).toHaveValue("30.00");
   await accessoryBlock.locator(".setSummaryRow").getByRole("button", { name: "Delete" }).click();
   await expect(accessoryBlock.locator(".setSummaryRow")).toHaveCount(0);
 
@@ -63,6 +73,19 @@ test("signs up and logs a workout through the UI", async ({ page }) => {
   await exerciseBlock.locator(".setRow").getByLabel("Reps").fill("6");
   await exerciseBlock.locator(".setRow").getByRole("button", { name: "Save" }).click();
   await expect(exerciseBlock.locator(".setSummaryRow")).toContainText("90.00 kg x 6");
+
+  await page.locator(".createExerciseForm").getByLabel("Name").fill(draftExerciseName);
+  await page.locator(".createExerciseForm").getByLabel("Primary muscle").selectOption({ label: "Triceps" });
+  await page.getByRole("button", { name: "Create and add" }).click();
+
+  const draftBlock = page.locator(".sessionExercise", { hasText: draftExerciseName });
+  await expect(draftBlock).toHaveClass(/sessionExerciseActive/);
+  await draftBlock.getByLabel("Kg").fill("22");
+  await exerciseBlock.getByRole("button", { name: "Open/Edit" }).click();
+  await expect(draftBlock).toContainText("Draft set started");
+  await draftBlock.getByRole("button", { name: "Remove" }).click();
+  await expect(draftBlock).toHaveCount(0);
+  await expect(page.getByText("Draft set started")).toHaveCount(0);
 
   await accessoryBlock.getByRole("button", { name: "Up" }).click();
   await expect(accessoryBlock.locator(".positionBadge")).toHaveText("1");

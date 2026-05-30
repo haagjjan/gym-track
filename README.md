@@ -54,10 +54,11 @@ Use `docs/repository-structure.md` when you need to understand where files belon
 
 ## Next Implementation Slices
 
-The remaining work is structured in `docs/08-next-implementation-plan.md`. The recommended next slice is small-batch launch execution.
+The remaining work is structured in `docs/08-next-implementation-plan.md`. The recommended next slice is UX Slice 2, Separate Add-Exercise Flow.
 
 Remaining implementation blocks:
 
+- UX hardening sequence from the product audit
 - Small-batch launch execution
 
 Remaining larger decisions:

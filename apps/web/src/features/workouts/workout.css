@@ -141,6 +141,12 @@
   background: #ffffff;
   border-color: var(--brand);
   box-shadow: 0 14px 36px rgba(24, 33, 31, 0.08);
+  gap: 18px;
+  padding: 20px;
+}
+
+.sessionExercise:not(.sessionExerciseActive) {
+  gap: 12px;
 }
 
 .sessionExerciseHeader {
@@ -226,6 +232,17 @@
   color: var(--ink);
   font-weight: 800;
   overflow-wrap: anywhere;
+}
+
+.draftIndicator {
+  background: #fff8e5;
+  border: 1px solid #ead9a5;
+  border-radius: 8px;
+  color: #6b5416;
+  font-size: 0.86rem;
+  font-weight: 800;
+  margin: 0;
+  padding: 10px 12px;
 }
 
 .activeExerciseMeta {

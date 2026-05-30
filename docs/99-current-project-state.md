@@ -87,14 +87,13 @@ Relevant repo checks:
 
 ## 7. Next Sensible Implementation Steps
 
-- Follow `docs/08-next-implementation-plan.md`; the recommended next slice is small-batch launch execution.
-- That means: get the current feature set ready for a first tester batch, validate the Render setup, and use the runbook to smoke-test the deployed stack.
-- After launch, the obvious follow-up work is shaped by tester feedback and the open operational items: custom domain strategy, monitoring thresholds, and backup/restore cadence.
+- Follow `docs/08-next-implementation-plan.md`; the recommended next slice is UX Slice 2, Separate Add-Exercise Flow.
+- Continue the UX hardening sequence before small-batch launch execution. UX Slice 1 is implemented for focused active workout logging, but exercise selection still needs to move out of the live logging surface.
+- Do not proceed to tester launch until the tester-launch blockers in `docs/08-next-implementation-plan.md` are resolved.
 
 ## 8. Known Risks Or Unclear Parts
 
 - Some roadmap docs lag the code. For example, the older workflow docs do not fully mention CSV import/export or the split Progress/Weekly Volume UI, while `README.md` and `docs/08-next-implementation-plan.md` are more current.
 - `docs/01-requirements.md` still reads like an early draft in places, so treat it as requirement history plus current MVP intent, not a perfect implementation ledger.
 - The app now includes more implemented slices than the original MVP docs initially described, so the safest source for “what next” is `docs/08-next-implementation-plan.md` plus the current code tree.
-- Hosted credentials, custom domains, email verification, password reset, and tester launch execution are still not implemented.
-
+- Hosted credentials, custom domains, email verification, password reset, UX hardening follow-ups, and tester launch execution are still not implemented.

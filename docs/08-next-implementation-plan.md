@@ -36,11 +36,11 @@ Do not continue toward launch until the tester-launch blockers in this file are 
 
 ## Recommended Next Slice
 
-Start with **UX Slice 1: Active Workout Logging Redesign**.
+Start with **UX Slice 2: Separate Add-Exercise Flow**.
 
-Reason: the screenshot/product audit showed that the app has the right technical feature categories, but the core gym-use flow is not yet good enough for testers. The workout screen currently feels too implementation-driven and shows too much at once. Before launch execution, make the active workout experience usable in a real gym: one active exercise expanded, inactive exercises collapsed, large mobile-friendly set inputs, fast correction of previous sets, and clear save behavior.
+Reason: UX Slice 1 made the active workout screen one-exercise-focused with compact inactive exercise cards, local current-set drafts, draft indicators, repeated-set defaults, and mobile-friendly logging controls. The next tester blocker is that exercise selection still lives as a full picker/create form on the logging screen. Before launch execution, separate adding exercises into a focused flow so the live logging area stays calm.
 
-After UX Slice 1, continue through the UX hardening slices below. Do not proceed to Small-Batch Launch Execution until the tester-launch blockers are resolved.
+After UX Slice 2, continue through the UX hardening slices below. Do not proceed to Small-Batch Launch Execution until the tester-launch blockers are resolved.
 
 ## UX Hardening Sequence From Product Audit
 
@@ -111,7 +111,7 @@ Definition of done before tester launch:
 
 ### UX Slice 1. Active Workout Logging Redesign
 
-Status: recommended next slice.
+Status: implemented.
 
 Goal: redesign only the workout logging/detail screen so one session exercise is expanded at a time. Keep existing workout, exercise, set, reorder, delete, and edit API behavior unchanged. The active exercise is local UI state only.
 
@@ -180,7 +180,7 @@ Tests/checks:
 
 ### UX Slice 2. Separate Add-Exercise Flow
 
-Status: planned after UX Slice 1.
+Status: recommended next slice.
 
 Goal: remove the giant exercise selection grid from the active workout screen. Exercise selection should be a focused add flow, not mixed into the active logging area.
 
@@ -848,7 +848,7 @@ First read:
 - docs/07-implementation-pattern.md
 - docs/08-next-implementation-plan.md
 
-Implement the next recommended slice only: UX Slice 1. Active Workout Logging Redesign.
+Implement the next recommended slice only: UX Slice 2. Separate Add-Exercise Flow.
 Use the UX Hardening Sequence From Product Audit as the current product priority. Do not proceed to Small-Batch Launch Execution until the tester-launch blockers listed there are resolved.
 
 Do not commit hosted credentials, production database URLs, tester personal data, backup artifacts, custom domain changes, application stack changes, backend/API contract changes, database migrations, or unrelated dashboard/history/progress/CSV/auth/deployment edits unless the selected UX slice explicitly requires them.

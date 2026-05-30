@@ -4,6 +4,7 @@ import type { FormEvent, ReactNode } from "react";
 import { useState, useTransition } from "react";
 import { addSet, deleteSet, updateSet } from "./workout-api";
 import { parseSetForm, SetFields, type SetFieldErrors } from "./set-form-fields";
+import type { SetDraft, SetDraftField } from "./workout-set-drafts";
 import type { WorkoutSet } from "./workout-types";
 
 interface SetEditorProps {
@@ -12,18 +13,29 @@ interface SetEditorProps {
 }
 
 interface AddSetFormProps extends SetEditorProps {
+  draft: SetDraft;
+  onDraftChange: (field: SetDraftField, value: string) => void;
+  onSetSaved: (set: WorkoutSet) => void;
   sessionExerciseId: string;
   workoutId: string;
 }
 
 export function AddSetForm({
+  draft,
   sessionExerciseId,
   workoutId,
+  onDraftChange,
   onRefresh,
+  onSetSaved,
   onShowError
 }: AddSetFormProps): ReactNode {
   const [isPending, startTransition] = useTransition();
   const [fieldErrors, setFieldErrors] = useState<SetFieldErrors>({});
+
+  function handleDraftChange(field: SetDraftField, value: string): void {
+    setFieldErrors({});
+    onDraftChange(field, value);
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
@@ -45,14 +57,22 @@ export function AddSetForm({
         return;
       }
 
-      form.reset();
+      onSetSaved(result.data.set);
       await onRefresh();
+      focusPrimarySetInput(form);
     });
   }
 
   return (
     <form className="setForm" onSubmit={handleSubmit} noValidate>
-      <SetFields fieldErrors={fieldErrors} />
+      <div className="currentSetHeading">
+        <span>Current set</span>
+      </div>
+      <SetFields
+        draftValues={draft.values}
+        fieldErrors={fieldErrors}
+        onDraftChange={handleDraftChange}
+      />
       <button className="primaryAction saveSetAction" type="submit" disabled={isPending}>
         Save set
       </button>
@@ -167,4 +187,13 @@ function formatSetDetail(set: WorkoutSet): string {
   const note = set.note ? `, ${set.note}` : "";
 
   return `RIR ${set.rir}, ${set.setType}${rest}${note}`;
+}
+
+function focusPrimarySetInput(form: HTMLFormElement): void {
+  window.requestAnimationFrame(() => {
+    const weightInput = form.querySelector<HTMLInputElement>('input[name="weightKg"]');
+    const repsInput = form.querySelector<HTMLInputElement>('input[name="reps"]');
+
+    (weightInput ?? repsInput)?.focus();
+  });
 }
