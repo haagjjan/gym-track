@@ -853,5 +853,5 @@ Use the UX Hardening Sequence From Product Audit as the current product priority
 
 Do not commit hosted credentials, production database URLs, tester personal data, backup artifacts, custom domain changes, application stack changes, backend/API contract changes, database migrations, or unrelated dashboard/history/progress/CSV/auth/deployment edits unless the selected UX slice explicitly requires them.
 
-Before handoff, run relevant checks, confirm `git diff --check`, keep the diff focused, commit, and push.
+Before handoff, run relevant checks, confirm `git diff --check`, keep the diff focused. I will be making the commits and push myself.
 ```
