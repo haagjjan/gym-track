@@ -10,6 +10,10 @@ import type {
   CreateExerciseRequest,
   ListExercisesQuery
 } from "./exercise.schemas.js";
+import {
+  evaluateExerciseName,
+  type ExerciseNameEvaluation
+} from "./exercise-name-quality.js";
 
 export interface MuscleGroupShape {
   id: string;
@@ -44,7 +48,8 @@ export interface ExerciseList {
 
 export type ExerciseResult<T> =
   | { ok: true; value: T }
-  | { ok: false; reason: "name_conflict" | "muscle_group_not_found" };
+  | { ok: false; reason: "name_conflict" | "muscle_group_not_found" }
+  | { ok: false; reason: "name_review_required" | "name_blocked"; evaluation: ExerciseNameEvaluation };
 
 export interface ExerciseService {
   listExercises(input: ListExercisesQuery): Promise<ExerciseList>;
@@ -90,7 +95,17 @@ export function createExerciseService(options: ExerciseServiceOptions): Exercise
       };
     },
     async createExercise(userId, input) {
-      const existingExercise = await options.repository.findExerciseByName(input.name);
+      const evaluation = evaluateExerciseName(input.name);
+
+      if (evaluation.status === "blocked") {
+        return { ok: false, reason: "name_blocked", evaluation };
+      }
+
+      if (evaluation.status === "warn" && !input.confirmNameWarning) {
+        return { ok: false, reason: "name_review_required", evaluation };
+      }
+
+      const existingExercise = await options.repository.findExerciseByName(evaluation.normalizedName);
 
       if (existingExercise && existingExercise.deletedAt === null) {
         return { ok: false, reason: "name_conflict" };
@@ -108,7 +123,7 @@ export function createExerciseService(options: ExerciseServiceOptions): Exercise
 
       if (existingExercise) {
         const restored = await options.repository.restoreExercise(
-          toRestoreExerciseInput(existingExercise.id, input, now())
+          toRestoreExerciseInput(existingExercise.id, input, evaluation.normalizedName, now())
         );
 
         return {
@@ -117,7 +132,9 @@ export function createExerciseService(options: ExerciseServiceOptions): Exercise
         };
       }
 
-      const created = await options.repository.createExercise(toNewExercise(userId, input));
+      const created = await options.repository.createExercise(
+        toNewExercise(userId, input, evaluation.normalizedName)
+      );
 
       if (created.status === "conflict") {
         return { ok: false, reason: "name_conflict" };
@@ -131,10 +148,14 @@ export function createExerciseService(options: ExerciseServiceOptions): Exercise
   };
 }
 
-function toNewExercise(userId: string, input: CreateExerciseRequest): NewExercise {
+function toNewExercise(
+  userId: string,
+  input: CreateExerciseRequest,
+  normalizedName: string
+): NewExercise {
   return {
     id: randomUUID(),
-    name: input.name,
+    name: normalizedName,
     equipment: input.equipment ?? null,
     exerciseType: input.exerciseType ?? null,
     primaryMuscleGroupId: input.primaryMuscleGroupId,
@@ -146,11 +167,12 @@ function toNewExercise(userId: string, input: CreateExerciseRequest): NewExercis
 function toRestoreExerciseInput(
   exerciseId: string,
   input: CreateExerciseRequest,
+  normalizedName: string,
   updatedAt: Date
 ): RestoreExerciseInput {
   return {
     id: exerciseId,
-    name: input.name,
+    name: normalizedName,
     equipment: input.equipment ?? null,
     exerciseType: input.exerciseType ?? null,
     primaryMuscleGroupId: input.primaryMuscleGroupId,

@@ -31,7 +31,8 @@ export const createExerciseRequestSchema = z
     equipment: optionalTextSchema(120),
     exerciseType: optionalTextSchema(50),
     primaryMuscleGroupId: z.string().uuid(),
-    secondaryMuscleGroupIds: z.array(z.string().uuid()).max(20).default([])
+    secondaryMuscleGroupIds: z.array(z.string().uuid()).max(20).default([]),
+    confirmNameWarning: z.boolean().optional()
   })
   .refine((value) => new Set(value.secondaryMuscleGroupIds).size === value.secondaryMuscleGroupIds.length, {
     message: "Secondary muscle groups must be unique.",

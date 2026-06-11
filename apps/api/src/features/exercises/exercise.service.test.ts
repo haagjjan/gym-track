@@ -135,18 +135,51 @@ describe("exercise service", () => {
   it("creates a user-scoped exercise with secondary muscles", async () => {
     const repository = new FakeExerciseRepository();
     const service = createExerciseService({ repository, now: () => now });
-    const result = await service.createExercise("user-1", {
-      name: "Incline Dumbbell Press",
-      equipment: "dumbbell",
-      exerciseType: "compound",
-      primaryMuscleGroupId: chest.id,
-      secondaryMuscleGroupIds: [triceps.id]
-    });
+    const result = await service.createExercise("user-1", createInput());
 
     assert.equal(result.ok, true);
     assert.equal(repository.createdExercise?.createdByUserId, "user-1");
-    assert.equal(repository.createdExercise?.name, "Incline Dumbbell Press");
+    assert.equal(repository.createdExercise?.name, "Dumbbell Bench Press");
     assert.deepEqual(repository.createdExercise?.secondaryMuscleGroupIds, [triceps.id]);
+  });
+
+  it("requires review for plausible names outside the catalog", async () => {
+    const repository = new FakeExerciseRepository();
+    const service = createExerciseService({ repository, now: () => now });
+    const result = await service.createExercise("user-1", {
+      ...createInput(),
+      name: "Jan Curl Variation"
+    });
+
+    assert.equal(result.ok, false);
+    assert.equal(result.reason, "name_review_required");
+    assert.equal(repository.createdExercise, null);
+  });
+
+  it("creates a warned exercise after explicit confirmation", async () => {
+    const repository = new FakeExerciseRepository();
+    const service = createExerciseService({ repository, now: () => now });
+    const result = await service.createExercise("user-1", {
+      ...createInput(),
+      name: "Jan Curl Variation",
+      confirmNameWarning: true
+    });
+
+    assert.equal(result.ok, true);
+    assert.equal(repository.createdExercise?.name, "Jan Curl Variation");
+  });
+
+  it("blocks suspicious names before persistence", async () => {
+    const repository = new FakeExerciseRepository();
+    const service = createExerciseService({ repository, now: () => now });
+    const result = await service.createExercise("user-1", {
+      ...createInput(),
+      name: "Bench Press 2026-05-20"
+    });
+
+    assert.equal(result.ok, false);
+    assert.equal(result.reason, "name_blocked");
+    assert.equal(repository.createdExercise, null);
   });
 
   it("rejects active exercise name conflicts", async () => {
@@ -187,7 +220,7 @@ describe("exercise service", () => {
 
 function createInput() {
   return {
-    name: "Incline Dumbbell Press",
+    name: "Dumbbell Bench Press",
     equipment: "dumbbell",
     exerciseType: "compound",
     primaryMuscleGroupId: chest.id,
