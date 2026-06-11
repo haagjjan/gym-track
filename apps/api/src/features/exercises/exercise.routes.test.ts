@@ -15,6 +15,7 @@ import type {
   ExerciseShape,
   MuscleGroupList
 } from "./exercise.service.js";
+import type { ExerciseNameEvaluation } from "./exercise-name-quality.js";
 
 const chestId = "11111111-1111-4111-8111-111111111111";
 const tricepsId = "22222222-2222-4222-8222-222222222222";
@@ -247,6 +248,43 @@ describe("exercise routes", () => {
     assert.equal(response.json().error.code, "MUSCLE_GROUP_NOT_FOUND");
   });
 
+  it("returns review details for warned exercise names", async () => {
+    const server = await buildExerciseServer(
+      new FakeExerciseService({
+        ok: false,
+        reason: "name_review_required",
+        evaluation: nameEvaluation("warn")
+      })
+    );
+    const response = await server.inject({
+      method: "POST",
+      url: "/api/v1/exercises",
+      payload: createPayload()
+    });
+
+    assert.equal(response.statusCode, 422);
+    assert.equal(response.json().error.code, "EXERCISE_NAME_REVIEW_REQUIRED");
+    assert.equal(response.json().error.details.suggestions[0], "Incline Dumbbell Press");
+  });
+
+  it("returns blocked details for rejected exercise names", async () => {
+    const server = await buildExerciseServer(
+      new FakeExerciseService({
+        ok: false,
+        reason: "name_blocked",
+        evaluation: nameEvaluation("blocked")
+      })
+    );
+    const response = await server.inject({
+      method: "POST",
+      url: "/api/v1/exercises",
+      payload: createPayload()
+    });
+
+    assert.equal(response.statusCode, 422);
+    assert.equal(response.json().error.code, "EXERCISE_NAME_BLOCKED");
+  });
+
   it("returns validation errors for duplicate secondary muscle IDs", async () => {
     const server = await buildExerciseServer(new FakeExerciseService());
     const response = await server.inject({
@@ -270,5 +308,19 @@ function createPayload() {
     exerciseType: "compound",
     primaryMuscleGroupId: chestId,
     secondaryMuscleGroupIds: [tricepsId]
+  };
+}
+
+function nameEvaluation(status: "blocked" | "warn"): ExerciseNameEvaluation {
+  return {
+    status,
+    normalizedName: "Incline Dumbbell Press",
+    reasons: [
+      {
+        code: status === "blocked" ? "contains_date" : "not_in_catalog",
+        message: status === "blocked" ? "Exercise names must not include dates or timestamps." : "This name is not in the approved exercise catalog yet."
+      }
+    ],
+    suggestions: ["Incline Dumbbell Press"]
   };
 }

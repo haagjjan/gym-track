@@ -6,6 +6,7 @@ import {
   listExercisesQuerySchema
 } from "./exercise.schemas.js";
 import type { ExerciseService } from "./exercise.service.js";
+import type { ExerciseNameEvaluation } from "./exercise-name-quality.js";
 
 interface ExerciseRouteOptions {
   authService: AuthService;
@@ -67,7 +68,11 @@ export async function registerExerciseRoutes(
     const result = await options.exerciseService.createExercise(user.id, parsed.data);
 
     if (!result.ok) {
-      return sendExerciseError(reply, result.reason);
+      return sendExerciseError(
+        reply,
+        result.reason,
+        "evaluation" in result ? result.evaluation : undefined
+      );
     }
 
     return reply.status(201).send({
@@ -101,7 +106,8 @@ async function authenticate(
 
 function sendExerciseError(
   reply: FastifyReply,
-  reason: "muscle_group_not_found" | "name_conflict"
+  reason: "muscle_group_not_found" | "name_conflict" | "name_review_required" | "name_blocked",
+  evaluation?: ExerciseNameEvaluation
 ) {
   if (reason === "name_conflict") {
     return reply.status(409).send({
@@ -112,12 +118,40 @@ function sendExerciseError(
     });
   }
 
+  if (reason === "name_review_required") {
+    return reply.status(422).send({
+      error: {
+        code: "EXERCISE_NAME_REVIEW_REQUIRED",
+        message: "This exercise name needs review before it can be added.",
+        details: toExerciseNameDetails(evaluation)
+      }
+    });
+  }
+
+  if (reason === "name_blocked") {
+    return reply.status(422).send({
+      error: {
+        code: "EXERCISE_NAME_BLOCKED",
+        message: "This exercise name is blocked.",
+        details: toExerciseNameDetails(evaluation)
+      }
+    });
+  }
+
   return reply.status(404).send({
     error: {
       code: "MUSCLE_GROUP_NOT_FOUND",
       message: "One or more muscle groups were not found."
     }
   });
+}
+
+function toExerciseNameDetails(evaluation?: ExerciseNameEvaluation) {
+  return {
+    normalizedName: evaluation?.normalizedName ?? "",
+    reasons: evaluation?.reasons ?? [],
+    suggestions: evaluation?.suggestions ?? []
+  };
 }
 
 function sendValidationError(reply: FastifyReply, error: ZodError) {
