@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BODY_COCKPIT_V1.0 // LIVE_SESSION</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&amp;family=Jetbrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"on-primary-fixed": "#002022", "inverse-on-surface": "#313030", "surface-container-low": "#1c1b1b", "neon-glow": "rgba(0, 242, 255, 0.4)", "inverse-primary": "#00696f", "on-secondary-fixed-variant": "#583584", "tertiary-fixed-dim": "#36e51c", primary: "#e1fdff", "surface-bright": "#3a3939", "on-primary-fixed-variant": "#004f54", "secondary-fixed": "#eedcff", "surface-container": "#201f1f", "on-secondary-container": "#cba4fb", "on-background": "#e5e2e1", "tertiary-container": "#51fb37", "on-secondary": "#401c6b", tertiary: "#e7ffda", "surface-container-lowest": "#0e0e0e", outline: "#849495", "on-error-container": "#ffdad6", "error-container": "#93000a", error: "#ffb4ab", "on-error": "#690005", "outline-variant": "#3a494b", "on-surface": "#e5e2e1", "on-primary": "#00363a", "surface-obsidian": "#121212", "on-tertiary-fixed-variant": "#075300", "surface-tint": "#00dbe7", background: "#131313", "on-surface-variant": "#b9cacb", "tertiary-fixed": "#78ff5d", surface: "#131313", "secondary-fixed-dim": "#d9b9ff", "surface-dim": "#131313", "on-primary-container": "#006a71", "primary-fixed-dim": "#00dbe7", "surface-variant": "#353534", "on-tertiary-fixed": "#012200", "surface-container-high": "#2a2a2a", "surface-container-highest": "#353534", "primary-container": "#00f2ff", "primary-fixed": "#74f5ff", "text-muted": "rgba(255, 255, 255, 0.6)", secondary: "#d9b9ff", "inverse-surface": "#e5e2e1", "on-tertiary-container": "#0d7000", "on-secondary-fixed": "#2a0054", "secondary-container": "#583584", "on-tertiary": "#033900", "glass-stroke": "rgba(255, 255, 255, 0.12)"}, borderRadius: {DEFAULT: "0.125rem", lg: "0.25rem", xl: "0.5rem", full: "0.75rem"}, spacing: {unit: "4px", "margin-mobile": "20px", "margin-desktop": "40px", "container-padding": "24px", gutter: "16px"}, fontFamily: {"label-caps": ["Space Grotesk"], "data-mono": ["JetBrains Mono"], "headline-lg": ["Space Grotesk"], "display-hero": ["Space Grotesk"], "headline-lg-mobile": ["Space Grotesk"], "body-md": ["JetBrains Mono"], headline: ["Space Grotesk"], display: ["Space Grotesk"], body: ["Jetbrains Mono"], label: ["Space Grotesk"]}, fontSize: {"label-caps": ["12px", {lineHeight: "16px", letterSpacing: "0.1em", fontWeight: "700"}], "data-mono": ["18px", {lineHeight: "24px", letterSpacing: "0.05em", fontWeight: "500"}], "headline-lg": ["32px", {lineHeight: "40px", fontWeight: "600"}], "display-hero": ["48px", {lineHeight: "56px", letterSpacing: "-0.02em", fontWeight: "700"}], "headline-lg-mobile": ["24px", {lineHeight: "32px", fontWeight: "600"}], "body-md": ["14px", {lineHeight: "20px", fontWeight: "400"}]}}}};</script>
+<style>
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+        .scanline-effect::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, transparent 0%, rgba(0, 219, 231, 0.05) 50%, transparent 100%);
+            animation: scanline 8s linear infinite;
+            pointer-events: none;
+        }
+        .glow-cyan {
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);
+        }
+        .glass-panel {
+            background: rgba(18, 18, 18, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md selection:bg-primary-container selection:text-on-primary-container overflow-x-hidden">
+<!-- Top Navigation Overlay -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-margin-mobile py-4 backdrop-blur-md border-b border-glass-stroke">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary-fixed-dim">menu</span>
+<span class="text-label-caps font-label-caps tracking-widest text-primary-fixed-dim shadow-[0_0_10px_rgba(0,242,255,0.4)]">BODY_COCKPIT_V1.0</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden md:flex gap-8">
+<span class="text-primary-fixed-dim font-bold text-label-caps font-label-caps cursor-pointer">PROTOCOLS</span>
+<span class="text-on-surface-variant hover:text-primary-fixed transition-all text-label-caps font-label-caps cursor-pointer">DASHBOARD</span>
+<span class="text-on-surface-variant hover:text-primary-fixed transition-all text-label-caps font-label-caps cursor-pointer">HISTORY</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer">notifications_active</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer">settings</span>
+</div>
+</div>
+</header>
+<!-- Side Navigation (Desktop Only) -->
+<nav class="hidden lg:flex flex-col h-screen fixed left-0 top-0 z-40 bg-surface-obsidian/80 backdrop-blur-xl border-r border-glass-stroke w-64 pt-24 px-4">
+<div class="mb-10 flex flex-col gap-1">
+<span class="text-headline-lg font-headline-lg font-bold text-primary-fixed-dim">OPERATOR_SMITH</span>
+<span class="text-label-caps font-label-caps text-on-surface-variant opacity-60">SYSTEM ACTIVE // STATUS: OPTIMAL</span>
+</div>
+<div class="flex flex-col gap-2">
+<a class="text-primary-fixed-dim border-l-2 border-primary-fixed-dim bg-primary/5 px-4 py-3 font-bold flex items-center gap-3" href="#">
+<span class="material-symbols-outlined">grid_view</span> DASHBOARD
+            </a>
+<a class="text-on-surface-variant px-4 py-3 opacity-60 hover:bg-surface-container-high hover:text-primary-fixed transition-all flex items-center gap-3" href="#">
+<span class="material-symbols-outlined">monitoring</span> BIO-METRICS
+            </a>
+<a class="text-on-surface-variant px-4 py-3 opacity-60 hover:bg-surface-container-high hover:text-primary-fixed transition-all flex items-center gap-3" href="#">
+<span class="material-symbols-outlined">history</span> HISTORY
+            </a>
+<a class="text-on-surface-variant px-4 py-3 opacity-60 hover:bg-surface-container-high hover:text-primary-fixed transition-all flex items-center gap-3" href="#">
+<span class="material-symbols-outlined">exercise</span> PROTOCOLS
+            </a>
+</div>
+<div class="mt-auto pb-10">
+<button class="w-full bg-primary-container text-on-primary-fixed font-bold py-4 rounded-lg tracking-widest text-label-caps font-label-caps hover:glow-cyan transition-all active:scale-95">
+                START_SESSION
+            </button>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="min-h-screen pt-24 pb-32 lg:pl-64 scanline-effect">
+<div class="max-w-6xl mx-auto px-margin-mobile lg:px-margin-desktop">
+<!-- Session Header -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter mb-10">
+<div class="md:col-span-8 flex flex-col gap-2">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 bg-secondary-fixed-dim rounded-full animate-pulse"></span>
+<span class="text-label-caps font-label-caps text-secondary-fixed-dim">LIVE SESSION ACTIVE</span>
+</div>
+<h1 class="text-display-hero font-display-hero leading-none">INCLINE DUMBBELL PRESS</h1>
+<div class="flex items-center gap-4 text-on-surface-variant">
+<span class="flex items-center gap-1 font-data-mono text-data-mono"><span class="material-symbols-outlined text-sm">category</span> CHEST</span>
+<span class="w-1 h-1 bg-outline-variant rounded-full"></span>
+<span class="font-data-mono text-data-mono text-primary-fixed-dim" id="session-timer">00:42:15</span>
+</div>
+</div>
+<div class="md:col-span-4 flex flex-col justify-end items-end gap-2">
+<button class="bg-surface-container-high border border-glass-stroke px-6 py-2 rounded-lg text-label-caps font-label-caps hover:bg-surface-variant transition-all">
+                        PAUSE_BIOFLUX
+                    </button>
+</div>
+</div>
+<!-- Dashboard Layout (Hybrid Grid) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Left Column: Set Logger -->
+<div class="lg:col-span-8 flex flex-col gap-6">
+<!-- Progress Tracker HUD -->
+<div class="glass-panel p-6 rounded-xl flex flex-wrap gap-8">
+<div>
+<span class="text-label-caps font-label-caps text-on-surface-variant block mb-1">TARGET_VOLUME</span>
+<span class="text-headline-lg font-headline-lg text-primary-fixed-dim">4,200 <span class="text-sm opacity-50">KG</span></span>
+</div>
+<div class="h-10 w-px bg-glass-stroke hidden sm:block"></div>
+<div>
+<span class="text-label-caps font-label-caps text-on-surface-variant block mb-1">CURRENT_SET</span>
+<span class="text-headline-lg font-headline-lg">03 <span class="text-sm opacity-50">/ 05</span></span>
+</div>
+<div class="h-10 w-px bg-glass-stroke hidden sm:block"></div>
+<div>
+<span class="text-label-caps font-label-caps text-on-surface-variant block mb-1">PREV_MAX</span>
+<span class="text-headline-lg font-headline-lg text-secondary-fixed-dim">32.5 <span class="text-sm opacity-50">KG</span></span>
+</div>
+</div>
+<!-- Input Section -->
+<div class="flex flex-col gap-4">
+<div class="flex justify-between items-center mb-2">
+<h3 class="text-label-caps font-label-caps tracking-widest text-on-surface-variant">ACTIVE_SETS</h3>
+<button class="text-primary-fixed-dim flex items-center gap-2 text-label-caps font-label-caps hover:underline">
+<span class="material-symbols-outlined text-base">add_circle</span> ADD_SET_SLOT
+                            </button>
+</div>
+<!-- Set Block 1 (Completed) -->
+<div class="glass-panel p-6 rounded-xl border-l-4 border-secondary-fixed-dim flex flex-col md:flex-row items-center gap-6 group transition-all hover:bg-surface-obsidian/90 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-2">
+<span class="text-[10px] font-label-caps text-secondary-fixed-dim opacity-50">SET_ID: 001_A</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-secondary-fixed-dim/10 p-3 rounded-lg min-w-[64px]">
+<span class="text-label-caps font-label-caps text-secondary-fixed-dim">01</span>
+</div>
+<div class="grid grid-cols-3 gap-6 flex-grow w-full">
+<div class="flex flex-col">
+<label class="text-[10px] font-label-caps text-on-surface-variant mb-1">KG</label>
+<input class="bg-transparent border-b border-glass-stroke focus:border-primary focus:ring-0 font-data-mono text-xl text-on-surface" readonly="" type="number" value="30"/>
+</div>
+<div class="flex flex-col">
+<label class="text-[10px] font-label-caps text-on-surface-variant mb-1">REPS</label>
+<input class="bg-transparent border-b border-glass-stroke focus:border-primary focus:ring-0 font-data-mono text-xl text-on-surface" readonly="" type="number" value="12"/>
+</div>
+<div class="flex flex-col">
+<label class="text-[10px] font-label-caps text-on-surface-variant mb-1">RPE</label>
+<input class="bg-transparent border-b border-glass-stroke focus:border-primary focus:ring-0 font-data-mono text-xl text-on-surface" readonly="" type="number" value="8"/>
+</div>
+</div>
+<button class="w-full md:w-auto bg-secondary-fixed-dim text-on-secondary-fixed font-bold py-3 px-8 rounded-lg flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-xl">check_circle</span>
+<span class="text-label-caps font-label-caps">LOGGED</span>
+</button>
+</div>
+<!-- Set Block 2 (Active/Pending) -->
+<div class="glass-panel p-6 rounded-xl border-l-4 border-primary-fixed-dim flex flex-col md:flex-row items-center gap-6 group transition-all hover:bg-surface-obsidian/95 relative shadow-lg">
+<div class="absolute top-0 right-0 p-2">
+<span class="text-[10px] font-label-caps text-primary-fixed-dim opacity-50">SET_ID: 002_B</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-primary/10 p-3 rounded-lg min-w-[64px]">
+<span class="text-label-caps font-label-caps text-primary-fixed-dim">02</span>
+</div>
+<div class="grid grid-cols-3 gap-6 flex-grow w-full">
+<div class="flex flex-col">
+<label class="text-[10px] font-label-caps text-on-surface-variant mb-1">KG</label>
+<input class="bg-transparent border-b border-primary focus:border-primary-fixed focus:ring-0 font-data-mono text-xl text-on-surface outline-none transition-all placeholder:opacity-30" placeholder="0.0" type="number"/>
+</div>
+<div class="flex flex-col">
+<label class="text-[10px] font-label-caps text-on-surface-variant mb-1">REPS</label>
+<input class="bg-transparent border-b border-primary focus:border-primary-fixed focus:ring-0 font-data-mono text-xl text-on-surface outline-none transition-all placeholder:opacity-30" placeholder="0" type="number"/>
+</div>
+<div class="flex flex-col">
+<label class="text-[10px] font-label-caps text-on-surface-variant mb-1">RPE</label>
+<input class="bg-transparent border-b border-primary focus:border-primary-fixed focus:ring-0 font-data-mono text-xl text-on-surface outline-none transition-all placeholder:opacity-30" placeholder="-" type="number"/>
+</div>
+</div>
+<button class="w-full md:w-auto border border-primary-fixed-dim text-primary-fixed-dim font-bold py-3 px-8 rounded-lg transition-all hover:bg-primary-fixed-dim hover:text-on-primary-fixed active:scale-95" id="log-btn-2">
+<span class="text-label-caps font-label-caps">LOG_SET</span>
+</button>
+</div>
+<!-- Set Block 3 (Ghost) -->
+<div class="glass-panel p-6 rounded-xl border-l-4 border-glass-stroke opacity-40 flex flex-col md:flex-row items-center gap-6 group transition-all hover:opacity-100">
+<div class="flex flex-col items-center justify-center bg-surface-container-high p-3 rounded-lg min-w-[64px]">
+<span class="text-label-caps font-label-caps text-on-surface-variant">03</span>
+</div>
+<div class="grid grid-cols-3 gap-6 flex-grow w-full">
+<div class="flex flex-col"><div class="h-6 w-full bg-glass-stroke rounded animate-pulse"></div></div>
+<div class="flex flex-col"><div class="h-6 w-full bg-glass-stroke rounded animate-pulse"></div></div>
+<div class="flex flex-col"><div class="h-6 w-full bg-glass-stroke rounded animate-pulse"></div></div>
+</div>
+<div class="h-12 w-32 bg-glass-stroke rounded animate-pulse"></div>
+</div>
+</div>
+<!-- Action Zone -->
+<div class="mt-8 flex flex-col md:flex-row gap-4">
+<button class="flex-grow bg-surface-obsidian border border-glass-stroke hover:border-primary-fixed-dim text-primary-fixed-dim p-6 rounded-xl flex items-center justify-center gap-4 group transition-all">
+<span class="material-symbols-outlined text-3xl group-hover:scale-110 transition-transform">add_task</span>
+<span class="text-headline-lg font-headline-lg">INSERT_EXERCISE</span>
+</button>
+<button class="bg-error-container/20 border border-error/30 text-error p-6 rounded-xl flex items-center justify-center gap-2 hover:bg-error-container/40 transition-all">
+<span class="material-symbols-outlined">delete_forever</span>
+<span class="text-label-caps font-label-caps">SCRUB_SESSION</span>
+</button>
+</div>
+</div>
+<!-- Right Column: Session Summary Sidebar -->
+<div class="lg:col-span-4 flex flex-col gap-6">
+<div class="glass-panel rounded-xl overflow-hidden">
+<div class="p-6 border-b border-glass-stroke bg-surface-obsidian">
+<h4 class="text-label-caps font-label-caps text-primary-fixed-dim tracking-[0.2em]">SESSION_METRICS</h4>
+</div>
+<div class="p-6 flex flex-col gap-8">
+<!-- Heart Rate / Bio-Sync -->
+<div class="flex flex-col gap-3">
+<div class="flex justify-between items-center">
+<span class="text-label-caps font-label-caps text-on-surface-variant">BIO_SYNC_HEART_RATE</span>
+<span class="text-data-mono font-data-mono text-secondary-fixed-dim">142 BPM</span>
+</div>
+<div class="w-full h-1 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-secondary-fixed-dim shadow-[0_0_8px_#5affa2]" style="width: 75%"></div>
+</div>
+<span class="text-[10px] font-label-caps text-on-surface-variant opacity-40">ZONE 4: ANAEROBIC</span>
+</div>
+<!-- Cumulative Data -->
+<div class="grid grid-cols-2 gap-4">
+<div class="p-4 bg-surface-container/50 border border-glass-stroke rounded-lg">
+<span class="text-[10px] font-label-caps text-on-surface-variant block mb-1">TOTAL_TONNAGE</span>
+<span class="text-2xl font-headline-lg text-primary-fixed-dim">2.4<span class="text-xs opacity-50 ml-1">T</span></span>
+</div>
+<div class="p-4 bg-surface-container/50 border border-glass-stroke rounded-lg">
+<span class="text-[10px] font-label-caps text-on-surface-variant block mb-1">EFFICIENCY</span>
+<span class="text-2xl font-headline-lg text-secondary-fixed-dim">94<span class="text-xs opacity-50 ml-1">%</span></span>
+</div>
+</div>
+<!-- Mini Chart (SVG Placeholder Effect) -->
+<div class="relative h-32 w-full bg-surface-obsidian/50 rounded-lg border border-glass-stroke p-2">
+<div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(#00f2ff 0.5px, transparent 0.5px); background-size: 10px 10px;"></div>
+<div class="flex items-end justify-between h-full w-full gap-1 px-2">
+<div class="bg-primary/20 w-full rounded-t" style="height: 40%"></div>
+<div class="bg-primary/40 w-full rounded-t" style="height: 60%"></div>
+<div class="bg-primary/60 w-full rounded-t" style="height: 35%"></div>
+<div class="bg-primary-container w-full rounded-t glow-cyan" style="height: 85%"></div>
+<div class="bg-primary/30 w-full rounded-t" style="height: 50%"></div>
+<div class="bg-primary/50 w-full rounded-t" style="height: 70%"></div>
+</div>
+<span class="absolute bottom-2 left-2 text-[8px] font-label-caps opacity-30">ENERGY_EXPENDITURE_REALTIME</span>
+</div>
+<!-- History Feed -->
+<div class="flex flex-col gap-4">
+<span class="text-label-caps font-label-caps text-on-surface-variant border-b border-glass-stroke pb-2">PREVIOUS_LOGS</span>
+<div class="flex flex-col gap-3">
+<div class="flex justify-between items-center text-xs opacity-60">
+<span>FLAT BENCH PRESS</span>
+<span>4 x 10 @ 80kg</span>
+</div>
+<div class="flex justify-between items-center text-xs opacity-60">
+<span>DIP MACHINE</span>
+<span>3 x 12 @ BW+15</span>
+</div>
+</div>
+</div>
+</div>
+<div class="p-6 bg-surface-container-high">
+<button class="w-full bg-primary-fixed-dim text-on-primary-fixed font-bold py-4 rounded-lg text-label-caps font-label-caps tracking-widest hover:glow-cyan transition-all active:scale-95">
+                                COMPLETE_SESSION
+                            </button>
+</div>
+</div>
+<!-- Atmosphere / Branding Image -->
+<div class="relative rounded-xl overflow-hidden aspect-video border border-glass-stroke">
+<img alt="Futuristic gym atmosphere" class="object-cover w-full h-full opacity-40 grayscale hover:grayscale-0 transition-all duration-700" data-alt="A cinematic, high-contrast photograph of a futuristic gym interior at night. The space is illuminated by sharp electric cyan and deep indigo neon lights reflecting off polished obsidian floors and metallic surfaces. In the center, a circular glowing tech pedestal is surrounded by wisps of mist and shadows, creating a high-performance, immersive athletic cockpit atmosphere. Professional fitness equipment like dumbbells and cable machines are faintly visible in the dark background, emphasizing a high-tech athletic environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVYibhIe4oKV4GNzERXoHlEZPqL_FniKRXMI0RW-xjXliFJNXQaEllaWNpkl2Ubm0nga1UwVhKJeBJZxYZtc4si781mSKShi6g0Bl0CSv0LXqJnBaIEcUiqDi0qeXRnMYTMsgR8I1N9WsiZfqKeYcLMjylKc872QET6AHTW4av1yT-w5kZ-GKFrK17oqXjkaBHtr4XYxXPJSaWwRBACqp8EiIAW8i2tfsPHudZryVB2qBAkwbGo2-Iy1aIvf_UY9wSq1JSOLE_cX8"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background to-transparent"></div>
+<div class="absolute bottom-4 left-4">
+<span class="text-label-caps font-label-caps text-primary-fixed-dim bg-background/80 px-2 py-1 rounded">FACILITY_CAM_04</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation (Mobile Only) -->
+<footer class="lg:hidden fixed bottom-0 left-0 w-full z-50 bg-surface-obsidian/90 backdrop-blur-lg border-t border-glass-stroke flex justify-around items-center px-4 pb-safe h-20 shadow-[0_-4px_20px_rgba(0,242,255,0.15)]">
+<div class="flex flex-col items-center justify-center text-primary-fixed-dim font-bold">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home_health</span>
+<span class="text-label-caps font-label-caps mt-1">CORE</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant opacity-50">
+<span class="material-symbols-outlined">vital_signs</span>
+<span class="text-label-caps font-label-caps mt-1">BIO</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant opacity-50">
+<span class="material-symbols-outlined">database</span>
+<span class="text-label-caps font-label-caps mt-1">LOGS</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant opacity-50">
+<span class="material-symbols-outlined">fitness_center</span>
+<span class="text-label-caps font-label-caps mt-1">GEAR</span>
+</div>
+</footer>
+<script>
+        // Simple Interaction logic for demo
+        document.getElementById('log-btn-2').addEventListener('click', function() {
+            const btn = this;
+            if(!btn.classList.contains('bg-secondary-fixed-dim')) {
+                btn.innerHTML = '<span class="material-symbols-outlined text-xl">check_circle</span> <span class="text-label-caps font-label-caps">LOGGED</span>';
+                btn.classList.remove('border', 'border-primary-fixed-dim', 'text-primary-fixed-dim');
+                btn.classList.add('bg-secondary-fixed-dim', 'text-on-secondary-fixed');
+                btn.closest('.glass-panel').classList.remove('border-primary-fixed-dim');
+                btn.closest('.glass-panel').classList.add('border-secondary-fixed-dim');
+                
+                // Haptic feedback feel
+                btn.style.transform = 'scale(1.05)';
+                setTimeout(() => { btn.style.transform = 'scale(1)'; }, 150);
+            }
+        });
+
+        // Timer simulation
+        let seconds = 2535; // Starting at ~42 mins
+        setInterval(() => {
+            seconds++;
+            const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+            const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+            const s = (seconds % 60).toString().padStart(2, '0');
+            document.getElementById('session-timer').textContent = `${h}:${m}:${s}`;
+        }, 1000);
+    </script>
+</body></html>
