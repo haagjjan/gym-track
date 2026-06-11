@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Aether Fitness System - Identity Verification</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&amp;family=Jetbrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"on-error": "#690005", tertiary: "#e7ffda", "on-background": "#e5e2e1", "on-primary-fixed": "#002022", "neon-glow": "rgba(0, 242, 255, 0.4)", outline: "#849495", "on-primary-fixed-variant": "#004f54", "inverse-surface": "#e5e2e1", "inverse-on-surface": "#313030", "secondary-container": "#583584", "surface-container-lowest": "#0e0e0e", surface: "#131313", "on-surface-variant": "#b9cacb", "on-secondary-fixed-variant": "#583584", "text-muted": "rgba(255, 255, 255, 0.6)", "on-secondary-container": "#cba4fb", "tertiary-fixed": "#78ff5d", "primary-fixed-dim": "#00dbe7", error: "#ffb4ab", "tertiary-container": "#51fb37", "surface-obsidian": "#121212", "surface-container": "#201f1f", "on-tertiary": "#033900", secondary: "#d9b9ff", "on-secondary": "#401c6b", "on-primary-container": "#006a71", "on-tertiary-fixed": "#012200", "outline-variant": "#3a494b", "surface-tint": "#00dbe7", "on-secondary-fixed": "#2a0054", "surface-bright": "#3a3939", "surface-container-high": "#2a2a2a", "secondary-fixed": "#eedcff", "tertiary-fixed-dim": "#36e51c", "surface-container-highest": "#353534", "on-surface": "#e5e2e1", "glass-stroke": "rgba(255, 255, 255, 0.12)", background: "#131313", "error-container": "#93000a", "on-error-container": "#ffdad6", "on-tertiary-fixed-variant": "#075300", "secondary-fixed-dim": "#d9b9ff", "surface-dim": "#131313", "primary-container": "#00f2ff", "primary-fixed": "#74f5ff", primary: "#e1fdff", "surface-variant": "#353534", "inverse-primary": "#00696f", "surface-container-low": "#1c1b1b", "on-tertiary-container": "#0d7000", "on-primary": "#00363a"}, borderRadius: {DEFAULT: "0.125rem", lg: "0.25rem", xl: "0.5rem", full: "0.75rem"}, spacing: {unit: "4px", gutter: "16px", "container-padding": "24px", "margin-desktop": "40px", "margin-mobile": "20px"}, fontFamily: {"label-caps": ["Space Grotesk"], "body-md": ["JetBrains Mono"], "headline-lg-mobile": ["Space Grotesk"], "display-hero": ["Space Grotesk"], "headline-lg": ["Space Grotesk"], "data-mono": ["JetBrains Mono"], headline: ["Space Grotesk"], display: ["Space Grotesk"], body: ["Jetbrains Mono"], label: ["Space Grotesk"]}, fontSize: {"label-caps": ["12px", {lineHeight: "16px", letterSpacing: "0.1em", fontWeight: "700"}], "body-md": ["14px", {lineHeight: "20px", fontWeight: "400"}], "headline-lg-mobile": ["24px", {lineHeight: "32px", fontWeight: "600"}], "display-hero": ["48px", {lineHeight: "56px", letterSpacing: "-0.02em", fontWeight: "700"}], "headline-lg": ["32px", {lineHeight: "40px", fontWeight: "600"}], "data-mono": ["18px", {lineHeight: "24px", letterSpacing: "0.05em", fontWeight: "500"}]}}}};</script>
+<style>
+        body {
+            background-color: #0A0A0A;
+            color: #e5e2e1;
+            overflow: hidden;
+        }
+
+        .carbon-overlay {
+            background-image: radial-gradient(#1a1a1a 1px, transparent 1px);
+            background-size: 20px 20px;
+            opacity: 0.3;
+        }
+
+        .grid-overlay {
+            background-image: linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .glass-panel {
+            background: rgba(18, 18, 18, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .neon-border {
+            border: 1px solid rgba(0, 219, 231, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .neon-border:focus-within {
+            border-color: #00dbe7;
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
+        }
+
+        .scanline {
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(to bottom, transparent, rgba(0, 242, 255, 0.2), transparent);
+            position: absolute;
+            top: -2px;
+            left: 0;
+            animation: scanning 4s linear infinite;
+        }
+
+        @keyframes scanning {
+            0% { top: 0%; }
+            100% { top: 100%; }
+        }
+
+        .glow-text {
+            text-shadow: 0 0 10px rgba(0, 242, 255, 0.4);
+        }
+
+        .input-glow:focus {
+            outline: none;
+            box-shadow: inset 0 0 10px rgba(0, 242, 255, 0.1);
+        }
+
+        .cta-glow {
+            box-shadow: 0 0 20px rgba(0, 219, 231, 0.4);
+        }
+
+        .cta-glow:hover {
+            box-shadow: 0 0 35px rgba(0, 219, 231, 0.7);
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md antialiased min-h-screen relative flex items-center justify-center p-6">
+<!-- Background Layers -->
+<div class="fixed inset-0 z-0">
+<!-- Gym Warehouse Silhouette -->
+<div class="absolute inset-0 bg-cover bg-center opacity-20 filter grayscale blur-sm scale-110" data-alt="A cinematic, high-contrast silhouette of a massive, state-of-the-art gym warehouse. The space is filled with professional-grade lifting equipment and sleek fitness machines, illuminated by faint, ethereal cyan spotlights that pierce through a hazy, industrial atmosphere. The style is futuristic and technical, with a moody obsidian color palette and electric cyan highlights, creating a sense of elite athletic preparation and advanced technology." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDU2mSwndZCPdjTc8v0QCH5v9mS8pzgfUCbsllNUaJBwFlR9QWSTDMjZUtBTMNPRlF9qebYh9QTpH2XuNnHCZgCKFCag9xFn8Bs92yVQe5e7fQxyLWhFGy0ZVuZALINFc7_HApwjQfcJ8_RTHFqoU9u62QmCQzw4Ir33vn6f5XEGD5tm-mdebDQrXAKBhBqXWbwIScYWnrI5ic2mE3ezSpZ2L4sr8J4ODUWl7li94i17c-Cbyz0snwNfPCXo-q5r1OQYG2k5614PSM')">
+</div>
+<div class="absolute inset-0 carbon-overlay"></div>
+<div class="absolute inset-0 grid-overlay"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black"></div>
+<!-- Ambient Glow -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary-fixed-dim/5 rounded-full blur-[120px]"></div>
+</div>
+<!-- Main Content Layout -->
+<main class="relative z-10 w-full max-w-7xl flex flex-col md:flex-row items-center justify-between gap-12 lg:gap-24">
+<!-- Left Side: Typography -->
+<div class="w-full md:w-1/2 space-y-4 text-left">
+<div class="flex items-center gap-3 mb-8">
+<div class="w-8 h-8 bg-primary-fixed-dim flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-fixed text-[20px]" data-icon="shield_lock">shield_lock</span>
+</div>
+<span class="font-label-caps text-label-caps tracking-[0.2em] text-primary-fixed-dim">IDENTITY_VERIFICATION_REQUIRED</span>
+</div>
+<h1 class="font-display-hero text-display-hero md:text-[64px] leading-tight tracking-tighter text-white">
+                WELCOME_<span class="text-primary-fixed-dim glow-text">BACK</span>
+</h1>
+<div class="flex flex-col gap-2 pt-4">
+<div class="flex items-center gap-2 font-data-mono text-primary-fixed-dim/60">
+<span class="w-2 h-2 rounded-full bg-secondary-fixed shadow-[0_0_8px_rgba(90,255,162,0.6)]"></span>
+<span class="text-[14px]">SYSTEM_LINK: OPTIMAL</span>
+</div>
+<p class="text-on-surface-variant max-w-md">
+                    Please authorize your operator profile to gain access to the Aether performance matrix and biomechanical telemetry.
+                </p>
+</div>
+<!-- Decorative HUD element -->
+<div class="hidden lg:block pt-12">
+<div class="border-l border-primary-fixed-dim/20 pl-6 space-y-4">
+<div class="flex items-center justify-between w-64 border-b border-glass-stroke pb-1">
+<span class="font-label-caps text-[10px] text-on-surface-variant">CORE_STATUS</span>
+<span class="font-data-mono text-[10px] text-primary-fixed-dim">ENCRYPTED</span>
+</div>
+<div class="flex items-center justify-between w-64 border-b border-glass-stroke pb-1">
+<span class="font-label-caps text-[10px] text-on-surface-variant">GEO_LOCATION</span>
+<span class="font-data-mono text-[10px] text-primary-fixed-dim">SECURE_NODE</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Side: Login Card -->
+<div class="w-full md:w-[480px]">
+<div class="glass-panel relative p-10 overflow-hidden">
+<!-- Scanline effect -->
+<div class="scanline"></div>
+<div class="mb-10">
+<h2 class="font-headline-lg text-headline-lg text-white mb-2">OPERATOR_LOGIN</h2>
+<div class="h-1 w-12 bg-primary-fixed-dim"></div>
+</div>
+<form class="space-y-8" onsubmit="return false">
+<!-- Operator ID Field -->
+<div class="space-y-2">
+<label class="block font-label-caps text-label-caps text-on-surface-variant ml-1">OPERATOR_ID</label>
+<div class="relative neon-border group">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary-fixed-dim/50 group-focus-within:text-primary-fixed-dim transition-colors" data-icon="account_circle">account_circle</span>
+<input class="w-full bg-transparent py-4 pl-12 pr-4 font-data-mono text-white placeholder:text-surface-variant border-none focus:ring-0" placeholder="E.G. ALPHA_7" type="text"/>
+</div>
+</div>
+<!-- Access Code Field -->
+<div class="space-y-2">
+<div class="flex justify-between items-center px-1">
+<label class="block font-label-caps text-label-caps text-on-surface-variant">ACCESS_CODE</label>
+<a class="font-label-caps text-[10px] text-primary-fixed-dim/60 hover:text-primary-fixed-dim transition-colors" href="#">FORGOT_CODE?</a>
+</div>
+<div class="relative neon-border group">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary-fixed-dim/50 group-focus-within:text-primary-fixed-dim transition-colors" data-icon="key">key</span>
+<input class="w-full bg-transparent py-4 pl-12 pr-4 font-data-mono text-white placeholder:text-surface-variant border-none focus:ring-0" placeholder="••••••••" type="password"/>
+<button class="absolute right-4 top-1/2 -translate-y-1/2 text-surface-variant hover:text-on-surface transition-colors" type="button">
+<span class="material-symbols-outlined text-[20px]" data-icon="visibility">visibility</span>
+</button>
+</div>
+</div>
+<!-- Remember Me Toggle -->
+<div class="flex items-center gap-3 px-1">
+<div class="relative flex items-center justify-center">
+<input class="peer h-5 w-5 bg-transparent border-primary-fixed-dim/30 rounded-none checked:bg-primary-fixed-dim focus:ring-offset-0 focus:ring-0 transition-all cursor-pointer" id="remember" type="checkbox"/>
+<span class="material-symbols-outlined absolute text-[14px] text-black scale-0 peer-checked:scale-100 pointer-events-none transition-transform" data-icon="check" data-weight="fill">check</span>
+</div>
+<label class="font-label-caps text-[11px] text-on-surface-variant cursor-pointer hover:text-on-surface" for="remember">PERSIST_AUTHENTICATION</label>
+</div>
+<!-- Submit Button -->
+<button class="w-full py-5 bg-primary-fixed-dim text-on-primary-fixed font-label-caps tracking-widest cta-glow flex items-center justify-center gap-3 transition-all active:scale-95 group" type="submit">
+                        INITIATE_SESSION
+                        <span class="material-symbols-outlined text-[20px] transition-transform group-hover:translate-x-1" data-icon="bolt">bolt</span>
+</button>
+</form>
+<!-- Footer Metadata -->
+<div class="mt-10 pt-8 border-t border-glass-stroke text-center">
+<p class="font-label-caps text-[11px] text-on-surface-variant flex items-center justify-center gap-2">
+                        NO_ACCOUNT_DETECTED? 
+                        <a class="text-primary-fixed-dim hover:glow-neon-glow transition-all" href="#">CREATE_PROFILE_V2.0</a>
+</p>
+</div>
+</div>
+<!-- Additional Decorative Elements -->
+<div class="mt-6 flex justify-between px-2 opacity-40">
+<div class="flex items-center gap-4">
+<div class="flex flex-col">
+<span class="text-[8px] font-label-caps text-on-surface-variant">SEC_LEVEL</span>
+<span class="text-[10px] font-data-mono text-primary-fixed-dim">P_HIGH</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[8px] font-label-caps text-on-surface-variant">IP_TRACE</span>
+<span class="text-[10px] font-data-mono text-primary-fixed-dim">88.2.14.0</span>
+</div>
+</div>
+<div class="h-8 w-1 bg-primary-fixed-dim/20"></div>
+</div>
+</div>
+</main>
+<!-- Bottom Footer (Global Identity) -->
+<footer class="fixed bottom-8 left-0 w-full px-12 flex justify-between items-center z-20 pointer-events-none">
+<div class="font-label-caps text-[12px] tracking-[0.4em] text-primary-fixed-dim/40">
+            AETHER_CORE_SYSTEMS
+        </div>
+<div class="hidden md:flex gap-8 pointer-events-auto">
+<a class="font-label-caps text-[10px] text-on-surface-variant hover:text-white transition-colors" href="#">LEGAL_PROTOCOLS</a>
+<a class="font-label-caps text-[10px] text-on-surface-variant hover:text-white transition-colors" href="#">SYSTEM_STATUS</a>
+<a class="font-label-caps text-[10px] text-on-surface-variant hover:text-white transition-colors" href="#">SUPPORT_COMMS</a>
+</div>
+</footer>
+<!-- Interactive Layer: Particle/Grid Script -->
+<script>
+        // Micro-interaction for the login card
+        const card = document.querySelector('.glass-panel');
+        document.addEventListener('mousemove', (e) => {
+            if (window.innerWidth < 768) return;
+            const xAxis = (window.innerWidth / 2 - e.pageX) / 50;
+            const yAxis = (window.innerHeight / 2 - e.pageY) / 50;
+            card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+        });
+
+        // Clear focus styles on mouse leave
+        document.addEventListener('mouseenter', () => {
+            card.style.transition = "none";
+        });
+
+        document.addEventListener('mouseleave', () => {
+            card.style.transition = "all 0.5s ease";
+            card.style.transform = `rotateY(0deg) rotateX(0deg)`;
+        });
+    </script>
+</body></html>

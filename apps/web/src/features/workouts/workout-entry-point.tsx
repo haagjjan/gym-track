@@ -3,10 +3,27 @@
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useState, useTransition } from "react";
+import { CockpitButton } from "../../shared/ui/cockpit";
 import { createWorkout, listWorkouts } from "./workout-api";
 import type { WorkoutSummary } from "./workout-types";
 
 export function WorkoutEntryPoint(): ReactNode {
+  return (
+    <section className="workoutEntry" aria-label="Workout entry">
+      <StartSessionAction label="Start or resume workout" pendingLabel="Opening" />
+    </section>
+  );
+}
+
+export function StartSessionAction({
+  label,
+  pendingLabel,
+  variant = "legacy"
+}: {
+  label: string;
+  pendingLabel: string;
+  variant?: "cockpit" | "legacy";
+}): ReactNode {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -27,16 +44,22 @@ export function WorkoutEntryPoint(): ReactNode {
   }
 
   return (
-    <section className="workoutEntry" aria-label="Workout entry">
-      <button className="primaryAction" type="button" onClick={handleClick} disabled={isPending}>
-        {isPending ? "Opening" : "Start or resume workout"}
-      </button>
+    <div className={variant === "cockpit" ? "appShellStartAction" : undefined}>
+      {variant === "cockpit" ? (
+        <CockpitButton type="button" onClick={handleClick} isLoading={isPending} loadingLabel={pendingLabel}>
+          {label}
+        </CockpitButton>
+      ) : (
+        <button className="primaryAction" type="button" onClick={handleClick} disabled={isPending}>
+          {isPending ? pendingLabel : label}
+        </button>
+      )}
       {error ? (
         <p className="inlineError" role="alert">
           {error}
         </p>
       ) : null}
-    </section>
+    </div>
   );
 }
 

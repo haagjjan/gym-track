@@ -1,0 +1,142 @@
+.appCockpitShell {
+  --bg: var(--cockpit-color-background);
+  --panel: var(--cockpit-color-panel);
+  --ink: var(--cockpit-color-text);
+  --muted: var(--cockpit-color-text-muted);
+  --line: var(--cockpit-color-border-muted);
+  --brand: var(--cockpit-color-cyan);
+  --brand-strong: var(--cockpit-color-cyan-strong);
+  --accent: var(--cockpit-color-cyan);
+  --danger: var(--cockpit-color-red);
+  background: var(--cockpit-color-background);
+  color: var(--cockpit-color-text);
+  min-height: 100vh;
+}
+
+.appCockpitShell .appShell,
+.appCockpitShell .workoutPage,
+.appCockpitShell .analyticsPage {
+  min-height: auto;
+}
+
+.appCockpitShell .dashboardHeader,
+.appCockpitShell .workoutHeader,
+.appCockpitShell .analyticsHeader {
+  border-block-start-color: var(--cockpit-color-cyan);
+}
+
+.appShellOperator {
+  display: grid;
+  gap: var(--cockpit-space-1);
+  min-width: 0;
+}
+
+.appShellOperator span,
+.appShellOperator small {
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-body);
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.appShellOperator span {
+  text-transform: uppercase;
+}
+
+.appShellOperator strong {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-heading);
+  overflow-wrap: anywhere;
+}
+
+.appShellNavList,
+.appShellNavFooter {
+  display: grid;
+  gap: var(--cockpit-space-3);
+}
+
+.appShellNavLink {
+  border: 1px solid transparent;
+  border-radius: var(--cockpit-radius-md);
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.82rem;
+  font-weight: 700;
+  min-height: 42px;
+  padding: var(--cockpit-space-3);
+  text-decoration: none;
+}
+
+.appShellNavLink:hover,
+.appShellNavLink[aria-current="page"] {
+  background: rgba(0, 219, 231, 0.08);
+  border-color: var(--cockpit-color-cyan);
+  color: var(--cockpit-color-cyan-soft);
+}
+
+.appShellTopActions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cockpit-space-2);
+}
+
+.appShellTopActions .secondaryAction,
+.appShellNavFooter .secondaryAction {
+  border-color: var(--cockpit-color-border);
+  color: var(--cockpit-color-cyan-soft);
+}
+
+.appShellMenuButton {
+  background: rgba(19, 19, 19, 0.72);
+  border: 1px solid var(--cockpit-color-border);
+  border-radius: var(--cockpit-radius-md);
+  color: var(--cockpit-color-cyan-soft);
+  cursor: pointer;
+  display: none;
+  font-family: var(--cockpit-font-heading);
+  font-weight: 700;
+  min-height: 40px;
+  padding: 0 var(--cockpit-space-3);
+}
+
+.appShellStartAction {
+  display: grid;
+  gap: var(--cockpit-space-2);
+}
+
+.appShellStartAction .cockpitButton {
+  width: 100%;
+}
+
+.appShellDrawerLayer {
+  inset: 0;
+  position: fixed;
+  z-index: 20;
+}
+
+.appShellDrawerBackdrop {
+  background: rgba(0, 0, 0, 0.62);
+  border: 0;
+  cursor: pointer;
+  inset: 0;
+  position: absolute;
+}
+
+.appShellDrawer {
+  height: 100%;
+  max-width: min(320px, 88vw);
+  position: relative;
+  width: 100%;
+}
+
+@media (max-width: 760px) {
+  .appShellMenuButton {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .appShellTopActions .secondaryAction {
+    display: none;
+  }
+}

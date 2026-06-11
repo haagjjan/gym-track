@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { getCurrentUser } from "../features/auth/server-auth";
-import { LogoutButton } from "../features/auth/logout-button";
 import type { AuthUser } from "../features/auth/auth-types";
-import { WorkoutEntryPoint } from "../features/workouts/workout-entry-point";
+import { AppCockpitShell } from "../features/navigation/app-cockpit-shell";
+import { DashboardHome } from "../features/dashboard";
 
 const sections = [
   { label: "Session", detail: "Workout logging" },
@@ -45,18 +45,9 @@ function SignedOutHome(): ReactNode {
 
 function SignedInHome({ user }: { user: AuthUser }): ReactNode {
   return (
-    <main className="appShell">
-      <section className="dashboardHeader" aria-labelledby="page-title">
-        <div>
-          <p className="eyebrow">Signed in</p>
-          <h1 id="page-title">Welcome, {user.username}</h1>
-          <p className="leadText">{user.email}</p>
-        </div>
-        <LogoutButton />
-      </section>
-      <WorkoutEntryPoint />
-      <PrimaryAreaGrid enableAppLinks />
-    </main>
+    <AppCockpitShell user={user}>
+      <DashboardHome user={user} />
+    </AppCockpitShell>
   );
 }
 

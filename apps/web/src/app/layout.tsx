@@ -1,8 +1,14 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./styles.css";
+import "../shared/ui/cockpit/cockpit-tokens.css";
+import "../shared/ui/cockpit/cockpit.css";
+import "../shared/ui/cockpit/cockpit-password.css";
+import "../features/navigation/navigation.css";
 import "../features/analytics/analytics.css";
 import "../features/auth/auth.css";
+import "../features/dashboard/dashboard.css";
+import "../features/dashboard/dashboard-panels.css";
 import "../features/workouts/workout.css";
 import "../features/workouts/workout-forms.css";
 import "../features/workouts/workout-history.css";

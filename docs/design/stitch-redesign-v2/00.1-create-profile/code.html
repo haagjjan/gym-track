@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Aether Fitness System - Create Operator Profile</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&amp;family=Jetbrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100..900&amp;family=Space+Grotesk:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(18, 18, 18, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .glow-cyan {
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);
+        }
+        .glow-cyan-strong {
+            box-shadow: 0 0 25px rgba(0, 242, 255, 0.5);
+        }
+        .scan-line {
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00dbe7, transparent);
+            position: absolute;
+            top: -2px;
+            animation: scan 4s linear infinite;
+        }
+        @keyframes scan {
+            0% { top: 0%; opacity: 0; }
+            5% { opacity: 1; }
+            95% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+        .hud-grid {
+            background-image: radial-gradient(circle, rgba(0, 219, 231, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .corner-accent {
+            width: 12px;
+            height: 12px;
+            border-color: #00dbe7;
+            position: absolute;
+        }
+    </style>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"on-error": "#690005", tertiary: "#e7ffda", "on-background": "#e5e2e1", "on-primary-fixed": "#002022", "neon-glow": "rgba(0, 242, 255, 0.4)", outline: "#849495", "on-primary-fixed-variant": "#004f54", "inverse-surface": "#e5e2e1", "inverse-on-surface": "#313030", "secondary-container": "#583584", "surface-container-lowest": "#0e0e0e", surface: "#131313", "on-surface-variant": "#b9cacb", "on-secondary-fixed-variant": "#583584", "text-muted": "rgba(255, 255, 255, 0.6)", "on-secondary-container": "#cba4fb", "tertiary-fixed": "#78ff5d", "primary-fixed-dim": "#00dbe7", error: "#ffb4ab", "tertiary-container": "#51fb37", "surface-obsidian": "#121212", "surface-container": "#201f1f", "on-tertiary": "#033900", secondary: "#d9b9ff", "on-secondary": "#401c6b", "on-primary-container": "#006a71", "on-tertiary-fixed": "#012200", "outline-variant": "#3a494b", "surface-tint": "#00dbe7", "on-secondary-fixed": "#2a0054", "surface-bright": "#3a3939", "surface-container-high": "#2a2a2a", "secondary-fixed": "#eedcff", "tertiary-fixed-dim": "#36e51c", "surface-container-highest": "#353534", "on-surface": "#e5e2e1", "glass-stroke": "rgba(255, 255, 255, 0.12)", background: "#131313", "error-container": "#93000a", "on-error-container": "#ffdad6", "on-tertiary-fixed-variant": "#075300", "secondary-fixed-dim": "#d9b9ff", "surface-dim": "#131313", "primary-container": "#00f2ff", "primary-fixed": "#74f5ff", primary: "#e1fdff", "surface-variant": "#353534", "inverse-primary": "#00696f", "surface-container-low": "#1c1b1b", "on-tertiary-container": "#0d7000", "on-primary": "#00363a"}, borderRadius: {DEFAULT: "0.125rem", lg: "0.25rem", xl: "0.5rem", full: "0.75rem"}, spacing: {unit: "4px", gutter: "16px", "container-padding": "24px", "margin-desktop": "40px", "margin-mobile": "20px"}, fontFamily: {"label-caps": ["Space Grotesk"], "body-md": ["JetBrains Mono"], "headline-lg-mobile": ["Space Grotesk"], "display-hero": ["Space Grotesk"], "headline-lg": ["Space Grotesk"], "data-mono": ["JetBrains Mono"], headline: ["Space Grotesk"], display: ["Space Grotesk"], body: ["Jetbrains Mono"], label: ["Space Grotesk"]}, fontSize: {"label-caps": ["12px", {lineHeight: "16px", letterSpacing: "0.1em", fontWeight: "700"}], "body-md": ["14px", {lineHeight: "20px", fontWeight: "400"}], "headline-lg-mobile": ["24px", {lineHeight: "32px", fontWeight: "600"}], "display-hero": ["48px", {lineHeight: "56px", letterSpacing: "-0.02em", fontWeight: "700"}], "headline-lg": ["32px", {lineHeight: "40px", fontWeight: "600"}], "data-mono": ["18px", {lineHeight: "24px", letterSpacing: "0.05em", fontWeight: "500"}]}}}};</script>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-hidden min-h-screen flex flex-col items-center justify-center relative">
+<!-- Ambient HUD Background -->
+<div class="fixed inset-0 z-0 hud-grid opacity-20 pointer-events-none"></div>
+<div class="fixed inset-0 z-0 bg-gradient-to-b from-black via-surface-obsidian/40 to-black pointer-events-none"></div>
+<!-- Top Bar Mockup (Suppressed but maintaining branding) -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop py-6">
+<div class="flex items-center gap-4">
+<div class="w-8 h-8 border-2 border-primary-fixed-dim rotate-45 flex items-center justify-center overflow-hidden">
+<div class="w-full h-full bg-primary-fixed-dim/20 animate-pulse"></div>
+</div>
+<span class="text-label-caps font-label-caps tracking-widest text-primary-fixed-dim shadow-[0_0_10px_rgba(0,242,255,0.4)]" style="opacity: 1;">BODY_COCKPIT_V1.0</span>
+</div>
+<div class="hidden md:flex gap-8">
+<span class="text-label-caps font-label-caps text-on-surface-variant opacity-40">SYS_AUTH_NODE_01</span>
+<span class="text-label-caps font-label-caps text-on-surface-variant opacity-40">ENCRYPTION: AES-256</span>
+</div>
+</header>
+<!-- Main Registration Canvas -->
+<main class="relative z-10 w-full max-w-lg px-6 min-h-screen flex flex-col justify-center items-center">
+<!-- Registration Container -->
+<div class="glass-panel relative p-8 md:p-12 overflow-hidden">
+<!-- Visual HUD Accents -->
+<div class="scan-line"></div>
+<div class="corner-accent border-t-2 border-l-2 top-0 left-0"></div>
+<div class="corner-accent border-t-2 border-r-2 top-0 right-0"></div>
+<div class="corner-accent border-b-2 border-l-2 bottom-0 left-0"></div>
+<div class="corner-accent border-b-2 border-r-2 bottom-0 right-0"></div>
+<div class="mb-10 text-center">
+<div class="inline-flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-primary-fixed-dim text-sm" style="opacity: 1;">shield_person</span>
+<span class="text-label-caps font-label-caps text-primary-fixed-dim text-[10px]" style="opacity: 1;">OPERATOR AUTHENTICATION REQUIRED</span>
+</div>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-primary-fixed-dim tracking-tight" style="opacity: 1;">CREATE_OPERATOR_PROFILE</h1>
+</div>
+<form class="space-y-6" onsubmit="return false;">
+<!-- Email Address -->
+<div class="relative group">
+<label class="block text-label-caps font-label-caps text-on-surface-variant mb-2 opacity-60">EMAIL_ADDRESS</label>
+<div class="relative">
+<input class="w-full bg-surface-obsidian/40 border-0 border-b-2 border-glass-stroke py-4 px-4 text-data-mono font-data-mono text-primary focus:ring-0 focus:border-primary-fixed-dim focus:bg-primary/5 transition-all outline-none" placeholder="USER@AETHER_NODE.COM" type="email"/>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-30 group-focus-within:text-primary-fixed-dim transition-colors">alternate_email</span>
+</div>
+</div>
+<!-- Operator ID -->
+<div class="relative group">
+<label class="block text-label-caps font-label-caps text-on-surface-variant mb-2 opacity-60">OPERATOR_ID</label>
+<div class="relative">
+<input class="w-full bg-surface-obsidian/40 border-0 border-b-2 border-glass-stroke py-4 px-4 text-data-mono font-data-mono text-primary focus:ring-0 focus:border-primary-fixed-dim focus:bg-primary/5 transition-all outline-none" placeholder="OP_772_SIGMA" type="text"/>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-30 group-focus-within:text-primary-fixed-dim transition-colors">fingerprint</span>
+</div>
+</div>
+<!-- Access Code -->
+<div class="relative group">
+<label class="block text-label-caps font-label-caps text-on-surface-variant mb-2 opacity-60">ACCESS_CODE</label>
+<div class="relative">
+<input class="w-full bg-surface-obsidian/40 border-0 border-b-2 border-glass-stroke py-4 px-4 text-data-mono font-data-mono text-primary focus:ring-0 focus:border-primary-fixed-dim focus:bg-primary/5 transition-all outline-none" placeholder="••••••••" type="password"/>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-30 group-focus-within:text-primary-fixed-dim transition-colors">key</span>
+</div>
+</div>
+<!-- Privacy/Terms Toggle (Implicit for high-end systems) -->
+<div class="flex items-center gap-3 pt-2">
+<div class="w-4 h-4 border border-primary-fixed-dim flex items-center justify-center bg-primary-fixed-dim/10 cursor-pointer" id="termsToggle">
+<div class="w-2 h-2 bg-primary-fixed-dim hidden" id="checkIcon"></div>
+</div>
+<span class="text-label-caps font-label-caps text-[10px] text-on-surface-variant opacity-60">ACKNOWLEDGE_BIOMETRIC_DATA_PROTOCOLS</span>
+</div>
+<!-- CTA -->
+<button class="w-full group relative overflow-hidden bg-primary-fixed-dim text-on-primary py-5 rounded-sm font-label-caps text-label-caps tracking-widest transition-all hover:scale-[1.02] active:scale-95 glow-cyan hover:glow-cyan-strong mt-8" type="button">
+<div class="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out skew-x-12"></div>
+                    REGISTER_PROFILE
+                </button>
+</form>
+<div class="mt-12 pt-8 border-t border-glass-stroke flex flex-col items-center gap-4">
+<p class="text-label-caps font-label-caps text-on-surface-variant text-[11px] opacity-60">Already have an account?</p>
+<a class="text-label-caps font-label-caps text-primary-fixed-dim hover:text-primary-fixed transition-colors underline underline-offset-4 tracking-widest" href="#" style="opacity: 1;">
+                    {{DATA:SCREEN:LOGIN_SCREEN}}
+                </a>
+</div>
+</div>
+<!-- System Meta Stats -->
+<div class="mt-8 grid grid-cols-2 gap-4">
+<div class="glass-panel p-3 flex flex-col gap-1 border-l-2 border-l-primary-fixed-dim">
+<span class="text-[9px] font-label-caps text-on-surface-variant opacity-40">UPLINK_STATUS</span>
+<span class="text-data-mono text-[12px] text-primary-fixed-dim" style="opacity: 1;">ACTIVE // 99.8%</span>
+</div>
+<div class="glass-panel p-3 flex flex-col gap-1 border-l-2 border-l-secondary-container">
+<span class="text-[9px] font-label-caps text-on-surface-variant opacity-40">DATA_REDUNDANCY</span>
+<span class="text-data-mono text-[12px] text-secondary-container">VERIFIED</span>
+</div>
+</div>
+</main>
+<!-- Side Graphic Accents -->
+<aside class="hidden xl:block fixed left-margin-desktop top-1/2 -translate-y-1/2 space-y-12 opacity-20">
+<div class="flex flex-col gap-2">
+<div class="h-1 w-24 bg-primary-fixed-dim"></div>
+<div class="h-1 w-12 bg-primary-fixed-dim/40"></div>
+<div class="h-1 w-32 bg-primary-fixed-dim/20"></div>
+</div>
+<div class="text-[10px] font-data-mono rotate-90 origin-left whitespace-nowrap tracking-[0.5em] text-primary-fixed-dim" style="opacity: 1;">
+            COCKPIT_ENVIRONMENT_STABLE
+        </div>
+</aside>
+<aside class="hidden xl:block fixed right-margin-desktop top-1/2 -translate-y-1/2 opacity-20 text-right">
+<div class="text-[10px] font-data-mono -rotate-90 origin-right whitespace-nowrap tracking-[0.5em] text-primary-fixed-dim" style="opacity: 1;">
+            BIO_SYNC_AWAITING_INPUT
+        </div>
+<div class="flex flex-col items-end gap-2 mt-12">
+<div class="h-1 w-32 bg-primary-fixed-dim/20"></div>
+<div class="h-1 w-12 bg-primary-fixed-dim/40"></div>
+<div class="h-1 w-24 bg-primary-fixed-dim"></div>
+</div>
+</aside>
+<!-- Image Data Placeholder for Ambient Background Context -->
+<div class="sr-only">
+<img class="" data-alt="A cinematic, high-contrast dark room background showcasing a futuristic cockpit interface with multiple floating holographic displays. The lighting is dominated by sharp, electric cyan neon lines that trace the edges of glass panels, reflecting onto a sleek, obsidian black surface. The atmosphere is technical and ultra-modern, suggesting an advanced command center for body metrics and physical performance monitoring. High-tech machinery is blurred in the deep shadows, focusing attention on the luminescent interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOaXVFQWsT4Yf34ejKs9EvKmoX85veEf1c3dZPLdxc6_b6AcO9rGAGGm-9dLWhkT8lPFj9GSawAfbEprQnIWoeyzBosVDj0oJD7EGvyCO8xJgo5X6Lg9k8MkVf8-XdpeOQXN008htTFPgQSAzVDGADNVDAhPn-0QUn8YfiyDtE-L7qG8is4CZ3kEjnHoy2b-HsYFByrXV8W022SwcVAZjxa1Is4fOH8gX3sRK0MRaqaRsnZfH4yjusxsyIzG68tVKzWA4cTlEqXjw"/>
+</div>
+<script>
+        // Simple micro-interactions
+        const termsToggle = document.getElementById('termsToggle');
+        const checkIcon = document.getElementById('checkIcon');
+        let checked = false;
+
+        termsToggle.addEventListener('click', () => {
+            checked = !checked;
+            checkIcon.classList.toggle('hidden', !checked);
+            termsToggle.classList.toggle('border-primary-fixed-dim', checked);
+            termsToggle.classList.toggle('bg-primary-fixed-dim/20', checked);
+        });
+
+        // Add some atmospheric flicker to "technical" elements
+        setInterval(() => {
+            const elements = document.querySelectorAll('.text-primary-fixed-dim');
+            const randomEl = elements[Math.floor(Math.random() * elements.length)];
+            randomEl.style.opacity = '0.7';
+            setTimeout(() => {
+                randomEl.style.opacity = '1';
+            }, 50);
+        }, 3000);
+    </script>
+</body></html>
