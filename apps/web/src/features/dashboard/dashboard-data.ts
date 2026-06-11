@@ -16,6 +16,15 @@ import { listWorkouts } from "../workouts/workout-api";
 import type { DashboardData, PerformanceSignal, VolumeBar } from "./dashboard-types";
 import { emptyDashboardData } from "./dashboard-types";
 
+const dashboardVolumeGroups = [
+  { name: "Chest", slug: "chest", sourceSlugs: ["chest"] },
+  { name: "Back", slug: "back", sourceSlugs: ["back", "traps"] },
+  { name: "Shoulders", slug: "shoulders", sourceSlugs: ["shoulders"] },
+  { name: "Arms", slug: "arms", sourceSlugs: ["biceps", "triceps", "forearms"] },
+  { name: "Core", slug: "core", sourceSlugs: ["abs"] },
+  { name: "Legs", slug: "legs", sourceSlugs: ["quads", "hamstrings", "glutes", "calves"] }
+];
+
 interface DashboardState {
   data: DashboardData;
   error: string | null;
@@ -127,15 +136,18 @@ export function weeklyVolumeBars(volume: WeeklyVolumePayload | null): VolumeBar[
     null
   );
 
-  return (latestWeek?.items ?? [])
-    .slice()
-    .sort((left, right) => right.workingSets - left.workingSets)
-    .slice(0, 5)
-    .map((item) => ({
-      name: item.muscleGroup.name,
-      slug: item.muscleGroup.slug,
-      workingSets: item.workingSets
-    }));
+  const setsBySlug = new Map(
+    (latestWeek?.items ?? []).map((item) => [item.muscleGroup.slug, item.workingSets])
+  );
+
+  return dashboardVolumeGroups.map((group) => ({
+    name: group.name,
+    slug: group.slug,
+    workingSets: group.sourceSlugs.reduce(
+      (total, slug) => total + (setsBySlug.get(slug) ?? 0),
+      0
+    )
+  }));
 }
 
 export function formatDateTime(value: string): string {

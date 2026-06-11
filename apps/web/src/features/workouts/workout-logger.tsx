@@ -3,7 +3,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
-import { LogoutButton } from "../auth/logout-button";
 import { addSessionExercise, deleteSessionExercise, endWorkout, getWorkout, reorderSessionExercises } from "./workout-api";
 import { ExercisePicker } from "./exercise-picker";
 import { SessionExercisePanel } from "./session-exercise-panel";
@@ -175,7 +174,6 @@ export function WorkoutLogger({ workoutId }: WorkoutLoggerProps): ReactNode {
           <p className="leadText">{workout ? formatStartedAt(workout.startedAt) : "Loading"}</p>
         </div>
         <div className="headerActions">
-          <LogoutButton />
           <button
             className="primaryAction"
             type="button"

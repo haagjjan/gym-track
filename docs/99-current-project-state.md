@@ -42,7 +42,10 @@ Repo layout:
 - `docs/04-schema-draft.md`: PostgreSQL schema draft and query mapping.
 - `docs/05-api-contract.md`: REST contract for auth, workouts, exercise library, and analytics.
 - `docs/07-implementation-pattern.md`: feature-slice pattern for API and web code.
-- `docs/08-next-implementation-plan.md`: fresh-session handoff; currently recommends UX Slice 2, Separate Add-Exercise Flow.
+- `docs/08-next-implementation-plan.md`: short fresh-session handoff; the old UX slice plan is superseded by the Stitch-based redesign docs.
+- `docs/design/stitch-redesign-v2/DESIGN.md`: visual design-system reference for the Body Cockpit redesign.
+- `docs/design/stitch-redesign-v2/design-notes.md`: screen behavior and UX reference for the Body Cockpit redesign.
+- `docs/design/stitch-redesign-v2/implementation-roadmap.md`: current source of truth for UI redesign execution order and Codex slice boundaries.
 - `docs/deployment-runbook.md`: Render deployment, migration, backup, restore, and monitoring checklist.
 - `docs/decisions/`: architecture decision records for stack and deployment direction.
 - `apps/api/src/server.ts`: wires Fastify plugins, repositories, and feature routes together.
@@ -60,8 +63,8 @@ Repo layout:
 - `docs/repository-structure.md` is the source of truth for where files belong.
 - `docs/decisions/0002-application-stack.md` through `0005-deployment-target.md` record the accepted stack and deployment direction.
 - `docs/Statusupdate-Whiteboxtesting.md` is a loose testing/status note and appears less authoritative than the roadmap docs.
-- The roadmap docs still describe the project in phase language; `docs/08-next-implementation-plan.md` is the freshest implementation handoff.
-- `README.md` reflects the current implementation more directly than the older phase docs, including CSV import/export and the split Progress/Weekly Volume surfaces.
+- The old roadmap docs still describe the project in phase language; `docs/08-next-implementation-plan.md` is now a short handoff pointer to `docs/design/stitch-redesign-v2/implementation-roadmap.md`.
+- `README.md` reflects the current implementation more directly than the older phase docs, including CSV import/export and the split Progress/Weekly Volume UI.
 
 ## 5. Current Tests And Commands
 
@@ -89,13 +92,23 @@ Relevant repo checks:
 
 ## 7. Next Sensible Implementation Steps
 
-- Follow `docs/08-next-implementation-plan.md`; the recommended next slice is UX Slice 2, Separate Add-Exercise Flow.
-- Continue the UX hardening sequence before small-batch launch execution. UX Slice 1 is implemented for focused active workout logging, but exercise selection still needs to move out of the live logging surface.
-- Do not proceed to tester launch until the tester-launch blockers in `docs/08-next-implementation-plan.md` are resolved.
+- Follow `docs/design/stitch-redesign-v2/implementation-roadmap.md`; it is now the source of truth for the UI redesign.
+- The backend/auth/database foundation should be kept. The UI surface is the main thing being rebuilt.
+- Current redesign status: foundation/auth/app shell work has started, but the logged-in home screen is still structurally wrong. It currently behaves like a card-grid dashboard instead of the intended cinematic cockpit home composition.
+- Next sensible slice: redo the home screen as a focused composition pass before moving to workout/start/active-logging screens.
+- The home rewrite should prioritize structure over perfect data integration:
+  - compact navigation shell stays
+  - central body/avatar/platform scene becomes the dominant visual anchor
+  - operator/body stats sit as overlays/side annotations
+  - previous sessions appear as a bottom strip/list
+  - one primary start/resume session CTA is integrated into the composition
+  - equal-weight dashboard cards and duplicate navigation blocks should be removed
+- Do not proceed to tester launch until the core mobile workout flow and main surfaces are redesigned and usable.
 
 ## 8. Known Risks Or Unclear Parts
 
-- Some roadmap docs lag the code. For example, the older workflow docs do not fully mention CSV import/export or the split Progress/Weekly Volume UI, while `README.md` and `docs/08-next-implementation-plan.md` are more current.
+- Some roadmap docs lag the code. For current UI redesign work, prefer `docs/design/stitch-redesign-v2/implementation-roadmap.md` over older workflow docs and older UX slice notes.
 - `docs/01-requirements.md` still reads like an early draft in places, so treat it as requirement history plus current MVP intent, not a perfect implementation ledger.
 - The app now includes more implemented slices than the original MVP docs initially described, so the safest source for “what next” is `docs/08-next-implementation-plan.md` plus the current code tree.
 - Hosted credentials, custom domains, email verification, password reset, UX hardening follow-ups, and tester launch execution are still not implemented.
+- The current home screen implementation should not be incrementally polished as a card grid. It should be replaced with a composition-first home screen. If a file-size or line-count limit is used, split the implementation into small components rather than creating one large page file.

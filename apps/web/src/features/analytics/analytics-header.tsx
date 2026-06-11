@@ -1,6 +1,5 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { LogoutButton } from "../auth/logout-button";
 
 export function AnalyticsHeader({
   eyebrow,
@@ -26,7 +25,6 @@ export function AnalyticsHeader({
         <p className="eyebrow">{eyebrow}</p>
         <h1>{title}</h1>
       </div>
-      <LogoutButton />
     </header>
   );
 }

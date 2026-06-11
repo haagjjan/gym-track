@@ -221,15 +221,70 @@ Acceptance criteria:
 
 ---
 
+## Phase 3.5 — App shell visual correction / navigation standard
+
+Goal:
+
+Bring the logged-in app shell up to the same visual level as the auth screens before rebuilding the dashboard.
+
+Reason:
+
+The sidebar/top navigation is a global product surface. If it stays generic, every later screen will inherit the wrong feeling even if the page content improves.
+
+Design direction:
+
+- The left side is a navigation menu, not a card dashboard.
+- Desktop should use a compact vertical side menu with list-style navigation items.
+- Mobile should use the same navigation pattern through the hamburger/three-bars menu.
+- The hamburger icon controls opening/closing the navigation menu.
+- Navigation items should feel like a compact cockpit/HUD list, not large square clickable boxes.
+- The active item should be highlighted with a thin cyan indicator, subtle background, icon, and label.
+- The menu should resemble the compact side navigation reference, not the old oversized card-style menu.
+
+Tasks:
+
+- Refine the logged-in `AppShell`, `Sidebar`, and `TopBar` visual structure.
+- Replace large square navigation cards with compact list-style nav rows.
+- Keep nav items clear:
+  - Dashboard
+  - Workout
+  - History
+  - Progress
+  - Volume
+- Keep the operator/status block, but make it visually compact and premium.
+- Keep one primary `START_SESSION` action in the shell if appropriate.
+- Remove duplicate logout actions; keep one clear logout location.
+- Ensure the hamburger/three-bars icon opens the menu on mobile.
+- Ensure desktop and mobile share the same navigation concept.
+
+Non-goals:
+
+- Do not rebuild the dashboard content yet.
+- Do not rebuild workout/history/progress/volume pages yet.
+- Do not change backend/API/auth behavior.
+- Do not add 3D.
+- Do not add a new navigation framework.
+
+Acceptance criteria:
+
+- Logged-in shell no longer looks like generic square-card navigation.
+- Navigation is compact, readable, and list-based.
+- Active nav state is clear but not oversized.
+- Hamburger menu behavior is ready for mobile.
+- There is only one logout action.
+- App shell visually fits the auth screens and the Stitch cockpit direction.
+
+---
+
 ## Phase 4 — Dashboard / Home rebuild
 
 Goal:
 
-The dashboard should immediately tell the user what to do next.
+The dashboard should immediately tell the user what to do next and should feel like a cinematic cockpit home screen, not a generic card grid.
 
 Tasks:
 
-- Build cockpit dashboard layout.
+- Build cockpit dashboard composition based on `01-home`, with a dominant central scene/stage rather than equal-weight dashboard cards.
 - Add primary action:
   - `RESUME_SESSION` if active workout exists
   - `START_SESSION` if no active workout exists
@@ -242,6 +297,14 @@ Tasks:
 - Add recent logs strip/list.
 - Add empty state for new users.
 - Use background image/decorative scene only as static/lazy visual.
+- Treat visual composition as its own requirement before perfect data integration.
+- Use the dashboard sketch/reference concept:
+  - hamburger/menu entry point
+  - central body/avatar/platform scene
+  - operator/body stats on the side
+  - previous sessions strip/list near the bottom
+  - primary start/resume session action integrated into the composition
+- Avoid making the home screen a grid of equal-weight cards.
 
 Non-goals:
 
@@ -253,6 +316,9 @@ Acceptance criteria:
 
 - User knows next action in under 10 seconds.
 - Dashboard does not look like placeholder UI.
+- Dashboard does not look like a generic card grid.
+- Central scene/stage is the dominant visual anchor.
+- Previous sessions and primary CTA are integrated into the home composition.
 - Mobile version is usable.
 - Missing data looks intentional, not broken.
 
@@ -545,14 +611,15 @@ Use one Codex task per slice.
 2. Add design tokens and base components.
 3. Rebuild auth screens.
 4. Rebuild app shell/navigation.
-5. Rebuild dashboard.
-6. Rebuild workout start.
-7. Rebuild active workout logging.
-8. Rebuild insert exercise flow.
-9. Rebuild history.
-10. Rebuild progress.
-11. Rebuild volume.
-12. Polish states and mobile QA.
+5. Correct app shell visual level and compact navigation.
+6. Rebuild dashboard composition.
+7. Rebuild workout start.
+8. Rebuild active workout logging.
+9. Rebuild insert exercise flow.
+10. Rebuild history.
+11. Rebuild progress.
+12. Rebuild volume.
+13. Polish states and mobile QA.
 
 Each task prompt should include:
 

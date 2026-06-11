@@ -11,6 +11,7 @@
   background: var(--cockpit-color-background);
   color: var(--cockpit-color-text);
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 .appCockpitShell .appShell,
@@ -25,79 +26,220 @@
   border-block-start-color: var(--cockpit-color-cyan);
 }
 
-.appShellOperator {
-  display: grid;
+.appCockpitShell .cockpitAppShell {
+  background:
+    linear-gradient(rgba(0, 219, 231, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 219, 231, 0.03) 1px, transparent 1px),
+    var(--cockpit-color-background);
+  background-size: 48px 48px;
+  grid-template-columns: 252px minmax(0, 1fr);
+}
+
+.appCockpitShell .cockpitSidebar {
+  background:
+    linear-gradient(180deg, rgba(0, 219, 231, 0.035), transparent 28%),
+    rgba(14, 14, 14, 0.92);
+  border-right: 1px solid rgba(0, 219, 231, 0.18);
+  box-shadow: 0 0 34px rgba(0, 0, 0, 0.38);
+  gap: var(--cockpit-space-4);
+  padding: var(--cockpit-space-5) 0 var(--cockpit-space-4);
+}
+
+.appCockpitShell .cockpitSidebar__operator,
+.appCockpitShell .cockpitSidebar__footer {
+  border: 1px solid rgba(0, 219, 231, 0.16);
+  border-radius: var(--cockpit-radius-lg);
+  margin-inline: var(--cockpit-space-4);
+  padding: var(--cockpit-space-3);
+}
+
+.appCockpitShell .cockpitSidebar__operator {
+  background: rgba(18, 18, 18, 0.74);
+}
+
+.appCockpitShell .cockpitSidebar__footer {
+  background: rgba(10, 10, 10, 0.46);
+}
+
+.appCockpitShell .cockpitSidebar__nav {
+  align-content: start;
   gap: var(--cockpit-space-1);
+}
+
+.appCockpitShell .cockpitTopBar {
+  background: rgba(10, 10, 10, 0.84);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(0, 219, 231, 0.18);
+  min-height: 64px;
+  padding: 0 var(--cockpit-space-6);
+}
+
+.appCockpitShell .cockpitTopBar__identity,
+.appCockpitShell .cockpitTopBar__actions {
+  flex-wrap: nowrap;
+}
+
+.appCockpitShell .cockpitTopBar__title {
+  color: var(--cockpit-color-cyan-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 0 10px rgba(0, 219, 231, 0.32);
+  white-space: nowrap;
+}
+
+.appCockpitShell .cockpitTopBar__status {
+  border: 1px solid rgba(0, 219, 231, 0.16);
+  border-radius: 999px;
+  color: rgba(185, 202, 203, 0.72);
+  padding: 3px var(--cockpit-space-2);
+}
+
+.appShellOperator {
+  align-items: center;
+  column-gap: var(--cockpit-space-3);
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  min-width: 0;
+  row-gap: var(--cockpit-space-2);
+}
+
+.appShellOperator__avatar {
+  align-items: center;
+  aspect-ratio: 1;
+  background: rgba(0, 219, 231, 0.08);
+  border: 1px solid var(--cockpit-color-cyan);
+  border-radius: var(--cockpit-radius-md);
+  box-shadow: inset 0 0 14px rgba(0, 219, 231, 0.12);
+  color: var(--cockpit-color-cyan-soft);
+  display: flex;
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.98rem;
+  font-weight: 700;
+  justify-content: center;
+}
+
+.appShellOperator__meta {
+  display: grid;
+  gap: 2px;
   min-width: 0;
 }
 
-.appShellOperator span,
-.appShellOperator small {
-  color: var(--cockpit-color-text-muted);
+.appShellOperator__meta span,
+.appShellOperator__meta small,
+.appShellOperator__status {
+  color: rgba(185, 202, 203, 0.74);
   font-family: var(--cockpit-font-body);
-  font-size: 0.76rem;
+  font-size: 0.68rem;
   line-height: 1.35;
 }
 
-.appShellOperator span {
+.appShellOperator__meta span,
+.appShellOperator__status {
   text-transform: uppercase;
 }
 
-.appShellOperator strong {
-  color: var(--cockpit-color-cyan-soft);
+.appShellOperator__meta strong {
+  color: var(--cockpit-color-cyan-strong);
   font-family: var(--cockpit-font-heading);
-  overflow-wrap: anywhere;
+  font-size: 1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.appShellOperator__meta small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.appShellOperator__status {
+  align-items: center;
+  border-top: 1px solid rgba(0, 219, 231, 0.12);
+  display: flex;
+  gap: var(--cockpit-space-2);
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-top: var(--cockpit-space-2);
+}
+
+.appShellOperator__status span {
+  background: var(--cockpit-color-green);
+  border-radius: 999px;
+  box-shadow: var(--cockpit-glow-green);
+  height: 6px;
+  width: 6px;
 }
 
 .appShellNavList,
 .appShellNavFooter {
   display: grid;
-  gap: var(--cockpit-space-3);
+  gap: var(--cockpit-space-1);
+}
+
+.appShellNavList {
+  padding-block: var(--cockpit-space-1);
 }
 
 .appShellNavLink {
+  align-items: center;
   border: 1px solid transparent;
-  border-radius: var(--cockpit-radius-md);
-  color: var(--cockpit-color-text-muted);
+  color: rgba(185, 202, 203, 0.72);
+  display: flex;
   font-family: var(--cockpit-font-heading);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 700;
-  min-height: 42px;
-  padding: var(--cockpit-space-3);
+  gap: var(--cockpit-space-3);
+  min-height: 38px;
+  padding: 0 var(--cockpit-space-4) 0 var(--cockpit-space-5);
+  position: relative;
   text-decoration: none;
+  text-transform: uppercase;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.appShellNavLink::before {
+  background: transparent;
+  bottom: 7px;
+  content: "";
+  left: 0;
+  position: absolute;
+  top: 7px;
+  width: 2px;
 }
 
 .appShellNavLink:hover,
 .appShellNavLink[aria-current="page"] {
-  background: rgba(0, 219, 231, 0.08);
-  border-color: var(--cockpit-color-cyan);
+  background: linear-gradient(90deg, rgba(0, 219, 231, 0.14), rgba(0, 219, 231, 0.04));
+  border-color: rgba(0, 219, 231, 0.12);
   color: var(--cockpit-color-cyan-soft);
 }
 
-.appShellTopActions {
+.appShellNavLink[aria-current="page"]::before {
+  background: var(--cockpit-color-cyan-strong);
+  box-shadow: 0 0 12px rgba(0, 242, 255, 0.66);
+}
+
+.appShellNavIcon {
   align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--cockpit-space-2);
-}
-
-.appShellTopActions .secondaryAction,
-.appShellNavFooter .secondaryAction {
-  border-color: var(--cockpit-color-border);
-  color: var(--cockpit-color-cyan-soft);
-}
-
-.appShellMenuButton {
-  background: rgba(19, 19, 19, 0.72);
-  border: 1px solid var(--cockpit-color-border);
-  border-radius: var(--cockpit-radius-md);
-  color: var(--cockpit-color-cyan-soft);
-  cursor: pointer;
-  display: none;
-  font-family: var(--cockpit-font-heading);
+  border: 1px solid rgba(0, 219, 231, 0.22);
+  border-radius: var(--cockpit-radius-sm);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-family: var(--cockpit-font-body);
+  font-size: 0.68rem;
   font-weight: 700;
-  min-height: 40px;
-  padding: 0 var(--cockpit-space-3);
+  height: 20px;
+  justify-content: center;
+  opacity: 0.82;
+  width: 20px;
+}
+
+.appShellNavFooter {
+  gap: var(--cockpit-space-2);
 }
 
 .appShellStartAction {
@@ -106,17 +248,75 @@
 }
 
 .appShellStartAction .cockpitButton {
+  border-radius: var(--cockpit-radius-md);
+  font-size: 0.78rem;
+  min-height: 42px;
+  padding-inline: var(--cockpit-space-2);
   width: 100%;
+}
+
+.appShellNavFooter .secondaryAction {
+  background: rgba(19, 19, 19, 0.54);
+  border: 1px solid rgba(185, 202, 203, 0.2);
+  border-radius: var(--cockpit-radius-md);
+  color: rgba(185, 202, 203, 0.78);
+  cursor: pointer;
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.74rem;
+  font-weight: 700;
+  min-height: 36px;
+  padding: 0 var(--cockpit-space-2);
+  text-transform: uppercase;
+  width: 100%;
+}
+
+.appShellNavFooter .secondaryAction:hover,
+.appShellNavFooter .secondaryAction:focus-visible {
+  border-color: rgba(0, 219, 231, 0.5);
+  color: var(--cockpit-color-cyan-soft);
+}
+
+.appShellMenuButton {
+  align-items: center;
+  background: transparent;
+  border: 1px solid rgba(0, 219, 231, 0.28);
+  border-radius: var(--cockpit-radius-md);
+  color: var(--cockpit-color-cyan-strong);
+  cursor: pointer;
+  display: none;
+  height: 38px;
+  justify-content: center;
+  padding: 0;
+  width: 38px;
+}
+
+.appShellMenuButton:hover,
+.appShellMenuButton:focus-visible {
+  background: rgba(0, 219, 231, 0.1);
+  box-shadow: var(--cockpit-glow-cyan);
+}
+
+.appShellMenuGlyph {
+  display: grid;
+  gap: 4px;
+  width: 18px;
+}
+
+.appShellMenuGlyph span {
+  background: currentColor;
+  box-shadow: 0 0 8px rgba(0, 219, 231, 0.44);
+  height: 2px;
 }
 
 .appShellDrawerLayer {
   inset: 0;
+  overflow: hidden;
   position: fixed;
-  z-index: 20;
+  z-index: 60;
 }
 
 .appShellDrawerBackdrop {
-  background: rgba(0, 0, 0, 0.62);
+  background: rgba(0, 0, 0, 0.68);
   border: 0;
   cursor: pointer;
   inset: 0;
@@ -124,19 +324,76 @@
 }
 
 .appShellDrawer {
-  height: 100%;
-  max-width: min(320px, 88vw);
+  background: rgba(10, 10, 10, 0.96);
+  border-right: 1px solid rgba(0, 219, 231, 0.24);
+  box-shadow: 18px 0 42px rgba(0, 0, 0, 0.48);
+  height: 100dvh;
+  max-width: calc(100vw - 28px);
+  overflow-y: auto;
   position: relative;
-  width: 100%;
+  width: min(292px, calc(100vw - 28px));
+}
+
+.appShellDrawerHeader {
+  align-items: center;
+  border-bottom: 1px solid rgba(0, 219, 231, 0.16);
+  color: var(--cockpit-color-cyan-soft);
+  display: flex;
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.78rem;
+  font-weight: 700;
+  justify-content: space-between;
+  min-height: 58px;
+  padding: 0 var(--cockpit-space-4);
+  text-transform: uppercase;
+}
+
+.appShellDrawerHeader span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.appShellDrawer .cockpitSidebar {
+  background: transparent;
+  border-right: 0;
+  box-shadow: none;
+  min-height: calc(100dvh - 58px);
+}
+
+.appShellMenuButton--drawer {
+  display: flex;
+  flex: 0 0 auto;
 }
 
 @media (max-width: 760px) {
-  .appShellMenuButton {
-    display: inline-flex;
-    align-items: center;
+  .appCockpitShell .cockpitAppShell {
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .appShellTopActions .secondaryAction {
+  .appCockpitShell .cockpitTopBar {
+    align-items: center;
+    flex-direction: row;
+    gap: var(--cockpit-space-3);
+    justify-content: flex-start;
+    min-height: 60px;
+    padding: 0 var(--cockpit-space-4);
+  }
+
+  .appCockpitShell .cockpitTopBar__actions {
+    flex: 0 0 auto;
+    order: -1;
+  }
+
+  .appCockpitShell .cockpitTopBar__identity {
+    flex: 1 1 auto;
+  }
+
+  .appCockpitShell .cockpitTopBar__status {
     display: none;
+  }
+
+  .appShellMenuButton {
+    display: flex;
   }
 }
