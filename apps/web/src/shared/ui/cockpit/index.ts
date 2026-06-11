@@ -2,6 +2,7 @@ export { CockpitButton } from "./cockpit-button";
 export {
   CockpitCheckbox,
   CockpitNumberInput,
+  CockpitPasswordInput,
   CockpitSearchInput,
   CockpitTextInput
 } from "./cockpit-fields";

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { getCurrentUser } from "../../../features/auth/server-auth";
+import { AppCockpitShell } from "../../../features/navigation/app-cockpit-shell";
 import { WorkoutLogger } from "../../../features/workouts/workout-logger";
 
 interface WorkoutPageProps {
@@ -18,5 +19,9 @@ export default async function WorkoutPage({ params }: WorkoutPageProps): Promise
 
   const { workoutId } = await params;
 
-  return <WorkoutLogger workoutId={workoutId} />;
+  return (
+    <AppCockpitShell user={user}>
+      <WorkoutLogger workoutId={workoutId} />
+    </AppCockpitShell>
+  );
 }

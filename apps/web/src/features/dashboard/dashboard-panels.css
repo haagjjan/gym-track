@@ -1,0 +1,150 @@
+.dashboardSignalList,
+.dashboardLogs,
+.dashboardControlGrid,
+.dashboardStatusGrid {
+  display: grid;
+  gap: var(--cockpit-space-3);
+}
+
+.dashboardSignal,
+.dashboardLog,
+.dashboardControlTile {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(0, 219, 231, 0.17);
+  border-radius: var(--cockpit-radius-md);
+  color: var(--cockpit-color-text);
+  display: grid;
+  gap: var(--cockpit-space-1);
+  min-width: 0;
+  padding: var(--cockpit-space-3);
+  position: relative;
+  text-decoration: none;
+}
+
+.dashboardSignal:hover,
+.dashboardLog:hover,
+.dashboardControlTile:hover {
+  border-color: rgba(0, 219, 231, 0.58);
+  box-shadow: inset 0 0 24px rgba(0, 219, 231, 0.08);
+}
+
+.dashboardSignal span,
+.dashboardLog span,
+.dashboardControlTile span {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.82rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.dashboardSignal strong,
+.dashboardLog strong {
+  font-family: var(--cockpit-font-heading);
+  font-size: 1.15rem;
+}
+
+.dashboardSignal small,
+.dashboardLog small,
+.dashboardControlTile small,
+.dashboardStatusNote {
+  color: var(--cockpit-color-text-muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.dashboardControlGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dashboardControlTile:first-child {
+  grid-column: 1 / -1;
+}
+
+.dashboardRecentLogs {
+  min-height: 190px;
+}
+
+.dashboardLogs {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dashboardVolumeBars {
+  display: grid;
+  gap: var(--cockpit-space-4);
+}
+
+.dashboardVolumeBar {
+  align-items: center;
+  display: grid;
+  gap: var(--cockpit-space-3);
+  grid-template-columns: minmax(72px, 1fr) minmax(90px, 1.4fr) 2.5rem;
+}
+
+.dashboardVolumeBar span,
+.dashboardVolumeBar strong {
+  color: var(--cockpit-color-text);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.dashboardVolumeBar div {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(0, 219, 231, 0.16);
+  border-radius: 999px;
+  height: 10px;
+  overflow: hidden;
+}
+
+.dashboardVolumeBar i {
+  background: linear-gradient(90deg, var(--cockpit-color-green), var(--cockpit-color-cyan));
+  display: block;
+  height: 100%;
+}
+
+.dashboardStatusGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dashboardStatusGrid div {
+  background: rgba(0, 0, 0, 0.24);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: var(--cockpit-radius-md);
+  padding: var(--cockpit-space-3);
+}
+
+.dashboardStatusGrid dd {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-heading);
+  font-weight: 700;
+  margin: var(--cockpit-space-1) 0 0;
+  overflow-wrap: anywhere;
+}
+
+.dashboardStatusNote {
+  border-top: 1px solid rgba(0, 219, 231, 0.16);
+  margin: 0;
+  padding-top: var(--cockpit-space-3);
+}
+
+@media (max-width: 900px) {
+  .dashboardLogs {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .dashboardControlGrid,
+  .dashboardStatusGrid,
+  .dashboardVolumeBar {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboardVolumeBar strong {
+    justify-self: start;
+  }
+}

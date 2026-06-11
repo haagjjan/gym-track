@@ -1,17 +1,20 @@
+"use client";
+
 import type { InputHTMLAttributes, ReactNode } from "react";
+import { useState } from "react";
 import { cockpitClassNames } from "./cockpit-utils";
 
 type CockpitInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "id" | "type"> & {
-  error?: string;
-  hint?: ReactNode;
+  error?: string | undefined;
+  hint?: ReactNode | undefined;
   id: string;
   inputMode?: InputHTMLAttributes<HTMLInputElement>["inputMode"];
   label: ReactNode;
 };
 
 type CockpitCheckboxProps = Omit<InputHTMLAttributes<HTMLInputElement>, "id" | "type"> & {
-  error?: string;
-  hint?: ReactNode;
+  error?: string | undefined;
+  hint?: ReactNode | undefined;
   id: string;
   label: ReactNode;
 };
@@ -26,6 +29,24 @@ export function CockpitNumberInput(props: CockpitInputProps): ReactNode {
 
 export function CockpitSearchInput(props: CockpitInputProps): ReactNode {
   return <CockpitInput type="search" {...props} />;
+}
+
+export function CockpitPasswordInput(props: CockpitInputProps): ReactNode {
+  const [isVisible, setIsVisible] = useState(false);
+
+  return (
+    <div className="cockpitPasswordField">
+      <CockpitInput type={isVisible ? "text" : "password"} {...props} />
+      <button
+        className="cockpitPasswordField__toggle"
+        type="button"
+        aria-label={isVisible ? "Hide access code" : "Show access code"}
+        onClick={() => setIsVisible((current) => !current)}
+      >
+        {isVisible ? "HIDE" : "SHOW"}
+      </button>
+    </div>
+  );
 }
 
 export function CockpitCheckbox({
@@ -58,7 +79,7 @@ export function CockpitCheckbox({
 }
 
 interface InternalInputProps extends CockpitInputProps {
-  type: "number" | "search" | "text";
+  type: "number" | "password" | "search" | "text";
 }
 
 function CockpitInput({

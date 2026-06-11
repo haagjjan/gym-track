@@ -69,6 +69,8 @@ apps/
         |-- features/
         |   |-- analytics/
         |   |-- auth/
+        |   |-- dashboard/
+        |   |-- navigation/
         |   `-- workouts/
         `-- shared/
             `-- ui/
@@ -83,6 +85,8 @@ apps/
 - `apps/web/e2e` owns browser smoke tests for core UI flows that run against the local app stack.
 - `apps/web/src/features/analytics` owns the Progress and Weekly Volume UI, browser analytics API helpers, and same-origin analytics API proxy helpers.
 - `apps/web/src/features/auth` owns web auth forms, server auth helpers, and auth proxy helpers.
+- `apps/web/src/features/dashboard` owns the logged-in cockpit dashboard/home screen and dashboard-only composition styles.
+- `apps/web/src/features/navigation` owns the logged-in cockpit app shell and route navigation UI.
 - `apps/web/src/features/workouts` owns the workout logging, history/detail, CSV import/export UI, browser workout API helpers, and same-origin workout API proxy helpers.
 - `apps/web/src/shared` owns web-only helpers with at least two feature consumers, currently API base URL resolution.
 - `apps/web/src/shared/ui` owns reusable web UI primitives that are shared across multiple feature surfaces.

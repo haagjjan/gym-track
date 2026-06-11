@@ -6,6 +6,12 @@ import type { FormEvent, ReactNode } from "react";
 import { useState, useTransition } from "react";
 import type { ZodError } from "zod";
 import {
+  CockpitButton,
+  CockpitErrorState,
+  CockpitPasswordInput,
+  CockpitTextInput
+} from "../../shared/ui/cockpit";
+import {
   loginFormSchema,
   signupFormSchema,
   type SignupFormInput
@@ -22,22 +28,30 @@ interface AuthFormProps {
 
 const copy = {
   login: {
-    title: "Log in",
-    eyebrow: "Welcome back",
-    submit: "Verify",
+    heroTitleLines: ["WELCOME_", "BACK"],
+    panelTitleLines: ["OPERATOR_LOGIN"],
+    eyebrow: "Identity verification required",
+    submit: "LOGIN",
+    pending: "AUTHENTICATING",
     alternateText: "Need an account?",
     alternateHref: "/signup",
-    alternateLabel: "Create one",
-    failure: "Username or password is incorrect."
+    alternateLabel: "CREATE_PROFILE",
+    failure: "Username or password is incorrect.",
+    intro:
+      "Authorize your operator profile to access workout logs, progress history, and volume intelligence."
   },
   signup: {
-    title: "Create account",
-    eyebrow: "Start tracking",
-    submit: "Save",
+    heroTitleLines: ["CREATE_", "OPERATOR", "PROFILE"],
+    panelTitleLines: ["CREATE_", "OPERATOR", "PROFILE"],
+    eyebrow: "Operator authentication required",
+    submit: "REGISTER_PROFILE",
+    pending: "REGISTERING",
     alternateText: "Already have an account?",
     alternateHref: "/login",
-    alternateLabel: "Log in",
-    failure: "Email or username already exists."
+    alternateLabel: "LOGIN_SCREEN",
+    failure: "Email or username already exists.",
+    intro:
+      "Create an operator profile for fast session logging and durable progress tracking."
   }
 };
 
@@ -47,6 +61,7 @@ export function AuthForm({ mode }: AuthFormProps): ReactNode {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const details = copy[mode];
+  const isSignup = mode === "signup";
 
   function handleSubmit(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
@@ -94,84 +109,95 @@ export function AuthForm({ mode }: AuthFormProps): ReactNode {
   }
 
   return (
-    <main className="authPage">
+    <main className="authPage" data-auth-mode={mode}>
       <section className="authIntro" aria-labelledby="auth-title">
-        <p className="eyebrow">{details.eyebrow}</p>
-        <h1 id="auth-title">{details.title}</h1>
-        <p className="authCopy">Gym Progress Tracker</p>
+        <Link className="authBrand" href="/">
+          BODY_COCKPIT_V1.0
+        </Link>
+        <p className="authKicker">{details.eyebrow}</p>
+        <h1 id="auth-title">
+          <AuthTitleLines lines={details.heroTitleLines} />
+        </h1>
+        <p className="authCopy">{details.intro}</p>
+        <div className="authStatusGrid" aria-label="System status">
+          <StatusItem label="SYSTEM_LINK" value="READY" />
+          <StatusItem label="DATA_MODE" value={isSignup ? "PROFILE_SETUP" : "ACCESS"} />
+        </div>
       </section>
 
-      <form className="authForm" onSubmit={handleSubmit} noValidate>
-        {mode === "signup" ? (
-          <Field
-            error={fieldErrors.email}
-            label="Email"
-            name="email"
-            type="email"
-            autoComplete="email"
+      <section className="authPanel" aria-labelledby="auth-panel-title">
+        <p className="authPanelEyebrow">{details.eyebrow}</p>
+        <h2 id="auth-panel-title">
+          <AuthTitleLines lines={details.panelTitleLines} />
+        </h2>
+        <form className="authForm" onSubmit={handleSubmit} noValidate>
+          {isSignup ? (
+            <CockpitTextInput
+              autoComplete="email"
+              error={fieldErrors.email}
+              id="email"
+              inputMode="email"
+              label="EMAIL_ADDRESS"
+              name="email"
+            />
+          ) : null}
+          <CockpitTextInput
+            autoComplete="username"
+            error={fieldErrors.username}
+            id="username"
+            label="OPERATOR_ID"
+            name="username"
           />
-        ) : null}
-        <Field
-          error={fieldErrors.username}
-          label="Username"
-          name="username"
-          type="text"
-          autoComplete="username"
-        />
-        <Field
-          error={fieldErrors.password}
-          label="Password"
-          name="password"
-          type="password"
-          autoComplete={mode === "signup" ? "new-password" : "current-password"}
-        />
+          <CockpitPasswordInput
+            autoComplete={isSignup ? "new-password" : "current-password"}
+            error={fieldErrors.password}
+            id="password"
+            label="ACCESS_CODE"
+            name="password"
+          />
 
-        {formError ? (
-          <p className="formError" role="alert">
-            {formError}
+          {formError ? (
+            <CockpitErrorState
+              className="authError"
+              title="AUTHENTICATION_ERROR"
+              message={formError}
+            />
+          ) : null}
+
+          <CockpitButton
+            className="authSubmit"
+            type="submit"
+            isLoading={isPending}
+            loadingLabel={details.pending}
+          >
+            {details.submit}
+          </CockpitButton>
+
+          <p className="authSwitch">
+            {details.alternateText}{" "}
+            <Link href={details.alternateHref}>{details.alternateLabel}</Link>
           </p>
-        ) : null}
-
-        <button className="primaryAction" type="submit" disabled={isPending}>
-          {isPending ? "Working" : details.submit}
-        </button>
-
-        <p className="authSwitch">
-          {details.alternateText} <Link href={details.alternateHref}>{details.alternateLabel}</Link>
-        </p>
-      </form>
+        </form>
+      </section>
     </main>
   );
 }
 
-interface FieldProps {
-  label: string;
-  name: FieldName;
-  type: string;
-  autoComplete: string;
-  error?: string | undefined;
+function StatusItem({ label, value }: { label: string; value: string }): ReactNode {
+  return (
+    <div className="authStatusItem">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
 }
 
-function Field({ label, name, type, autoComplete, error }: FieldProps): ReactNode {
-  const errorId = `${name}-error`;
-
-  return (
-    <label className="field">
-      <span>{label}</span>
-      <input
-        aria-describedby={error ? errorId : undefined}
-        aria-invalid={error ? "true" : "false"}
-        autoComplete={autoComplete}
-        name={name}
-        type={type}
-      />
-      {error ? (
-        <span className="fieldError" id={errorId}>
-          {error}
-        </span>
-      ) : null}
-    </label>
-  );
+function AuthTitleLines({ lines }: { lines: string[] }): ReactNode {
+  return lines.map((line) => (
+    <span className="authTitleLine" key={line}>
+      {line}
+    </span>
+  ));
 }
 
 function toFieldErrors(error: ZodError): FieldErrors {
