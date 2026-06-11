@@ -52,31 +52,43 @@ Convert Stitch screens into implementation references.
 
 Tasks:
 
-- Save final screenshots in `docs/design/body-cockpit-v1/`.
-- Add this file as `design-notes.md`.
-- Add this roadmap as `implementation-roadmap.md`.
-- Add a screen inventory:
-  - login
-  - register
-  - dashboard
-  - workout start
-  - active workout
-  - history
-  - progress
-  - volume
-- Decide final route mapping.
-- Decide final naming language:
-  - session
-  - protocol
-  - operator
-  - log
-  - volume
-  - evolution
+- Use `docs/design/stitch-redesign-v2/` as the source folder for the redesign.
+- Treat `DESIGN.md` as the visual design-system reference:
+  - colors
+  - typography
+  - spacing
+  - glow/elevation
+  - component appearance
+- Treat `design-notes.md` as the screen behavior and UX reference:
+  - screen purpose
+  - visible elements
+  - functional requirements
+  - states
+  - UX risks
+- Treat `implementation-roadmap.md` as the execution plan:
+  - build order
+  - non-goals
+  - acceptance criteria
+  - Codex slice boundaries
+- Use each screen folder as visual/code reference only:
+  - `00.0-login/`
+  - `00.1-create-profile/`
+  - `01-home/`
+  - `02-start-workout/`
+  - `03-active-workout/`
+  - `05-history/`
+  - `06-progress/`
+  - `07-weekly-volume/`
+- Do not paste `code.html` directly into production code.
+- Use `code.html` only to understand layout, spacing, typography, colors, and visual hierarchy.
+- Decide final route mapping before implementing each screen.
+- Decide final naming language before implementing each screen.
 
 Acceptance criteria:
 
-- Screens are documented.
-- Codex has a clear visual target.
+- `DESIGN.md`, `design-notes.md`, and `implementation-roadmap.md` have clearly separated responsibilities.
+- Codex has a clear visual target and a clear execution target.
+- Stitch `code.html` files are explicitly treated as reference only.
 - No implementation begins before the first slice is defined.
 
 ---
@@ -556,31 +568,39 @@ Each task prompt should include:
 
 ```md
 Read:
-- docs/design/body-cockpit-v1/design-notes.md
-- docs/design/body-cockpit-v1/implementation-roadmap.md
-- current project state docs
-- current next implementation plan docs
+- docs/design/stitch-redesign-v2/DESIGN.md
+- docs/design/stitch-redesign-v2/design-notes.md
+- docs/design/stitch-redesign-v2/implementation-roadmap.md
+- docs/PROJECT_STATE.md or the current project-state document if named differently
+- docs/08-next-implementation-plan.md if it still exists, but treat it as historical context only
+- the current app layout/component files before editing
 
 Task:
-Create the first UI foundation slice only.
+Create the first UI foundation slice only. This is not a page redesign yet.
 
 Implement:
-- design tokens/theme variables
-- base cockpit components
-- app shell primitives if appropriate
+- design tokens/theme variables based on `DESIGN.md`
+- reusable cockpit base components
+- app shell primitives only if they can be added without breaking existing routes
+- a clear place for future cockpit UI components
 
 Do not:
 - redesign all pages
+- implement login/register/dashboard/workout screens yet
 - change backend/API behavior
+- change auth/cookie behavior
+- change workout/session/set logic
 - add 3D
-- paste Stitch code directly
-- change workout logic
+- paste Stitch `code.html` directly into the app
+- introduce a new UI framework unless absolutely necessary and explicitly justified
 
 Acceptance criteria:
 - app still compiles
 - existing pages still work
 - new reusable UI primitives exist
 - dark/cyan cockpit visual direction is available for later slices
+- no production page is replaced by raw Stitch export HTML
+- the diff is small enough to review safely
 
 Run:
 - pnpm type-check
