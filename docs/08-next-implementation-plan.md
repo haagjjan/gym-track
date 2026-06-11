@@ -684,7 +684,7 @@ Tests/checks:
 
 ### UX Slice 12. CSV Import Cleanup
 
-Status: planned before or shortly after tester launch depending on whether testers will import data.
+Status: partly implemented with preview-first CSV import review, exercise-name warnings/blocks, and explicit confirm-before-import for warned names. Remaining polish can still follow if tester feedback shows gaps.
 
 Goal: prevent bad imported data from silently polluting the main UI.
 

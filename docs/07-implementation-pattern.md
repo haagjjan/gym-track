@@ -138,9 +138,9 @@ The exercise library API follows the same feature-owned pattern:
 - `POST /api/v1/exercises`
 - `GET /api/v1/muscle-groups`
 
-Exercise routes own auth checks, request validation, and HTTP response mapping. Exercise services own business decisions such as name conflicts, muscle group validation, and soft-deleted exercise restoration. Exercise repositories own Kysely persistence and selectable exercise queries.
+Exercise routes own auth checks, request validation, and HTTP response mapping. Exercise services own business decisions such as name conflicts, muscle group validation, soft-deleted exercise restoration, and shared exercise-name quality review/block decisions. Exercise repositories own Kysely persistence and selectable exercise queries.
 
-Status: implemented for listing selectable exercises, creating or restoring shared global exercises, and listing seeded muscle groups.
+Status: implemented for listing selectable exercises, creating or restoring shared global exercises, name review/block responses, and listing seeded muscle groups.
 
 ## Workout Logging API Slice
 
@@ -266,11 +266,11 @@ Status: implemented for separate `/progress` and `/weekly-volume` destinations, 
 
 The CSV slice should add one canonical workout-history CSV format:
 
-- API endpoints are `GET /api/v1/workouts/export.csv` and `POST /api/v1/workouts/import.csv`.
+- API endpoints are `GET /api/v1/workouts/export.csv`, `POST /api/v1/workouts/import.csv`, and `POST /api/v1/workouts/import.csv/preview`.
 - Web route handlers proxy those endpoints through the existing same-origin pattern.
 - Use `papaparse` for CSV parsing and unparsing.
 - Validate the whole file before writing and reject malformed files with row-level errors.
-- Create or reuse global exercises by case-insensitive name and require known primary muscle group slugs.
+- Create or reuse global exercises by case-insensitive name, require known primary muscle group slugs, and run the shared exercise-name quality evaluator before preview/import.
 - Do not partially import on validation failure.
 
-Status: implemented for authenticated canonical CSV workout-history export/import, same-origin web proxy routes, whole-file validation with row-level errors, global exercise reuse/creation by case-insensitive name, and no partial import on validation failure.
+Status: implemented for authenticated canonical CSV workout-history export/import, same-origin web proxy routes, preview-first review, whole-file validation with row-level errors, exercise-name warning/block handling, global exercise reuse/creation by case-insensitive name, and no partial import on validation failure.

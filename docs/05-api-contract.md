@@ -537,6 +537,7 @@ Imports closed workout sessions from the canonical CSV format.
 Request:
 
 - Content type: `text/csv`
+- Optional query param: `confirmNameWarnings=true`
 - Body: CSV text using the canonical columns above.
 
 Response `201`:
@@ -554,10 +555,13 @@ Behavior:
 
 - Requires authentication.
 - Validates the entire CSV before writing.
+- Uses the shared exercise-name quality gate for every `exercise_name`.
 - Creates closed workout sessions from CSV rows.
 - Creates or reuses global exercises by case-insensitive `exercise_name`.
 - Requires `primary_muscle_group_slug` to match a seeded muscle group.
 - Requires compact `exercise_position` and `set_order` values starting at `1`.
+- Rejects blocked exercise names.
+- Rejects warned exercise names unless `confirmNameWarnings=true`.
 - Does not partially import when validation fails.
 
 Validation response `422`:
@@ -573,6 +577,54 @@ Validation response `422`:
   }
 }
 ```
+
+When the failure is caused by warned or blocked exercise names, `error.details.preview` includes:
+
+- `importedRows`
+- `importedWorkouts`
+- `importability`
+- `warnings`
+- `blocked`
+
+### `POST /api/v1/workouts/import.csv/preview`
+
+Previews a CSV import without writing any workout data.
+
+Request:
+
+- Content type: `text/csv`
+- Body: CSV text using the canonical columns above.
+
+Response `200`:
+
+```json
+{
+  "data": {
+    "preview": {
+      "importedRows": 1,
+      "importedWorkouts": 1,
+      "importability": "ready_with_warnings",
+      "warnings": [
+        {
+          "row": 2,
+          "originalName": "Incline Dumbell Press",
+          "normalizedName": "Incline Dumbell Press",
+          "reasons": [{ "code": "not_in_catalog", "message": "This name is not in the approved exercise catalog yet." }],
+          "suggestions": ["Incline Dumbbell Press"]
+        }
+      ],
+      "blocked": []
+    }
+  }
+}
+```
+
+Behavior:
+
+- Requires authentication.
+- Validates the entire CSV before previewing.
+- Reports row-level validation errors without writing any data.
+- Returns `importability` as `ready`, `ready_with_warnings`, or `blocked`.
 
 ## Workout Exercise Endpoints
 
@@ -840,7 +892,8 @@ Request:
   "equipment": "dumbbell",
   "exerciseType": "compound",
   "primaryMuscleGroupId": "uuid",
-  "secondaryMuscleGroupIds": ["uuid"]
+  "secondaryMuscleGroupIds": ["uuid"],
+  "confirmNameWarning": false
 }
 ```
 
@@ -872,7 +925,43 @@ Behavior:
 
 - Returns `409` if an active exercise with the same case-insensitive name exists.
 - Returns `404` if any referenced muscle group does not exist.
+- Uses a shared exercise-name quality gate before create/restore:
+  - exact case-insensitive allowlist match: accept automatically
+  - hard-block rule or blacklist match: reject
+  - plausible but unapproved name: require explicit confirmation
 - If the existing record is soft-deleted, implementation should restore/reuse it instead of creating a duplicate.
+
+Review-required response `422`:
+
+```json
+{
+  "error": {
+    "code": "EXERCISE_NAME_REVIEW_REQUIRED",
+    "message": "This exercise name needs review before it can be added.",
+    "details": {
+      "normalizedName": "Incline Dumbell Press",
+      "reasons": [{ "code": "not_in_catalog", "message": "This name is not in the approved exercise catalog yet." }],
+      "suggestions": ["Incline Dumbbell Press"]
+    }
+  }
+}
+```
+
+Blocked-name response `422`:
+
+```json
+{
+  "error": {
+    "code": "EXERCISE_NAME_BLOCKED",
+    "message": "This exercise name is blocked.",
+    "details": {
+      "normalizedName": "Bench Press 2026-05-20",
+      "reasons": [{ "code": "contains_date", "message": "Exercise names must not include dates or timestamps." }],
+      "suggestions": ["Bench Press"]
+    }
+  }
+}
+```
 
 ### `GET /api/v1/muscle-groups`
 

@@ -5,17 +5,31 @@ import { useEffect, useState, useTransition } from "react";
 import type { ZodError } from "zod";
 import {
   createExercise,
+  getExerciseNameReviewDetails,
   listExercises,
   listMuscleGroups
 } from "./workout-api";
 import { createExerciseFormSchema } from "./workout-form-schemas";
-import type { Exercise, MuscleGroup } from "./workout-types";
+import type { Exercise, ExerciseNameReviewDetails, MuscleGroup } from "./workout-types";
 
 interface ExercisePickerProps {
   onAddExercise: (exerciseId: string) => Promise<boolean>;
 }
 
 type ExerciseCreateField = "equipment" | "exerciseType" | "name" | "primaryMuscleGroupId";
+type CreateExerciseValues = {
+  equipment: string;
+  exerciseType: string;
+  name: string;
+  primaryMuscleGroupId: string;
+};
+
+const initialCreateValues: CreateExerciseValues = {
+  equipment: "",
+  exerciseType: "",
+  name: "",
+  primaryMuscleGroupId: ""
+};
 
 export function ExercisePicker({ onAddExercise }: ExercisePickerProps): ReactNode {
   const [search, setSearch] = useState("");
@@ -25,6 +39,11 @@ export function ExercisePicker({ onAddExercise }: ExercisePickerProps): ReactNod
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<ExerciseCreateField, string>>>({});
+  const [createValues, setCreateValues] = useState<CreateExerciseValues>(initialCreateValues);
+  const [nameReview, setNameReview] = useState<{
+    details: ExerciseNameReviewDetails;
+    isBlocked: boolean;
+  } | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -57,28 +76,53 @@ export function ExercisePicker({ onAddExercise }: ExercisePickerProps): ReactNod
     event.preventDefault();
     setError(null);
     setFieldErrors({});
+    setNameReview(null);
 
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-    const parsed = createExerciseFormSchema.safeParse({
-      name: String(formData.get("name") ?? ""),
-      equipment: String(formData.get("equipment") ?? ""),
-      exerciseType: String(formData.get("exerciseType") ?? ""),
-      primaryMuscleGroupId: String(formData.get("primaryMuscleGroupId") ?? "")
-    });
+    const parsed = createExerciseFormSchema.safeParse(createValues);
 
     if (!parsed.success) {
       setFieldErrors(toCreateFieldErrors(parsed.error));
       return;
     }
 
+    submitCreate(parsed.data);
+  }
+
+  function submitCreate(
+    values: {
+      name: string;
+      equipment: string | null;
+      exerciseType: string | null;
+      primaryMuscleGroupId: string;
+    },
+    confirmNameWarning = false
+  ): void {
     startTransition(async () => {
       const created = await createExercise({
-        ...parsed.data,
-        secondaryMuscleGroupIds: []
+        ...values,
+        secondaryMuscleGroupIds: [],
+        confirmNameWarning
       });
 
       if (!created.ok) {
+        const reviewDetails = getExerciseNameReviewDetails(created);
+
+        if (
+          (created.code === "EXERCISE_NAME_REVIEW_REQUIRED" ||
+            created.code === "EXERCISE_NAME_BLOCKED") &&
+          reviewDetails
+        ) {
+          setNameReview({
+            details: reviewDetails,
+            isBlocked: created.code === "EXERCISE_NAME_BLOCKED"
+          });
+          setCreateValues((current) => ({
+            ...current,
+            name: reviewDetails.normalizedName || current.name
+          }));
+          return;
+        }
+
         setError(created.message);
         return;
       }
@@ -89,9 +133,19 @@ export function ExercisePicker({ onAddExercise }: ExercisePickerProps): ReactNod
         return;
       }
 
-      form.reset();
+      setCreateValues(initialCreateValues);
+      setNameReview(null);
       setSearch(created.data.exercise.name);
     });
+  }
+
+  function handleCreateValueChange(field: ExerciseCreateField, value: string): void {
+    setCreateValues((current) => ({ ...current, [field]: value }));
+    setFieldErrors((current) => ({ ...current, [field]: undefined }));
+
+    if (field === "name") {
+      setNameReview(null);
+    }
   }
 
   return (
@@ -114,6 +168,55 @@ export function ExercisePicker({ onAddExercise }: ExercisePickerProps): ReactNod
         </p>
       ) : null}
 
+      {nameReview ? (
+        <div className="reviewPanel" role="status">
+          <p className={nameReview.isBlocked ? "inlineError" : "mutedText"}>
+            {nameReview.isBlocked
+              ? "This name is blocked. Choose a cleaner exercise name."
+              : "This name is not in the approved catalog yet. Review it before adding."}
+          </p>
+          <ul className="reviewList">
+            {nameReview.details.reasons.map((reason) => (
+              <li key={reason.code}>{reason.message}</li>
+            ))}
+          </ul>
+          {nameReview.details.suggestions.length > 0 ? (
+            <div className="suggestionGroup">
+              {nameReview.details.suggestions.map((suggestion) => (
+                <button
+                  className="secondaryAction"
+                  key={suggestion}
+                  type="button"
+                  onClick={() => handleCreateValueChange("name", suggestion)}
+                  disabled={isPending}
+                >
+                  Use {suggestion}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          {!nameReview.isBlocked ? (
+            <button
+              className="secondaryAction"
+              type="button"
+              onClick={() => {
+                const parsed = createExerciseFormSchema.safeParse(createValues);
+
+                if (!parsed.success) {
+                  setFieldErrors(toCreateFieldErrors(parsed.error));
+                  return;
+                }
+
+                submitCreate(parsed.data, true);
+              }}
+              disabled={isPending}
+            >
+              Create anyway
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="exerciseResults">
         {exercises.map((exercise) => (
           <button
@@ -133,12 +236,24 @@ export function ExercisePicker({ onAddExercise }: ExercisePickerProps): ReactNod
       <form className="createExerciseForm" onSubmit={handleCreate} noValidate>
         <label className="compactField">
           <span>Name</span>
-          <input name="name" type="text" placeholder="Incline dumbbell press" />
+          <input
+            name="name"
+            type="text"
+            placeholder="Incline dumbbell press"
+            value={createValues.name}
+            onChange={(event) => handleCreateValueChange("name", event.target.value)}
+          />
           <FieldError message={fieldErrors.name} />
         </label>
         <label className="compactField">
           <span>Primary muscle</span>
-          <select name="primaryMuscleGroupId" defaultValue="">
+          <select
+            name="primaryMuscleGroupId"
+            value={createValues.primaryMuscleGroupId}
+            onChange={(event) =>
+              handleCreateValueChange("primaryMuscleGroupId", event.target.value)
+            }
+          >
             <option value="" disabled>
               Select
             </option>
@@ -152,12 +267,22 @@ export function ExercisePicker({ onAddExercise }: ExercisePickerProps): ReactNod
         </label>
         <label className="compactField">
           <span>Equipment</span>
-          <input name="equipment" type="text" placeholder="barbell" />
+          <input
+            name="equipment"
+            type="text"
+            placeholder="barbell"
+            value={createValues.equipment}
+            onChange={(event) => handleCreateValueChange("equipment", event.target.value)}
+          />
           <FieldError message={fieldErrors.equipment} />
         </label>
         <label className="compactField">
           <span>Type</span>
-          <select name="exerciseType" defaultValue="">
+          <select
+            name="exerciseType"
+            value={createValues.exerciseType}
+            onChange={(event) => handleCreateValueChange("exerciseType", event.target.value)}
+          >
             <option value="">Unset</option>
             <option value="compound">Compound</option>
             <option value="isolation">Isolation</option>
