@@ -4,8 +4,13 @@ import Link from "next/link";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState, useTransition } from "react";
 import { LogoutButton } from "../auth/logout-button";
-import { importWorkoutCsv, listWorkouts } from "./workout-api";
-import type { ListWorkoutsPayload, WorkoutSummary } from "./workout-types";
+import {
+  confirmWorkoutCsvImport,
+  importWorkoutCsv,
+  listWorkouts,
+  previewWorkoutCsv
+} from "./workout-api";
+import type { CsvImportPreview, ListWorkoutsPayload, WorkoutSummary } from "./workout-types";
 import { formatStartedAt } from "./workout-view-model";
 
 const pageSize = 20;
@@ -110,15 +115,15 @@ export function WorkoutHistory(): ReactNode {
 
 function CsvPortabilityPanel({ onImported }: { onImported: () => void }): ReactNode {
   const [isPending, startTransition] = useTransition();
+  const [file, setFile] = useState<File | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [preview, setPreview] = useState<CsvImportPreview | null>(null);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
-    const form = event.currentTarget;
-    const file = new FormData(form).get("workoutCsv");
 
-    if (!(file instanceof File) || file.size === 0) {
+    if (!file || file.size === 0) {
       setError("Choose a CSV file to import.");
       return;
     }
@@ -126,14 +131,40 @@ function CsvPortabilityPanel({ onImported }: { onImported: () => void }): ReactN
     setError(null);
     setMessage(null);
     startTransition(async () => {
-      const result = await importWorkoutCsv(file).catch(() => null);
+      const result = await previewWorkoutCsv(file).catch(() => null);
 
       if (!result || !result.ok) {
-        setError(formatImportError(result));
+        setPreview(null);
+        setError(formatImportError(result, false));
         return;
       }
 
-      form.reset();
+      setPreview(result.data.preview);
+      setMessage(previewMessage(result.data.preview));
+    });
+  }
+
+  function handleImport(confirmWarnings: boolean): void {
+    if (!file) {
+      setError("Choose a CSV file to import.");
+      return;
+    }
+
+    setError(null);
+    setMessage(null);
+    startTransition(async () => {
+      const result = await (confirmWarnings
+        ? confirmWorkoutCsvImport(file)
+        : importWorkoutCsv(file)
+      ).catch(() => null);
+
+      if (!result || !result.ok) {
+        setError(formatImportError(result, true));
+        return;
+      }
+
+      setPreview(null);
+      setFile(null);
       const workoutNoun = result.data.importedWorkouts === 1 ? "workout" : "workouts";
       const rowNoun = result.data.importedRows === 1 ? "row" : "rows";
       setMessage(
@@ -155,11 +186,22 @@ function CsvPortabilityPanel({ onImported }: { onImported: () => void }): ReactN
         </a>
         <form className="csvImportForm" onSubmit={handleSubmit}>
           <label>
-            Import CSV
-            <input name="workoutCsv" type="file" accept=".csv,text/csv" />
+            Choose CSV
+            <input
+              name="workoutCsv"
+              type="file"
+              accept=".csv,text/csv"
+              onChange={(event) => {
+                const nextFile = event.target.files?.[0] ?? null;
+                setFile(nextFile);
+                setPreview(null);
+                setMessage(null);
+                setError(null);
+              }}
+            />
           </label>
           <button className="primaryAction" type="submit" disabled={isPending}>
-            {isPending ? "Importing" : "Import"}
+            {isPending ? "Checking" : "Preview import"}
           </button>
         </form>
       </div>
@@ -169,7 +211,70 @@ function CsvPortabilityPanel({ onImported }: { onImported: () => void }): ReactN
           {error}
         </p>
       ) : null}
+      {preview ? <CsvImportPreviewPanel preview={preview} onImport={handleImport} isPending={isPending} /> : null}
     </section>
+  );
+}
+
+function CsvImportPreviewPanel({
+  preview,
+  onImport,
+  isPending
+}: {
+  preview: CsvImportPreview;
+  onImport: (confirmWarnings: boolean) => void;
+  isPending: boolean;
+}): ReactNode {
+  const hasWarnings = preview.warnings.length > 0;
+  const hasBlocked = preview.blocked.length > 0;
+
+  return (
+    <div className="csvPreviewPanel">
+      <p>
+        {preview.importedWorkouts} workout{preview.importedWorkouts === 1 ? "" : "s"} and{" "}
+        {preview.importedRows} row{preview.importedRows === 1 ? "" : "s"} are ready for review.
+      </p>
+      {hasBlocked ? (
+        <ReviewList title="Blocked exercise names" items={preview.blocked} />
+      ) : null}
+      {hasWarnings ? (
+        <ReviewList title="Names to review" items={preview.warnings} />
+      ) : null}
+      <div className="csvActions">
+        {!hasBlocked ? (
+          <button
+            className="primaryAction"
+            type="button"
+            onClick={() => onImport(hasWarnings)}
+            disabled={isPending}
+          >
+            {isPending ? "Importing" : hasWarnings ? "Confirm import" : "Import now"}
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function ReviewList({
+  title,
+  items
+}: {
+  title: string;
+  items: CsvImportPreview["warnings"];
+}): ReactNode {
+  return (
+    <div className="csvReviewGroup">
+      <h3>{title}</h3>
+      <ul className="csvReviewList">
+        {items.slice(0, 6).map((item) => (
+          <li key={`${item.row}-${item.originalName}`}>
+            <strong>Row {item.row}:</strong> {item.originalName}
+            {item.suggestions.length > 0 ? ` -> ${item.suggestions.join(", ")}` : ""}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -235,11 +340,13 @@ function formatImportError(
         ok: false;
         message: string;
         fields: Record<string, string[]> | undefined;
+        details: unknown;
       }
-    | null
+    | null,
+  importing: boolean
 ): string {
   if (!result) {
-    return "CSV import failed.";
+    return importing ? "CSV import failed." : "CSV preview failed.";
   }
 
   const rowErrors = Object.entries(result.fields ?? {})
@@ -247,4 +354,16 @@ function formatImportError(
     .slice(0, 3);
 
   return rowErrors.length > 0 ? rowErrors.join(" ") : result.message;
+}
+
+function previewMessage(preview: CsvImportPreview): string {
+  if (preview.importability === "ready") {
+    return "Preview looks clean. You can import this file now.";
+  }
+
+  if (preview.importability === "blocked") {
+    return "Preview found blocked exercise names. Fix the CSV before importing.";
+  }
+
+  return "Preview found exercise names to review. Confirm import only if those names are intentional.";
 }

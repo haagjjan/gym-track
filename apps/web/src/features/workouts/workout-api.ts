@@ -1,6 +1,8 @@
 import type {
   ApiErrorPayload,
   Exercise,
+  ExerciseNameReviewDetails,
+  CsvImportPreview,
   ListExercisesPayload,
   ListMuscleGroupsPayload,
   ListWorkoutsPayload,
@@ -17,6 +19,7 @@ type ApiResult<T> =
       code: string | undefined;
       message: string;
       fields: Record<string, string[]> | undefined;
+      details: unknown;
     };
 
 interface AddSetInput {
@@ -34,6 +37,7 @@ interface CreateExerciseInput {
   exerciseType: string | null;
   primaryMuscleGroupId: string;
   secondaryMuscleGroupIds: string[];
+  confirmNameWarning?: boolean;
 }
 
 type UpdateSetInput = Partial<AddSetInput>;
@@ -49,6 +53,10 @@ interface ListWorkoutsOptions {
 interface CsvImportPayload {
   importedRows: number;
   importedWorkouts: number;
+}
+
+interface CsvPreviewPayload {
+  preview: CsvImportPreview;
 }
 
 export async function listWorkouts(
@@ -132,6 +140,26 @@ export async function createExercise(
   });
 }
 
+export function getExerciseNameReviewDetails(
+  result: ApiResult<unknown>
+): ExerciseNameReviewDetails | null {
+  if (result.ok || !result.details || typeof result.details !== "object") {
+    return null;
+  }
+
+  const details = result.details as Partial<ExerciseNameReviewDetails>;
+
+  if (!Array.isArray(details.reasons) || !Array.isArray(details.suggestions)) {
+    return null;
+  }
+
+  return {
+    normalizedName: typeof details.normalizedName === "string" ? details.normalizedName : "",
+    reasons: details.reasons,
+    suggestions: details.suggestions
+  };
+}
+
 export async function addSessionExercise(
   workoutId: string,
   exerciseId: string
@@ -192,7 +220,21 @@ export async function deleteSet(setId: string): Promise<ApiResult<unknown>> {
 }
 
 export async function importWorkoutCsv(file: File): Promise<ApiResult<CsvImportPayload>> {
-  const response = await fetch("/api/workouts/import.csv", {
+  return postCsv<CsvImportPayload>("/api/workouts/import.csv", file);
+}
+
+export async function previewWorkoutCsv(file: File): Promise<ApiResult<CsvPreviewPayload>> {
+  return postCsv<CsvPreviewPayload>("/api/workouts/import.csv/preview", file);
+}
+
+export async function confirmWorkoutCsvImport(
+  file: File
+): Promise<ApiResult<CsvImportPayload>> {
+  return postCsv<CsvImportPayload>("/api/workouts/import.csv?confirmNameWarnings=true", file);
+}
+
+async function postCsv<T>(url: string, file: File): Promise<ApiResult<T>> {
+  const response = await fetch(url, {
     method: "POST",
     headers: {
       "content-type": "text/csv"
@@ -205,7 +247,7 @@ export async function importWorkoutCsv(file: File): Promise<ApiResult<CsvImportP
     return toApiError(response.status, payload);
   }
 
-  return { ok: true, data: (payload as { data: CsvImportPayload }).data };
+  return { ok: true, data: (payload as { data: T }).data };
 }
 
 async function requestApi<T>(
@@ -217,7 +259,7 @@ async function requestApi<T>(
   } = {}
 ): Promise<ApiResult<T>> {
   const init: RequestInit = {
-    method: options.method ?? "GET",
+    method: options.method ?? "GET"
   };
 
   if (options.body !== undefined) {
@@ -257,7 +299,8 @@ function toApiError(status: number, value: unknown): ApiResult<never> {
     status,
     code: undefined,
     message: "Something went wrong.",
-    fields: undefined
+    fields: undefined,
+    details: undefined
   };
 
   if (!isApiErrorPayload(value)) {
@@ -269,7 +312,8 @@ function toApiError(status: number, value: unknown): ApiResult<never> {
     status,
     code: value.error.code,
     message: value.error.message ?? fallback.message,
-    fields: value.error.fields
+    fields: value.error.fields,
+    details: value.error.details
   };
 }
 

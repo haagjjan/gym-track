@@ -87,10 +87,38 @@ export interface ListMuscleGroupsPayload {
   items: MuscleGroup[];
 }
 
+export interface ExerciseNameQualityIssue {
+  code: string;
+  message: string;
+}
+
+export interface ExerciseNameReviewDetails {
+  normalizedName: string;
+  reasons: ExerciseNameQualityIssue[];
+  suggestions: string[];
+}
+
+export interface CsvNameReview {
+  row: number;
+  originalName: string;
+  normalizedName: string;
+  reasons: ExerciseNameQualityIssue[];
+  suggestions: string[];
+}
+
+export interface CsvImportPreview {
+  importedRows: number;
+  importedWorkouts: number;
+  importability: "ready" | "ready_with_warnings" | "blocked";
+  warnings: CsvNameReview[];
+  blocked: CsvNameReview[];
+}
+
 export interface ApiErrorPayload {
   error: {
     code?: string | undefined;
     message?: string | undefined;
     fields?: Record<string, string[]> | undefined;
+    details?: unknown;
   };
 }

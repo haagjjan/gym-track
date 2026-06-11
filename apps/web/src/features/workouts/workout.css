@@ -97,6 +97,29 @@
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
 }
 
+.reviewPanel {
+  background: #f8fbf7;
+  border: 1px solid #c5d5ca;
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.reviewList {
+  color: var(--muted);
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.suggestionGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .exerciseOption {
   background: var(--panel);
   border: 1px solid var(--line);
