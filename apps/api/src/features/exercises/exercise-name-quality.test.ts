@@ -30,4 +30,11 @@ describe("exercise name quality", () => {
     assert.equal(result.status, "blocked");
     assert.match(result.reasons.map((reason) => reason.code).join(","), /blocked_term/);
   });
+
+  it("does not block legitimate names containing innocent substrings", () => {
+    const result = evaluateExerciseName("Assisted Pull-Up");
+
+    assert.equal(result.status, "warn");
+    assert.equal(result.normalizedName, "Assisted Pull-Up");
+  });
 });

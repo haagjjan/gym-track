@@ -230,6 +230,8 @@ export const blockedExerciseNames = [
 ] as const;
 
 export const blockedExerciseWordFragments = [
+  // Match whole words only. Keep this list free of short substrings so
+  // legitimate movement names like "assisted pull-up" never get caught.
   "anus",
   "bastard",
   "bitch",
