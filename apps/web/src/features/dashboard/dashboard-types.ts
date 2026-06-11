@@ -19,6 +19,13 @@ export interface PerformanceSignal {
   value: string;
 }
 
+export interface HomeStat {
+  detail?: string;
+  id: string;
+  label: string;
+  value: string;
+}
+
 export interface VolumeBar {
   name: string;
   slug: string;

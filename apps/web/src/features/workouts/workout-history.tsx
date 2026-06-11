@@ -3,7 +3,6 @@
 import Link from "next/link";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState, useTransition } from "react";
-import { LogoutButton } from "../auth/logout-button";
 import {
   confirmWorkoutCsvImport,
   importWorkoutCsv,
@@ -71,7 +70,6 @@ export function WorkoutHistory(): ReactNode {
           <h1>Past workouts</h1>
           <p className="leadText">Review logged sessions and open a workout to inspect its sets.</p>
         </div>
-        <LogoutButton />
       </header>
 
       <CsvPortabilityPanel onImported={() => loadWorkouts(0)} />

@@ -6,7 +6,6 @@ import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import type { AuthUser } from "../auth/auth-types";
 import { LogoutButton } from "../auth/logout-button";
-import { StartSessionAction } from "../workouts/workout-entry-point";
 import {
   CockpitAppShell,
   CockpitSidebar,
@@ -19,11 +18,11 @@ interface AppCockpitShellProps {
 }
 
 const navItems = [
-  { href: "/", label: "DASHBOARD", match: (path: string) => path === "/" },
-  { href: "/", label: "WORKOUT", match: (path: string) => /^\/workouts\/[^/]+/.test(path) },
-  { href: "/workouts", label: "HISTORY", match: (path: string) => path === "/workouts" },
-  { href: "/progress", label: "PROGRESS", match: (path: string) => path === "/progress" },
-  { href: "/weekly-volume", label: "VOLUME", match: (path: string) => path === "/weekly-volume" }
+  { href: "/", icon: "D", label: "Dashboard", match: (path: string) => path === "/" },
+  { href: "/", icon: "W", label: "Workout", match: (path: string) => /^\/workouts\/[^/]+/.test(path) },
+  { href: "/workouts", icon: "H", label: "History", match: (path: string) => path === "/workouts" },
+  { href: "/progress", icon: "P", label: "Progress", match: (path: string) => path === "/progress" },
+  { href: "/weekly-volume", icon: "V", label: "Volume", match: (path: string) => path === "/weekly-volume" }
 ];
 
 export function AppCockpitShell({ children, user }: AppCockpitShellProps): ReactNode {
@@ -44,17 +43,16 @@ export function AppCockpitShell({ children, user }: AppCockpitShellProps): React
             title="BODY_COCKPIT_V1.0"
             status="SYSTEM_READY"
             actions={
-              <div className="appShellTopActions">
-                <button
-                  className="appShellMenuButton"
-                  type="button"
-                  aria-expanded={isDrawerOpen}
-                  onClick={() => setIsDrawerOpen((current) => !current)}
-                >
-                  MENU
-                </button>
-                <LogoutButton />
-              </div>
+              <button
+                aria-controls="app-navigation-drawer"
+                aria-expanded={isDrawerOpen}
+                aria-label="Open navigation"
+                className="appShellMenuButton"
+                type="button"
+                onClick={() => setIsDrawerOpen(true)}
+              >
+                <MenuGlyph />
+              </button>
             }
           />
         }
@@ -69,7 +67,25 @@ export function AppCockpitShell({ children, user }: AppCockpitShellProps): React
             aria-label="Close navigation"
             onClick={() => setIsDrawerOpen(false)}
           />
-          <div className="appShellDrawer">{sidebar}</div>
+          <div
+            aria-label="Navigation menu"
+            className="appShellDrawer"
+            id="app-navigation-drawer"
+            role="dialog"
+          >
+            <div className="appShellDrawerHeader">
+              <span>BODY_COCKPIT_V1.0</span>
+              <button
+                aria-label="Close navigation"
+                className="appShellMenuButton appShellMenuButton--drawer"
+                type="button"
+                onClick={() => setIsDrawerOpen(false)}
+              >
+                <MenuGlyph />
+              </button>
+            </div>
+            {sidebar}
+          </div>
         </div>
       ) : null}
     </div>
@@ -81,14 +97,22 @@ function AppSidebar({ pathname, user }: { pathname: string; user: AuthUser }): R
     <CockpitSidebar
       operator={
         <div className="appShellOperator">
-          <span>OPERATOR</span>
-          <strong>{user.username}</strong>
-          <small>{user.email}</small>
+          <div className="appShellOperator__avatar" aria-hidden="true">
+            {operatorInitial(user.username)}
+          </div>
+          <div className="appShellOperator__meta">
+            <span>OPERATOR</span>
+            <strong>{user.username}</strong>
+            <small>{user.email}</small>
+          </div>
+          <p className="appShellOperator__status">
+            <span aria-hidden="true" />
+            AUTH_ACTIVE
+          </p>
         </div>
       }
       footer={
         <div className="appShellNavFooter">
-          <StartSessionAction label="START_SESSION" pendingLabel="OPENING" variant="cockpit" />
           <LogoutButton />
         </div>
       }
@@ -101,10 +125,27 @@ function AppSidebar({ pathname, user }: { pathname: string; user: AuthUser }): R
             href={item.href}
             key={item.label}
           >
-            {item.label}
+            <span className="appShellNavIcon" aria-hidden="true">
+              {item.icon}
+            </span>
+            <span>{item.label}</span>
           </Link>
         ))}
       </div>
     </CockpitSidebar>
   );
+}
+
+function MenuGlyph(): ReactNode {
+  return (
+    <span className="appShellMenuGlyph" aria-hidden="true">
+      <span />
+      <span />
+      <span />
+    </span>
+  );
+}
+
+function operatorInitial(username: string): string {
+  return username.trim().charAt(0).toUpperCase() || "O";
 }

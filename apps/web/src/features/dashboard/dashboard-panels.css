@@ -1,150 +1,250 @@
-.dashboardSignalList,
-.dashboardLogs,
-.dashboardControlGrid,
-.dashboardStatusGrid {
-  display: grid;
-  gap: var(--cockpit-space-3);
-}
-
-.dashboardSignal,
-.dashboardLog,
-.dashboardControlTile {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(0, 219, 231, 0.17);
-  border-radius: var(--cockpit-radius-md);
-  color: var(--cockpit-color-text);
-  display: grid;
-  gap: var(--cockpit-space-1);
-  min-width: 0;
-  padding: var(--cockpit-space-3);
-  position: relative;
-  text-decoration: none;
-}
-
-.dashboardSignal:hover,
-.dashboardLog:hover,
-.dashboardControlTile:hover {
-  border-color: rgba(0, 219, 231, 0.58);
-  box-shadow: inset 0 0 24px rgba(0, 219, 231, 0.08);
-}
-
-.dashboardSignal span,
-.dashboardLog span,
-.dashboardControlTile span {
+.homeHudField {
+  --home-base-rotate-y: 0deg;
+  --home-pointer-rotate-x: 0deg;
+  --home-pointer-rotate-y: 0deg;
+  --home-pointer-shift-x: 0px;
+  --home-pointer-shift-y: 0px;
+  --home-pointer-x: 50%;
+  --home-pointer-y: 50%;
+  background:
+    radial-gradient(
+      circle at var(--home-pointer-x) var(--home-pointer-y),
+      rgba(0, 219, 231, 0.18),
+      transparent 40%
+    ),
+    linear-gradient(90deg, rgba(0, 219, 231, 0.08), transparent 74%);
+  border-block: 1px solid rgba(0, 219, 231, 0.28);
   color: var(--cockpit-color-cyan-soft);
-  font-family: var(--cockpit-font-heading);
-  font-size: 0.82rem;
-  font-weight: 700;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.dashboardSignal strong,
-.dashboardLog strong {
-  font-family: var(--cockpit-font-heading);
-  font-size: 1.15rem;
-}
-
-.dashboardSignal small,
-.dashboardLog small,
-.dashboardControlTile small,
-.dashboardStatusNote {
-  color: var(--cockpit-color-text-muted);
-  font-size: 0.78rem;
-  line-height: 1.4;
-}
-
-.dashboardControlGrid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.dashboardControlTile:first-child {
-  grid-column: 1 / -1;
-}
-
-.dashboardRecentLogs {
-  min-height: 190px;
-}
-
-.dashboardLogs {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.dashboardVolumeBars {
   display: grid;
   gap: var(--cockpit-space-4);
+  padding: var(--cockpit-space-3) 0;
+  transform:
+    perspective(960px)
+    rotateY(calc(var(--home-base-rotate-y) + var(--home-pointer-rotate-y)))
+    rotateX(var(--home-pointer-rotate-x))
+    translate3d(var(--home-pointer-shift-x), var(--home-pointer-shift-y), 0);
+  transition:
+    filter 160ms ease,
+    text-shadow 160ms ease,
+    transform 160ms ease;
+  width: min(100%, 400px);
 }
 
-.dashboardVolumeBar {
+.homeHudField[data-anchor="left"] {
+  --home-base-rotate-y: 7deg;
+  text-align: left;
+  transform-origin: right center;
+}
+
+.homeHudField[data-anchor="right"] {
+  --home-base-rotate-y: -7deg;
+  text-align: right;
+  transform-origin: left center;
+}
+
+.homeHudField:hover,
+.homeHudField:focus-within {
+  filter: drop-shadow(0 0 18px rgba(0, 219, 231, 0.22));
+  text-shadow: 0 0 12px rgba(0, 219, 231, 0.34);
+}
+
+.homeHudField__header {
   align-items: center;
-  display: grid;
-  gap: var(--cockpit-space-3);
-  grid-template-columns: minmax(72px, 1fr) minmax(90px, 1.4fr) 2.5rem;
+  display: flex;
+  gap: var(--cockpit-space-2);
 }
 
-.dashboardVolumeBar span,
-.dashboardVolumeBar strong {
-  color: var(--cockpit-color-text);
+.homeHudField[data-anchor="right"] .homeHudField__header {
+  flex-direction: row-reverse;
+}
+
+.homeHudField__header span {
+  background: var(--cockpit-color-cyan-strong);
+  box-shadow: 0 0 12px rgba(0, 242, 255, 0.66);
+  height: 6px;
+  width: 6px;
+}
+
+.homeHudField__header h2 {
+  color: var(--cockpit-color-cyan-strong);
   font-family: var(--cockpit-font-heading);
-  font-size: 0.78rem;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  margin: 0;
   text-transform: uppercase;
 }
 
-.dashboardVolumeBar div {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(0, 219, 231, 0.16);
-  border-radius: 999px;
-  height: 10px;
-  overflow: hidden;
-}
-
-.dashboardVolumeBar i {
-  background: linear-gradient(90deg, var(--cockpit-color-green), var(--cockpit-color-cyan));
-  display: block;
-  height: 100%;
-}
-
-.dashboardStatusGrid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.dashboardStatusGrid div {
-  background: rgba(0, 0, 0, 0.24);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: var(--cockpit-radius-md);
-  padding: var(--cockpit-space-3);
-}
-
-.dashboardStatusGrid dd {
-  color: var(--cockpit-color-cyan-soft);
-  font-family: var(--cockpit-font-heading);
-  font-weight: 700;
-  margin: var(--cockpit-space-1) 0 0;
-  overflow-wrap: anywhere;
-}
-
-.dashboardStatusNote {
-  border-top: 1px solid rgba(0, 219, 231, 0.16);
+.homeHudField__metrics,
+.homeHudField__volume {
   margin: 0;
+  transform: translateZ(28px);
+}
+
+.homeHudField__metrics {
+  display: grid;
+  gap: var(--cockpit-space-3);
+}
+
+.homeHudField__metrics div {
+  border-top: 1px solid rgba(0, 219, 231, 0.16);
+  display: grid;
+  gap: 4px;
   padding-top: var(--cockpit-space-3);
 }
 
-@media (max-width: 900px) {
-  .dashboardLogs {
-    grid-template-columns: 1fr;
-  }
+.homeHudField__metrics div:first-child {
+  border-top: 0;
+  padding-top: 0;
 }
 
-@media (max-width: 620px) {
-  .dashboardControlGrid,
-  .dashboardStatusGrid,
-  .dashboardVolumeBar {
-    grid-template-columns: 1fr;
+.homeHudField__metrics dt,
+.homeHudField__volume span {
+  color: rgba(185, 202, 203, 0.8);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.homeHudField__metrics dd {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-body);
+  font-size: 1.02rem;
+  font-weight: 600;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.homeHudField__metrics p,
+.homeHudField__status p {
+  color: rgba(225, 253, 255, 0.72);
+  font-size: 0.74rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.homeHudField__volume {
+  align-items: end;
+  display: grid;
+  gap: 2px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  min-height: 168px;
+}
+
+.homeHudField__volume > div {
+  align-items: center;
+  display: grid;
+  gap: 7px;
+  justify-items: center;
+  min-width: 0;
+}
+
+.homeHudField__track {
+  align-items: end;
+  border-top: 1px solid rgba(0, 219, 231, 0.24);
+  display: flex;
+  height: 112px;
+  justify-content: center;
+  width: 100%;
+}
+
+.homeHudField__track i {
+  background: linear-gradient(180deg, var(--cockpit-color-cyan-strong), rgba(0, 219, 231, 0.18));
+  box-shadow: 0 0 14px rgba(0, 219, 231, 0.34);
+  display: block;
+  min-height: 6px;
+  width: min(100%, 18px);
+}
+
+.homeHudField__volume span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.homeHudField__volume strong,
+.homeHudField__status strong {
+  color: var(--cockpit-color-green);
+  font-family: var(--cockpit-font-body);
+  font-size: 0.78rem;
+}
+
+.homeHudField__status {
+  border-top: 1px solid rgba(0, 219, 231, 0.16);
+  display: grid;
+  gap: var(--cockpit-space-2);
+  padding-top: var(--cockpit-space-3);
+  transform: translateZ(28px);
+}
+
+.homeSessionCta {
+  align-items: start;
+  background:
+    linear-gradient(90deg, transparent, rgba(0, 219, 231, 0.1), transparent),
+    rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(0, 219, 231, 0.24);
+  border-radius: var(--cockpit-radius-lg);
+  box-shadow: 0 0 34px rgba(0, 219, 231, 0.14);
+  display: grid;
+  gap: var(--cockpit-space-4);
+  padding: var(--cockpit-space-4);
+}
+
+.homeSessionCta__copy {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.homeSessionCta__eyebrow {
+  color: rgba(185, 202, 203, 0.78);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.homeSessionCta__copy h2 {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-heading);
+  font-size: clamp(1.15rem, 2vw, 1.45rem);
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.homeSessionCta__copy p {
+  color: var(--cockpit-color-text);
+  font-size: 0.78rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.homeSessionCta .appShellStartAction .cockpitButton {
+  border-radius: var(--cockpit-radius-md);
+  box-shadow: 0 0 24px rgba(0, 219, 231, 0.2);
+  min-height: 48px;
+  width: 100%;
+}
+
+.homeSessionCta .appShellStartAction {
+  justify-self: start;
+  width: min(100%, 180px);
+}
+
+@media (max-width: 760px) {
+  .homeHudField {
+    --home-base-rotate-y: 0deg;
+    text-align: left;
+    transform-origin: center;
+    width: 100%;
   }
 
-  .dashboardVolumeBar strong {
-    justify-self: start;
+  .homeHudField[data-anchor="right"] .homeHudField__header {
+    flex-direction: row;
   }
 }
