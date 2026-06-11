@@ -23,4 +23,11 @@ describe("exercise name quality", () => {
     assert.equal(result.status, "blocked");
     assert.match(result.reasons.map((reason) => reason.code).join(","), /contains_date/);
   });
+
+  it("blocks names containing offensive fragments", () => {
+    const result = evaluateExerciseName("fuck press");
+
+    assert.equal(result.status, "blocked");
+    assert.match(result.reasons.map((reason) => reason.code).join(","), /blocked_term/);
+  });
 });

@@ -1,5 +1,6 @@
 import {
   blockedExerciseNames,
+  blockedExerciseWordFragments,
   canonicalExerciseNames,
   priorityExerciseNames
 } from "./exercise-name-catalog.js";
@@ -30,12 +31,16 @@ const normalizedCatalog = canonicalExerciseNames.map((name) => ({
 }));
 
 const blockedNames = new Set(blockedExerciseNames.map((name) => normalizeExerciseName(name)));
+const blockedWordPatterns = blockedExerciseWordFragments.map(
+  (fragment) => new RegExp(`\\b${escapeRegExp(fragment)}\\b`, "i")
+);
 const knownNames = new Set(normalizedCatalog.map((item) => item.lookupName));
 const datePattern =
   /\b(?:\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}|\d{8})\b/;
 const timestampPattern = /\b\d{4}-\d{2}-\d{2}t\d{2}:\d{2}(?::\d{2})?/i;
 const urlOrEmailPattern = /https?:\/\/|www\.|[^\s]+@[^\s]+\.[^\s]+/i;
-const exportNoisePattern = /\b(?:csv|import|export|sheet|row|copy|backup|log|entry)\b/i;
+const exportNoisePattern = /\b(?:csv|import|export|sheet|copy|backup|log|entry)\b/i;
+const rowMarkerPattern = /\brow\s+\d{4,}\b/i;
 const longNumericSuffixPattern = /(?:^|\s)\d{5,}(?:\s|$)/;
 
 export function normalizeExerciseName(name: string): string {
@@ -91,6 +96,13 @@ function blockedReasonMatches(
     });
   }
 
+  if (blockedWordPatterns.some((pattern) => pattern.test(normalizedName))) {
+    reasons.push({
+      code: "blocked_term",
+      message: "Exercise names must not include troll words, slurs, or offensive language."
+    });
+  }
+
   if (datePattern.test(normalizedName) || timestampPattern.test(normalizedName)) {
     reasons.push({
       code: "contains_date",
@@ -105,7 +117,7 @@ function blockedReasonMatches(
     });
   }
 
-  if (exportNoisePattern.test(normalizedName)) {
+  if (exportNoisePattern.test(normalizedName) || rowMarkerPattern.test(normalizedName)) {
     reasons.push({
       code: "contains_export_noise",
       message: "Exercise names must not include import/export labels or row markers."
@@ -195,4 +207,8 @@ function levenshteinDistance(source: string, candidate: string): number {
   }
 
   return matrix[rows - 1]![cols - 1]!;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
