@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BODY_COCKPIT_V1.0 // MISSION_SELECT</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            background-color: #0A0A0A;
+            color: #e5e2e1;
+            overflow-x: hidden;
+        }
+        .glass-panel {
+            background: rgba(18, 18, 18, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .glow-cyan {
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
+        }
+        .glow-neon-glow:hover {
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.4);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #00dbe7;
+        }
+        .status-indicator {
+            width: 4px;
+            height: 4px;
+        }
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .expanded .collapsible-content {
+            max-height: 500px;
+        }
+        .mission-grid {
+            background-image: linear-gradient(rgba(0, 219, 231, 0.03) 1px, transparent 1px), 
+                              linear-gradient(90deg, rgba(0, 219, 231, 0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary": "#e9ffeb",
+                        "text-muted": "rgba(255, 255, 255, 0.6)",
+                        "outline-variant": "#3a494b",
+                        "on-tertiary": "#3b2f00",
+                        "on-secondary": "#00391d",
+                        "secondary-fixed-dim": "#00e384",
+                        "inverse-primary": "#00696f",
+                        "on-surface": "#e5e2e1",
+                        "secondary-fixed": "#5affa2",
+                        "on-surface-variant": "#b9cacb",
+                        "tertiary-fixed-dim": "#e8c423",
+                        "surface-container-low": "#1c1b1b",
+                        "primary-container": "#00f2ff",
+                        "surface-container": "#201f1f",
+                        "on-secondary-fixed": "#00210e",
+                        "primary": "#e1fdff",
+                        "on-primary-fixed": "#002022",
+                        "tertiary-container": "#fed83a",
+                        "surface-container-highest": "#353534",
+                        "on-tertiary-fixed": "#221b00",
+                        "surface-dim": "#131313",
+                        "primary-fixed": "#74f5ff",
+                        "primary-fixed-dim": "#00dbe7",
+                        "inverse-on-surface": "#313030",
+                        "surface-obsidian": "#121212",
+                        "on-tertiary-container": "#725e00",
+                        "outline": "#849495",
+                        "on-secondary-container": "#00703e",
+                        "surface": "#131313",
+                        "on-tertiary-fixed-variant": "#554500",
+                        "on-primary": "#00363a",
+                        "error": "#ffb4ab",
+                        "surface-tint": "#00dbe7",
+                        "on-primary-container": "#006a71",
+                        "surface-variant": "#353534",
+                        "on-secondary-fixed-variant": "#00522c",
+                        "on-error-container": "#ffdad6",
+                        "tertiary-fixed": "#ffe173",
+                        "on-primary-fixed-variant": "#004f54",
+                        "tertiary": "#fff6e4",
+                        "background": "#131313",
+                        "surface-container-high": "#2a2a2a",
+                        "inverse-surface": "#e5e2e1",
+                        "error-container": "#93000a",
+                        "surface-bright": "#3a3939",
+                        "neon-glow": "rgba(0, 242, 255, 0.4)",
+                        "on-error": "#690005",
+                        "glass-stroke": "rgba(255, 255, 255, 0.12)",
+                        "on-background": "#e5e2e1",
+                        "surface-container-lowest": "#0e0e0e",
+                        "secondary-container": "#00fd93"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "gutter": "16px",
+                        "container-padding": "24px",
+                        "margin-desktop": "40px",
+                        "margin-mobile": "20px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Space Grotesk"],
+                        "body-md": ["JetBrains Mono"],
+                        "data-mono": ["JetBrains Mono"],
+                        "label-caps": ["Space Grotesk"],
+                        "display-hero": ["Space Grotesk"],
+                        "headline-lg-mobile": ["Space Grotesk"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "data-mono": ["18px", {"lineHeight": "24px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "700"}],
+                        "display-hero": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-margin-mobile py-4 backdrop-blur-md border-b border-glass-stroke">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary-fixed-dim cursor-pointer" data-icon="menu">menu</span>
+<h1 class="text-label-caps font-label-caps tracking-widest text-primary-fixed-dim shadow-[0_0_10px_rgba(0,242,255,0.4)]">BODY_COCKPIT_V1.0</h1>
+</div>
+<div class="flex items-center gap-6">
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary-fixed hover:glow-neon-glow cursor-pointer transition-all" data-icon="notifications_active">notifications_active</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary-fixed hover:glow-neon-glow cursor-pointer transition-all" data-icon="settings">settings</span>
+</div>
+</header>
+<!-- SideNavBar -->
+<nav class="hidden lg:flex flex-col h-screen fixed left-0 top-0 z-40 bg-surface-obsidian/80 backdrop-blur-xl border-r border-glass-stroke w-64">
+<div class="p-8 pt-24">
+<div class="flex items-center gap-3 mb-8">
+<div class="w-12 h-12 rounded-full overflow-hidden border border-primary-fixed-dim">
+<img alt="Operator Avatar" data-alt="A futuristic digital portrait of a cybernetic athlete with glowing neural link interfaces, set against a dark obsidian background with electric cyan ambient lighting. The style is sharp, technical, and hyper-realistic, reflecting a high-performance biometric cockpit environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKsTVWJtfXnCYLahaRmyUfTnPuTZYpW830dwaluPjg7SQhupfJv1G-SjZ0d6Lkr0yOdxE4Kzs7asXCD7VkUWmw0vUfbOlBlQGWNHjNRNW0FcQ9FWBcwVfWo8o8Owha_Waf18Qh7u77H-GKk2mhKKXh3tdCZHJbPJD0QIrMY2XgqKgkKwpipQw5l1SXRZPg_l0ZoX5WuwayRiVQydoDPnKox8ilknfURgFRLcN8PtTZ4J4LTPwnLjkwm622mPJ1hJ0KwxZGk-Jv-S0"/>
+</div>
+<div>
+<h2 class="text-label-caps font-bold text-primary-fixed-dim">OPERATOR_SMITH</h2>
+<p class="text-[10px] text-primary-fixed-dim opacity-70 tracking-widest uppercase">SYSTEM ACTIVE // STATUS: OPTIMAL</p>
+</div>
+</div>
+<div class="space-y-2">
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 opacity-60 hover:bg-surface-container-high hover:text-primary-fixed transition-all" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="grid_view">grid_view</span>
+<span class="text-label-caps">DASHBOARD</span>
+</a>
+<a class="flex items-center gap-3 text-primary-fixed-dim border-l-2 border-primary-fixed-dim bg-primary/5 px-4 py-3 font-bold" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="fitness_center">fitness_center</span>
+<span class="text-label-caps">WORKOUT</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 opacity-60 hover:bg-surface-container-high hover:text-primary-fixed transition-all" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="history">history</span>
+<span class="text-label-caps">HISTORY</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 opacity-60 hover:bg-surface-container-high hover:text-primary-fixed transition-all" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="monitoring">monitoring</span>
+<span class="text-label-caps">PROGRESS</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 opacity-60 hover:bg-surface-container-high hover:text-primary-fixed transition-all" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="bar_chart">bar_chart</span>
+<span class="text-label-caps">VOLUME</span>
+</a>
+</div>
+</div>
+<div class="mt-auto p-8">
+<button class="w-full bg-primary-container text-on-primary py-4 text-label-caps font-bold tracking-widest hover:glow-neon-glow transition-all active:scale-95" onclick="location.href='#active-session'">
+                START_SESSION
+            </button>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="lg:ml-64 pt-24 pb-32 px-margin-mobile lg:px-margin-desktop min-h-screen relative mission-grid">
+<!-- Background Animation -->
+<div class="fixed inset-0 pointer-events-none opacity-20 -z-10">
+</div>
+<div class="max-w-4xl mx-auto">
+<!-- Header Section -->
+<div class="mb-12 border-l-4 border-primary-fixed-dim pl-6">
+<p class="text-primary-fixed-dim text-label-caps mb-2 tracking-[0.2em] font-bold">INITIALIZING_MISSION_PARAMETERS</p>
+<h2 class="text-headline-lg-mobile lg:text-headline-lg font-headline-lg text-primary uppercase">Select Operation Archetype</h2>
+</div>
+<!-- Quick Start Section -->
+<section class="mb-16">
+<div class="flex items-center justify-between mb-6">
+<h3 class="text-label-caps text-on-surface-variant flex items-center gap-2">
+<span class="w-2 h-2 bg-error animate-pulse rounded-sm"></span>
+                        IMMEDIATE_REDEPLOYMENT
+                    </h3>
+<span class="text-[10px] text-primary-fixed-dim/50 font-data-mono">PREVIOUS_ENGAGEMENT: 24_HRS_AGO</span>
+</div>
+<button class="group relative w-full text-left glass-panel p-8 transition-all hover:border-primary-fixed-dim hover:glow-cyan duration-500 overflow-hidden rounded-xl bg-gradient-to-br from-surface-container-low to-transparent" onclick="location.href='#active-session'">
+<!-- Subtle Glow Edge -->
+<div class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary-fixed-dim to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
+<div>
+<div class="flex items-center gap-2 mb-2">
+<span class="text-primary-fixed-dim text-label-caps font-bold text-lg">RESUME: ALPHA_PROTOCOL</span>
+<span class="bg-primary/10 text-primary-fixed-dim text-[9px] px-2 py-0.5 rounded-full border border-primary/20">HIGH STAKES</span>
+</div>
+<div class="flex flex-wrap gap-3 mt-4">
+<span class="bg-surface-obsidian border border-glass-stroke px-3 py-1 text-[10px] text-on-surface-variant font-data-mono">BENCH_PRESS (100KG)</span>
+<span class="bg-surface-obsidian border border-glass-stroke px-3 py-1 text-[10px] text-on-surface-variant font-data-mono">INCLINE_DUMBBELL (35KG)</span>
+<span class="bg-surface-obsidian border border-glass-stroke px-3 py-1 text-[10px] text-on-surface-variant font-data-mono">CABLE_FLYS</span>
+<span class="bg-surface-obsidian border border-glass-stroke px-3 py-1 text-[10px] text-on-surface-variant font-data-mono">+3 MORE</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden lg:block h-12 w-[1px] bg-glass-stroke"></div>
+<div class="flex flex-col items-end">
+<span class="text-label-caps text-on-surface-variant opacity-60">EST_COMBAT_TIME</span>
+<span class="text-primary-fixed-dim font-data-mono text-2xl">55:00</span>
+</div>
+<span class="material-symbols-outlined text-4xl text-primary-fixed-dim group-hover:scale-110 transition-transform" data-icon="play_circle">play_circle</span>
+</div>
+</div>
+<!-- Decorative HUD Element -->
+<div class="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-9xl" data-icon="target">target</span>
+</div>
+</button>
+</section>
+<!-- Manual Selection Section -->
+<section>
+<div class="flex items-center justify-between mb-6">
+<h3 class="text-label-caps text-on-surface-variant flex items-center gap-2">
+<span class="w-2 h-2 bg-primary-fixed-dim/40 rounded-sm"></span>
+                        CUSTOM_MISSION_BUILDER
+                    </h3>
+<div class="flex items-center gap-2 border-b border-primary-fixed-dim/20 pb-1">
+<span class="material-symbols-outlined text-sm text-primary-fixed-dim" data-icon="search">search</span>
+<input class="bg-transparent border-none text-[10px] text-primary-fixed-dim font-label-caps focus:ring-0 placeholder:text-primary-fixed-dim/30 w-32 uppercase" placeholder="SCAN_DATABASE..." type="text"/>
+</div>
+</div>
+<div class="space-y-4">
+<!-- Muscle Group: Chest -->
+<div class="accordion-item glass-panel border-primary-fixed-dim/30 rounded-lg overflow-hidden transition-all duration-300">
+<button class="w-full flex items-center justify-between px-6 py-5 hover:bg-primary/5 transition-colors" onclick="toggleAccordion(this)">
+<div class="flex items-center gap-4">
+<span class="status-indicator bg-primary-fixed-dim glow-cyan"></span>
+<span class="text-label-caps font-bold tracking-widest">FRONTAL_ASSAULT_PROTOCOLS</span>
+<span class="text-[10px] text-on-surface-variant opacity-50 font-data-mono">12_MODULES</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant transition-transform duration-300" data-icon="expand_more">expand_more</span>
+</button>
+<div class="collapsible-content border-t border-glass-stroke">
+<div class="p-4 space-y-2">
+<div class="flex items-center justify-between p-4 bg-surface-obsidian hover:bg-surface-container-high transition-colors group">
+<div>
+<div class="text-sm font-bold text-primary-fixed-dim">FLAT BARBELL BENCH PRESS</div>
+<div class="text-[10px] text-on-surface-variant opacity-60">HEAVY_ORDNANCE // STRENGTH</div>
+</div>
+<button class="w-8 h-8 flex items-center justify-center border border-primary-fixed-dim/30 rounded-sm group-hover:border-primary-fixed-dim group-hover:bg-primary-fixed-dim group-hover:text-black transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+</button>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-obsidian hover:bg-surface-container-high transition-colors group">
+<div>
+<div class="text-sm font-bold text-primary-fixed-dim">INCLINE DUMBBELL PRESS</div>
+<div class="text-[10px] text-on-surface-variant opacity-60">UPPER_VECTOR_STRIKE</div>
+</div>
+<button class="w-8 h-8 flex items-center justify-center border border-primary-fixed-dim/30 rounded-sm group-hover:border-primary-fixed-dim group-hover:bg-primary-fixed-dim group-hover:text-black transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+</button>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-obsidian hover:bg-surface-container-high transition-colors group">
+<div>
+<div class="text-sm font-bold text-primary-fixed-dim">CABLE CROSSOVER</div>
+<div class="text-[10px] text-on-surface-variant opacity-60">PRECISION_STRIKE // ISOLATION</div>
+</div>
+<button class="w-8 h-8 flex items-center justify-center border border-primary-fixed-dim/30 rounded-sm group-hover:border-primary-fixed-dim group-hover:bg-primary-fixed-dim group-hover:text-black transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Muscle Group: Back -->
+<div class="accordion-item glass-panel border-primary-fixed-dim/10 rounded-lg overflow-hidden transition-all duration-300">
+<button class="w-full flex items-center justify-between px-6 py-5 hover:bg-primary/5 transition-colors" onclick="toggleAccordion(this)">
+<div class="flex items-center gap-4">
+<span class="status-indicator bg-on-surface-variant/30"></span>
+<span class="text-label-caps font-bold tracking-widest">REAR_GUARD_PROTOCOLS</span>
+<span class="text-[10px] text-on-surface-variant opacity-50 font-data-mono">15_MODULES</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant transition-transform duration-300" data-icon="expand_more">expand_more</span>
+</button>
+<div class="collapsible-content border-t border-glass-stroke">
+<div class="p-4 space-y-2">
+<div class="flex items-center justify-between p-4 bg-surface-obsidian hover:bg-surface-container-high transition-colors group">
+<div>
+<div class="text-sm font-bold text-primary-fixed-dim">DEADLIFT (TRAP BAR)</div>
+<div class="text-[10px] text-on-surface-variant opacity-60">TOTAL_FORCE_RECON // CNS</div>
+</div>
+<button class="w-8 h-8 flex items-center justify-center border border-primary-fixed-dim/30 rounded-sm group-hover:border-primary-fixed-dim group-hover:bg-primary-fixed-dim group-hover:text-black transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+</button>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-obsidian hover:bg-surface-container-high transition-colors group">
+<div>
+<div class="text-sm font-bold text-primary-fixed-dim">LAT PULLDOWN</div>
+<div class="text-[10px] text-on-surface-variant opacity-60">WIDTH_EXTENSION // TACTICAL</div>
+</div>
+<button class="w-8 h-8 flex items-center justify-center border border-primary-fixed-dim/30 rounded-sm group-hover:border-primary-fixed-dim group-hover:bg-primary-fixed-dim group-hover:text-black transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Muscle Group: Legs -->
+<div class="accordion-item glass-panel border-primary-fixed-dim/10 rounded-lg overflow-hidden transition-all duration-300">
+<button class="w-full flex items-center justify-between px-6 py-5 hover:bg-primary/5 transition-colors" onclick="toggleAccordion(this)">
+<div class="flex items-center gap-4">
+<span class="status-indicator bg-on-surface-variant/30"></span>
+<span class="text-label-caps font-bold tracking-widest">FOUNDATION_PROTOCOLS</span>
+<span class="text-[10px] text-on-surface-variant opacity-50 font-data-mono">18_MODULES</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant transition-transform duration-300" data-icon="expand_more">expand_more</span>
+</button>
+<div class="collapsible-content border-t border-glass-stroke">
+<div class="p-4 bg-surface-obsidian/40 italic text-center py-8 text-on-surface-variant/40 text-[10px] uppercase tracking-widest">
+                                Loading additional data...
+                            </div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="lg:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-safe h-20 bg-surface-obsidian/90 backdrop-blur-lg border-t border-glass-stroke shadow-[0_-4px_20px_rgba(0,242,255,0.15)]">
+<div class="flex flex-col items-center justify-center text-on-surface-variant opacity-50 hover:opacity-100 hover:text-primary-fixed transition-all">
+<span class="material-symbols-outlined" data-icon="home_health">home_health</span>
+<span class="text-label-caps mt-1">CORE</span>
+</div>
+<div class="flex flex-col items-center justify-center text-primary-fixed-dim font-bold scale-110">
+<span class="material-symbols-outlined" data-icon="fitness_center">fitness_center</span>
+<span class="text-label-caps mt-1">MISSION</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant opacity-50 hover:opacity-100 hover:text-primary-fixed transition-all">
+<span class="material-symbols-outlined" data-icon="database">database</span>
+<span class="text-label-caps mt-1">LOGS</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant opacity-50 hover:opacity-100 hover:text-primary-fixed transition-all">
+<span class="material-symbols-outlined" data-icon="monitoring">monitoring</span>
+<span class="text-label-caps mt-1">DATA</span>
+</div>
+</nav>
+<script>
+        function toggleAccordion(element) {
+            const parent = element.parentElement;
+            const icon = element.querySelector('.material-symbols-outlined');
+            
+            // Toggle active state
+            const wasExpanded = parent.classList.contains('expanded');
+            
+            if (!wasExpanded) {
+                parent.classList.add('expanded');
+                icon.style.transform = 'rotate(180deg)';
+                parent.classList.add('border-primary-fixed-dim/50');
+                parent.classList.remove('border-primary-fixed-dim/10');
+            } else {
+                parent.classList.remove('expanded');
+                icon.style.transform = 'rotate(0deg)';
+                parent.classList.add('border-primary-fixed-dim/10');
+                parent.classList.remove('border-primary-fixed-dim/50');
+            }
+        }
+
+        // Micro-interaction for hover glow follow effect (simplified)
+        document.addEventListener('mousemove', (e) => {
+            const panels = document.querySelectorAll('.glass-panel');
+            panels.forEach(panel => {
+                const rect = panel.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                if (x > 0 && y > 0 && x < rect.width && y < rect.height) {
+                    panel.style.setProperty('--mouse-x', `${x}px`);
+                    panel.style.setProperty('--mouse-y', `${y}px`);
+                }
+            });
+        });
+    </script>
+</body></html>
