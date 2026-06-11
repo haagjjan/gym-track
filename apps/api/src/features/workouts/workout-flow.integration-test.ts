@@ -212,7 +212,8 @@ async function createExercise(server: FastifyInstance, cookie: string, tag: stri
       equipment: "barbell",
       exerciseType: "compound",
       primaryMuscleGroupId: muscleGroupId,
-      secondaryMuscleGroupIds: []
+      secondaryMuscleGroupIds: [],
+      confirmNameWarning: true
     }
   });
 
@@ -372,7 +373,7 @@ async function importWorkoutCsv(
 ): Promise<CsvImportPayload> {
   const response = await server.inject({
     method: "POST",
-    url: "/api/v1/workouts/import.csv",
+    url: "/api/v1/workouts/import.csv?confirmNameWarnings=true",
     cookies: authCookies(cookie),
     headers: {
       "content-type": "text/csv"
