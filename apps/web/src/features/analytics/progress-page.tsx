@@ -1,9 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { dateRange } from "./analytics-date-range";
-import { AnalyticsHeader } from "./analytics-header";
 import {
   getExerciseProgress,
   getExerciseSummary,
@@ -14,17 +14,21 @@ import type {
   ExerciseProgressPayload,
   ExerciseSummaryPayload
 } from "./analytics-types";
-import { ExerciseSummary, ProgressTable } from "./analytics-widgets";
-import { ProgressExerciseList, uniqueMuscleGroups } from "./progress-exercise-list";
+import { ExerciseSummary, ProgressEmptyState, ProgressRecentLogs } from "./analytics-widgets";
 import { ProgressTimeSeries } from "./progress-chart";
+import {
+  compareCompletedExerciseDesc,
+  filterProgressExercises,
+  shortProgressDate
+} from "./progress-filters";
+import { uniqueMuscleGroups } from "./progress-exercise-list";
+import { ProgressSelectorPanel } from "./progress-selector-panel";
 
 const timeWindows = [
   { label: "1W", value: "7" },
-  { label: "2W", value: "14" },
-  { label: "4W", value: "28" },
+  { label: "1M", value: "30" },
   { label: "3M", value: "90" },
-  { label: "1Y", value: "365" },
-  { label: "All", value: "all" }
+  { label: "MAX", value: "all" }
 ] as const;
 
 type TimeWindow = (typeof timeWindows)[number]["value"];
@@ -33,15 +37,20 @@ export function ProgressPage(): ReactNode {
   const [exercises, setExercises] = useState<CompletedExercise[]>([]);
   const [selectedExerciseId, setSelectedExerciseId] = useState("");
   const [selectedMuscleSlug, setSelectedMuscleSlug] = useState("");
-  const [openMuscleSlug, setOpenMuscleSlug] = useState("");
-  const [timeWindow, setTimeWindow] = useState<TimeWindow>("14");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [timeWindow, setTimeWindow] = useState<TimeWindow>("30");
   const [progress, setProgress] = useState<ExerciseProgressPayload | null>(null);
   const [summary, setSummary] = useState<ExerciseSummaryPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoadingExercises, setIsLoadingExercises] = useState(true);
   const [isLoadingProgress, setIsLoadingProgress] = useState(false);
   const muscleGroups = useMemo(() => uniqueMuscleGroups(exercises), [exercises]);
+  const filteredExercises = useMemo(
+    () => filterProgressExercises(exercises, selectedMuscleSlug, searchQuery),
+    [exercises, searchQuery, selectedMuscleSlug]
+  );
   const selectedExercise = exercises.find((exercise) => exercise.id === selectedExerciseId) ?? null;
+  const selectedWindowLabel = timeWindows.find((item) => item.value === timeWindow)?.label ?? "MAX";
 
   const loadExercises = useCallback(async (signal: AbortSignal): Promise<void> => {
     const result = await listCompletedExercises(signal).catch(() => null);
@@ -57,8 +66,10 @@ export function ProgressPage(): ReactNode {
       return;
     }
 
-    setExercises(result.data.items);
-    setSelectedExerciseId(result.data.items[0]?.id ?? "");
+    const nextExercises = [...result.data.items].sort(compareCompletedExerciseDesc);
+
+    setExercises(nextExercises);
+    setSelectedExerciseId(nextExercises[0]?.id ?? "");
   }, []);
 
   useEffect(() => {
@@ -88,6 +99,8 @@ export function ProgressPage(): ReactNode {
   ): Promise<void> {
     setIsLoadingProgress(true);
     setError(null);
+    setProgress(null);
+    setSummary(null);
 
     const range = windowValue === "all" ? {} : dateRange(Number(windowValue));
     const [progressResult, summaryResult] = await Promise.all([
@@ -115,57 +128,61 @@ export function ProgressPage(): ReactNode {
     setSummary(summaryResult.data);
   }
 
-  function chooseMuscle(slug: string): void {
-    setSelectedMuscleSlug(slug);
-    setOpenMuscleSlug(slug);
+  function clearFilters(): void {
+    setSearchQuery("");
+    setSelectedMuscleSlug("");
   }
 
   return (
     <main className="analyticsPage progressPage">
-      <AnalyticsHeader
-        eyebrow="Progress"
-        links={[{ href: "/weekly-volume", label: "Weekly Volume" }]}
-        title="Exercise progress"
-      />
+      <header className="progressHero">
+        <div>
+          <nav className="pageNav" aria-label="Analytics navigation">
+            <Link className="backLink" href="/">Home</Link>
+            <Link className="backLink" href="/workouts">History</Link>
+            <Link className="backLink" href="/weekly-volume">Weekly Volume</Link>
+          </nav>
+          <p className="eyebrow">Evolution analysis</p>
+          <h1>Progress analytics</h1>
+          <p className="leadText">
+            Pick one lift, read the trend, then decide what to load next time.
+          </p>
+        </div>
+        <div className="progressHeroBadge" aria-label="Progress mode">
+          <span>WORKING_SET_SIGNAL</span>
+          <strong>{selectedExercise?.name ?? "Select exercise"}</strong>
+        </div>
+      </header>
+
       {error ? <p className="formError analyticsMessage" role="alert">{error}</p> : null}
-      <section className="analyticsSplit" aria-label="Exercise progress workspace">
-        <aside className="analyticsPanel exerciseLibraryPanel" aria-label="Completed exercises">
-          <div className="analyticsPanelHeader compactHeader">
-            <div>
-              <p className="eyebrow">Exercises done</p>
-              <h2>Last trained first</h2>
-            </div>
-          </div>
-          <label className="compactField">
-            <span>Muscle group</span>
-            <select value={selectedMuscleSlug} onChange={(event) => chooseMuscle(event.target.value)}>
-              <option value="">Last done</option>
-              {muscleGroups.map((muscle) => (
-                <option key={muscle.slug} value={muscle.slug}>{muscle.name}</option>
-              ))}
-            </select>
-          </label>
-          {isLoadingExercises ? <p className="mutedText">Loading exercises.</p> : null}
-          {!isLoadingExercises && exercises.length === 0 ? (
-            <p className="mutedText">Log a workout to start seeing progress.</p>
-          ) : null}
-          <ProgressExerciseList
-            exercises={exercises}
-            muscleGroups={muscleGroups}
-            openMuscleSlug={openMuscleSlug}
-            selectedExerciseId={selectedExerciseId}
-            selectedMuscleSlug={selectedMuscleSlug}
-            onOpenMuscle={setOpenMuscleSlug}
-            onSelectExercise={setSelectedExerciseId}
-          />
-        </aside>
-        <section className="analyticsPanel progressDetailPanel" aria-labelledby="progress-detail-title">
-          <div className="analyticsPanelHeader">
+
+      <section className="progressWorkspace" aria-label="Exercise progress workspace">
+        <ProgressSelectorPanel
+          exercises={exercises}
+          filteredExercises={filteredExercises}
+          isLoadingExercises={isLoadingExercises}
+          muscleGroups={muscleGroups}
+          onClearFilters={clearFilters}
+          onSearchQueryChange={setSearchQuery}
+          onSelectExercise={setSelectedExerciseId}
+          onSelectMuscle={setSelectedMuscleSlug}
+          searchQuery={searchQuery}
+          selectedExerciseId={selectedExerciseId}
+          selectedMuscleSlug={selectedMuscleSlug}
+        />
+
+        <section className="progressAnalysisStack" aria-labelledby="progress-detail-title">
+          <div className="progressStageHeader">
             <div>
               <p className="eyebrow">Selected exercise</p>
               <h2 id="progress-detail-title">{selectedExercise?.name ?? "No exercise selected"}</h2>
+              <p>
+                {selectedExercise
+                  ? `${selectedExercise.primaryMuscleGroup.name} · last trained ${shortProgressDate(selectedExercise.lastDoneAt)}`
+                  : "Select an exercise to inspect its strength signal."}
+              </p>
             </div>
-            <div className="segmentedControl" aria-label="Time window">
+            <div className="progressRangeTabs" aria-label="Time window">
               {timeWindows.map((item) => (
                 <button
                   aria-pressed={timeWindow === item.value}
@@ -178,10 +195,35 @@ export function ProgressPage(): ReactNode {
               ))}
             </div>
           </div>
-          {isLoadingProgress ? <p className="mutedText">Loading progress.</p> : null}
-          {summary ? <ExerciseSummary summary={summary} /> : null}
-          {progress ? <ProgressTimeSeries items={progress.items} /> : null}
-          {progress ? <ProgressTable items={progress.items} /> : null}
+
+          {!selectedExercise ? (
+            <ProgressEmptyState
+              title="NO_EXERCISE_SELECTED"
+              message="Choose a completed movement from the selector to start analysis."
+            />
+          ) : (
+            <>
+              <ExerciseSummary
+                isLoading={isLoadingProgress}
+                items={progress?.items ?? []}
+                selectedWindowLabel={selectedWindowLabel}
+                summary={summary}
+              />
+              <ProgressTimeSeries
+                exerciseName={selectedExercise.name}
+                isLoading={isLoadingProgress}
+                items={progress?.items ?? []}
+                selectedWindowLabel={selectedWindowLabel}
+              />
+              {!isLoadingProgress ? (
+                <ProgressRecentLogs
+                  exerciseName={selectedExercise.name}
+                  items={progress?.items ?? []}
+                  selectedWindowLabel={selectedWindowLabel}
+                />
+              ) : null}
+            </>
+          )}
         </section>
       </section>
     </main>
