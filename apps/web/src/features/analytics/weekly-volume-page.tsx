@@ -5,27 +5,55 @@ import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getWeeklyVolume } from "./analytics-api";
 import { dateRange } from "./analytics-date-range";
-import { AnalyticsHeader } from "./analytics-header";
 import type { WeeklyVolumePayload } from "./analytics-types";
 import {
-  firstMuscleSlug,
-  selectedWeeklyMuscle,
-  WeeklyBodyMap,
-  type WeeklyMuscleTotal
-} from "./weekly-body-map";
+  aggregateVolume,
+  firstVolumeSlug,
+  latestWeekWorkingSets,
+  selectedVolumeMuscle,
+  totalWorkingSets,
+  volumeWindowWeeks
+} from "./volume-analytics";
+import { VolumeDistributionMatrix } from "./volume-distribution-matrix";
+import { VolumeEmptyState } from "./volume-empty-state";
+import {
+  VolumeIntelligencePanel,
+  VolumeLegend,
+  VolumeMetricDeck
+} from "./volume-widgets";
+import {
+  handleVolumePointerLeave,
+  handleVolumePointerMove
+} from "./volume-pointer";
+import { WeeklyBodyMap } from "./weekly-body-map";
+
+const volumeWindows = [
+  { label: "1W", value: "7" },
+  { label: "1M", value: "30" },
+  { label: "3M", value: "90" }
+] as const;
+
+type VolumeWindow = (typeof volumeWindows)[number]["value"];
 
 export function WeeklyVolumePage(): ReactNode {
   const [volume, setVolume] = useState<WeeklyVolumePayload | null>(null);
   const [selectedSlug, setSelectedSlug] = useState("chest");
+  const [timeWindow, setTimeWindow] = useState<VolumeWindow>("7");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const range = useMemo(() => dateRange(7), []);
-  const selected = useMemo(
-    () => selectedWeeklyMuscle(volume ?? { weeks: [] }, selectedSlug),
-    [selectedSlug, volume]
-  );
+  const selectedWindow = volumeWindows.find((item) => item.value === timeWindow) ?? volumeWindows[0];
+  const range = useMemo(() => dateRange(Number(timeWindow)), [timeWindow]);
+  const windowWeeks = volumeWindowWeeks(Number(timeWindow));
+  const totals = useMemo(() => aggregateVolume(volume, windowWeeks), [volume, windowWeeks]);
+  const selected = useMemo(() => selectedVolumeMuscle(totals, selectedSlug), [selectedSlug, totals]);
+  const activeMuscles = [...totals.values()].filter((item) => item.workingSets > 0).length;
+  const windowTotalSets = totalWorkingSets(totals);
+  const latestWeekSets = latestWeekWorkingSets(totals);
 
   const loadWeeklyVolume = useCallback(async (signal: AbortSignal): Promise<void> => {
+    setIsLoading(true);
+    setError(null);
+
     const result = await getWeeklyVolume({ ...range, signal }).catch(() => null);
 
     if (signal.aborted) {
@@ -39,9 +67,11 @@ export function WeeklyVolumePage(): ReactNode {
       return;
     }
 
+    const nextTotals = aggregateVolume(result.data, windowWeeks);
+
     setVolume(result.data);
-    setSelectedSlug(firstMuscleSlug(result.data));
-  }, [range]);
+    setSelectedSlug((current) => current && nextTotals.has(current) ? current : firstVolumeSlug(nextTotals));
+  }, [range, windowWeeks]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -53,89 +83,99 @@ export function WeeklyVolumePage(): ReactNode {
 
   return (
     <main className="analyticsPage weeklyVolumePage">
-      <AnalyticsHeader
-        eyebrow="Weekly Volume"
-        links={[{ href: "/progress", label: "Progress" }]}
-        title="Muscle heat map"
-      />
-      {error ? <p className="formError analyticsMessage" role="alert">{error}</p> : null}
-      <section className="analyticsPanel bodyVolumePanel" aria-labelledby="weekly-volume-title">
-        <div className="analyticsPanelHeader compactHeader">
-          <div>
-            <p className="eyebrow">Current week</p>
-            <h2 id="weekly-volume-title">Working sets by muscle</h2>
-          </div>
+      <header className="volumeHero">
+        <div>
+          <nav className="pageNav" aria-label="Analytics navigation">
+            <Link className="backLink" href="/">Home</Link>
+            <Link className="backLink" href="/workouts">History</Link>
+            <Link className="backLink" href="/progress">Progress</Link>
+          </nav>
+          <p className="eyebrow">Volume heatmap</p>
+          <h1>Muscle volume</h1>
+          <p className="leadText">
+            See where the week is loaded, then tap a muscle to inspect the real set distribution.
+          </p>
         </div>
-        {isLoading ? <p className="mutedText">Loading weekly volume.</p> : null}
-        {volume ? (
-          <div className="bodyVolumeGrid">
-            <WeeklyBodyMap selectedSlug={selectedSlug} volume={volume} onSelect={setSelectedSlug} />
-            <MuscleStats selected={selected} />
+        <div className="volumeHeroBadge" aria-label="Volume scan status">
+          <span>BODY_RECONSTRUCTION</span>
+          <strong>{selected?.muscleGroup.name ?? "No target"}</strong>
+          <small>{activeMuscles} active muscle groups</small>
+        </div>
+      </header>
+
+      {error ? <p className="formError analyticsMessage" role="alert">{error}</p> : null}
+
+      <section className="volumeControlBar" aria-label="Volume time range">
+        <div>
+          <p className="eyebrow">Scan window</p>
+          <h2>{selectedWindow.label} load distribution</h2>
+        </div>
+        <div className="volumeRangeTabs" aria-label="Time window">
+          {volumeWindows.map((item) => (
+            <button
+              aria-pressed={timeWindow === item.value}
+              key={item.value}
+              onClick={() => setTimeWindow(item.value)}
+              type="button"
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <VolumeMetricDeck
+        activeMuscles={activeMuscles}
+        latestWeekSets={latestWeekSets}
+        selected={selected}
+        totals={totals}
+        windowLabel={selectedWindow.label}
+      />
+
+      <section className="volumeWorkspace" aria-label="Weekly volume workspace">
+        <section
+          className="volumeMapPanel volumeReactive"
+          aria-labelledby="volume-map-title"
+          onPointerLeave={handleVolumePointerLeave}
+          onPointerMove={handleVolumePointerMove}
+        >
+          <div className="volumeSectionHeader">
+            <div>
+              <p className="eyebrow">Body map</p>
+              <h2 id="volume-map-title">Front / back working-set signal</h2>
+            </div>
+            <span>{isLoading ? "SCANNING" : `${windowTotalSets} sets`}</span>
           </div>
-        ) : null}
+
+          {isLoading ? (
+            <VolumeEmptyState title="SCANNING_VOLUME" message="Reading weekly muscle volume." />
+          ) : null}
+
+          {!isLoading && windowTotalSets === 0 ? (
+            <VolumeEmptyState
+              title="NO_VOLUME_DATA"
+              message="Complete working sets to illuminate muscle groups in this window."
+            />
+          ) : null}
+
+          <WeeklyBodyMap selectedSlug={selectedSlug} totals={totals} onSelect={setSelectedSlug} />
+          <VolumeLegend />
+        </section>
+
+        <div className="volumeSideStack">
+          <VolumeIntelligencePanel
+            latestWeekSets={latestWeekSets}
+            selected={selected}
+            windowLabel={selectedWindow.label}
+            windowTotalSets={windowTotalSets}
+          />
+          <VolumeDistributionMatrix
+            onSelect={setSelectedSlug}
+            selectedSlug={selectedSlug}
+            totals={totals}
+          />
+        </div>
       </section>
     </main>
   );
-}
-
-function MuscleStats({ selected }: { selected: WeeklyMuscleTotal | null }): ReactNode {
-  if (!selected) {
-    return (
-      <aside className="muscleStats">
-        <p className="eyebrow">Selected muscle</p>
-        <h2>No training volume yet</h2>
-        <p className="mutedText">Log working sets this week to color the body map.</p>
-      </aside>
-    );
-  }
-
-  return (
-    <aside className="muscleStats">
-      <p className="eyebrow">Selected muscle</p>
-      <h2>{selected.muscleGroup.name}</h2>
-      <div className="analyticsMetrics singleMetric">
-        <div className="analyticsMetric">
-          <span>Working sets</span>
-          <strong>{selected.workingSets}</strong>
-        </div>
-      </div>
-      <section>
-        <h3>Exercises</h3>
-        <div className="statList">
-          {selected.exercises.length > 0 ? (
-            selected.exercises.map((exercise) => (
-              <p key={exercise.id}>
-                <span>{exercise.name}</span>
-                <strong>{exercise.workingSets}</strong>
-              </p>
-            ))
-          ) : (
-            <p className="mutedText">No exercises this week.</p>
-          )}
-        </div>
-      </section>
-      <section>
-        <h3>Recent sessions</h3>
-        <div className="statList">
-          {selected.recentSessions.length > 0 ? (
-            selected.recentSessions.map((session) => (
-              <Link key={session.workoutId} href={`/workouts/${session.workoutId}`}>
-                <span>{shortDate(session.sessionDate)}</span>
-                <strong>{session.workingSets}</strong>
-              </Link>
-            ))
-          ) : (
-            <p className="mutedText">No sessions this week.</p>
-          )}
-        </div>
-      </section>
-    </aside>
-  );
-}
-
-function shortDate(value: string): string {
-  return new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric"
-  }).format(new Date(value));
 }
