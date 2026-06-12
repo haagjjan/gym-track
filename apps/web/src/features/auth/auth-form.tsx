@@ -104,7 +104,6 @@ export function AuthForm({ mode }: AuthFormProps): ReactNode {
       }
 
       router.push("/");
-      router.refresh();
     });
   }
 
