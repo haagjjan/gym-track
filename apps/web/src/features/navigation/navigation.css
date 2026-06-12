@@ -201,6 +201,23 @@
     color 150ms ease;
 }
 
+.appShellNavAction {
+  display: grid;
+  gap: var(--cockpit-space-1);
+}
+
+.appShellNavButton {
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+
+.appShellNavButton:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
 .appShellNavLink::before {
   background: transparent;
   bottom: 7px;
@@ -221,6 +238,15 @@
 .appShellNavLink[aria-current="page"]::before {
   background: var(--cockpit-color-cyan-strong);
   box-shadow: 0 0 12px rgba(0, 242, 255, 0.66);
+}
+
+.appShellNavError {
+  color: #ffdad6;
+  font-family: var(--cockpit-font-body);
+  font-size: 0.68rem;
+  line-height: 1.4;
+  margin: 0;
+  padding: 0 var(--cockpit-space-4) 0 var(--cockpit-space-5);
 }
 
 .appShellNavIcon {
@@ -324,7 +350,7 @@
 }
 
 .appShellDrawer {
-  background: rgba(10, 10, 10, 0.96);
+  background: var(--cockpit-color-background);
   border-right: 1px solid rgba(0, 219, 231, 0.24);
   box-shadow: 18px 0 42px rgba(0, 0, 0, 0.48);
   height: 100dvh;

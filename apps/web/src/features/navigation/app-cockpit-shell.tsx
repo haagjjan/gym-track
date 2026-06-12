@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import type { AuthUser } from "../auth/auth-types";
 import { LogoutButton } from "../auth/logout-button";
+import { StartSessionAction } from "../workouts/workout-entry-point";
 import {
   CockpitAppShell,
   CockpitSidebar,
@@ -19,7 +20,6 @@ interface AppCockpitShellProps {
 
 const navItems = [
   { href: "/", icon: "D", label: "Dashboard", match: (path: string) => path === "/" },
-  { href: "/", icon: "W", label: "Workout", match: (path: string) => /^\/workouts\/[^/]+/.test(path) },
   { href: "/workouts", icon: "H", label: "History", match: (path: string) => path === "/workouts" },
   { href: "/progress", icon: "P", label: "Progress", match: (path: string) => path === "/progress" },
   { href: "/weekly-volume", icon: "V", label: "Volume", match: (path: string) => path === "/weekly-volume" }
@@ -113,12 +113,31 @@ function AppSidebar({ pathname, user }: { pathname: string; user: AuthUser }): R
       }
       footer={
         <div className="appShellNavFooter">
+          <StartSessionAction label="START_SESSION" pendingLabel="OPENING" variant="cockpit" />
           <LogoutButton />
         </div>
       }
     >
       <div className="appShellNavList">
-        {navItems.map((item) => (
+        <Link
+          aria-current={navItems[0]?.match(pathname) ? "page" : undefined}
+          className="appShellNavLink"
+          href="/"
+        >
+          <span className="appShellNavIcon" aria-hidden="true">
+            D
+          </span>
+          <span>Dashboard</span>
+        </Link>
+        <StartSessionAction
+          href="/workout"
+          icon="W"
+          isActive={pathname === "/workout" || /^\/workouts\/[^/]+/.test(pathname)}
+          label="Workout"
+          pendingLabel="Opening"
+          variant="nav"
+        />
+        {navItems.slice(1).map((item) => (
           <Link
             aria-current={item.match(pathname) ? "page" : undefined}
             className="appShellNavLink"

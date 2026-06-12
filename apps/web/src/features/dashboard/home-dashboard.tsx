@@ -5,13 +5,16 @@ import type { AuthUser } from "../auth/auth-types";
 import { CockpitErrorState, CockpitScreenContainer } from "../../shared/ui/cockpit";
 import {
   formatDateTime,
+  performanceFromData,
   useDashboardData,
   weeklyVolumeBars
 } from "./dashboard-data";
 import type { HomeStat } from "./dashboard-types";
+import { HomeBodyVisual } from "./home-body-visual";
 import { HomeHeroStage } from "./home-hero-stage";
 import { HomeSessionCta } from "./home-session-cta";
 import { HomeStatsPanel } from "./home-stats-panel";
+import { PreviousSessionsStrip } from "./previous-sessions-strip";
 
 interface HomeDashboardProps {
   user: AuthUser;
@@ -21,6 +24,19 @@ export function HomeDashboard({ user }: HomeDashboardProps): ReactNode {
   const { data, error, isLoading } = useDashboardData();
   const activeWorkout = data.workouts.find((workout) => workout.isOpen) ?? null;
   const completedSessions = data.workouts.filter((workout) => !workout.isOpen);
+  const performanceSignals = performanceFromData(
+    data.completedExercises,
+    data.exerciseSummaries
+  );
+  const performanceItems =
+    performanceSignals.length > 0
+      ? performanceSignals.map((signal) => ({
+          detail: signal.detail,
+          id: signal.id,
+          label: cockpitLabel(signal.name),
+          value: signal.value
+        }))
+      : personalBestPlaceholders;
   const volumeBars = weeklyVolumeBars(data.weeklyVolume);
   const homeTitle = activeWorkout ? "RESUME_SESSION" : "START_SESSION";
   const homeSummary = activeWorkout
@@ -33,14 +49,24 @@ export function HomeDashboard({ user }: HomeDashboardProps): ReactNode {
     <CockpitScreenContainer className="homeDashboard" width="wide">
       <section className="homeDashboardScene" aria-labelledby="home-dashboard-title">
         <HomeHeroStage
-          action={<HomeSessionCta activeWorkout={activeWorkout} />}
+          bottomRail={
+            <>
+              <PreviousSessionsStrip
+                isLoading={isLoading}
+                workouts={completedSessions}
+              />
+              <HomeSessionCta activeWorkout={activeWorkout} />
+            </>
+          }
+          centerVisual={<HomeBodyVisual />}
           leftPanel={
             <HomeStatsPanel
               anchor="left"
               emptyMessage="Choose three tracked lifts later to activate this panel."
               emptyTitle="PB_LIFTS_NOT_CONFIGURED"
               heading="PERFORMANCE_PB"
-              items={personalBestPlaceholders}
+              isLoading={isLoading}
+              items={performanceItems}
             />
           }
           rightTopPanel={
@@ -79,6 +105,10 @@ export function HomeDashboard({ user }: HomeDashboardProps): ReactNode {
       ) : null}
     </CockpitScreenContainer>
   );
+}
+
+function cockpitLabel(value: string): string {
+  return value.trim().toUpperCase().replace(/[^A-Z0-9]+/g, "_");
 }
 
 const personalBestPlaceholders: HomeStat[] = [

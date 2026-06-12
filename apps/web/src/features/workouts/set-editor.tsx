@@ -31,9 +31,11 @@ export function AddSetForm({
 }: AddSetFormProps): ReactNode {
   const [isPending, startTransition] = useTransition();
   const [fieldErrors, setFieldErrors] = useState<SetFieldErrors>({});
+  const [savedMessage, setSavedMessage] = useState<string | null>(null);
 
   function handleDraftChange(field: SetDraftField, value: string): void {
     setFieldErrors({});
+    setSavedMessage(null);
     onDraftChange(field, value);
   }
 
@@ -58,6 +60,7 @@ export function AddSetForm({
       }
 
       onSetSaved(result.data.set);
+      setSavedMessage(`SET_${result.data.set.setOrder}_SAVED`);
       await onRefresh();
       focusPrimarySetInput(form);
     });
@@ -66,7 +69,7 @@ export function AddSetForm({
   return (
     <form className="setForm" onSubmit={handleSubmit} noValidate>
       <div className="currentSetHeading">
-        <span>Current set</span>
+        <span>CURRENT_SET</span>
       </div>
       <SetFields
         draftValues={draft.values}
@@ -74,8 +77,9 @@ export function AddSetForm({
         onDraftChange={handleDraftChange}
       />
       <button className="primaryAction saveSetAction" type="submit" disabled={isPending}>
-        Save set
+        {isPending ? "SAVING" : "SAVE_SET"}
       </button>
+      {savedMessage ? <p className="setSavedSignal">{savedMessage}</p> : null}
     </form>
   );
 }
@@ -114,6 +118,12 @@ export function EditableSetRow({
   }
 
   function handleDelete(): void {
+    const confirmed = window.confirm(`Delete set ${set.setOrder}?`);
+
+    if (!confirmed) {
+      return;
+    }
+
     startTransition(async () => {
       const result = await deleteSet(set.id);
 
@@ -141,7 +151,7 @@ export function EditableSetRow({
             onClick={() => setIsEditing(true)}
             disabled={isPending}
           >
-            Edit
+            EDIT
           </button>
           <button
             className="dangerAction"
@@ -149,7 +159,7 @@ export function EditableSetRow({
             onClick={handleDelete}
             disabled={isPending}
           >
-            Delete
+            DELETE
           </button>
         </div>
       </div>
@@ -161,7 +171,7 @@ export function EditableSetRow({
       <span className="setOrder">{set.setOrder}</span>
       <SetFields fieldErrors={fieldErrors} set={set} />
       <button className="smallAction" type="submit" disabled={isPending}>
-        Save
+        SAVE
       </button>
       <button
         className="smallAction"
@@ -169,10 +179,10 @@ export function EditableSetRow({
         onClick={() => setIsEditing(false)}
         disabled={isPending}
       >
-        Cancel
+        CANCEL
       </button>
       <button className="dangerAction" type="button" onClick={handleDelete} disabled={isPending}>
-        Delete
+        DELETE
       </button>
     </form>
   );
