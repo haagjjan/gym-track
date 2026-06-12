@@ -12,6 +12,7 @@ import "../features/dashboard/dashboard-panels.css";
 import "../features/workouts/workout.css";
 import "../features/workouts/workout-forms.css";
 import "../features/workouts/workout-history.css";
+import "../features/workouts/workout-start.css";
 
 export const metadata: Metadata = {
   title: "Gym Progress Tracker",
