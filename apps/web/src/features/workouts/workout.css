@@ -536,6 +536,47 @@
   color: var(--cockpit-color-text);
 }
 
+.workoutInsertCommand {
+  align-items: center;
+  background:
+    linear-gradient(90deg, rgba(0, 219, 231, 0.08), transparent 66%),
+    rgba(19, 19, 19, 0.72);
+  border: 1px solid rgba(0, 219, 231, 0.18);
+  border-radius: var(--cockpit-radius-lg);
+  display: flex;
+  gap: var(--cockpit-space-4);
+  justify-content: space-between;
+  min-width: 0;
+  padding: var(--cockpit-space-4);
+}
+
+.workoutInsertCommand p,
+.workoutInsertCommand span {
+  margin: 0;
+}
+
+.workoutInsertCommand p {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.workoutInsertCommand span {
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-body);
+  font-size: 0.86rem;
+}
+
+.workoutInsertCommand--locked {
+  border-color: rgba(132, 148, 149, 0.28);
+}
+
+.insertExerciseAction {
+  min-width: 176px;
+}
+
 .workoutLogger .sessionExerciseList {
   gap: var(--cockpit-space-4);
   grid-template-columns: minmax(0, 1fr);
@@ -620,6 +661,18 @@
   border: 1px solid rgba(0, 219, 231, 0.28);
   color: var(--cockpit-color-cyan-soft);
   font-family: var(--cockpit-font-body);
+}
+
+.readOnlySessionNotice {
+  background: rgba(132, 148, 149, 0.08);
+  border: 1px solid rgba(132, 148, 149, 0.24);
+  border-radius: var(--cockpit-radius-md);
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin: 0;
+  padding: var(--cockpit-space-3);
 }
 
 .workoutLogger .smallAction,
@@ -886,6 +939,88 @@
   color: var(--cockpit-color-text-muted);
 }
 
+.exerciseInsertOverlay {
+  align-items: stretch;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(10px);
+  display: grid;
+  inset: 0;
+  justify-items: end;
+  padding: var(--cockpit-space-5);
+  position: fixed;
+  z-index: 100;
+}
+
+.exerciseInsertDialog {
+  background:
+    linear-gradient(180deg, rgba(0, 219, 231, 0.08), transparent 38%),
+    rgba(10, 10, 10, 0.96);
+  border: 1px solid rgba(0, 219, 231, 0.36);
+  border-radius: var(--cockpit-radius-lg);
+  box-shadow:
+    0 0 32px rgba(0, 242, 255, 0.18),
+    0 26px 80px rgba(0, 0, 0, 0.54);
+  color: var(--cockpit-color-text);
+  display: grid;
+  gap: var(--cockpit-space-4);
+  max-height: calc(100vh - 40px);
+  min-width: 0;
+  overflow: auto;
+  padding: var(--cockpit-space-5);
+  width: min(640px, 100%);
+}
+
+.exerciseInsertHeader {
+  align-items: start;
+  border-block-end: 1px solid rgba(0, 219, 231, 0.18);
+  display: grid;
+  gap: var(--cockpit-space-4);
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding-bottom: var(--cockpit-space-4);
+}
+
+.exerciseInsertHeader p,
+.exerciseInsertHeader h2,
+.exerciseInsertHeader span {
+  margin: 0;
+}
+
+.exerciseInsertHeader p {
+  color: var(--cockpit-color-cyan-strong);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.exerciseInsertHeader h2 {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-heading);
+  font-size: 1.7rem;
+  line-height: 1.1;
+  margin-top: var(--cockpit-space-1);
+}
+
+.exerciseInsertHeader span {
+  color: var(--cockpit-color-text-muted);
+  display: block;
+  font-family: var(--cockpit-font-body);
+  margin-top: var(--cockpit-space-2);
+}
+
+.exerciseInsertClose {
+  min-width: 92px;
+}
+
+.exerciseInsertDialog .createExerciseForm {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.exerciseInsertDialog .createExerciseForm .compactField:first-child,
+.exerciseInsertDialog .createExerciseForm .secondaryAction {
+  grid-column: 1 / -1;
+}
+
 @media (max-width: 1120px) {
   .workoutCommandHeader,
   .workoutLoggerLayout {
@@ -920,11 +1055,16 @@
   }
 
   .activeExerciseFocus,
+  .workoutInsertCommand,
   .workoutTimerPanel,
   .exerciseNavigator,
   .workoutLogger .exercisePicker,
   .workoutEmptyExerciseState {
     padding: var(--cockpit-space-4);
+  }
+
+  .exerciseInsertOverlay {
+    padding: var(--cockpit-space-3);
   }
 }
 
@@ -935,7 +1075,35 @@
   }
 
   .workoutCompleteAction,
+  .insertExerciseAction,
   .workoutLogger .exercisePicker .secondaryAction {
     width: 100%;
+  }
+
+  .workoutInsertCommand,
+  .exerciseInsertHeader {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .workoutInsertCommand {
+    align-items: stretch;
+    display: grid;
+  }
+
+  .exerciseInsertOverlay {
+    align-items: end;
+    padding: 0;
+  }
+
+  .exerciseInsertDialog {
+    border-end-end-radius: 0;
+    border-end-start-radius: 0;
+    max-height: 92vh;
+    padding: var(--cockpit-space-4);
+    width: 100%;
+  }
+
+  .exerciseInsertDialog .createExerciseForm {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

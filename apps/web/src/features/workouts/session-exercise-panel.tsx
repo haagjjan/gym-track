@@ -9,7 +9,9 @@ import { AddSetForm, EditableSetRow } from "./set-editor";
 interface SessionExercisePanelProps {
   canMoveDown: boolean;
   canMoveUp: boolean;
+  canEdit: boolean;
   draft: SetDraft;
+  editingSetId: string | null;
   isActive: boolean;
   item: SessionExercise;
   workoutId: string;
@@ -18,6 +20,7 @@ interface SessionExercisePanelProps {
   onMoveExercise: (sessionExerciseId: string, direction: "down" | "up") => Promise<void>;
   onRefresh: () => Promise<unknown>;
   onSelectExercise: (sessionExerciseId: string) => void;
+  onSetEditChange: (setId: string | null) => void;
   onSetSaved: (sessionExerciseId: string, set: WorkoutSet) => void;
   onShowError: (message: string) => void;
 }
@@ -25,7 +28,9 @@ interface SessionExercisePanelProps {
 export function SessionExercisePanel({
   canMoveDown,
   canMoveUp,
+  canEdit,
   draft,
+  editingSetId,
   isActive,
   item,
   workoutId,
@@ -34,6 +39,7 @@ export function SessionExercisePanel({
   onMoveExercise,
   onRefresh,
   onSelectExercise,
+  onSetEditChange,
   onSetSaved,
   onShowError
 }: SessionExercisePanelProps): ReactNode {
@@ -70,24 +76,28 @@ export function SessionExercisePanel({
               OPEN
             </button>
           ) : null}
-          <MoveButton
-            disabled={!canMoveUp || isPending}
-            label="Up"
-            onClick={() => run(() => onMoveExercise(item.id, "up"))}
-          />
-          <MoveButton
-            disabled={!canMoveDown || isPending}
-            label="Down"
-            onClick={() => run(() => onMoveExercise(item.id, "down"))}
-          />
-          <button
-            className="dangerAction"
-            type="button"
-            onClick={() => run(() => onDeleteExercise(item.id))}
-            disabled={isPending}
-          >
-            Remove
-          </button>
+          {canEdit ? (
+            <>
+              <MoveButton
+                disabled={!canMoveUp || isPending}
+                label="Up"
+                onClick={() => run(() => onMoveExercise(item.id, "up"))}
+              />
+              <MoveButton
+                disabled={!canMoveDown || isPending}
+                label="Down"
+                onClick={() => run(() => onMoveExercise(item.id, "down"))}
+              />
+              <button
+                className="dangerAction"
+                type="button"
+                onClick={() => run(() => onDeleteExercise(item.id))}
+                disabled={isPending}
+              >
+                REMOVE
+              </button>
+            </>
+          ) : null}
         </div>
       </header>
 
@@ -103,8 +113,12 @@ export function SessionExercisePanel({
           <div className="setList" aria-label={`${item.exercise.name} previous sets`}>
             {item.sets.map((set) => (
               <EditableSetRow
+                canEdit={canEdit}
+                isEditing={editingSetId === set.id}
                 key={set.id}
+                onCancelEdit={() => onSetEditChange(null)}
                 set={set}
+                onStartEdit={onSetEditChange}
                 onRefresh={onRefresh}
                 onShowError={onShowError}
               />
@@ -114,15 +128,19 @@ export function SessionExercisePanel({
             ) : null}
           </div>
 
-          <AddSetForm
-            draft={draft}
-            sessionExerciseId={item.id}
-            workoutId={workoutId}
-            onDraftChange={(field, value) => onDraftChange(item.id, field, value)}
-            onRefresh={onRefresh}
-            onSetSaved={(set) => onSetSaved(item.id, set)}
-            onShowError={onShowError}
-          />
+          {canEdit ? (
+            <AddSetForm
+              draft={draft}
+              sessionExerciseId={item.id}
+              workoutId={workoutId}
+              onDraftChange={(field, value) => onDraftChange(item.id, field, value)}
+              onRefresh={onRefresh}
+              onSetSaved={(set) => onSetSaved(item.id, set)}
+              onShowError={onShowError}
+            />
+          ) : (
+            <p className="readOnlySessionNotice">SESSION_ARCHIVED_READ_ONLY</p>
+          )}
         </>
       ) : null}
     </article>

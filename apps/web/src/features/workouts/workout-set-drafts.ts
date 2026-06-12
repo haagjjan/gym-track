@@ -30,7 +30,7 @@ export function createDraftFromSet(set: WorkoutSet): SetDraft {
       reps: String(set.reps),
       restTimeSeconds: set.restTimeSeconds === null ? "" : String(set.restTimeSeconds),
       rir: String(set.rir),
-      setType: set.setType,
+      setType: "working",
       weightKg: set.weightKg
     }
   };

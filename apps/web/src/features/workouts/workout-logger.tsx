@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { addSessionExercise, deleteSessionExercise, endWorkout, getWorkout, reorderSessionExercises } from "./workout-api";
-import { ExercisePicker } from "./exercise-picker";
+import { ExerciseInsertDialog } from "./exercise-insert-dialog";
 import { SessionExercisePanel } from "./session-exercise-panel";
 import { useSetDrafts } from "./use-set-drafts";
 import type { SessionExercise, WorkoutDetail, WorkoutSet } from "./workout-types";
@@ -20,6 +20,8 @@ export function WorkoutLogger({ workoutId }: WorkoutLoggerProps): ReactNode {
   const [isLoading, setIsLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [isInsertDialogOpen, setIsInsertDialogOpen] = useState(false);
+  const [editingSetId, setEditingSetId] = useState<string | null>(null);
   const { clearSetDraft, getSetDraft, handleDraftChange, handleSetSaved } = useSetDrafts(workout);
 
   const refreshWorkout = useCallback(async (): Promise<WorkoutDetail | null> => {
@@ -68,6 +70,13 @@ export function WorkoutLogger({ workoutId }: WorkoutLoggerProps): ReactNode {
     return () => controller.abort();
   }, [workoutId]);
 
+  useEffect(() => {
+    if (workout && !workout.isOpen) {
+      setEditingSetId(null);
+      setIsInsertDialogOpen(false);
+    }
+  }, [workout]);
+
   const totalSets = useMemo(
     () => workout?.exercises.reduce((total, exercise) => total + exercise.sets.length, 0) ?? 0,
     [workout]
@@ -113,10 +122,17 @@ export function WorkoutLogger({ workoutId }: WorkoutLoggerProps): ReactNode {
 
       setWorkout(sortedWorkout);
       setActiveSessionExerciseId((current) => chooseActiveExerciseId(sortedWorkout, current));
+      setEditingSetId(null);
+      setIsInsertDialogOpen(false);
     });
   }
 
   async function handleAddExercise(exerciseId: string): Promise<boolean> {
+    if (workout && !workout.isOpen) {
+      setError("This workout is complete and cannot be edited.");
+      return false;
+    }
+
     setError(null);
     const result = await addSessionExercise(workoutId, exerciseId);
 
@@ -130,12 +146,18 @@ export function WorkoutLogger({ workoutId }: WorkoutLoggerProps): ReactNode {
 
     if (newestExercise) {
       setActiveSessionExerciseId(newestExercise.id);
+      setEditingSetId(null);
     }
 
     return true;
   }
 
   async function handleDeleteExercise(sessionExerciseId: string): Promise<void> {
+    if (!workout?.isOpen) {
+      setError("This workout is complete and cannot be edited.");
+      return;
+    }
+
     const exerciseName =
       workout?.exercises.find((exercise) => exercise.id === sessionExerciseId)?.exercise.name ??
       "this exercise";
@@ -156,6 +178,7 @@ export function WorkoutLogger({ workoutId }: WorkoutLoggerProps): ReactNode {
 
     const refreshedWorkout = await refreshWorkout();
     clearSetDraft(sessionExerciseId);
+    setEditingSetId(null);
 
     if (activeSessionExerciseId === sessionExerciseId) {
       setActiveSessionExerciseId(chooseActiveExerciseId(refreshedWorkout, fallbackExerciseId));
@@ -167,6 +190,11 @@ export function WorkoutLogger({ workoutId }: WorkoutLoggerProps): ReactNode {
     direction: "down" | "up"
   ): Promise<void> {
     if (!workout) {
+      return;
+    }
+
+    if (!workout.isOpen) {
+      setError("This workout is complete and cannot be edited.");
       return;
     }
 
@@ -190,6 +218,12 @@ export function WorkoutLogger({ workoutId }: WorkoutLoggerProps): ReactNode {
     }
 
     await refreshWorkout();
+    setEditingSetId(null);
+  }
+
+  function handleSelectExercise(sessionExerciseId: string): void {
+    setActiveSessionExerciseId(sessionExerciseId);
+    setEditingSetId(null);
   }
 
   return (
@@ -239,8 +273,11 @@ export function WorkoutLogger({ workoutId }: WorkoutLoggerProps): ReactNode {
         <div className="workoutLoggerLayout">
           <section className="workoutMissionDeck" aria-label="Active workout logging">
             <ActiveExerciseFocus activeExercise={activeExercise} />
-
-            <ExercisePicker onAddExercise={handleAddExercise} />
+            <InsertExerciseCommand
+              canInsert={workout.isOpen}
+              hasExercises={workout.exercises.length > 0}
+              onOpen={() => setIsInsertDialogOpen(true)}
+            />
 
             <section className="sessionExerciseList" aria-label="Logged exercises">
               {workout.exercises.map((item, index) => (
@@ -248,7 +285,9 @@ export function WorkoutLogger({ workoutId }: WorkoutLoggerProps): ReactNode {
                   isActive={item.id === activeSessionExerciseId}
                   canMoveDown={index < workout.exercises.length - 1}
                   canMoveUp={index > 0}
+                  canEdit={workout.isOpen}
                   draft={getSetDraft(item.id)}
+                  editingSetId={editingSetId}
                   item={item}
                   key={item.id}
                   workoutId={workout.id}
@@ -256,7 +295,8 @@ export function WorkoutLogger({ workoutId }: WorkoutLoggerProps): ReactNode {
                   onDraftChange={handleDraftChange}
                   onMoveExercise={handleMoveExercise}
                   onRefresh={refreshWorkout}
-                  onSelectExercise={setActiveSessionExerciseId}
+                  onSelectExercise={handleSelectExercise}
+                  onSetEditChange={setEditingSetId}
                   onSetSaved={handleSetSaved}
                   onShowError={setError}
                 />
@@ -265,6 +305,15 @@ export function WorkoutLogger({ workoutId }: WorkoutLoggerProps): ReactNode {
                 <div className="workoutEmptyExerciseState">
                   <p>NO_EXERCISES_INSERTED</p>
                   <span>Movement queue standing by.</span>
+                  {workout.isOpen ? (
+                    <button
+                      className="primaryAction insertExerciseAction"
+                      type="button"
+                      onClick={() => setIsInsertDialogOpen(true)}
+                    >
+                      INSERT_FIRST_EXERCISE
+                    </button>
+                  ) : null}
                 </div>
               ) : null}
             </section>
@@ -290,6 +339,12 @@ export function WorkoutLogger({ workoutId }: WorkoutLoggerProps): ReactNode {
           </aside>
         </div>
       ) : null}
+
+      <ExerciseInsertDialog
+        isOpen={isInsertDialogOpen && Boolean(workout?.isOpen)}
+        onAddExercise={handleAddExercise}
+        onClose={() => setIsInsertDialogOpen(false)}
+      />
     </main>
   );
 }
@@ -329,6 +384,43 @@ function ActiveExerciseFocus({
         <span>{formatSetCount(activeExercise.sets.length)}</span>
         <span>{lastSet ? formatSetHeadline(lastSet) : "NO_SETS_SAVED"}</span>
       </div>
+    </section>
+  );
+}
+
+function InsertExerciseCommand({
+  canInsert,
+  hasExercises,
+  onOpen
+}: {
+  canInsert: boolean;
+  hasExercises: boolean;
+  onOpen: () => void;
+}): ReactNode {
+  if (!canInsert) {
+    return (
+      <section className="workoutInsertCommand workoutInsertCommand--locked">
+        <div>
+          <p>SESSION_LOCKED</p>
+          <span>This completed session is read-only.</span>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="workoutInsertCommand" aria-label="Insert exercise">
+      <div>
+        <p>{hasExercises ? "NEXT_STATION" : "FIRST_STATION"}</p>
+        <span>
+          {hasExercises
+            ? "Insert the next exercise when you are ready to move on."
+            : "Add the first exercise before logging sets."}
+        </span>
+      </div>
+      <button className="secondaryAction insertExerciseAction" type="button" onClick={onOpen}>
+        INSERT_EXERCISE
+      </button>
     </section>
   );
 }

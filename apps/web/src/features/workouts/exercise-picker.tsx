@@ -1,7 +1,7 @@
 "use client";
 
 import type { FormEvent, ReactNode } from "react";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import type { ZodError } from "zod";
 import {
   createExercise,
@@ -13,7 +13,9 @@ import { createExerciseFormSchema } from "./workout-form-schemas";
 import type { Exercise, ExerciseNameReviewDetails, MuscleGroup } from "./workout-types";
 
 interface ExercisePickerProps {
+  autoFocus?: boolean;
   onAddExercise: (exerciseId: string) => Promise<boolean>;
+  onInserted?: () => void;
 }
 
 type ExerciseCreateField = "equipment" | "exerciseType" | "name" | "primaryMuscleGroupId";
@@ -31,7 +33,11 @@ const initialCreateValues: CreateExerciseValues = {
   primaryMuscleGroupId: ""
 };
 
-export function ExercisePicker({ onAddExercise }: ExercisePickerProps): ReactNode {
+export function ExercisePicker({
+  autoFocus = false,
+  onAddExercise,
+  onInserted
+}: ExercisePickerProps): ReactNode {
   const [search, setSearch] = useState("");
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [muscleGroups, setMuscleGroups] = useState<MuscleGroup[]>([]);
@@ -44,6 +50,13 @@ export function ExercisePicker({ onAddExercise }: ExercisePickerProps): ReactNod
     details: ExerciseNameReviewDetails;
     isBlocked: boolean;
   } | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (autoFocus) {
+      searchInputRef.current?.focus();
+    }
+  }, [autoFocus]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -68,7 +81,11 @@ export function ExercisePicker({ onAddExercise }: ExercisePickerProps): ReactNod
   function handleAdd(exerciseId: string): void {
     setError(null);
     startTransition(async () => {
-      await onAddExercise(exerciseId);
+      const added = await onAddExercise(exerciseId);
+
+      if (added) {
+        onInserted?.();
+      }
     });
   }
 
@@ -136,6 +153,7 @@ export function ExercisePicker({ onAddExercise }: ExercisePickerProps): ReactNod
       setCreateValues(initialCreateValues);
       setNameReview(null);
       setSearch(created.data.exercise.name);
+      onInserted?.();
     });
   }
 
@@ -154,6 +172,7 @@ export function ExercisePicker({ onAddExercise }: ExercisePickerProps): ReactNod
         <label className="compactField">
           <span>Exercise</span>
           <input
+            ref={searchInputRef}
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
