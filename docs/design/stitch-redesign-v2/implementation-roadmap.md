@@ -406,34 +406,42 @@ Acceptance criteria:
 
 ---
 
-## Phase 7 — Insert exercise flow
+# Phase 7 — Insert Exercise Flow + Logging Edit-State Hardening
 
-Goal:
+## Goal
 
-Separate exercise selection from the active logging UI.
+Separate exercise selection from the active workout logging UI.
 
-Tasks:
+The active workout screen should only show the current session exercises and logging controls.  
+Adding a new exercise should happen through a dedicated insert flow: drawer, modal, or separate overlay screen.
 
-- Create insert exercise drawer/modal/screen.
-- Add search-first exercise picker.
-- Add recent exercises.
-- Add muscle/category filter if already available.
-- Add compact exercise rows.
-- Add create-custom-exercise as secondary action.
-- After selection, add exercise to current session and focus it.
+This phase should also harden the logging edit behavior so that only the intended set is editable at a time.
 
-Non-goals:
+---
 
-- No full exercise database overhaul.
-- No recommendation system.
-- No huge grid on active workout screen.
+## Problem
 
-Acceptance criteria:
+Currently, adding exercises risks cluttering the active workout screen with large exercise grids, filters, database-like views, or creation forms.
 
-- Adding an exercise is fast.
-- Active workout screen stays clean.
-- Search empty state is clear.
-- Custom exercise creation is not the primary path.
+The workout logger must stay focused on live logging.
+
+There are also edit-state risks:
+
+- closed sessions may still feel editable
+- old sets may be too easy to accidentally edit
+- multiple sets may be editable at once
+- creating a new set may copy too much data from the previous set
+
+This phase should make the flow stricter and safer.
+
+---
+
+## UX Concept
+
+The active workout screen has one clear secondary action:
+
+```text
++ Add exercise
 
 ---
 
