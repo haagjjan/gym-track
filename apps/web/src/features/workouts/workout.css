@@ -356,3 +356,586 @@
     grid-column: span 2;
   }
 }
+
+.workoutLogger {
+  gap: var(--cockpit-space-6);
+  min-height: 100%;
+  padding: var(--cockpit-space-8);
+}
+
+.workoutCommandHeader,
+.workoutLoggerLayout,
+.workoutAlert {
+  margin-inline: auto;
+  width: min(100%, 1360px);
+}
+
+.workoutCommandHeader {
+  align-items: end;
+  border-left: 4px solid var(--cockpit-color-cyan-strong);
+  display: grid;
+  gap: var(--cockpit-space-5);
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding-left: var(--cockpit-space-6);
+}
+
+.workoutCommandHeader h1,
+.workoutCommandHeader p {
+  margin: 0;
+}
+
+.workoutCommandHeader h1 {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-heading);
+  font-size: 3rem;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+  text-shadow: 0 0 22px rgba(225, 253, 255, 0.22);
+}
+
+.workoutCommandHeader .eyebrow {
+  color: var(--cockpit-color-cyan-strong);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.workoutCommandHeader .leadText {
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-body);
+  line-height: 1.55;
+  margin-top: var(--cockpit-space-2);
+}
+
+.workoutCommandHeader__actions {
+  align-items: end;
+  display: grid;
+  gap: var(--cockpit-space-3);
+  justify-items: end;
+}
+
+.workoutLiveBadge {
+  align-items: center;
+  border: 1px solid rgba(0, 219, 231, 0.28);
+  border-radius: 999px;
+  color: var(--cockpit-color-cyan-soft);
+  display: inline-flex;
+  font-family: var(--cockpit-font-body);
+  font-size: 0.78rem;
+  gap: var(--cockpit-space-2);
+  min-height: 32px;
+  padding: 0 var(--cockpit-space-3);
+}
+
+.workoutLiveBadge span {
+  background: var(--cockpit-color-green);
+  border-radius: 999px;
+  box-shadow: 0 0 10px rgba(81, 251, 55, 0.58);
+  height: 8px;
+  width: 8px;
+}
+
+.workoutLiveBadge[data-status="closed"] span {
+  background: var(--cockpit-color-text-muted);
+  box-shadow: none;
+}
+
+.workoutCompleteAction {
+  min-width: 190px;
+}
+
+.workoutLoggerLayout {
+  align-items: start;
+  display: grid;
+  gap: var(--cockpit-space-5);
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+}
+
+.workoutMissionDeck {
+  display: grid;
+  gap: var(--cockpit-space-5);
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+}
+
+.workoutLogger .pageNav {
+  gap: var(--cockpit-space-2);
+  margin-bottom: var(--cockpit-space-4);
+}
+
+.workoutLogger .backLink {
+  border: 1px solid rgba(0, 219, 231, 0.16);
+  border-radius: var(--cockpit-radius-md);
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.75rem;
+  min-height: 34px;
+  padding: var(--cockpit-space-2) var(--cockpit-space-3);
+  text-transform: uppercase;
+}
+
+.workoutLogger .backLink:hover,
+.workoutLogger .backLink:focus-visible {
+  border-color: var(--cockpit-color-cyan);
+  box-shadow: var(--cockpit-glow-cyan);
+  color: var(--cockpit-color-cyan-soft);
+  outline: 2px solid transparent;
+}
+
+.activeExerciseFocus {
+  background:
+    radial-gradient(circle at 86% 30%, rgba(0, 242, 255, 0.18), transparent 28%),
+    linear-gradient(90deg, rgba(0, 219, 231, 0.12), rgba(0, 0, 0, 0.28));
+  border: 1px solid rgba(0, 219, 231, 0.24);
+  border-radius: var(--cockpit-radius-lg);
+  display: grid;
+  gap: var(--cockpit-space-3);
+  min-width: 0;
+  padding: var(--cockpit-space-6);
+}
+
+.activeExerciseFocus p,
+.activeExerciseFocus h2,
+.activeExerciseFocus span {
+  margin: 0;
+}
+
+.activeExerciseFocus p {
+  color: var(--cockpit-color-cyan-strong);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.activeExerciseFocus h2 {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-heading);
+  font-size: 2.1rem;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.activeExerciseFocus__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cockpit-space-2);
+}
+
+.activeExerciseFocus__meta span {
+  border: 1px solid rgba(225, 253, 255, 0.16);
+  color: rgba(225, 253, 255, 0.82);
+  font-family: var(--cockpit-font-body);
+  font-size: 0.72rem;
+  padding: var(--cockpit-space-2) var(--cockpit-space-3);
+}
+
+.activeExerciseFocus--empty h2 {
+  color: var(--cockpit-color-text);
+}
+
+.workoutLogger .sessionExerciseList {
+  gap: var(--cockpit-space-4);
+  grid-template-columns: minmax(0, 1fr);
+  margin-inline: 0;
+  width: 100%;
+}
+
+.workoutLogger .sessionExercise {
+  background:
+    linear-gradient(90deg, rgba(0, 219, 231, 0.05), transparent 60%),
+    rgba(19, 19, 19, 0.72);
+  border: 1px solid rgba(0, 219, 231, 0.16);
+  border-radius: var(--cockpit-radius-lg);
+  color: var(--cockpit-color-text);
+  gap: var(--cockpit-space-4);
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  padding: var(--cockpit-space-5);
+  width: 100%;
+}
+
+.workoutLogger .sessionExerciseActive {
+  background:
+    radial-gradient(circle at 96% 12%, rgba(0, 242, 255, 0.14), transparent 28%),
+    linear-gradient(90deg, rgba(0, 219, 231, 0.1), rgba(19, 19, 19, 0.82));
+  border-color: rgba(0, 219, 231, 0.5);
+  box-shadow:
+    var(--cockpit-glow-cyan),
+    0 18px 44px rgba(0, 0, 0, 0.26);
+}
+
+.workoutLogger .sessionExerciseHeader h2,
+.workoutLogger .sessionExerciseHeader p {
+  margin: 0;
+}
+
+.workoutLogger .sessionExerciseHeader h2 {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-heading);
+  font-size: 1.35rem;
+}
+
+.workoutLogger .sessionExerciseHeader p {
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-body);
+  margin-top: var(--cockpit-space-1);
+}
+
+.workoutLogger .positionBadge,
+.workoutLogger .setOrder {
+  background: rgba(0, 219, 231, 0.08);
+  border: 1px solid rgba(0, 219, 231, 0.38);
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-body);
+}
+
+.workoutLogger .exerciseSummary {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.workoutLogger .exerciseSummary div,
+.workoutLogger .activeExerciseMeta {
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(0, 219, 231, 0.14);
+  border-radius: var(--cockpit-radius-md);
+}
+
+.workoutLogger .exerciseSummary dt,
+.workoutLogger .activeExerciseMeta span {
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-heading);
+}
+
+.workoutLogger .exerciseSummary dd,
+.workoutLogger .activeExerciseMeta strong {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-body);
+}
+
+.workoutLogger .draftIndicator {
+  background: rgba(0, 219, 231, 0.08);
+  border: 1px solid rgba(0, 219, 231, 0.28);
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-body);
+}
+
+.workoutLogger .smallAction,
+.workoutLogger .dangerAction,
+.workoutLogger .primaryAction,
+.workoutLogger .secondaryAction {
+  border-radius: var(--cockpit-radius-md);
+  font-family: var(--cockpit-font-heading);
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.workoutLogger .smallAction,
+.workoutLogger .secondaryAction {
+  background: rgba(19, 19, 19, 0.74);
+  border: 1px solid rgba(132, 148, 149, 0.52);
+  color: var(--cockpit-color-cyan-soft);
+}
+
+.workoutLogger .primaryAction {
+  background: var(--cockpit-color-cyan-strong);
+  border: 1px solid var(--cockpit-color-cyan-strong);
+  color: #002022;
+}
+
+.workoutLogger .dangerAction {
+  background: rgba(147, 0, 10, 0.42);
+  border: 1px solid rgba(255, 180, 171, 0.56);
+  color: #ffdad6;
+}
+
+.workoutLogger .smallAction:hover:not(:disabled),
+.workoutLogger .smallAction:focus-visible,
+.workoutLogger .secondaryAction:hover:not(:disabled),
+.workoutLogger .secondaryAction:focus-visible,
+.workoutLogger .primaryAction:hover:not(:disabled),
+.workoutLogger .primaryAction:focus-visible {
+  box-shadow: var(--cockpit-glow-cyan);
+  outline: 2px solid transparent;
+}
+
+.workoutLogger .dangerAction:hover:not(:disabled),
+.workoutLogger .dangerAction:focus-visible {
+  box-shadow: var(--cockpit-glow-red);
+  outline: 2px solid transparent;
+}
+
+.workoutTelemetryPanel {
+  display: grid;
+  gap: var(--cockpit-space-4);
+  min-width: 0;
+  position: sticky;
+  top: var(--cockpit-space-5);
+}
+
+.workoutTimerPanel,
+.exerciseNavigator,
+.workoutLogger .exercisePicker,
+.workoutEmptyExerciseState {
+  background:
+    linear-gradient(90deg, rgba(0, 219, 231, 0.08), transparent 70%),
+    rgba(28, 27, 27, 0.82);
+  border: 1px solid rgba(0, 219, 231, 0.2);
+  border-radius: var(--cockpit-radius-lg);
+  color: var(--cockpit-color-text);
+  min-width: 0;
+  padding: var(--cockpit-space-5);
+}
+
+.workoutTimerPanel {
+  display: grid;
+  gap: var(--cockpit-space-2);
+}
+
+.workoutTimerPanel span,
+.exerciseNavigator__header span,
+.workoutLogger .metric span {
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.workoutTimerPanel strong {
+  color: var(--cockpit-color-green);
+  font-family: var(--cockpit-font-body);
+  font-size: 2.2rem;
+  line-height: 1;
+}
+
+.workoutTimerPanel small {
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-body);
+}
+
+.workoutLogger .workoutStats {
+  display: grid;
+  gap: var(--cockpit-space-3);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+}
+
+.workoutLogger .metric {
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(0, 219, 231, 0.18);
+  border-radius: var(--cockpit-radius-md);
+  display: grid;
+  gap: var(--cockpit-space-1);
+  min-width: 0;
+  padding: var(--cockpit-space-4);
+}
+
+.workoutLogger .metric strong {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-body);
+  font-size: 1.15rem;
+  overflow-wrap: anywhere;
+}
+
+.exerciseNavigator {
+  display: grid;
+  gap: var(--cockpit-space-3);
+}
+
+.exerciseNavigator__header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.exerciseNavigator__header strong {
+  color: var(--cockpit-color-green);
+  font-family: var(--cockpit-font-body);
+}
+
+.exerciseNavigator__list {
+  display: grid;
+  gap: var(--cockpit-space-2);
+}
+
+.exerciseNavigator__item {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(0, 219, 231, 0.16);
+  border-radius: var(--cockpit-radius-md);
+  color: var(--cockpit-color-text);
+  cursor: pointer;
+  display: grid;
+  gap: var(--cockpit-space-2);
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: var(--cockpit-space-3);
+  text-align: left;
+}
+
+.exerciseNavigator__item[aria-current="true"] {
+  background: rgba(0, 219, 231, 0.12);
+  border-color: var(--cockpit-color-cyan);
+  box-shadow: var(--cockpit-glow-cyan);
+}
+
+.exerciseNavigator__item span {
+  align-items: center;
+  border: 1px solid rgba(0, 219, 231, 0.32);
+  color: var(--cockpit-color-cyan);
+  display: inline-flex;
+  font-family: var(--cockpit-font-body);
+  font-size: 0.72rem;
+  height: 28px;
+  justify-content: center;
+  width: 28px;
+}
+
+.exerciseNavigator__item strong,
+.exerciseNavigator__item small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.exerciseNavigator__item strong {
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.86rem;
+}
+
+.exerciseNavigator__item small {
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-body);
+  font-size: 0.72rem;
+  grid-column: 2;
+}
+
+.workoutLogger .exercisePicker {
+  display: grid;
+  gap: var(--cockpit-space-4);
+  margin-inline: 0;
+  width: 100%;
+}
+
+.workoutLogger .exercisePicker::before {
+  color: var(--cockpit-color-cyan-strong);
+  content: "INSERT_EXERCISE";
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.workoutLogger .exerciseResults {
+  display: grid;
+  gap: var(--cockpit-space-2);
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.workoutLogger .exerciseOption {
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(0, 219, 231, 0.18);
+  color: var(--cockpit-color-text);
+}
+
+.workoutLogger .exerciseOption:hover,
+.workoutLogger .exerciseOption:focus-visible {
+  border-color: var(--cockpit-color-cyan);
+  box-shadow: var(--cockpit-glow-cyan);
+  outline: 2px solid transparent;
+}
+
+.workoutLogger .exerciseOption small,
+.workoutLogger .mutedText {
+  color: var(--cockpit-color-text-muted);
+}
+
+.workoutEmptyExerciseState {
+  display: grid;
+  gap: var(--cockpit-space-2);
+}
+
+.workoutEmptyExerciseState p,
+.workoutEmptyExerciseState span {
+  margin: 0;
+}
+
+.workoutEmptyExerciseState p {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-heading);
+  font-weight: 700;
+}
+
+.workoutEmptyExerciseState span {
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-body);
+}
+
+.workoutAlert {
+  background: rgba(255, 180, 171, 0.1);
+  border: 1px solid rgba(255, 180, 171, 0.32);
+  border-radius: var(--cockpit-radius-md);
+  color: #ffdad6;
+  padding: var(--cockpit-space-4);
+}
+
+.workoutAlert.mutedText {
+  background: rgba(0, 219, 231, 0.08);
+  border-color: rgba(0, 219, 231, 0.28);
+  color: var(--cockpit-color-text-muted);
+}
+
+@media (max-width: 1120px) {
+  .workoutCommandHeader,
+  .workoutLoggerLayout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .workoutCommandHeader__actions {
+    justify-items: start;
+  }
+
+  .workoutTelemetryPanel {
+    position: static;
+  }
+}
+
+@media (max-width: 760px) {
+  .workoutLogger {
+    padding: var(--cockpit-space-4);
+  }
+
+  .workoutCommandHeader {
+    border-left-width: 2px;
+    padding-left: var(--cockpit-space-4);
+  }
+
+  .workoutCommandHeader h1 {
+    font-size: 2.2rem;
+  }
+
+  .workoutLogger .workoutStats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .activeExerciseFocus,
+  .workoutTimerPanel,
+  .exerciseNavigator,
+  .workoutLogger .exercisePicker,
+  .workoutEmptyExerciseState {
+    padding: var(--cockpit-space-4);
+  }
+}
+
+@media (max-width: 480px) {
+  .workoutCommandHeader h1,
+  .activeExerciseFocus h2 {
+    font-size: 1.85rem;
+  }
+
+  .workoutCompleteAction,
+  .workoutLogger .exercisePicker .secondaryAction {
+    width: 100%;
+  }
+}

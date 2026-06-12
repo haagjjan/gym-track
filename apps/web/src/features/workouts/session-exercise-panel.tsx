@@ -67,7 +67,7 @@ export function SessionExercisePanel({
               onClick={() => onSelectExercise(item.id)}
               disabled={isPending}
             >
-              Open/Edit
+              OPEN
             </button>
           ) : null}
           <MoveButton
@@ -110,7 +110,7 @@ export function SessionExercisePanel({
               />
             ))}
             {item.sets.length === 0 ? (
-              <p className="mutedText">No sets logged yet. Save the first set below.</p>
+              <p className="mutedText">SET_BUFFER_EMPTY</p>
             ) : null}
           </div>
 
@@ -153,7 +153,7 @@ function ExerciseSummary({
           <dd>{summary.lastSetLabel}</dd>
         </div>
       </dl>
-      {hasStartedDraft ? <p className="draftIndicator">Draft set started</p> : null}
+      {hasStartedDraft ? <p className="draftIndicator">DRAFT_SET_ARMED</p> : null}
     </>
   );
 }
@@ -164,23 +164,23 @@ function summarizeExercise(item: SessionExercise): ExerciseSummaryValue {
 
   return {
     setCountLabel,
-    lastSetLabel: lastSet ? formatSetSummary(lastSet) : "No sets yet"
+    lastSetLabel: lastSet ? formatSetSummary(lastSet) : "NO_SETS_SAVED"
   };
 }
 
 function formatSetCount(count: number): string {
-  return count === 1 ? "1 set logged" : `${count} sets logged`;
+  return count === 1 ? "1_SET_LOGGED" : `${count}_SETS_LOGGED`;
 }
 
 function formatSetSummary(set: WorkoutSet): string {
-  const parts = [`Last: ${set.weightKg} kg × ${set.reps}`, `RIR ${set.rir}`];
+  const parts = [`LAST ${set.weightKg} kg x ${set.reps}`, `RIR ${set.rir}`];
 
   if (set.setType === "warmup") {
-    parts.push("warmup");
+    parts.push("WARMUP");
   }
 
   if (set.restTimeSeconds !== null) {
-    parts.push(`${set.restTimeSeconds}s rest`);
+    parts.push(`${set.restTimeSeconds}s REST`);
   }
 
   return parts.join(" · ");
@@ -203,7 +203,7 @@ function MoveButton({
       disabled={disabled}
       title={`Move ${label.toLowerCase()}`}
     >
-      {label}
+      {label.toUpperCase()}
     </button>
   );
 }
