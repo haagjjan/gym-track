@@ -190,7 +190,7 @@ export function ExercisePicker({ onAddExercise }: ExercisePickerProps): ReactNod
                   onClick={() => handleCreateValueChange("name", suggestion)}
                   disabled={isPending}
                 >
-                  Use {suggestion}
+                  USE {suggestion}
                 </button>
               ))}
             </div>
@@ -211,7 +211,7 @@ export function ExercisePicker({ onAddExercise }: ExercisePickerProps): ReactNod
               }}
               disabled={isPending}
             >
-              Create anyway
+              CREATE_ANYWAY
             </button>
           ) : null}
         </div>
@@ -230,7 +230,7 @@ export function ExercisePicker({ onAddExercise }: ExercisePickerProps): ReactNod
             <small>{exercise.primaryMuscleGroup.name}</small>
           </button>
         ))}
-        {!isLoading && exercises.length === 0 ? <p className="mutedText">No exercises found.</p> : null}
+        {!isLoading && exercises.length === 0 ? <p className="mutedText">NO_EXERCISES_FOUND</p> : null}
       </div>
 
       <form className="createExerciseForm" onSubmit={handleCreate} noValidate>
@@ -290,7 +290,7 @@ export function ExercisePicker({ onAddExercise }: ExercisePickerProps): ReactNod
           <FieldError message={fieldErrors.exerciseType} />
         </label>
         <button className="secondaryAction" type="submit" disabled={isPending}>
-          Create and add
+          CREATE_ADD
         </button>
       </form>
     </section>
