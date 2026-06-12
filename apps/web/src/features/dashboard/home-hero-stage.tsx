@@ -2,7 +2,8 @@ import type { ReactNode } from "react";
 import type { AuthUser } from "../auth/auth-types";
 
 interface HomeHeroStageProps {
-  action: ReactNode;
+  bottomRail: ReactNode;
+  centerVisual: ReactNode;
   leftPanel: ReactNode;
   rightBottomPanel: ReactNode;
   rightTopPanel: ReactNode;
@@ -14,7 +15,8 @@ interface HomeHeroStageProps {
 }
 
 export function HomeHeroStage({
-  action,
+  bottomRail,
+  centerVisual,
   leftPanel,
   rightBottomPanel,
   rightTopPanel,
@@ -44,13 +46,13 @@ export function HomeHeroStage({
 
       <div className="homeHeroStage__left">{leftPanel}</div>
 
-      <div className="homeHeroStage__reserve" aria-hidden="true" />
+      <div className="homeHeroStage__reserve">{centerVisual}</div>
 
       <div className="homeHeroStage__rightTop">{rightTopPanel}</div>
 
       <div className="homeHeroStage__rightBottom">{rightBottomPanel}</div>
 
-      <div className="homeHeroStage__action">{action}</div>
+      <div className="homeHeroStage__bottomRail">{bottomRail}</div>
     </section>
   );
 }
