@@ -1,15 +1,15 @@
 .homeHudField {
   --home-base-rotate-y: 0deg;
-  --home-pointer-rotate-x: 0deg;
-  --home-pointer-rotate-y: 0deg;
-  --home-pointer-shift-x: 0px;
-  --home-pointer-shift-y: 0px;
-  --home-pointer-x: 50%;
-  --home-pointer-y: 50%;
+  --cockpit-pointer-rotate-x: 0deg;
+  --cockpit-pointer-rotate-y: 0deg;
+  --cockpit-pointer-shift-x: 0px;
+  --cockpit-pointer-shift-y: 0px;
+  --cockpit-pointer-x: 50%;
+  --cockpit-pointer-y: 50%;
   background:
     radial-gradient(
-      circle at var(--home-pointer-x) var(--home-pointer-y),
-      rgba(0, 219, 231, 0.18),
+      circle at var(--cockpit-pointer-x) var(--cockpit-pointer-y),
+      var(--cockpit-reactive-spotlight),
       transparent 40%
     ),
     linear-gradient(90deg, rgba(0, 219, 231, 0.08), transparent 74%);
@@ -20,9 +20,9 @@
   padding: var(--cockpit-space-3) 0;
   transform:
     perspective(960px)
-    rotateY(calc(var(--home-base-rotate-y) + var(--home-pointer-rotate-y)))
-    rotateX(var(--home-pointer-rotate-x))
-    translate3d(var(--home-pointer-shift-x), var(--home-pointer-shift-y), 0);
+    rotateY(calc(var(--home-base-rotate-y) + var(--cockpit-pointer-rotate-y)))
+    rotateX(var(--cockpit-pointer-rotate-x))
+    translate3d(var(--cockpit-pointer-shift-x), var(--cockpit-pointer-shift-y), 0);
   transition:
     filter 160ms ease,
     text-shadow 160ms ease,
@@ -44,8 +44,8 @@
 
 .homeHudField:hover,
 .homeHudField:focus-within {
-  filter: drop-shadow(0 0 18px rgba(0, 219, 231, 0.22));
-  text-shadow: 0 0 12px rgba(0, 219, 231, 0.34);
+  filter: drop-shadow(0 0 18px rgba(0, 219, 231, 0.2));
+  text-shadow: var(--cockpit-reactive-text-glow);
 }
 
 .homeHudField__header {
@@ -356,5 +356,12 @@
   .previousSessionsStrip__header {
     align-items: start;
     display: grid;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .homeHudField {
+    transform: none;
+    transition: none;
   }
 }
