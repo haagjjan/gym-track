@@ -1,4 +1,8 @@
-import type { PointerEvent, ReactNode } from "react";
+import type { ReactNode } from "react";
+import {
+  handleCockpitPointerLeave,
+  handleCockpitPointerMove
+} from "../../shared/ui/cockpit/cockpit-reactive";
 import type { HomeStat, VolumeBar } from "./dashboard-types";
 
 interface HomeStatsPanelProps {
@@ -27,8 +31,8 @@ export function HomeStatsPanel({
       aria-busy={isLoading}
       className="homeHudField"
       data-anchor={anchor}
-      onPointerLeave={handlePointerLeave}
-      onPointerMove={handlePointerMove}
+      onPointerLeave={handleCockpitPointerLeave}
+      onPointerMove={handleCockpitPointerMove}
     >
       <div className="homeHudField__header">
         <span aria-hidden="true" />
@@ -81,29 +85,4 @@ function barHeight(value: number, maxValue: number): number {
   }
 
   return Math.max(14, Math.round((value / maxValue) * 100));
-}
-
-function handlePointerMove(event: PointerEvent<HTMLElement>): void {
-  const target = event.currentTarget;
-  const rect = target.getBoundingClientRect();
-  const x = (event.clientX - rect.left) / rect.width - 0.5;
-  const y = (event.clientY - rect.top) / rect.height - 0.5;
-
-  target.style.setProperty("--home-pointer-x", `${(x + 0.5) * 100}%`);
-  target.style.setProperty("--home-pointer-y", `${(y + 0.5) * 100}%`);
-  target.style.setProperty("--home-pointer-rotate-x", `${(-y * 5).toFixed(2)}deg`);
-  target.style.setProperty("--home-pointer-rotate-y", `${(x * 5).toFixed(2)}deg`);
-  target.style.setProperty("--home-pointer-shift-x", `${(x * 5).toFixed(2)}px`);
-  target.style.setProperty("--home-pointer-shift-y", `${(y * 5).toFixed(2)}px`);
-}
-
-function handlePointerLeave(event: PointerEvent<HTMLElement>): void {
-  const target = event.currentTarget;
-
-  target.style.setProperty("--home-pointer-x", "50%");
-  target.style.setProperty("--home-pointer-y", "50%");
-  target.style.setProperty("--home-pointer-rotate-x", "0deg");
-  target.style.setProperty("--home-pointer-rotate-y", "0deg");
-  target.style.setProperty("--home-pointer-shift-x", "0px");
-  target.style.setProperty("--home-pointer-shift-y", "0px");
 }
