@@ -9,8 +9,8 @@ interface HomeSessionCtaProps {
 export function HomeSessionCta({ activeWorkout }: HomeSessionCtaProps): ReactNode {
   const label = activeWorkout ? "RESUME_SESSION" : "START_SESSION";
   const message = activeWorkout
-    ? "Continue the active workout already in progress."
-    : "Open a fresh workout and jump directly into logging.";
+    ? "Open mission selection and continue the active workout already in progress."
+    : "Open mission selection and launch the next session.";
 
   return (
     <section className="homeSessionCta" aria-labelledby="home-session-cta-title">
