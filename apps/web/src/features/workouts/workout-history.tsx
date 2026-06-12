@@ -1,8 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import type { FormEvent, PointerEvent, ReactNode } from "react";
+import type { FormEvent, ReactNode } from "react";
 import { useEffect, useMemo, useState, useTransition } from "react";
+import {
+  handleCockpitPointerLeave,
+  handleCockpitPointerMove
+} from "../../shared/ui/cockpit/cockpit-reactive";
 import {
   confirmWorkoutCsvImport,
   getWorkout,
@@ -241,8 +245,8 @@ function HistoryMetric({
     <div
       className="historyMetricCard"
       data-tone={tone}
-      onPointerLeave={handleHistoryPointerLeave}
-      onPointerMove={handleHistoryPointerMove}
+      onPointerLeave={handleCockpitPointerLeave}
+      onPointerMove={handleCockpitPointerMove}
     >
       <span>{label}</span>
       <strong>{value}</strong>
@@ -270,8 +274,8 @@ function WorkoutHistoryCard({
     <article
       className="historyCard"
       data-expanded={isExpanded ? "true" : "false"}
-      onPointerLeave={handleHistoryPointerLeave}
-      onPointerMove={handleHistoryPointerMove}
+      onPointerLeave={handleCockpitPointerLeave}
+      onPointerMove={handleCockpitPointerMove}
     >
       <div className="historyCardMain">
         <div className="historyGlyph" aria-hidden="true">
@@ -681,27 +685,6 @@ function formatNumber(value: number): string {
   return new Intl.NumberFormat(undefined, {
     maximumFractionDigits: 1
   }).format(value);
-}
-
-function handleHistoryPointerMove(event: PointerEvent<HTMLElement>): void {
-  const target = event.currentTarget;
-  const rect = target.getBoundingClientRect();
-  const x = (event.clientX - rect.left) / rect.width - 0.5;
-  const y = (event.clientY - rect.top) / rect.height - 0.5;
-
-  target.style.setProperty("--history-pointer-x", `${(x + 0.5) * 100}%`);
-  target.style.setProperty("--history-pointer-y", `${(y + 0.5) * 100}%`);
-  target.style.setProperty("--history-pointer-rotate-x", `${(-y * 2.4).toFixed(2)}deg`);
-  target.style.setProperty("--history-pointer-rotate-y", `${(x * 2.4).toFixed(2)}deg`);
-}
-
-function handleHistoryPointerLeave(event: PointerEvent<HTMLElement>): void {
-  const target = event.currentTarget;
-
-  target.style.setProperty("--history-pointer-x", "50%");
-  target.style.setProperty("--history-pointer-y", "50%");
-  target.style.setProperty("--history-pointer-rotate-x", "0deg");
-  target.style.setProperty("--history-pointer-rotate-y", "0deg");
 }
 
 function formatImportError(

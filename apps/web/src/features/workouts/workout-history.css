@@ -136,14 +136,14 @@
 
 .historyMetricCard,
 .historyCard {
-  --history-pointer-rotate-x: 0deg;
-  --history-pointer-rotate-y: 0deg;
-  --history-pointer-x: 50%;
-  --history-pointer-y: 50%;
+  --cockpit-pointer-rotate-x: 0deg;
+  --cockpit-pointer-rotate-y: 0deg;
+  --cockpit-pointer-x: 50%;
+  --cockpit-pointer-y: 50%;
   background:
     radial-gradient(
-      circle at var(--history-pointer-x) var(--history-pointer-y),
-      rgba(0, 219, 231, 0.2),
+      circle at var(--cockpit-pointer-x) var(--cockpit-pointer-y),
+      var(--cockpit-reactive-spotlight),
       transparent 38%
     ),
     rgba(19, 19, 19, 0.82);
@@ -152,8 +152,8 @@
   overflow: hidden;
   transform:
     perspective(1100px)
-    rotateX(var(--history-pointer-rotate-x))
-    rotateY(var(--history-pointer-rotate-y));
+    rotateX(var(--cockpit-pointer-rotate-x))
+    rotateY(var(--cockpit-pointer-rotate-y));
   transition:
     border-color 160ms ease,
     box-shadow 160ms ease,
@@ -166,7 +166,7 @@
 .historyCard:focus-within {
   border-color: rgba(0, 219, 231, 0.46);
   box-shadow:
-    var(--cockpit-glow-cyan),
+    var(--cockpit-reactive-glow),
     0 18px 44px rgba(0, 0, 0, 0.28);
 }
 
