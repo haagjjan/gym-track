@@ -33,4 +33,7 @@
   --cockpit-glow-cyan: 0 0 14px rgba(0, 219, 231, 0.32);
   --cockpit-glow-green: 0 0 14px rgba(81, 251, 55, 0.26);
   --cockpit-glow-red: 0 0 14px rgba(255, 95, 85, 0.22);
+  --cockpit-reactive-glow: 0 0 26px rgba(0, 219, 231, 0.13);
+  --cockpit-reactive-spotlight: rgba(0, 242, 255, 0.17);
+  --cockpit-reactive-text-glow: 0 0 10px rgba(0, 242, 255, 0.28);
 }
