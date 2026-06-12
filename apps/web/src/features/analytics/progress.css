@@ -158,15 +158,15 @@
 }
 
 .progressReactive {
-  --progress-pointer-rotate-x: 0deg;
-  --progress-pointer-rotate-y: 0deg;
-  --progress-pointer-x: 50%;
-  --progress-pointer-y: 50%;
+  --cockpit-pointer-rotate-x: 0deg;
+  --cockpit-pointer-rotate-y: 0deg;
+  --cockpit-pointer-x: 50%;
+  --cockpit-pointer-y: 50%;
   overflow: hidden;
   transform:
     perspective(980px)
-    rotateX(var(--progress-pointer-rotate-x))
-    rotateY(var(--progress-pointer-rotate-y));
+    rotateX(var(--cockpit-pointer-rotate-x))
+    rotateY(var(--cockpit-pointer-rotate-y));
   transition:
     border-color 160ms ease,
     box-shadow 160ms ease,
@@ -176,8 +176,8 @@
 .progressReactive::before {
   background:
     radial-gradient(
-      circle at var(--progress-pointer-x) var(--progress-pointer-y),
-      rgba(0, 242, 255, 0.18),
+      circle at var(--cockpit-pointer-x) var(--cockpit-pointer-y),
+      var(--cockpit-reactive-spotlight),
       transparent 42%
     );
   content: "";
@@ -191,7 +191,7 @@
 .progressReactive:hover,
 .progressReactive:focus-within {
   border-color: rgba(0, 242, 255, 0.48);
-  box-shadow: 0 0 26px rgba(0, 219, 231, 0.13);
+  box-shadow: var(--cockpit-reactive-glow);
 }
 
 .progressReactive:hover::before,
@@ -299,8 +299,8 @@
 .progressPage .exerciseChoice {
   background:
     radial-gradient(
-      circle at var(--progress-pointer-x, 50%) var(--progress-pointer-y, 50%),
-      rgba(0, 219, 231, 0.16),
+      circle at var(--cockpit-pointer-x, 50%) var(--cockpit-pointer-y, 50%),
+      var(--cockpit-reactive-spotlight),
       transparent 44%
     ),
     rgba(18, 23, 24, 0.9);
@@ -313,8 +313,8 @@
   text-align: left;
   transform:
     perspective(820px)
-    rotateX(var(--progress-pointer-rotate-x, 0deg))
-    rotateY(var(--progress-pointer-rotate-y, 0deg));
+    rotateX(var(--cockpit-pointer-rotate-x, 0deg))
+    rotateY(var(--cockpit-pointer-rotate-y, 0deg));
   transition:
     border-color 160ms ease,
     box-shadow 160ms ease,
