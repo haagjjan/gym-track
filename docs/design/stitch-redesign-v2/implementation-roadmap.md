@@ -406,7 +406,7 @@ Acceptance criteria:
 
 ---
 
-# Phase 7 — Insert Exercise Flow + Logging Edit-State Hardening
+## Phase 7 — Insert Exercise Flow + Logging Edit-State Hardening
 
 ## Goal
 
@@ -442,8 +442,7 @@ The active workout screen has one clear secondary action:
 
 ```text
 + Add exercise
-
----
+```
 
 ## Phase 8 — History rebuild
 
