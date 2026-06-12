@@ -85,11 +85,20 @@ export function AddSetForm({
 }
 
 export function EditableSetRow({
+  canEdit,
+  isEditing,
+  onCancelEdit,
+  onStartEdit,
   set,
   onRefresh,
   onShowError
-}: SetEditorProps & { set: WorkoutSet }): ReactNode {
-  const [isEditing, setIsEditing] = useState(false);
+}: SetEditorProps & {
+  canEdit: boolean;
+  isEditing: boolean;
+  onCancelEdit: () => void;
+  onStartEdit: (setId: string) => void;
+  set: WorkoutSet;
+}): ReactNode {
   const [isPending, startTransition] = useTransition();
   const [fieldErrors, setFieldErrors] = useState<SetFieldErrors>({});
 
@@ -113,11 +122,15 @@ export function EditableSetRow({
       }
 
       await onRefresh();
-      setIsEditing(false);
+      onCancelEdit();
     });
   }
 
   function handleDelete(): void {
+    if (!canEdit) {
+      return;
+    }
+
     const confirmed = window.confirm(`Delete set ${set.setOrder}?`);
 
     if (!confirmed) {
@@ -133,10 +146,11 @@ export function EditableSetRow({
       }
 
       await onRefresh();
+      onCancelEdit();
     });
   }
 
-  if (!isEditing) {
+  if (!canEdit || !isEditing) {
     return (
       <div className="setSummaryRow">
         <span className="setOrder">{set.setOrder}</span>
@@ -144,24 +158,26 @@ export function EditableSetRow({
           <strong>{formatSetHeadline(set)}</strong>
           <span>{formatSetDetail(set)}</span>
         </div>
-        <div className="setSummaryActions">
-          <button
-            className="smallAction"
-            type="button"
-            onClick={() => setIsEditing(true)}
-            disabled={isPending}
-          >
-            EDIT
-          </button>
-          <button
-            className="dangerAction"
-            type="button"
-            onClick={handleDelete}
-            disabled={isPending}
-          >
-            DELETE
-          </button>
-        </div>
+        {canEdit ? (
+          <div className="setSummaryActions">
+            <button
+              className="smallAction"
+              type="button"
+              onClick={() => onStartEdit(set.id)}
+              disabled={isPending}
+            >
+              EDIT
+            </button>
+            <button
+              className="dangerAction"
+              type="button"
+              onClick={handleDelete}
+              disabled={isPending}
+            >
+              DELETE
+            </button>
+          </div>
+        ) : null}
       </div>
     );
   }
@@ -176,7 +192,7 @@ export function EditableSetRow({
       <button
         className="smallAction"
         type="button"
-        onClick={() => setIsEditing(false)}
+        onClick={onCancelEdit}
         disabled={isPending}
       >
         CANCEL
