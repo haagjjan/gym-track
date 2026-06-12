@@ -15,7 +15,6 @@ export function LogoutButton(): ReactNode {
       });
 
       router.push("/");
-      router.refresh();
     });
   }
 
