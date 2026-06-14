@@ -604,6 +604,7 @@ Tasks:
 Acceptance criteria:
 
 - App is usable in the gym from phone.
+- Every Input Text field is cleanly surrounded by an equal distance to the Edge.
 - No critical flow breaks.
 - UI feels coherent.
 - Ready for small personal beta.
