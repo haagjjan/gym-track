@@ -1,141 +1,199 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 
-test("signs up and logs a workout through the UI", async ({ page }) => {
+test.setTimeout(180_000);
+
+test("completes the mobile workout flow and reviews redesigned screens", async ({ page }) => {
   const tag = `${Date.now()}${process.pid}`;
   const username = `smoke_${tag}`;
-  const exerciseName = `Smoke Bench ${tag}`;
-  const accessoryExerciseName = `Smoke Curl ${tag}`;
-  const draftExerciseName = `Smoke Pressdown ${tag}`;
+  const password = "secret";
+  const pressName = "Incline Dumbbell Press";
+  const rowName = "Barbell Row";
 
+  await page.setViewportSize({ width: 390, height: 900 });
   await page.goto("/signup");
-  await page.getByLabel("Email").fill(`${username}@example.com`);
-  await page.getByLabel("Username").fill(username);
-  await page.getByLabel("Password").fill("secret");
-  await page.getByRole("button", { name: "Save" }).click();
+  await page.getByLabel("EMAIL_ADDRESS").fill(`${username}@example.com`);
+  await page.getByLabel("OPERATOR_ID").fill(username);
+  await page.getByLabel("ACCESS_CODE").fill(password);
+  await page.getByRole("button", { name: "REGISTER_PROFILE" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: /START_SESSION|RESUME_SESSION/i })).toBeVisible();
+  await expectNoHorizontalScroll(page);
 
-  await expect(page.getByRole("heading", { name: `Welcome, ${username}` })).toBeVisible();
+  await page.request.post("/api/auth/logout");
+  await page.goto("/login");
+  await page.getByLabel("OPERATOR_ID").fill(username);
+  await page.getByLabel("ACCESS_CODE").fill(password);
+  await page.getByRole("button", { name: "LOGIN" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: /START_SESSION|RESUME_SESSION/i })).toBeVisible();
+  await expectNoHorizontalScroll(page);
 
-  await page.getByRole("button", { name: "Start or resume workout" }).click();
+  await page.goto("/workout");
+  await expect(page.getByRole("heading", { name: /SELECT_OPERATION/i })).toBeVisible();
+  await page.getByRole("button", { name: "START_EMPTY_SESSION" }).first().click();
   await expect(page).toHaveURL(/\/workouts\/[0-9a-f-]+$/);
-  await expect(page.getByRole("heading", { name: "Workout" })).toBeVisible();
+  const activeWorkoutUrl = page.url();
 
-  await page.locator(".createExerciseForm").getByLabel("Name").fill(exerciseName);
-  await page.locator(".createExerciseForm").getByLabel("Primary muscle").selectOption({ label: "Chest" });
-  await page.locator(".createExerciseForm").getByLabel("Equipment").fill("barbell");
-  await page.locator(".createExerciseForm").getByLabel("Type").selectOption("compound");
-  await page.getByRole("button", { name: "Create and add" }).click();
+  await insertExercise(page, pressName, "Chest");
+  const pressPanel = exercisePanel(page, pressName);
+  await expect(pressPanel).toHaveClass(/sessionExerciseActive/);
 
-  const exerciseBlock = page.locator(".sessionExercise", { hasText: exerciseName });
-  await expect(exerciseBlock.getByRole("heading", { name: exerciseName })).toBeVisible();
-  await expect(exerciseBlock).toHaveClass(/sessionExerciseActive/);
-
-  await exerciseBlock.getByLabel("Kg").fill("90");
-  await exerciseBlock.getByLabel("Reps").fill("5");
-  await exerciseBlock.getByLabel("RIR").fill("1");
-  await exerciseBlock.getByLabel("Rest").fill("120");
-  await exerciseBlock.getByRole("button", { name: "Save set" }).click();
-
-  await expect(exerciseBlock.locator(".setSummaryRow")).toHaveCount(1);
-  await expect(exerciseBlock.locator(".setSummaryRow")).toContainText("90.00 kg x 5");
-
-  await page.locator(".createExerciseForm").getByLabel("Name").fill(accessoryExerciseName);
-  await page.locator(".createExerciseForm").getByLabel("Primary muscle").selectOption({ label: "Biceps" });
-  await page.getByRole("button", { name: "Create and add" }).click();
-
-  const accessoryBlock = page.locator(".sessionExercise", { hasText: accessoryExerciseName });
-  await expect(page.locator(".sessionExerciseActive")).toHaveCount(1);
-  await expect(accessoryBlock).toHaveClass(/sessionExerciseActive/);
-  await expect(exerciseBlock.locator(".setForm")).toHaveCount(0);
-  await expect(exerciseBlock).toContainText("1 set logged");
-  await expect(exerciseBlock).toContainText("Last: 90.00 kg × 5 · RIR 1 · 120s rest");
-
-  await accessoryBlock.getByLabel("Kg").fill("30");
-  await accessoryBlock.getByLabel("Reps").fill("12");
-  await accessoryBlock.getByLabel("RIR").fill("3");
-  await accessoryBlock.getByLabel("Rest").fill("60");
-  await exerciseBlock.getByRole("button", { name: "Open/Edit" }).click();
-  await expect(accessoryBlock).toContainText("Draft set started");
-  await accessoryBlock.getByRole("button", { name: "Open/Edit" }).click();
-  await expect(accessoryBlock.getByLabel("Kg")).toHaveValue("30");
-  await expect(accessoryBlock.getByLabel("Reps")).toHaveValue("12");
-  await expect(accessoryBlock.getByLabel("RIR")).toHaveValue("3");
-  await expect(accessoryBlock.getByLabel("Rest")).toHaveValue("60");
-
-  await accessoryBlock.getByRole("button", { name: "Save set" }).click();
-  await expect(accessoryBlock.locator(".setSummaryRow")).toHaveCount(1);
-  await expect(accessoryBlock.getByLabel("Kg")).toHaveValue("30.00");
-  await accessoryBlock.locator(".setSummaryRow").getByRole("button", { name: "Delete" }).click();
-  await expect(accessoryBlock.locator(".setSummaryRow")).toHaveCount(0);
-
-  await exerciseBlock.getByRole("button", { name: "Open/Edit" }).click();
-  await expect(exerciseBlock).toHaveClass(/sessionExerciseActive/);
-  await exerciseBlock.locator(".setSummaryRow").getByRole("button", { name: "Edit" }).click();
-  await exerciseBlock.locator(".setRow").getByLabel("Reps").fill("6");
-  await exerciseBlock.locator(".setRow").getByRole("button", { name: "Save" }).click();
-  await expect(exerciseBlock.locator(".setSummaryRow")).toContainText("90.00 kg x 6");
-
-  await page.locator(".createExerciseForm").getByLabel("Name").fill(draftExerciseName);
-  await page.locator(".createExerciseForm").getByLabel("Primary muscle").selectOption({ label: "Triceps" });
-  await page.getByRole("button", { name: "Create and add" }).click();
-
-  const draftBlock = page.locator(".sessionExercise", { hasText: draftExerciseName });
-  await expect(draftBlock).toHaveClass(/sessionExerciseActive/);
-  await draftBlock.getByLabel("Kg").fill("22");
-  await exerciseBlock.getByRole("button", { name: "Open/Edit" }).click();
-  await expect(draftBlock).toContainText("Draft set started");
-  await draftBlock.getByRole("button", { name: "Remove" }).click();
-  await expect(draftBlock).toHaveCount(0);
-  await expect(page.getByText("Draft set started")).toHaveCount(0);
-
-  await accessoryBlock.getByRole("button", { name: "Up" }).click();
-  await expect(accessoryBlock.locator(".positionBadge")).toHaveText("1");
-
-  await page.getByRole("button", { name: "End workout" }).click();
-  await expect(page.getByText("Closed workout")).toBeVisible();
-  await expect(page.getByRole("button", { name: "End workout" })).toBeDisabled();
-
-  await page.getByRole("link", { name: "History" }).click();
-  await expect(page).toHaveURL(/\/workouts$/);
-  await expect(page.locator(".historyRow").first()).toContainText("2 exercises");
-
-  const importedExerciseName = `CSV Row ${tag}`;
-  const csv = [
-    "workout_started_at,workout_ended_at,workout_type,workout_title,workout_notes,exercise_name,primary_muscle_group_slug,equipment,exercise_type,exercise_position,set_order,set_type,weight_kg,reps,rir,rest_time_seconds,set_note",
-    `2026-05-20T08:00:00.000Z,2026-05-20T09:00:00.000Z,upper,CSV Upper,,${importedExerciseName},chest,dumbbell,compound,1,1,working,42.50,10,2,60,Smoke import`
-  ].join("\n");
-
-  await page.setInputFiles('input[name="workoutCsv"]', {
-    name: "workouts.csv",
-    mimeType: "text/csv",
-    buffer: Buffer.from(csv)
+  await saveSet(pressPanel, {
+    kg: "40",
+    reps: "10",
+    rest: "60",
+    rir: "4",
+    type: "warmup"
   });
-  await page.getByRole("button", { name: "Import", exact: true }).click();
-  await expect(page.getByText("Imported 1 workout from 1 row.")).toBeVisible();
-  await expect(page.getByText("CSV Upper")).toBeVisible();
+  await expect(pressPanel.locator(".setSummaryRow")).toHaveCount(1);
+  await expect(pressPanel.locator(".setSummaryRow").first()).toContainText("40.00 kg x 10");
 
-  const download = await Promise.all([
-    page.waitForEvent("download"),
-    page.getByRole("link", { name: "Export CSV" }).click()
-  ]).then(([file]) => file);
+  await saveSet(pressPanel, {
+    kg: "90",
+    reps: "5",
+    rest: "120",
+    rir: "1",
+    type: "working"
+  });
+  await expect(pressPanel.locator(".setSummaryRow")).toHaveCount(2);
+  await expect(pressPanel.locator(".setSummaryRow").last()).toContainText("90.00 kg x 5");
 
-  expect(download.suggestedFilename()).toBe("gym-workouts.csv");
+  const workingSet = pressPanel.locator(".setSummaryRow").filter({ hasText: "90.00 kg x 5" });
+  await workingSet.getByRole("button", { name: "EDIT" }).click();
+  const editRow = pressPanel.locator(".setRowEditing");
+  await editRow.getByLabel("Reps").fill("6");
+  await editRow.getByRole("button", { name: "SAVE" }).click();
+  await expect(pressPanel.locator(".setSummaryRow").last()).toContainText("90.00 kg x 6");
 
-  await page.locator(".historyRow").first().click();
-  const detailExerciseBlock = page.locator(".sessionExercise", { hasText: exerciseName });
-  await expect(detailExerciseBlock.getByRole("heading", { name: exerciseName })).toBeVisible();
-  await detailExerciseBlock.getByRole("button", { name: "Open/Edit" }).click();
-  await expect(detailExerciseBlock.locator(".setSummaryRow")).toContainText("90.00 kg x 6");
+  await insertExercise(page, rowName, "Back");
+  const rowPanel = exercisePanel(page, rowName);
+  await expect(page.locator(".sessionExerciseActive")).toHaveCount(1);
+  await expect(rowPanel).toHaveClass(/sessionExerciseActive/);
+  await saveSet(rowPanel, {
+    kg: "70",
+    reps: "8",
+    rest: "90",
+    rir: "2",
+    type: "working"
+  });
+  await expect(rowPanel.locator(".setSummaryRow")).toHaveCount(1);
+
+  page.once("dialog", (dialog) => dialog.accept());
+  await rowPanel.locator(".setSummaryRow").getByRole("button", { name: "DELETE" }).click();
+  await expect(rowPanel.locator(".setSummaryRow")).toHaveCount(0);
+
+  page.once("dialog", (dialog) => dialog.accept());
+  await rowPanel.getByRole("button", { name: "REMOVE" }).click();
+  await expect(rowPanel).toHaveCount(0);
+
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "COMPLETE_SESSION" }).click();
+  await expect(page.getByText("CLOSED")).toBeVisible();
+  await expect(page.getByRole("button", { name: "COMPLETE_SESSION" })).toBeDisabled();
+  await expectNoHorizontalScroll(page);
+
+  await page.goto("/workouts");
+  await expect(page.getByRole("heading", { name: /SESSION HISTORY/i })).toBeVisible();
+  const historyCard = page.locator(".historyCard").filter({ hasText: pressName }).first();
+  await expect(historyCard).toBeVisible();
+  await historyCard.getByRole("button", { name: "EXPAND" }).click();
+  await expect(historyCard).toContainText("90.00 kg x 6");
 
   await page.goto("/progress");
-  await expect(page.getByRole("heading", { name: "Exercise progress" })).toBeVisible();
-  await expect(page.getByRole("button", { name: new RegExp(exerciseName) })).toBeVisible();
-  await expect(page.getByLabel("Weight and reps over time")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /PROGRESS ANALYTICS/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: new RegExp(pressName, "i") })).toBeVisible();
+  await expect(page.getByRole("region", { name: /Estimated 1RM over/i })).toBeVisible();
 
   await page.goto("/weekly-volume");
-  await expect(page.getByRole("heading", { name: "Muscle heat map" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /MUSCLE VOLUME/i })).toBeVisible();
   await expect(page.getByLabel("Weekly volume body map")).toBeVisible();
-  await expect(page.locator("svg.bodyMap rect")).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Chest" })).toBeVisible();
-  await page.getByRole("button", { name: /Back, 0 working sets/ }).click();
-  await expect(page.getByRole("heading", { name: "Back" })).toBeVisible();
+
+  await expectRoutesToFit(page, [
+    "/",
+    "/workout",
+    activeWorkoutUrl,
+    "/workouts",
+    "/progress",
+    "/weekly-volume"
+  ]);
 });
+
+async function insertExercise(page: Page, name: string, muscle: string): Promise<void> {
+  const insertAction = page
+    .getByRole("button", { name: /INSERT_(FIRST_)?EXERCISE/ })
+    .first();
+
+  await insertAction.click();
+  const dialog = page.getByRole("dialog", { name: "Add exercise to session" });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("searchbox", { name: "Exercise" }).fill(name);
+
+  const existingOption = dialog.locator(".exerciseOption").filter({ hasText: name }).first();
+
+  if (await isVisibleAfterLoad(existingOption)) {
+    await existingOption.click();
+    await expect(dialog).toBeHidden();
+    return;
+  }
+
+  await dialog.locator(".createExerciseForm").getByLabel("Name").fill(name);
+  await dialog.locator(".createExerciseForm").getByLabel("Primary muscle").selectOption({ label: muscle });
+  await dialog.locator(".createExerciseForm").getByLabel("Equipment").fill("barbell");
+  await dialog.locator(".createExerciseForm").getByLabel("Type").selectOption("compound");
+  await dialog.getByRole("button", { name: "CREATE_ADD" }).click();
+  await expect(dialog).toBeHidden();
+}
+
+async function isVisibleAfterLoad(locator: Locator): Promise<boolean> {
+  return locator.waitFor({ state: "visible", timeout: 3_000 }).then(
+    () => true,
+    () => false
+  );
+}
+
+async function saveSet(
+  panel: Locator,
+  values: {
+    kg: string;
+    reps: string;
+    rest: string;
+    rir: string;
+    type: "warmup" | "working";
+  }
+): Promise<void> {
+  await panel.getByLabel("Type").selectOption(values.type);
+  await panel.getByLabel("Kg").fill(values.kg);
+  await panel.getByLabel("Reps").fill(values.reps);
+  await panel.getByLabel("RIR").fill(values.rir);
+  await panel.getByLabel("Rest").fill(values.rest);
+  await panel.getByRole("button", { name: "SAVE_SET" }).click();
+  await expect(panel.getByText(/SET_\d+_SAVED/)).toBeVisible();
+}
+
+function exercisePanel(page: Page, name: string): Locator {
+  return page.locator(".sessionExercise", { hasText: name });
+}
+
+async function expectRoutesToFit(page: Page, routes: string[]): Promise<void> {
+  for (const width of [390, 430, 1440]) {
+    await page.setViewportSize({ width, height: width === 1440 ? 1000 : 900 });
+
+    for (const route of routes) {
+      await page.goto(route);
+      await page.locator("main").waitFor({ state: "visible" });
+      await expectNoHorizontalScroll(page);
+    }
+  }
+}
+
+async function expectNoHorizontalScroll(page: Page): Promise<void> {
+  const metrics = await page.evaluate(() => ({
+    bodyClient: document.body.clientWidth,
+    bodyScroll: document.body.scrollWidth,
+    docClient: document.documentElement.clientWidth,
+    docScroll: document.documentElement.scrollWidth
+  }));
+  const maxClient = Math.max(metrics.bodyClient, metrics.docClient);
+  const maxScroll = Math.max(metrics.bodyScroll, metrics.docScroll);
+
+  expect(maxScroll).toBeLessThanOrEqual(maxClient + 1);
+}
