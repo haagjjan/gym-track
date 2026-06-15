@@ -1,12 +1,39 @@
-import type { ReactNode } from "react";
+"use client";
+
+import dynamic from "next/dynamic";
+import { useCallback, useState, type ReactNode } from "react";
+
+const HomeAvatarScene = dynamic(
+  () => import("./home-avatar-scene").then((module) => module.HomeAvatarScene),
+  {
+    loading: () => null,
+    ssr: false
+  }
+);
 
 export function HomeBodyVisual(): ReactNode {
+  const [isSceneReady, setIsSceneReady] = useState(false);
+  const handleSceneReady = useCallback(() => {
+    setIsSceneReady(true);
+  }, []);
+  const handleSceneUnavailable = useCallback(() => {
+    setIsSceneReady(false);
+  }, []);
+
   return (
-    <div className="homeBodyVisual" aria-hidden="true">
-      {/* Future upgrade could replace this visual anchor with isolated lazy-loaded 3D. */}
+    <div
+      className={isSceneReady ? "homeBodyVisual homeBodyVisual--threeReady" : "homeBodyVisual"}
+      aria-hidden="true"
+    >
       <div className="homeBodyVisual__spotlight" />
       <div className="homeBodyVisual__mist" />
       <div className="homeBodyVisual__scanline" />
+      <div className="homeBodyVisual__scene">
+        <HomeAvatarScene
+          onSceneReady={handleSceneReady}
+          onSceneUnavailable={handleSceneUnavailable}
+        />
+      </div>
       <svg
         className="homeBodyVisual__avatar"
         height="560"
