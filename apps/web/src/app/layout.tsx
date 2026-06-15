@@ -14,6 +14,7 @@ import "../features/analytics/volume-intelligence.css";
 import "../features/auth/auth.css";
 import "../features/dashboard/dashboard.css";
 import "../features/dashboard/dashboard-panels.css";
+import "../features/dashboard/home-body-visual.css";
 import "../features/workouts/workout.css";
 import "../features/workouts/workout-forms.css";
 import "../features/workouts/workout-history.css";
