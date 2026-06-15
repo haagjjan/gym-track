@@ -44,6 +44,35 @@
   left: 8%;
   right: 8%;
   top: 18%;
+  z-index: 4;
+}
+
+.homeBodyVisual__scene {
+  inset: 0 0 3%;
+  opacity: 0;
+  pointer-events: auto;
+  position: absolute;
+  transition: opacity 280ms ease;
+  z-index: 3;
+}
+
+.homeBodyVisual--threeReady .homeBodyVisual__scene {
+  opacity: 1;
+}
+
+.homeAvatarScene {
+  contain: layout paint;
+  height: 100%;
+  width: 100%;
+}
+
+.homeAvatarScene canvas {
+  display: block;
+  filter:
+    drop-shadow(0 0 20px rgba(0, 219, 231, 0.34))
+    drop-shadow(0 0 54px rgba(0, 219, 231, 0.16));
+  height: 100%;
+  width: 100%;
 }
 
 .homeBodyVisual__avatar {
@@ -56,6 +85,14 @@
   position: relative;
   width: 320px;
   z-index: 2;
+}
+
+.homeBodyVisual--threeReady .homeBodyVisual__avatar {
+  opacity: 0.14;
+  transform: scale(0.985);
+  transition:
+    opacity 260ms ease,
+    transform 260ms ease;
 }
 
 .homeBodyVisual__avatar-fill {
@@ -84,6 +121,10 @@
   transform: translateX(-50%);
   width: min(100%, 480px);
   z-index: 1;
+}
+
+.homeBodyVisual--threeReady .homeBodyVisual__platform {
+  opacity: 0.66;
 }
 
 .homeBodyVisual__platform span {
@@ -158,4 +199,11 @@
     height: 116px;
   }
 
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .homeBodyVisual__scene,
+  .homeBodyVisual__avatar {
+    transition: none;
+  }
 }
