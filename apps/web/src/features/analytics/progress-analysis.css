@@ -69,6 +69,49 @@
   overflow: visible;
 }
 
+.progressChartControls {
+  align-items: end;
+  display: grid;
+  gap: var(--cockpit-space-2);
+  justify-items: end;
+}
+
+.progressChartControls > span {
+  color: rgba(185, 202, 203, 0.82);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.progressChartToggleGroup {
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(0, 219, 231, 0.18);
+  border-radius: var(--cockpit-radius-lg);
+  display: flex;
+  gap: var(--cockpit-space-1);
+  padding: var(--cockpit-space-1);
+}
+
+.progressChartToggleGroup button {
+  background: transparent;
+  border: 0;
+  border-radius: var(--cockpit-radius-md);
+  color: rgba(225, 253, 255, 0.68);
+  cursor: pointer;
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.68rem;
+  font-weight: 700;
+  min-height: 30px;
+  padding: 0 var(--cockpit-space-2);
+}
+
+.progressChartToggleGroup button[aria-pressed="true"] {
+  background: var(--cockpit-color-cyan-strong);
+  box-shadow: 0 0 16px rgba(0, 219, 231, 0.24);
+  color: #002022;
+}
+
 .progressChartPanel .chartTooltip {
   background: rgba(8, 11, 12, 0.94);
   border-color: rgba(0, 219, 231, 0.38);
@@ -179,6 +222,11 @@
     grid-template-columns: 1fr;
   }
 
+  .progressChartControls {
+    justify-items: start;
+    width: 100%;
+  }
+
   .progressRangeTabs {
     overflow-x: auto;
     width: 100%;
@@ -223,6 +271,12 @@
   .progressRangeTabs {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .progressChartToggleGroup {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
   }
 }
 
