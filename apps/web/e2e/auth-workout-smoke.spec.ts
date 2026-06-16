@@ -100,6 +100,8 @@ test("completes the mobile workout flow and reviews redesigned screens", async (
   await page.goto("/progress");
   await expect(page.getByRole("heading", { name: /PROGRESS ANALYTICS/i })).toBeVisible();
   await expect(page.getByRole("button", { name: new RegExp(pressName, "i") })).toBeVisible();
+  await expect(page.getByRole("region", { name: /Weight and reps over/i })).toBeVisible();
+  await page.getByRole("button", { name: "EST_1RM" }).click();
   await expect(page.getByRole("region", { name: /Estimated 1RM over/i })).toBeVisible();
 
   await page.goto("/weekly-volume");
