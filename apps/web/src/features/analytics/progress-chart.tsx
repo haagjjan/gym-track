@@ -130,7 +130,11 @@ export function ProgressTimeSeries({
           ) : null}
           <div className="timeSeriesCanvas">
             <ResponsiveContainer width="100%" height={340}>
-              <LineChart data={chartRows} margin={{ top: 18, right: 18, bottom: 8, left: 4 }}>
+              <LineChart
+                data={chartRows}
+                key={chartMode}
+                margin={{ top: 18, right: 18, bottom: 8, left: 4 }}
+              >
                 <CartesianGrid stroke="rgba(0, 219, 231, 0.16)" strokeDasharray="4 8" />
                 <XAxis
                   axisLine={{ stroke: "rgba(0, 219, 231, 0.28)" }}
@@ -197,6 +201,7 @@ export function ProgressTimeSeries({
                       tickFormatter={(value) => `${value} kg`}
                       tickLine={false}
                       width={64}
+                      yAxisId="estimated"
                     />
                     <Tooltip content={<ProgressTooltip mode={chartMode} />} cursor={{ stroke: "rgba(0, 242, 255, 0.42)" }} />
                     <Line
@@ -208,6 +213,7 @@ export function ProgressTimeSeries({
                       stroke="#00f2ff"
                       strokeWidth={3}
                       type="monotone"
+                      yAxisId="estimated"
                     />
                   </>
                 )}
