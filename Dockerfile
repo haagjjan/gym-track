@@ -10,6 +10,10 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/* \
   && corepack enable
 
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+
+RUN corepack prepare pnpm@10.11.0 --activate
+
 FROM base AS deps
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json tsconfig.base.json ./
