@@ -135,6 +135,35 @@ h1 {
   opacity: 0.68;
 }
 
+.appErrorPage {
+  align-items: center;
+  background:
+    radial-gradient(circle at 50% 24%, rgba(0, 219, 231, 0.16), transparent 34%),
+    var(--cockpit-color-background, #0a0a0a);
+  color: var(--cockpit-color-text, #e5e2e1);
+  display: grid;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.appErrorPage .cockpitState {
+  margin-inline: auto;
+  max-width: 620px;
+  width: min(100%, 620px);
+}
+
+.appErrorActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.appErrorDigest {
+  color: var(--cockpit-color-text, #e5e2e1);
+  display: block;
+  margin-top: 8px;
+}
+
 .dashboardHeader {
   align-items: end;
   grid-template-columns: 1fr auto;
