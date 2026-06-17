@@ -1,8 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import { CockpitButton, CockpitErrorState } from "../shared/ui/cockpit";
+import {
+  logClientDiagnosticGroup,
+  readClientDiagnostics,
+  recordClientDiagnostic,
+  sanitizeDiagnosticRoute
+} from "../shared/client-diagnostics";
 
 interface AppErrorProps {
   error: Error & { digest?: string };
@@ -10,9 +17,22 @@ interface AppErrorProps {
 }
 
 export default function AppError({ error, reset }: AppErrorProps): ReactNode {
+  const pathname = usePathname();
+
   useEffect(() => {
-    console.error("Unhandled client route error", error);
-  }, [error]);
+    const diagnostic = recordClientDiagnostic({
+      digest: error.digest,
+      event: "client_route_error",
+      message: error.message,
+      route: sanitizeDiagnosticRoute(pathname),
+      stack: error.stack
+    });
+
+    logClientDiagnosticGroup("[client diagnostics] route error", {
+      diagnostic,
+      recentDiagnostics: readClientDiagnostics()
+    });
+  }, [error, pathname]);
 
   const digest = error.digest ? `Fault digest: ${error.digest}` : null;
 
