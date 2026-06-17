@@ -104,6 +104,7 @@ docs/
 |-- 06-implementation-start.md
 |-- 07-implementation-pattern.md
 |-- 08-next-implementation-plan.md
+|-- 09-observability-and-data-structures.md
 |-- deployment-runbook.md
 |-- git-pipeline.md
 |-- repository-structure.md
@@ -115,6 +116,7 @@ docs/
 - `docs/06-implementation-start.md` records the original staged implementation handoff.
 - `docs/07-implementation-pattern.md` records the feature-slice pattern used by API and web work.
 - `docs/08-next-implementation-plan.md` records the current fresh-session handoff and remaining implementation blocks.
+- `docs/09-observability-and-data-structures.md` records implemented data structures and the planned logging/diagnostics approach for client and API failures.
 - `docs/deployment-runbook.md` records Render deployment, migration, backup, restore-test, and monitoring steps for small-batch users.
 - `docs/decisions` contains ADRs, including the accepted Render deployment target. Add or update an ADR before changing stack, auth strategy, schema policy, API style, or deployment direction.
 
