@@ -8,6 +8,12 @@ test("completes the mobile workout flow and reviews redesigned screens", async (
   const password = "secret";
   const pressName = "Incline Dumbbell Press";
   const rowName = "Barbell Row";
+  const pulldownName = "Lat Pulldown";
+  const pageErrors: string[] = [];
+
+  page.on("pageerror", (error) => {
+    pageErrors.push(error.stack ?? error.message);
+  });
 
   await page.setViewportSize({ width: 390, height: 900 });
   await page.goto("/signup");
@@ -84,6 +90,17 @@ test("completes the mobile workout flow and reviews redesigned screens", async (
   await rowPanel.getByRole("button", { name: "REMOVE" }).click();
   await expect(rowPanel).toHaveCount(0);
 
+  await insertExercise(page, pulldownName, "Back");
+  const pulldownPanel = exercisePanel(page, pulldownName);
+  await saveSet(pulldownPanel, {
+    kg: "65",
+    reps: "10",
+    rest: "90",
+    rir: "2",
+    type: "working"
+  });
+  await expect(pulldownPanel.locator(".setSummaryRow")).toHaveCount(1);
+
   page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "COMPLETE_SESSION" }).click();
   await expect(page.getByText("CLOSED")).toBeVisible();
@@ -100,9 +117,31 @@ test("completes the mobile workout flow and reviews redesigned screens", async (
   await page.goto("/progress");
   await expect(page.getByRole("heading", { name: /PROGRESS ANALYTICS/i })).toBeVisible();
   await expect(page.getByRole("button", { name: new RegExp(pressName, "i") })).toBeVisible();
+  await expect(page.getByRole("button", { name: new RegExp(pulldownName, "i") })).toBeVisible();
   await expect(page.getByRole("region", { name: /Weight and reps over/i })).toBeVisible();
+  await page.locator(".timeSeriesViewport").evaluate((node) => {
+    node.scrollLeft = 0;
+    node.dispatchEvent(new Event("scroll", { bubbles: true }));
+  });
+  await page.getByRole("button", { name: "1W" }).click();
+  await expect(page.getByRole("region", { name: /Weight and reps over 1W/i })).toBeVisible();
+  await page.getByRole("button", { name: "3M" }).click();
+  await expect(page.getByRole("region", { name: /Weight and reps over 3M/i })).toBeVisible();
+  await page.getByRole("button", { name: "MAX" }).click();
+  await expect(page.getByRole("region", { name: /Weight and reps over MAX/i })).toBeVisible();
+  await page.getByRole("button", { name: /^REPS$/ }).click();
+  await page.getByRole("button", { name: /^REPS$/ }).click();
+  await page.getByRole("button", { name: /^WEIGHT$/ }).click();
+  await page.getByRole("button", { name: /^WEIGHT$/ }).click();
   await page.getByRole("button", { name: "EST_1RM" }).click();
   await expect(page.getByRole("region", { name: /Estimated 1RM over/i })).toBeVisible();
+  await page.getByRole("button", { name: "LOAD_REPS" }).click();
+  await expect(page.getByRole("region", { name: /Weight and reps over/i })).toBeVisible();
+  await page.getByRole("button", { name: new RegExp(pulldownName, "i") }).click();
+  await expect(page.getByRole("heading", { name: pulldownName })).toBeVisible();
+  await page.getByRole("button", { name: new RegExp(pressName, "i") }).click();
+  await expect(page.getByRole("heading", { name: pressName })).toBeVisible();
+  await expect(page.getByText("APPLICATION_FAULT")).toHaveCount(0);
 
   await page.goto("/weekly-volume");
   await expect(page.getByRole("heading", { name: /MUSCLE VOLUME/i })).toBeVisible();
@@ -117,6 +156,7 @@ test("completes the mobile workout flow and reviews redesigned screens", async (
     "/progress",
     "/weekly-volume"
   ]);
+  expect(pageErrors).toEqual([]);
 });
 
 async function insertExercise(page: Page, name: string, muscle: string): Promise<void> {
