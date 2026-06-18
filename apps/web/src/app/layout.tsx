@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { ClientDiagnosticsListener } from "./client-diagnostics-listener";
 import "./styles.css";
 import "../shared/ui/cockpit/cockpit-tokens.css";
 import "../shared/ui/cockpit/cockpit.css";
@@ -32,7 +33,10 @@ interface RootLayoutProps {
 export default function RootLayout({ children }: RootLayoutProps): ReactNode {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <ClientDiagnosticsListener />
+        {children}
+      </body>
     </html>
   );
 }
