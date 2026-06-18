@@ -3,7 +3,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { dateRange } from "./analytics-date-range";
 import {
   getExerciseProgress,
   getExerciseSummary,
@@ -87,14 +86,13 @@ export function ProgressPage(): ReactNode {
 
     const controller = new AbortController();
 
-    void loadProgress(selectedExerciseId, timeWindow, controller.signal);
+    void loadProgress(selectedExerciseId, controller.signal);
 
     return () => controller.abort();
-  }, [selectedExerciseId, timeWindow]);
+  }, [selectedExerciseId]);
 
   async function loadProgress(
     exerciseId: string,
-    windowValue: TimeWindow,
     signal: AbortSignal
   ): Promise<void> {
     setIsLoadingProgress(true);
@@ -102,10 +100,9 @@ export function ProgressPage(): ReactNode {
     setProgress(null);
     setSummary(null);
 
-    const range = windowValue === "all" ? {} : dateRange(Number(windowValue));
     const [progressResult, summaryResult] = await Promise.all([
-      getExerciseProgress(exerciseId, { ...range, signal }),
-      getExerciseSummary(exerciseId, { ...range, signal })
+      getExerciseProgress(exerciseId, { signal }),
+      getExerciseSummary(exerciseId, { signal })
     ]).catch(() => [null, null] as const);
 
     if (signal.aborted) {
@@ -182,7 +179,7 @@ export function ProgressPage(): ReactNode {
                   : "Select an exercise to inspect its strength signal."}
               </p>
             </div>
-            <div className="progressRangeTabs" aria-label="Time window">
+            <div className="progressRangeTabs" aria-label="Visible chart span">
               {timeWindows.map((item) => (
                 <button
                   aria-pressed={timeWindow === item.value}
@@ -206,7 +203,7 @@ export function ProgressPage(): ReactNode {
               <ExerciseSummary
                 isLoading={isLoadingProgress}
                 items={progress?.items ?? []}
-                selectedWindowLabel={selectedWindowLabel}
+                selectedWindowLabel="full history"
                 summary={summary}
               />
               <ProgressTimeSeries
@@ -214,12 +211,13 @@ export function ProgressPage(): ReactNode {
                 isLoading={isLoadingProgress}
                 items={progress?.items ?? []}
                 selectedWindowLabel={selectedWindowLabel}
+                selectedWindowValue={timeWindow}
               />
               {!isLoadingProgress ? (
                 <ProgressRecentLogs
                   exerciseName={selectedExercise.name}
                   items={progress?.items ?? []}
-                  selectedWindowLabel={selectedWindowLabel}
+                  selectedWindowLabel="full history"
                 />
               ) : null}
             </>
