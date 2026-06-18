@@ -107,6 +107,9 @@ docs/
 |-- 09-observability-and-data-structures.md
 |-- deployment-runbook.md
 |-- git-pipeline.md
+|-- status/
+|   |-- Statusupdate-Whiteboxtesting.md
+|   `-- privat-beta-readiness.md
 |-- repository-structure.md
 `-- decisions/
 ```
@@ -118,6 +121,7 @@ docs/
 - `docs/08-next-implementation-plan.md` records the current fresh-session handoff and remaining implementation blocks.
 - `docs/09-observability-and-data-structures.md` records implemented data structures and the planned logging/diagnostics approach for client and API failures.
 - `docs/deployment-runbook.md` records Render deployment, migration, backup, restore-test, and monitoring steps for small-batch users.
+- `docs/status/` contains short-lived status reviews, audit notes, and private-beta readiness updates.
 - `docs/decisions` contains ADRs, including the accepted Render deployment target. Add or update an ADR before changing stack, auth strategy, schema policy, API style, or deployment direction.
 
 ## Local-Only Files
