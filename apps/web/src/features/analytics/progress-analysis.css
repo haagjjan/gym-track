@@ -59,16 +59,6 @@
   color: var(--cockpit-color-lavender);
 }
 
-.timeSeriesCanvas {
-  min-height: 340px;
-  min-width: 0;
-  width: 100%;
-}
-
-.progressChartPanel .recharts-surface {
-  overflow: visible;
-}
-
 .progressChartControls {
   align-items: end;
   display: grid;
@@ -110,6 +100,56 @@
   background: var(--cockpit-color-cyan-strong);
   box-shadow: 0 0 16px rgba(0, 219, 231, 0.24);
   color: #002022;
+}
+
+.timeSeriesMeta {
+  align-items: center;
+  color: rgba(185, 202, 203, 0.76);
+  display: flex;
+  flex-wrap: wrap;
+  font-family: var(--cockpit-font-body);
+  font-size: 0.72rem;
+  gap: var(--cockpit-space-2);
+  justify-content: space-between;
+}
+
+.timeSeriesViewport {
+  border: 1px solid rgba(0, 219, 231, 0.18);
+  border-radius: var(--cockpit-radius-lg);
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: var(--cockpit-space-2) var(--cockpit-space-2) var(--cockpit-space-1);
+  scrollbar-color: rgba(0, 242, 255, 0.72) rgba(0, 0, 0, 0.28);
+  scrollbar-width: thin;
+  width: 100%;
+}
+
+.timeSeriesViewport:focus-visible {
+  outline: 2px solid rgba(0, 242, 255, 0.78);
+  outline-offset: 3px;
+}
+
+.timeSeriesViewport::-webkit-scrollbar {
+  height: 8px;
+}
+
+.timeSeriesViewport::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.timeSeriesViewport::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, rgba(0, 242, 255, 0.78), rgba(217, 185, 255, 0.72));
+  border-radius: 999px;
+}
+
+.timeSeriesCanvas {
+  min-height: 340px;
+  min-width: min(720px, 100%);
+}
+
+.progressChartPanel .recharts-surface {
+  overflow: visible;
 }
 
 .progressChartPanel .chartTooltip {
