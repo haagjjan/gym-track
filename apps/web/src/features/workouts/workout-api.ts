@@ -10,6 +10,10 @@ import type {
   WorkoutDetail,
   WorkoutSet
 } from "./workout-types";
+import {
+  recordClientDiagnostic,
+  sanitizeDiagnosticRoute
+} from "../../shared/client-diagnostics";
 
 type ApiResult<T> =
   | { ok: true; data: T }
@@ -21,6 +25,7 @@ type ApiResult<T> =
       fields: Record<string, string[]> | undefined;
       details: unknown;
     };
+type ApiFailure = Extract<ApiResult<never>, { ok: false }>;
 
 interface AddSetInput {
   setType: SetType;
@@ -234,18 +239,53 @@ export async function confirmWorkoutCsvImport(
 }
 
 async function postCsv<T>(url: string, file: File): Promise<ApiResult<T>> {
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "content-type": "text/csv"
-    },
-    body: await file.text()
-  });
+  const startedAt = Date.now();
+  let response: Response;
+
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "content-type": "text/csv"
+      },
+      body: await file.text()
+    });
+  } catch (error) {
+    recordApiDiagnostic({
+      code: error instanceof Error ? error.name : "FETCH_ERROR",
+      durationMs: Date.now() - startedAt,
+      method: "POST",
+      ok: false,
+      statusCode: null,
+      url
+    });
+    throw error;
+  }
+
   const payload = await readJson(response);
 
   if (!response.ok) {
-    return toApiError(response.status, payload);
+    const result = toApiError(response.status, payload);
+
+    recordApiDiagnostic({
+      code: result.code,
+      durationMs: Date.now() - startedAt,
+      method: "POST",
+      ok: false,
+      statusCode: response.status,
+      url
+    });
+
+    return result;
   }
+
+  recordApiDiagnostic({
+    durationMs: Date.now() - startedAt,
+    method: "POST",
+    ok: true,
+    statusCode: response.status,
+    url
+  });
 
   return { ok: true, data: (payload as { data: T }).data };
 }
@@ -258,8 +298,10 @@ async function requestApi<T>(
     signal?: AbortSignal;
   } = {}
 ): Promise<ApiResult<T>> {
+  const startedAt = Date.now();
+  const method = options.method ?? "GET";
   const init: RequestInit = {
-    method: options.method ?? "GET"
+    method
   };
 
   if (options.body !== undefined) {
@@ -271,14 +313,74 @@ async function requestApi<T>(
     init.signal = options.signal;
   }
 
-  const response = await fetch(url, init);
+  let response: Response;
+
+  try {
+    response = await fetch(url, init);
+  } catch (error) {
+    recordApiDiagnostic({
+      code: error instanceof Error ? error.name : "FETCH_ERROR",
+      durationMs: Date.now() - startedAt,
+      method,
+      ok: false,
+      statusCode: null,
+      url
+    });
+    throw error;
+  }
+
   const payload = await readJson(response);
 
   if (!response.ok) {
-    return toApiError(response.status, payload);
+    const result = toApiError(response.status, payload);
+
+    recordApiDiagnostic({
+      code: result.code,
+      durationMs: Date.now() - startedAt,
+      method,
+      ok: false,
+      statusCode: response.status,
+      url
+    });
+
+    return result;
   }
 
+  recordApiDiagnostic({
+    durationMs: Date.now() - startedAt,
+    method,
+    ok: true,
+    statusCode: response.status,
+    url
+  });
+
   return { ok: true, data: (payload as { data: T }).data };
+}
+
+function recordApiDiagnostic({
+  code,
+  durationMs,
+  method,
+  ok,
+  statusCode,
+  url
+}: {
+  code?: string | undefined;
+  durationMs: number;
+  method: string;
+  ok: boolean;
+  statusCode: number | null;
+  url: string;
+}): void {
+  recordClientDiagnostic({
+    code,
+    durationMs,
+    event: "client_api_request",
+    method,
+    ok,
+    route: sanitizeDiagnosticRoute(url),
+    statusCode
+  });
 }
 
 function withSignal(signal: AbortSignal | undefined): { signal?: AbortSignal } {
@@ -293,7 +395,7 @@ async function readJson(response: Response): Promise<unknown> {
   }
 }
 
-function toApiError(status: number, value: unknown): ApiResult<never> {
+function toApiError(status: number, value: unknown): ApiFailure {
   const fallback = {
     ok: false as const,
     status,
