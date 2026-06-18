@@ -1,237 +1,166 @@
 # Gym Progress Tracker
 
-Gym Progress Tracker is a planned web app for logging strength workouts, tracking exercise progress, reviewing weekly training volume, and moving workout history through CSV files.
+Gym Progress Tracker is a TypeScript and PostgreSQL web app for logging strength workouts, tracking exercise progress, and reviewing weekly training volume. The product is designed like a small SaaS app, even though it is currently being used as a personal tracker.
 
-The repository is in the first implementation foundation phase. It contains the project documentation, workflow rules, architecture decisions, pnpm workspace metadata, shared TypeScript tooling, local PostgreSQL setup, a production-like Docker Compose local runner, initial PostgreSQL migrations, a first runnable API/web slice, API auth foundation, workout session API foundation, exercise library API foundation, workout logging API foundation, analytics API foundation, CSV workout import/export, the first workout logging UI, workout history/detail UI, analytics UI, full project CI checks, API database integration coverage, web smoke coverage, a recorded deployment target, Render deployment configuration, a small-batch operations runbook, and structured API logging configuration.
+The repo is past the planning stage and into a real MVP foundation. It includes:
+
+- Authenticated email/password signup, login, logout, and current-user flows
+- Workout session create, list, detail, and end flows
+- Workout logging for session exercises and sets
+- Shared exercise library and seeded muscle group lookup
+- Exercise progress and weekly volume analytics
+- Canonical CSV workout import and export
+- Next.js web UI with auth, dashboard, workout logging, history, progress, and weekly volume screens
+- Fastify API, Kysely data access, PostgreSQL migrations, and DB-backed opaque sessions
+- CI, tests, smoke coverage, Docker Compose local orchestration, and Render deployment config
 
 ## Current Status
 
-- GitHub remote is connected.
-- Full project checks, API database integration tests, and a web smoke test run through GitHub Actions.
-- MVP requirements, query needs, data model notes, schema draft, and API contract are documented.
-- The accepted stack is TypeScript, PostgreSQL, Next.js App Router, Fastify, pnpm workspaces, Kysely, Zod, `node-pg-migrate`, Argon2, DB-backed sessions, and Docker Compose for local orchestration.
-- The root pnpm workspace, TypeScript config, lint config, production-like Docker Compose app stack, and `.env.example` are present.
-- `apps/api` and `apps/web` exist with minimal runnable foundations.
-- Initial database schema and muscle group seed migrations are present under `apps/api/db/migrations`.
-- `apps/api` exposes `GET /api/v1/health` with a database connectivity check.
-- `apps/api` exposes signup, login, logout, and current-user auth endpoints with Argon2 password hashing and DB-backed opaque sessions.
-- `apps/api` exposes authenticated workout session create, list, detail, and end endpoints.
-- `apps/api` exposes authenticated exercise library list and create endpoints.
-- `apps/api` exposes authenticated seeded muscle group lookup for exercise creation.
-- `apps/api` exposes authenticated workout logging child endpoints for session exercises and sets.
-- `apps/api` exposes authenticated analytics endpoints for completed exercise progress navigation, exercise progress, exercise summaries, and weekly muscle volume.
-- `apps/api` exposes authenticated canonical CSV workout-history import/export endpoints.
-- `apps/web` has signup, login, logout, authenticated home state, a first workout logging flow for starting/resuming workouts, picking or creating exercises, editing sets, reordering exercises, and ending workouts, plus workout history/detail, CSV import/export controls, Progress, and anatomical Weekly Volume screens.
-- Hosted production credentials, custom domains, email verification, and password reset are not implemented yet.
+This repository currently feels like a private-beta candidate rather than a finished SaaS product.
 
-## Key Documents
+What is working well:
 
-- `AGENTS.md` - working rules for Codex and coding agents
-- `ARCHITECTURE.md` - architecture boundaries and dependency rules
-- `ENGINEERING.md` - TypeScript/PostgreSQL engineering standards
-- `CONTRIBUTING.md` - contribution workflow and review gates
-- `docs/repository-structure.md` - current repo map and local-only file rules
-- `docs/00-workflow.md` - project roadmap
-- `docs/01-requirements.md` - MVP requirements and user flows
-- `docs/02-query-list.md` - DB-driven query requirements
-- `docs/03-data-model-notes.md` - accepted data modeling rules
-- `docs/04-schema-draft.md` - MVP PostgreSQL schema draft
-- `docs/05-api-contract.md` - MVP REST API contract
-- `docs/06-implementation-start.md` - next-chat implementation prompt and staged rollout
-- `docs/07-implementation-pattern.md` - implementation pattern for API/web feature slices
-- `docs/08-next-implementation-plan.md` - fresh-session pickup plan for remaining MVP work
-- `docs/deployment-runbook.md` - Render deployment and small-batch operations checklist
-- `docs/status/` - short-lived status reviews, audit notes, and private-beta readiness updates
-- `docs/decisions/` - architecture decision records
+- The backend and database foundation are solid and well-tested.
+- The core workout logging loop exists end to end.
+- Analytics and history are usable and wired to real data.
+- The cockpit-style UI direction has been established.
+- Local development, type-checking, linting, and tests are in place.
 
-## Repository Map
+What is still missing for a full SaaS release:
 
-Use `docs/repository-structure.md` when you need to understand where files belong. In short:
+- Email verification and password reset
+- Account settings and account deletion/export workflows
+- Production tester rollout and real-world QA
+- Centralized monitoring and alerting beyond the current runbook
+- Final polish for mobile gym usage and edge-case UX
 
-- `apps/api` owns Fastify routes, auth, health, database access, migrations, and API tests.
-- `apps/web` owns the Next.js app, including auth, workout logging, workout history/detail, and analytics UI slices.
-- `docs` owns requirements, API contracts, workflow, implementation pattern, and ADRs.
-- `docs/status` owns ongoing review notes, audit writeups, and private-beta readiness updates.
-- Root config files own workspace tooling, TypeScript, linting, Docker, Compose, CI, Playwright smoke-test configuration, Render Blueprint configuration, and local setup.
+## Product View
 
-## Next Implementation Slices
+The app is centered on four product loops:
 
-The remaining work is structured in `docs/08-next-implementation-plan.md`. The recommended next slice is UX Slice 2, Separate Add-Exercise Flow.
+1. Log a workout quickly during or after training.
+2. Review previous sessions and correct mistakes.
+3. Track progress on a specific exercise.
+4. Understand weekly muscle-group volume.
 
-Remaining implementation blocks:
+The current implementation supports those loops well enough to continue building from, but it still needs real-world testing before it should be treated as production-ready for external users.
 
-- UX hardening sequence from the product audit
-- Small-batch launch execution
+## Repository Structure
 
-Remaining larger decisions:
+The authoritative repo map lives in [docs/repository-structure.md](docs/repository-structure.md).
 
-- custom domain strategy
-- monitoring alert thresholds beyond the small-batch checklist
-- backup retention and restore-test cadence after the first tester batch
+In short:
 
-CSV workout import/export uses one canonical workout-history format before supporting arbitrary legacy CSV layouts.
+- `apps/api` owns the Fastify API, auth, analytics, workout logic, CSV import/export, migrations, and API tests.
+- `apps/web` owns the Next.js UI, feature screens, same-origin proxy routes, and browser smoke tests.
+- `docs/` owns product requirements, schema and API contracts, ADRs, implementation plans, and deployment guidance.
 
-## Deploy To Render
+## Local Setup
 
-ADR 0005 records Render as the first small-batch deployment target. The checked-in `render.yaml` defines Docker-backed Render services for web and API plus a Render PostgreSQL database.
+Prerequisites:
 
-Before deploying real tester data, read:
+- Node.js 22+
+- pnpm 10+
+- Docker
 
-```text
-docs/deployment-runbook.md
-```
-
-Never use `.env.example` credentials for hosted infrastructure, and do not commit production database URLs or secrets.
-
-## Run Locally
-
-With Docker running, start the full local app stack with:
-
-```sh
-pnpm start
-```
-
-This builds and runs PostgreSQL, migrations, the Fastify API, and the Next.js web app through Docker Compose. Open:
-
-```text
-http://localhost:3000/signup
-```
-
-Stop the stack with:
-
-```sh
-pnpm stop
-```
-
-This is production-like local startup, not hot reload. Re-run `pnpm start` after code changes that need rebuilding.
-
-If an older local dev server is already listening on port `3000`, stop it before opening the app so the browser reaches the Compose web container.
-
-## Local Checks
-
-After installing Node.js and pnpm, install workspace dependencies:
+Install dependencies:
 
 ```sh
 pnpm install
 ```
 
-For the current API/web foundation, run:
+Start the local production-like stack:
 
 ```sh
-pnpm check
-pnpm test:integration
-pnpm test
-pnpm smoke:web
-git diff --check
-git status --short
+pnpm start
 ```
 
-`pnpm test:integration` requires `INTEGRATION_DATABASE_URL` to point at a migrated PostgreSQL database. `pnpm smoke:web` requires the local web/API stack to be running and Playwright's Chromium browser to be installed.
+This runs PostgreSQL, migrations, the API, and the web app through Docker Compose.
 
-## Manual Development
-
-Use the lower-level commands when debugging an individual service or when you want API/web hot reload outside Docker.
-
-Start local PostgreSQL only:
-
-```sh
-cp .env.example .env
-pnpm db:start
-```
-
-Run pending database migrations with:
-
-```sh
-pnpm migrate:up
-```
-
-Roll back one migration with:
-
-```sh
-pnpm migrate:down
-```
-
-Start the API in development mode with:
-
-```sh
-pnpm dev:api
-```
-
-API logging uses Fastify's Pino logger. `LOG_LEVEL` defaults to `info`; local development uses `pino-pretty`, production emits structured JSON logs, and test server instances keep logging disabled unless a test opts in. Cookies, authorization headers, and session token fields are redacted from request-scoped logs.
-
-With the API running, check auth manually with:
-
-```sh
-curl -i http://localhost:4000/api/v1/auth/signup \
-  -H "content-type: application/json" \
-  -d '{"email":"jan@example.com","username":"jan","password":"secret"}'
-```
-
-After signup or login, keep the session cookie and smoke-test workout sessions plus workout logging with:
-
-```sh
-COOKIE_JAR=/tmp/gym-progress-cookies.txt
-USER_TAG=$(date +%s)
-parse_json='let input = ""; process.stdin.on("data", (chunk) => input += chunk); process.stdin.on("end", () => console.log(JSON.parse(input).data[process.argv[1]][process.argv[2])));'
-
-curl -i -c "$COOKIE_JAR" http://localhost:4000/api/v1/auth/signup \
-  -H "content-type: application/json" \
-  -d "{\"email\":\"jan+$USER_TAG@example.com\",\"username\":\"jan_$USER_TAG\",\"password\":\"secret\"}"
-
-CHEST_ID=$(docker compose exec -T postgres psql \
-  -U gym_progress_tracker \
-  -d gym_progress_tracker \
-  -tAc "select id from muscle_groups where slug = 'chest';")
-
-WORKOUT_ID=$(curl -s -b "$COOKIE_JAR" http://localhost:4000/api/v1/workouts \
-  -H "content-type: application/json" \
-  -d '{"workoutType":"upper","title":"Upper A","notes":null}' \
-  | node -e "$parse_json" workout id)
-
-EXERCISE_ID=$(curl -s -b "$COOKIE_JAR" http://localhost:4000/api/v1/exercises \
-  -H "content-type: application/json" \
-  -d "{\"name\":\"Bench Press $USER_TAG\",\"equipment\":\"barbell\",\"exerciseType\":\"compound\",\"primaryMuscleGroupId\":\"$CHEST_ID\"}" \
-  | node -e "$parse_json" exercise id)
-
-SESSION_EXERCISE_ID=$(curl -s -b "$COOKIE_JAR" "http://localhost:4000/api/v1/workouts/$WORKOUT_ID/exercises" \
-  -H "content-type: application/json" \
-  -d "{\"exerciseId\":\"$EXERCISE_ID\"}" \
-  | node -e "$parse_json" sessionExercise id)
-
-SET_ID=$(curl -s -b "$COOKIE_JAR" "http://localhost:4000/api/v1/workouts/$WORKOUT_ID/exercises/$SESSION_EXERCISE_ID/sets" \
-  -H "content-type: application/json" \
-  -d '{"setType":"working","weightKg":"80.00","reps":8,"rir":2,"restTimeSeconds":120}' \
-  | node -e "$parse_json" set id)
-
-curl -s -b "$COOKIE_JAR" -X PATCH "http://localhost:4000/api/v1/sets/$SET_ID" \
-  -H "content-type: application/json" \
-  -d '{"reps":9,"rir":1}'
-
-curl -s -b "$COOKIE_JAR" "http://localhost:4000/api/v1/workouts/$WORKOUT_ID"
-
-curl -s -b "$COOKIE_JAR" -X POST "http://localhost:4000/api/v1/workouts/$WORKOUT_ID/end" \
-  -H "content-type: application/json" \
-  -d '{}'
-```
-
-Start the web app in development mode with:
-
-```sh
-pnpm dev:web
-```
-
-With both the API and web app running, open:
+Open:
 
 ```text
-http://localhost:3000/signup
+http://localhost:3000
 ```
 
-Create an account, refresh the home page, log out, then log in again from `/login`.
-
-After signing in, use the home page action to start or resume a workout. The workout logging page lets you add exercises, create a missing exercise with a seeded muscle group, add/edit/delete sets, reorder exercise blocks, and end the workout. Use the History tile or open `/workouts` to review past sessions, open workout detail, export closed workout sets as CSV, or import the canonical workout-history CSV format. Use Progress or open `/progress` for exercise trends, and use Volume or open `/weekly-volume` for weekly muscle volume.
-
-Stop local PostgreSQL with:
+Stop the stack:
 
 ```sh
+pnpm stop
+```
+
+For lower-level development, the common commands are:
+
+```sh
+pnpm db:start
+pnpm migrate:up
+pnpm dev:api
+pnpm dev:web
 pnpm db:stop
 ```
+
+The environment template is [`.env.example`](.env.example).
+
+## Checks
+
+Run the main quality gates with:
+
+```sh
+pnpm type-check
+pnpm lint
+pnpm test
+pnpm build
+```
+
+Database-backed integration coverage:
+
+```sh
+pnpm test:integration
+```
+
+Browser smoke coverage:
+
+```sh
+pnpm smoke:web
+```
+
+## Deployment
+
+The accepted deployment target is Render. The deployment plan and operational checklist live in [docs/deployment-runbook.md](docs/deployment-runbook.md).
+
+The checked-in Render Blueprint is [render.yaml](render.yaml).
+
+## Source Docs
+
+If you want the current project truth, read these in order:
+
+1. [docs/00-workflow.md](docs/00-workflow.md)
+2. [docs/01-requirements.md](docs/01-requirements.md)
+3. [docs/02-query-list.md](docs/02-query-list.md)
+4. [docs/03-data-model-notes.md](docs/03-data-model-notes.md)
+5. [docs/04-schema-draft.md](docs/04-schema-draft.md)
+6. [docs/05-api-contract.md](docs/05-api-contract.md)
+7. [docs/07-implementation-pattern.md](docs/07-implementation-pattern.md)
+8. [docs/08-next-implementation-plan.md](docs/08-next-implementation-plan.md)
+
+The architecture and working rules are in:
+
+- [AGENTS.md](AGENTS.md)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
+- [ENGINEERING.md](ENGINEERING.md)
+- [CONTRIBUTING.md](CONTRIBUTING.md)
+
+## Notes For Contributors
+
+- Keep changes small and tied to a documented requirement.
+- Preserve user work and unrelated changes.
+- Update docs when behavior, API shape, workflow, or architecture changes.
+- Do not introduce a new stack or major pattern without an ADR in `docs/decisions/`.
+
+## Where To Start
+
+If you are trying to understand the product quickly, start with:
+
+- [docs/08-next-implementation-plan.md](docs/08-next-implementation-plan.md)
+- [docs/design/stitch-redesign-v2/implementation-roadmap.md](docs/design/stitch-redesign-v2/implementation-roadmap.md)
+- [docs/deployment-runbook.md](docs/deployment-runbook.md)
