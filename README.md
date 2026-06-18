@@ -41,6 +41,7 @@ The repository is in the first implementation foundation phase. It contains the 
 - `docs/07-implementation-pattern.md` - implementation pattern for API/web feature slices
 - `docs/08-next-implementation-plan.md` - fresh-session pickup plan for remaining MVP work
 - `docs/deployment-runbook.md` - Render deployment and small-batch operations checklist
+- `docs/status/` - short-lived status reviews, audit notes, and private-beta readiness updates
 - `docs/decisions/` - architecture decision records
 
 ## Repository Map
@@ -50,6 +51,7 @@ Use `docs/repository-structure.md` when you need to understand where files belon
 - `apps/api` owns Fastify routes, auth, health, database access, migrations, and API tests.
 - `apps/web` owns the Next.js app, including auth, workout logging, workout history/detail, and analytics UI slices.
 - `docs` owns requirements, API contracts, workflow, implementation pattern, and ADRs.
+- `docs/status` owns ongoing review notes, audit writeups, and private-beta readiness updates.
 - Root config files own workspace tooling, TypeScript, linting, Docker, Compose, CI, Playwright smoke-test configuration, Render Blueprint configuration, and local setup.
 
 ## Next Implementation Slices
