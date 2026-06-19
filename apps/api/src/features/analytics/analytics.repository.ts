@@ -22,7 +22,7 @@ export interface CompletedExerciseRecord {
   totalSets: number;
 }
 
-export interface AnalyticsExerciseRecord {
+interface AnalyticsExerciseRecord {
   id: string;
   name: string;
   primaryMuscleGroup: AnalyticsMuscleGroupRecord;
