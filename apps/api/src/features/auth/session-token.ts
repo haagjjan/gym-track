@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 
-export interface SessionTokenPair {
+interface SessionTokenPair {
   rawToken: string;
   tokenHash: string;
 }
