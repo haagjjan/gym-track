@@ -17,7 +17,7 @@ import {
 
 export type { WeeklyVolume } from "./analytics-weekly-volume.js";
 
-export interface ExerciseProgressItem {
+interface ExerciseProgressItem {
   workoutId: string;
   sessionExerciseId: string;
   setId: string;
@@ -44,7 +44,7 @@ export interface ExerciseSummary {
   bestTopSet: BestTopSet | null;
 }
 
-export interface BestTopSet {
+interface BestTopSet {
   workoutId: string;
   setId: string;
   sessionDate: string;
@@ -58,7 +58,7 @@ export interface CompletedExerciseList {
   items: CompletedExercise[];
 }
 
-export interface CompletedExercise {
+interface CompletedExercise {
   id: string;
   name: string;
   primaryMuscleGroup: MuscleGroupShape;
