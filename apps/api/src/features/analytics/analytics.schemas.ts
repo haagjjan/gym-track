@@ -50,7 +50,6 @@ export const weeklyVolumeQuerySchema = withDateRangeRefinement(
   })
 );
 
-export type AnalyticsExerciseParams = z.infer<typeof analyticsExerciseParamsSchema>;
 export type ExerciseProgressQuery = z.infer<typeof exerciseProgressQuerySchema>;
 export type ExerciseSummaryQuery = z.infer<typeof exerciseSummaryQuerySchema>;
 export type WeeklyVolumeQuery = z.infer<typeof weeklyVolumeQuerySchema>;
