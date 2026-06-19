@@ -7,13 +7,13 @@ export interface WeeklyVolume {
   weeks: WeeklyVolumeWeek[];
 }
 
-export interface WeeklyVolumeWeek {
+interface WeeklyVolumeWeek {
   weekStart: string;
   weekEnd: string;
   items: WeeklyVolumeItem[];
 }
 
-export interface WeeklyVolumeItem {
+interface WeeklyVolumeItem {
   muscleGroup: MuscleGroupShape;
   workingSets: number;
   exercises: WeeklyVolumeExercise[];
@@ -26,13 +26,13 @@ export interface MuscleGroupShape {
   name: string;
 }
 
-export interface WeeklyVolumeExercise {
+interface WeeklyVolumeExercise {
   id: string;
   name: string;
   workingSets: number;
 }
 
-export interface WeeklyVolumeSession {
+interface WeeklyVolumeSession {
   workoutId: string;
   sessionDate: string;
   workingSets: number;
