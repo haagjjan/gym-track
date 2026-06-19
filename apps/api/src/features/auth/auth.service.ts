@@ -19,7 +19,7 @@ export interface AuthenticatedUser {
   sessionToken: string;
   expiresAt: Date;
 }
-export type AuthResult<T> =
+type AuthResult<T> =
   | { ok: true; value: T }
   | { ok: false; reason: "conflict" | "invalid_credentials" | "unauthorized" };
 export interface AuthService {
