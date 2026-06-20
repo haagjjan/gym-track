@@ -43,7 +43,7 @@ const exportNoisePattern = /\b(?:csv|import|export|sheet|copy|backup|log|entry)\
 const rowMarkerPattern = /\brow\s+\d{4,}\b/i;
 const longNumericSuffixPattern = /(?:^|\s)\d{5,}(?:\s|$)/;
 
-export function normalizeExerciseName(name: string): string {
+function normalizeExerciseName(name: string): string {
   return name.trim().replace(/\s+/g, " ");
 }
 
