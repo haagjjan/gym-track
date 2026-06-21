@@ -71,7 +71,7 @@ export interface WorkoutCsvExercise {
   sets: WorkoutCsvSet[];
 }
 
-export interface WorkoutCsvSet {
+interface WorkoutCsvSet {
   setOrder: number;
   setType: "warmup" | "working";
   weightKg: string;
