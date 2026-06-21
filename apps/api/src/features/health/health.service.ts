@@ -1,6 +1,6 @@
 import type { DatabaseHealthCheck } from "../../db/database-health.js";
 
-export type HealthStatus = "ok" | "degraded";
+type HealthStatus = "ok" | "degraded";
 
 export interface HealthReport {
   status: HealthStatus;
