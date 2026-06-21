@@ -11,12 +11,12 @@ import {
   type ExerciseNameQualityIssue
 } from "../exercises/exercise-name-quality.js";
 
-export interface WorkoutCsvImportSummary {
+interface WorkoutCsvImportSummary {
   importedRows: number;
   importedWorkouts: number;
 }
 
-export interface WorkoutCsvNameReview {
+interface WorkoutCsvNameReview {
   row: number;
   originalName: string;
   normalizedName: string;
@@ -24,7 +24,7 @@ export interface WorkoutCsvNameReview {
   suggestions: string[];
 }
 
-export interface WorkoutCsvPreview {
+interface WorkoutCsvPreview {
   importedRows: number;
   importedWorkouts: number;
   importability: "ready" | "ready_with_warnings" | "blocked";
@@ -32,11 +32,11 @@ export interface WorkoutCsvPreview {
   blocked: WorkoutCsvNameReview[];
 }
 
-export type WorkoutCsvImportResult =
+type WorkoutCsvImportResult =
   | { ok: true; value: WorkoutCsvImportSummary }
   | { ok: false; errors: WorkoutCsvError[]; preview?: WorkoutCsvPreview };
 
-export type WorkoutCsvPreviewResult =
+type WorkoutCsvPreviewResult =
   | { ok: true; value: WorkoutCsvPreview }
   | { ok: false; errors: WorkoutCsvError[] };
 
