@@ -65,9 +65,6 @@ export const updateSetRequestSchema = addSetRequestSchema.partial().refine(
   }
 );
 
-export type WorkoutParams = z.infer<typeof workoutParamsSchema>;
-export type SessionExerciseParams = z.infer<typeof sessionExerciseParamsSchema>;
-export type SetParams = z.infer<typeof setParamsSchema>;
 export type AddSessionExerciseRequest = z.infer<typeof addSessionExerciseRequestSchema>;
 export type ReorderSessionExercisesRequest = z.infer<typeof reorderSessionExercisesRequestSchema>;
 export type AddSetRequest = z.infer<typeof addSetRequestSchema>;
