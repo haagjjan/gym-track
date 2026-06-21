@@ -25,7 +25,7 @@ export interface WorkoutListRecord extends WorkoutSessionRecord {
   totalSets: number;
 }
 
-export interface WorkoutSetRecord {
+interface WorkoutSetRecord {
   id: string;
   sessionExerciseId: string;
   setOrder: number;
@@ -39,7 +39,7 @@ export interface WorkoutSetRecord {
   updatedAt: Date;
 }
 
-export interface WorkoutSessionExerciseRecord {
+interface WorkoutSessionExerciseRecord {
   id: string;
   position: number;
   exercise: {
