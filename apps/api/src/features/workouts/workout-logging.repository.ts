@@ -15,7 +15,7 @@ import {
   toSetUpdate
 } from "./workout-logging.repository.helpers.js";
 
-export interface MuscleGroupRecord {
+interface MuscleGroupRecord {
   id: string;
   slug: string;
   name: string;
