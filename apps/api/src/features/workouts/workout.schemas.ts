@@ -48,7 +48,6 @@ export const endWorkoutRequestSchema = z.object({
 
 export type CreateWorkoutRequest = z.infer<typeof createWorkoutRequestSchema>;
 export type ListWorkoutsQuery = z.infer<typeof listWorkoutsQuerySchema>;
-export type WorkoutParams = z.infer<typeof workoutParamsSchema>;
 export type EndWorkoutRequest = z.infer<typeof endWorkoutRequestSchema>;
 
 function queryDateSchema(bound: "start" | "end") {
