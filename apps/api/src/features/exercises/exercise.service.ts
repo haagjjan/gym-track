@@ -15,7 +15,7 @@ import {
   type ExerciseNameEvaluation
 } from "./exercise-name-quality.js";
 
-export interface MuscleGroupShape {
+interface MuscleGroupShape {
   id: string;
   slug: string;
   name: string;
