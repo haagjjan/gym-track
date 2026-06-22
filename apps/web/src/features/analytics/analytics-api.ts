@@ -1,9 +1,8 @@
 import type {
   ApiErrorPayload,
-  ListCompletedExercisesPayload,
   ExerciseProgressPayload,
   ExerciseSummaryPayload,
-  ListExercisesPayload,
+  ListCompletedExercisesPayload,
   WeeklyVolumePayload
 } from "./analytics-types";
 import {
@@ -30,12 +29,6 @@ interface AnalyticsRangeOptions {
 
 interface ExerciseProgressOptions extends AnalyticsRangeOptions {
   includeWarmups?: boolean;
-}
-
-export async function listExercises(
-  signal?: AbortSignal
-): Promise<ApiResult<ListExercisesPayload>> {
-  return requestApi<ListExercisesPayload>("/api/exercises?limit=100&offset=0", withSignal(signal));
 }
 
 export async function listCompletedExercises(
