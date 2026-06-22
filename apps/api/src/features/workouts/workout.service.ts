@@ -12,7 +12,7 @@ import type {
   ListWorkoutsQuery
 } from "./workout.schemas.js";
 
-export interface WorkoutSummary {
+interface WorkoutSummary {
   id: string;
   startedAt: string;
   endedAt: string | null;
@@ -24,13 +24,13 @@ export interface WorkoutSummary {
   totalSets: number;
 }
 
-export interface MuscleGroupShape {
+interface MuscleGroupShape {
   id: string;
   slug: string;
   name: string;
 }
 
-export interface WorkoutSetShape {
+interface WorkoutSetShape {
   id: string;
   setOrder: number;
   setType: string;
@@ -43,7 +43,7 @@ export interface WorkoutSetShape {
   updatedAt: string;
 }
 
-export interface SessionExerciseShape {
+interface SessionExerciseShape {
   id: string;
   position: number;
   exercise: {
