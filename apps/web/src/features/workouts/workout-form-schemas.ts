@@ -39,6 +39,3 @@ export const createExerciseFormSchema = z.object({
     .transform((value) => (value.length > 0 ? value : null)),
   primaryMuscleGroupId: z.string().uuid("Choose a muscle group.")
 });
-
-export type SetFormInput = z.infer<typeof setFormSchema>;
-export type CreateExerciseFormInput = z.infer<typeof createExerciseFormSchema>;
