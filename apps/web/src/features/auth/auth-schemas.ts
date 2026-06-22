@@ -18,4 +18,3 @@ export const loginFormSchema = z.object({
 });
 
 export type SignupFormInput = z.infer<typeof signupFormSchema>;
-export type LoginFormInput = z.infer<typeof loginFormSchema>;
