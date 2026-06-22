@@ -275,8 +275,7 @@
   text-shadow: var(--cockpit-reactive-text-glow);
 }
 
-.cockpitField,
-.cockpitCheckboxField {
+.cockpitField {
   display: grid;
   gap: var(--cockpit-space-2);
 }
@@ -300,8 +299,7 @@
   width: 100%;
 }
 
-.cockpitField__input:focus,
-.cockpitCheckboxField input:focus-visible {
+.cockpitField__input:focus {
   border-color: var(--cockpit-color-cyan);
   box-shadow: var(--cockpit-glow-cyan);
   outline: 2px solid transparent;
@@ -320,21 +318,6 @@
 
 .cockpitField__error {
   color: #ffdad6;
-}
-
-.cockpitCheckboxField__control {
-  align-items: flex-start;
-  color: var(--cockpit-color-text);
-  display: flex;
-  gap: var(--cockpit-space-2);
-  line-height: 1.45;
-}
-
-.cockpitCheckboxField input {
-  accent-color: var(--cockpit-color-cyan);
-  height: 18px;
-  margin-top: 2px;
-  width: 18px;
 }
 
 .cockpitState {
