@@ -6,14 +6,6 @@ import type { ReactNode } from "react";
 import { useTransition } from "react";
 import { CockpitButton } from "../../shared/ui/cockpit";
 
-export function WorkoutEntryPoint(): ReactNode {
-  return (
-    <section className="workoutEntry" aria-label="Workout entry">
-      <StartSessionAction label="Start or resume workout" pendingLabel="Opening" />
-    </section>
-  );
-}
-
 export function StartSessionAction({
   href = "/workout",
   icon,
