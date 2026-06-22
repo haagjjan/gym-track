@@ -1,7 +1,7 @@
 import type { FastifyServerOptions } from "fastify";
 
 export type ApiLogger = NonNullable<FastifyServerOptions["logger"]>;
-export type AppLogLevel = "fatal" | "error" | "warn" | "info" | "debug" | "trace" | "silent";
+type AppLogLevel = "fatal" | "error" | "warn" | "info" | "debug" | "trace" | "silent";
 
 interface LoggerStream {
   write(message: string): void;
