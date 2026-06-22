@@ -87,7 +87,7 @@ export interface ListMuscleGroupsPayload {
   items: MuscleGroup[];
 }
 
-export interface ExerciseNameQualityIssue {
+interface ExerciseNameQualityIssue {
   code: string;
   message: string;
 }
@@ -98,7 +98,7 @@ export interface ExerciseNameReviewDetails {
   suggestions: string[];
 }
 
-export interface CsvNameReview {
+interface CsvNameReview {
   row: number;
   originalName: string;
   normalizedName: string;
