@@ -12,7 +12,7 @@ export interface MuscleGroup {
   name: string;
 }
 
-export interface Exercise {
+interface Exercise {
   id: string;
   name: string;
   primaryMuscleGroup: MuscleGroup;
@@ -22,15 +22,6 @@ export interface Exercise {
 export interface CompletedExercise extends Exercise {
   lastDoneAt: string;
   totalSets: number;
-}
-
-export interface ListExercisesPayload {
-  items: Exercise[];
-  pagination: {
-    limit: number;
-    offset: number;
-    total: number;
-  };
 }
 
 export interface ListCompletedExercisesPayload {
