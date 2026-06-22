@@ -1,16 +1,9 @@
-.workoutEntry,
 .workoutHeader,
 .workoutStats,
 .exercisePicker,
 .sessionExerciseList {
   margin-inline: auto;
   width: min(100%, 1080px);
-}
-
-.workoutEntry {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
 }
 
 .workoutPage {
