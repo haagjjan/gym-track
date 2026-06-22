@@ -10,7 +10,7 @@ export type ClientDiagnosticInput = ClientDiagnosticEvent extends infer Event
     : never
   : never;
 
-export interface ClientApiRequestEvent extends ClientDiagnosticBase {
+interface ClientApiRequestEvent extends ClientDiagnosticBase {
   code?: string | undefined;
   durationMs: number;
   event: "client_api_request";
@@ -20,7 +20,7 @@ export interface ClientApiRequestEvent extends ClientDiagnosticBase {
   statusCode: number | null;
 }
 
-export interface ClientRouteErrorEvent extends ClientDiagnosticBase {
+interface ClientRouteErrorEvent extends ClientDiagnosticBase {
   digest?: string | undefined;
   event: "client_route_error";
   message: string;
@@ -28,7 +28,7 @@ export interface ClientRouteErrorEvent extends ClientDiagnosticBase {
   stack?: string | undefined;
 }
 
-export interface ClientUnhandledErrorEvent extends ClientDiagnosticBase {
+interface ClientUnhandledErrorEvent extends ClientDiagnosticBase {
   event: "client_unhandled_error";
   filename?: string | undefined;
   line?: number | undefined;
@@ -37,14 +37,14 @@ export interface ClientUnhandledErrorEvent extends ClientDiagnosticBase {
   stack?: string | undefined;
 }
 
-export interface ClientUnhandledRejectionEvent extends ClientDiagnosticBase {
+interface ClientUnhandledRejectionEvent extends ClientDiagnosticBase {
   event: "client_unhandled_rejection";
   message: string;
   route: string;
   stack?: string | undefined;
 }
 
-export interface ProgressChartStateEvent extends ClientDiagnosticBase {
+interface ProgressChartStateEvent extends ClientDiagnosticBase {
   chartMode: "estimated" | "loadReps";
   chartRowCount: number;
   clientWidth: number;
@@ -70,12 +70,12 @@ const uuidPathSegmentPattern =
   /\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?=\/|$)/gi;
 const diagnosticEvents: ClientDiagnosticEvent[] = [];
 
-export function areClientDiagnosticsEnabled(): boolean {
+function areClientDiagnosticsEnabled(): boolean {
   return process.env.NODE_ENV !== "production"
     || process.env.NEXT_PUBLIC_CLIENT_DIAGNOSTICS === "1";
 }
 
-export function createClientEventId(): string {
+function createClientEventId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
   }
