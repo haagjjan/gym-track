@@ -1,6 +1,7 @@
 # Gym Progress Tracker
 
-Gym Progress Tracker is a TypeScript and PostgreSQL web app for logging strength workouts, tracking exercise progress, and reviewing weekly training volume. The product is designed like a small SaaS app, even though it is currently being used as a personal tracker.
+Gym Progress Tracker is a TypeScript and PostgreSQL web app for logging strength workouts, tracking exercise progress, and reviewing weekly training volume. 
+I designed the Project similar to a small SaaA application. Currently it is far form being that. It's currently mainly used as a small Side project.
 
 The repo is past the planning stage and into a real MVP foundation. It includes:
 
