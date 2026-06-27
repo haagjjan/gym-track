@@ -1,50 +1,37 @@
 # Gym Progress Tracker
 
-Gym Progress Tracker is a TypeScript and PostgreSQL web app for logging strength workouts, tracking exercise progress, and reviewing weekly training volume. 
-I designed the Project similar to a small SaaA application. Currently it is far form being that. It's currently mainly used as a small Side project.
+Gym Progress Tracker is a TypeScript and PostgreSQL web app for logging strength workouts, tracking exercise progress, and reviewing weekly training volume.
 
-The repo is past the planning stage and into a real MVP foundation. It includes:
+The repository is past the planning stage and into the MVP foundation. The backend, database, auth, workout logging, analytics, CI, and deployment scaffolding are in place. The main active area is the UI redesign and polish.
 
-- Authenticated email/password signup, login, logout, and current-user flows
+## What Is Implemented
+
+- Email/password signup, login, logout, and current-user flows
 - Workout session create, list, detail, and end flows
 - Workout logging for session exercises and sets
 - Shared exercise library and seeded muscle group lookup
 - Exercise progress and weekly volume analytics
 - Canonical CSV workout import and export
-- Next.js web UI with auth, dashboard, workout logging, history, progress, and weekly volume screens
+- Next.js web UI for auth, dashboard, workout logging, history/detail, progress, and weekly volume
 - Fastify API, Kysely data access, PostgreSQL migrations, and DB-backed opaque sessions
 - CI, tests, smoke coverage, Docker Compose local orchestration, and Render deployment config
 
 ## Current Status
 
-This repository currently feels like a private-beta candidate rather than a finished SaaS product.
+The backend/auth/database foundation is solid enough to keep.
 
-What is working well:
+What is already working well:
 
-- The backend and database foundation are solid and well-tested.
 - The core workout logging loop exists end to end.
-- Analytics and history are usable and wired to real data.
-- The cockpit-style UI direction has been established.
-- Local development, type-checking, linting, and tests are in place.
+- Analytics and history are wired to real data.
+- Local development, type-checking, linting, and tests are available.
 
-What is still missing for a full SaaS release:
+What still needs work before this feels like a full product:
 
 - Email verification and password reset
 - Account settings and account deletion/export workflows
 - Production tester rollout and real-world QA
-- Centralized monitoring and alerting beyond the current runbook
-- Final polish for mobile gym usage and edge-case UX
-
-## Product View
-
-The app is centered on four product loops:
-
-1. Log a workout quickly during or after training.
-2. Review previous sessions and correct mistakes.
-3. Track progress on a specific exercise.
-4. Understand weekly muscle-group volume.
-
-The current implementation supports those loops well enough to continue building from, but it still needs real-world testing before it should be treated as production-ready for external users.
+- Final polish for mobile gym usage and edge cases
 
 ## Repository Structure
 
@@ -107,6 +94,12 @@ The environment template is [`.env.example`](.env.example).
 Run the main quality gates with:
 
 ```sh
+pnpm check
+```
+
+If you want the individual commands:
+
+```sh
 pnpm type-check
 pnpm lint
 pnpm test
@@ -143,6 +136,7 @@ If you want the current project truth, read these in order:
 6. [docs/05-api-contract.md](docs/05-api-contract.md)
 7. [docs/07-implementation-pattern.md](docs/07-implementation-pattern.md)
 8. [docs/08-next-implementation-plan.md](docs/08-next-implementation-plan.md)
+9. [docs/99-current-project-state.md](docs/99-current-project-state.md)
 
 The architecture and working rules are in:
 
@@ -151,17 +145,17 @@ The architecture and working rules are in:
 - [ENGINEERING.md](ENGINEERING.md)
 - [CONTRIBUTING.md](CONTRIBUTING.md)
 
+## Where To Start
+
+If you are trying to understand the current state quickly, start with:
+
+- [docs/99-current-project-state.md](docs/99-current-project-state.md)
+- [docs/design/stitch-redesign-v2/implementation-roadmap.md](docs/design/stitch-redesign-v2/implementation-roadmap.md)
+- [docs/deployment-runbook.md](docs/deployment-runbook.md)
+
 ## Notes For Contributors
 
 - Keep changes small and tied to a documented requirement.
 - Preserve user work and unrelated changes.
 - Update docs when behavior, API shape, workflow, or architecture changes.
 - Do not introduce a new stack or major pattern without an ADR in `docs/decisions/`.
-
-## Where To Start
-
-If you are trying to understand the product quickly, start with:
-
-- [docs/08-next-implementation-plan.md](docs/08-next-implementation-plan.md)
-- [docs/design/stitch-redesign-v2/implementation-roadmap.md](docs/design/stitch-redesign-v2/implementation-roadmap.md)
-- [docs/deployment-runbook.md](docs/deployment-runbook.md)
