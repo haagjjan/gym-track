@@ -78,7 +78,7 @@ Once I approve the direction, rebuild every page/component from the Phase 0 chec
 
 ## Working Conventions
 
-- Branch: `frontend-rework-fable5`
+- Branch: `frontend-rework`
 - Frontend framework and libraries are your call — Next.js isn't a hard requirement, pick whatever fits this job best (data-dense dashboard, one real-time 3D scene, gym-adjacent mobile use). If you propose switching away from it, state the choice and a brief justification as part of Phase 0, and account for how it affects the pnpm workspace and the Docker build. Whatever you pick still consumes the existing Fastify API as-is and lives inside the pnpm monorepo.
 - Commit logically (per page or component group), not as one giant diff.
 
@@ -90,6 +90,3 @@ Once I approve the direction, rebuild every page/component from the Phase 0 chec
 
 ---
 
-## Kickoff prompt (paste this into Claude Code, in the repo root, on the `frontend-rework-fable5` branch — also drag `dashboard-fused-concept.png` directly into the chat, don't rely on the file path alone)
-
-> Read `docs/10-frontend-rework-brief.md`, `docs/DESIGN.md`, and everything in `docs/design-refs/` before doing anything else. This is a from-scratch rebuild, not a refactor — once Phase 0 is confirmed, the existing frontend code gets archived out of the active app, not adapted. Start with Phase 0 only: inventory the current frontend using the Screen Spec Template, and propose a tech stack with a brief justification. Don't touch any code yet. Stop after both so I can confirm before you move on.
