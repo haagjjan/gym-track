@@ -1,6 +1,6 @@
 # UI Polish & Ops Round 2
 
-**For:** Claude Fable 5, run via Claude Code
+**For:** Claude, run via Claude Code
 **Follows:** `10-frontend-rework-brief.md`, `11-phase0-frontend-inventory.md` (Phase 0–2 output, reviewed),
 `12-saas-hardening.md` (backend hardening pass)
 **Status:** Owner review of the Phase 2 build complete. This is not a redesign — it's a punch list against
@@ -13,14 +13,14 @@ Five batches, ordered by priority. Work batch by batch, not screen by screen —
 work here. Some batches have an explicit open decision flagged before implementation — resolve or ask
 before writing code for those items.
 
-**Order: A → C → B → D → E is the default. But do E in parallel with A if convenient — see note in E.**
+**Order: A → C → B → D → E is the default**
 
 One standing decision confirmed by the owner: **the persistent desktop sidebar stays as-is.** Do not
 revisit nav paradigm; primary usage is mobile.
 
 ---
 
-## Batch A — Isolated frontend polish
+## Batch A — Isolated frontend polish *mostly done*
 No new assets, no backend, no dependencies on other batches. Do these first.
 
 - [ ] **Dashboard:** data cards react to cursor/touch — subtle 3D tilt-on-hover, the "hover tilt card"
@@ -34,16 +34,16 @@ No new assets, no backend, no dependencies on other batches. Do these first.
 - [ ] **Progress chart:** add a visually heavier separator line at year boundaries when a chart spans
       multiple years.
 - [ ] **Progress chart:** Y-axis labels/gridline should stay pinned/visible regardless of horizontal
-      scroll position (currently only visible when scrolled fully left).
+      scroll position (currently only visible when scrolled fully left). *Comment: the Y axis labels are successfully pinned, but the left side is covered by the data in the chart, and not visible per standart view*
 - [ ] **Progress chart (mobile):** the exercise selector list should be collapsible/expandable — a long
       list (8–9+ exercises) currently pushes the chart too far down the viewport.
 - [ ] **Active Workout Logger:** move the reorder controls (up/down arrows) from inside individual sets to
       the exercise-block level. Reordering exercises, not sets, is the actual use case; current placement
-      is confusing.
+      is confusing. *partially done, I will order you directly when I wan this in a later phase*
 - [ ] **Cross-cutting:** email-verification banner should not be a persistent top-of-app banner. Move it
       into the menu; surface only as a small pending-action badge/indicator on the menu icon.
 
-## Batch C — Shared 3D environment & asset work
+## Batch C — Shared 3D environment & asset work *TO Do*
 Do this before Batch B's chart-rendering item and before deeper Volume work — it's the foundation both
 Dashboard and Volume avatars sit in, and solving it once avoids solving it twice.
 
