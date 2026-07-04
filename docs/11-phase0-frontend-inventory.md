@@ -77,7 +77,7 @@ Implementation notes: `POST /api/auth/signup`.
 ### Dashboard (`/`)
 Screen purpose: At-a-glance status hub; entry point to a session.
 Primary user actions: Start or resume session; jump to a previous session.
-Displayed data: Top-3 recently trained lifts with best top set / est. 1RM (fallback: total sets); weekly volume bars aggregated to 6 regions (Chest, Back, Shoulders, Arms, Core, Legs); biometrics panel (placeholders — see flags); previous-sessions strip (last 6 workouts); active-session banner with start timestamp; central body visual (Phase 1/2: 3D avatar).
+Displayed data: Top-3 favorit lifts (user chosen, in the menue) with best top set / est. 1RM (fallback: total sets); weekly volume bars aggregated to 6 regions (Chest, Back, Shoulders, Arms, Core, Legs); biometrics panel (placeholders — see flags); previous-sessions strip (last 6 workouts); active-session banner with start timestamp; central body visual (Phase 1/2: 3D avatar).
 Interactions: CTA switches START_SESSION ↔ RESUME_SESSION based on an open workout.
 Empty state: Per-panel empty titles (no PB lifts / no weekly volume / biometrics not configured); first-run copy on zero sessions.
 Loading state: Per-panel skeletons; partial-failure error banner (loaded data still renders).
@@ -122,7 +122,7 @@ Interactions: Auto-selects most recently trained exercise on load; chart scrolls
 Empty state: No completed exercises; no exercise selected; no telemetry in window.
 Loading state: Selector list loading; metric deck skeleton; chart loading.
 Mobile constraints: Selector panel stacks above analysis stack.
-Implementation notes: Working sets only drive the signal.
+Implementation notes: Display only best working set of the specific day. The Horizontal scroll must not create any errors, or performance problems.
 
 ### Weekly Volume (`/weekly-volume`)
 Screen purpose: Muscle-group load distribution — where the training week landed.
