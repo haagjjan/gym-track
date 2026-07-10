@@ -23,6 +23,7 @@ const webNextConfig = compat.config({
 const eslintConfig = [
   {
     ignores: [
+      "_legacy-reference/**",
       "**/.next/**",
       "**/coverage/**",
       "**/dist/**",
