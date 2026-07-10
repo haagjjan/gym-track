@@ -112,6 +112,35 @@ camera framing, thermal spike). The accepted architecture, which Parts 2/3 must 
   `features/avatar/use-avatar-scene.ts`: WebGL gate → static fallback, live
   `prefers-reduced-motion`, IntersectionObserver → frameloop "always"/"demand" pause.
 
+## Volume Muscle Regions — Projected ID Maps (docs/14 Batch C Part 2, built)
+
+Muscle-group regions on the 3D body come from hand-authored front/back SVG maps
+(`apps/web/public/volume/muscle-regions-{front,back}.svg`), rasterized once by
+`features/volume/region-map.ts` and consumed by BOTH the projection shader
+(`muscle-mask-material.ts`, per-fragment planar projection, front/back chosen by the
+surface normal) and click-picking (raycast hit point → the same ImageData). One pixel
+source: rendering and selection cannot disagree, and region precision equals the
+authored art — refine the SVGs, not code. Constraints that must hold:
+
+- **Region-id colors must be NON-COLLINEAR** (`REGION_PALETTE` + nearest-entry decode
+  with a distance cutoff). Rasterization anti-aliasing blends border texels between two
+  palette colors; with collinear palettes those blends land exactly ON other ids and
+  every boundary sparkles with foreign regions (this happened — first encoding was
+  R=id·18 with an R+G=255 checksum, which is a line in RGB space).
+- **Pedestal hiding cuts at the ANKLE line** (`yn < 0.085` discard + a radial clause for
+  the side console). The pedestal is multi-tiered: the feet stand on a narrow top tier
+  that is radially interleaved with the feet, so no yn/radial predicate can remove it
+  without eating the feet. The figure hovers over a cyan projector pad instead
+  (owner-approved "hide fully + ground with a disc"). Material is DoubleSide so the cut
+  reads solid.
+- The Volume screen is **body-only** (owner override of Part 1's "same environment on
+  both screens"): no HologramBay/fog there; Dashboard keeps the bay.
+- The same SVGs render directly as the 2D body-map view (`body-map-2d.tsx`, 3D|2D
+  toggle) — art edits update both views and picking simultaneously.
+- Legacy per-vertex classification (`classifyVertex`/`classifyFigure`/`paintHeat`) and
+  the red HEAT_STOPS ramp are deleted; the display ramp is cyan→green at
+  `TARGET_WEEKLY_SETS` (heatmap.ts `volumeRampCss`, single-sourced with the shader).
+
 ## ADR Gate
 
 Create or update an ADR before changing:
