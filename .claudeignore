@@ -1,0 +1,50 @@
+# VCS and local metadata
+.git/
+.DS_Store
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+apps/*/node_modules/
+.pnpm-store/
+
+# Build output
+.next/
+apps/web/.next/
+dist/
+apps/api/dist/
+build/
+out/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Test output and coverage
+coverage/
+playwright-report/
+test-results/
+junit*.xml
+*.lcov
+
+# Tool caches and compiler metadata
+.turbo/
+.cache/
+*.tsbuildinfo
+
+# Local runtime and scratch data
+cookies.txt
+tmp/
+temp/
+*.sqlite
+*.sqlite3
+*.dump
+*.backup
+*.bak
