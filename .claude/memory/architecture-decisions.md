@@ -127,19 +127,41 @@ authored art — refine the SVGs, not code. Constraints that must hold:
   palette colors; with collinear palettes those blends land exactly ON other ids and
   every boundary sparkles with foreign regions (this happened — first encoding was
   R=id·18 with an R+G=255 checksum, which is a line in RGB space).
-- **Pedestal hiding cuts at the ANKLE line** (`yn < 0.085` discard + a radial clause for
-  the side console). The pedestal is multi-tiered: the feet stand on a narrow top tier
-  that is radially interleaved with the feet, so no yn/radial predicate can remove it
-  without eating the feet. The figure hovers over a cyan projector pad instead
-  (owner-approved "hide fully + ground with a disc"). Material is DoubleSide so the cut
-  reads solid.
+- **Pedestal hiding keeps the FEET** (owner request, 2026-07-11; supersedes the earlier
+  ankle-line cut). The discard combines height, radius, and the surface normal: everything
+  below the tier plate (`yn < 0.033`), plus far-out or up-facing fragments at sole level
+  (`yn < 0.047 && (radial > 0.6 || normal.y > 0.55)`), plus the old high side-console
+  clause. Mesh-audit facts backing it: all pedestal geometry beyond radial 0.6 tops out at
+  yn 0.044, the plate the feet stand on is up-facing at yn 0.032–0.044, and above yn 0.046
+  only feet/ankles exist. Soles clip against the plate (invisible in practice); material
+  stays DoubleSide so cuts read solid; the cyan projector pad remains under the figure.
 - The Volume screen is **body-only** (owner override of Part 1's "same environment on
   both screens"): no HologramBay/fog there; Dashboard keeps the bay.
 - The same SVGs render directly as the 2D body-map view (`body-map-2d.tsx`, 3D|2D
   toggle) — art edits update both views and picking simultaneously.
 - Legacy per-vertex classification (`classifyVertex`/`classifyFigure`/`paintHeat`) and
-  the red HEAT_STOPS ramp are deleted; the display ramp is cyan→green at
-  `TARGET_WEEKLY_SETS` (heatmap.ts `volumeRampCss`, single-sourced with the shader).
+  the red HEAT_STOPS ramp are deleted; the display ramp is cyan→VIOLET (`#a852ff`) at
+  `TARGET_WEEKLY_SETS` (owner request 2026-07-11, replacing cyan→green; heatmap.ts
+  `volumeRampCss`, single-sourced with the shader's `uViolet`).
+- **Region art is owner-editable by design**: `apps/web/public/volume/README.md` documents
+  the SVG coordinate system, palette/stroke/draw-order rules, and the `/muscle-spike`
+  live-reload loop (`__muscleSpikeTemplate` / `__muscleSpikeReloadMaps`). Refine shapes
+  there — never in code.
+
+## 3D Interaction — Who Moves: Figure vs Camera (docs/14 Batch C, owner-confirmed)
+
+- **Dashboard (has the HologramBay environment): drag spins the FIGURE, never the
+  camera.** Orbiting the camera made the whole bay (light strips, floor streaks) appear
+  to rotate with the statue — owner flagged this as a bug (2026-07-11). `AvatarStage`
+  therefore has no OrbitControls: pointer drag feeds the turntable group's yaw with
+  release inertia that decays back into the idle spin (doc 14: "the environment stays
+  ambient, not reactive"). The fused pedestal rotating with the figure is correct — it
+  belongs to the statue.
+- **Volume (body-only, no environment): the CAMERA moves.** OrbitControls stays, and the
+  Part 3 muscle-focus is a camera ease (`CameraDirector` in `volume-body-map.tsx`):
+  selection eases target height / azimuth side / push-in distance; deselect eases back;
+  FRONT/BACK snaps stay instant; a user drag cancels any ease in flight. Camera movement
+  sidesteps the pedestal fusion and keeps picking coordinates stable.
 
 ## ADR Gate
 
