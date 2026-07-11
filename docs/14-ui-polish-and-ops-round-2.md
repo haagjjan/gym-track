@@ -43,30 +43,113 @@ No new assets, no backend, no dependencies on other batches. Do these first.
 - [ ] **Cross-cutting:** email-verification banner should not be a persistent top-of-app banner. Move it
       into the menu; surface only as a small pending-action badge/indicator on the menu icon.
 
-## Batch C — Shared 3D environment & asset work *TO Do*
+**Note:** owner review found most of Batch A solid, with some rough edges remaining. Rather than reopening
+A, residual polish is expected to surface naturally during Batch B (same screens, same files) — do not
+treat Batch A as reopened unless the owner explicitly flags a specific regression.
+
+## Batch C — Shared 3D environment & Volume interaction
 Do this before Batch B's chart-rendering item and before deeper Volume work — it's the foundation both
 Dashboard and Volume avatars sit in, and solving it once avoids solving it twice.
 
-- [ ] **Build one shared "hologram bay" 3D environment** (obsidian/carbon-fiber materials, ambient
-      lighting, floor reflection/fog) that both the Dashboard and Volume avatars render inside. The goal:
-      the avatar should read as a hologram standing inside a real environment, not a 3D model sitting in a
-      bounded canvas on a flat page. Currently both screens show a visible rectangular render boundary
-      around the model — that boundary needs to disappear into a continuous scene.
-  - Reuse the same environment asset/component on both screens.
-- [ ] **Volume screen — muscle-group highlighting spike** (do in isolation before wiring it into the real
-      screen, same spirit as the original avatar spike in doc 10 Phase 1):
-  - Current state: color overlay doesn't align to actual muscle boundaries (e.g. a "chest" highlight
-    bleeds into the abdomen), and uses colors outside the design system.
-  - Needed: precise per-muscle-group masking with a defined edge, styled as a glow/outline highlight
-    consistent with the hologram look (not a paint-fill look). Palette must come from the existing
-    cyan/lavender/green accent system in `DESIGN.md` — no new colors.
-  - **Open decision, resolve before building:** does this need the FBX re-exported with real
-    muscle-group vertex groups/sub-meshes, or can it be done with a UV mask/shader approach on the
-    existing mesh? Spike both quickly if unclear; report back before committing.
-- [ ] **Volume screen:** replace the current "click a muscle group → recolor it beige" interaction with a
-      camera move — smoothly orbit/reframe the camera to center on the selected muscle region instead of
-      changing its color. Reference feel: clean product-page camera transitions (e.g. Apple-style),
-      **not** a scroll-driven camera rig — just a programmatic move-to-target on click.
+**Known constraint — confirm during Part 1, don't rediscover it:** the existing avatar asset has the
+pedestal fused into the same mesh/object as the figure itself, rather than as a separate piece (this
+happened unintentionally during Phase 1 asset generation). Any interaction that moves or reframes "the
+figure" currently moves the pedestal along with it unless the mesh is split apart later. This is not a
+blocker for this batch — just a real limitation to design around in Part 3 rather than hit by surprise.
+
+Part 1's base build ran on Opus 4.8 and mostly worked, but the full-viewport/glass-panel rework (see
+REWORK note below) surfaced real composition and performance problems that need frontier-level judgment
+to solve well — that piece moves to Fable 5, same as Part 2. Stop for owner review after Part 1's rework,
+and again after Part 2, before proceeding.
+
+### Part 1 — Shared environment (built procedurally in code, no external mesh)
+No external environment asset should be generated or imported. Given the constraints below, the required
+effect (a dark industrial "hologram bay" the avatar stands inside) is achievable with primitives,
+materials, fog, and lighting authored directly in code — this is materially cheaper than generating and
+integrating a full environment mesh, and lower-risk.
+
+- [ ] No gym equipment or detailed background props of any kind.
+- [ ] No pedestal or floor platform of its own — one already exists fused to the avatar object (see
+      constraint above); the environment surrounds it, never duplicates it.
+- [ ] Not navigable. This is a fixed-camera backdrop, not a walkable space — do not model geometry or
+      detail that would only be visible from angles the camera never reaches.
+- [ ] Reference images `docs/design-refs/hologram-bay-mood.png` and `hologram-bay-mood-2.png` (confirm
+      actual filenames on disk before starting) are mood/material/lighting reference **only** —
+      obsidian/dark metal, cyan accent lighting, a reflective floor giving a sense of depth. Do **not**
+      attempt to reproduce their composition, background equipment/detail, depth-of-field blur, or
+      path-traced-style reflections. Where photoreal fidelity and mobile performance conflict,
+      performance wins — a cheap faked/blurred floor reflection is preferable to an expensive real one.
+- [ ] Give the environment a small amount of ambient life: cheap, continuous, non-interactive loops only
+      (e.g. a slow sine-driven pulse on accent lighting, subtle drifting fog/particles). This should not
+      be a scripted or triggered animation system — just a low-cost loop running underneath everything
+      else. The only thing that should ever move in response to user interaction is the figure itself
+      (see Part 3) — the environment stays ambient, not reactive.
+- [ ] Use the same environment component on both the Dashboard and Volume screens.
+- [ ] **REWORK — first attempt (full-viewport canvas + live `backdrop-filter: blur()` on all panels)
+      failed both visually and on performance; do not repeat that approach as-is.** Observed failures:
+      avatar composition broke (cropped/off-center — camera framing wasn't recomputed for the new canvas
+      aspect ratio), and CPU/GPU thermal spiked noticeably on the owner's machine during testing, which
+      will be worse on mobile. Root cause: full-viewport WebGL plus live backdrop-filter blur over an
+      *animating* canvas is one of the most expensive combinations in browser rendering, since the blur
+      has to be recomputed every frame.
+- [ ] **Outcome bar, not a mandated implementation:** the environment should *feel* like one continuous
+      space with no visible canvas boundary, and panels should *feel* like glass — but how that's achieved
+      is open. A cheap, faked approach (tinted semi-transparent panel fill + subtle texture/gradient +
+      glow border, no live backdrop-filter over the canvas; a color-matched background extending past a
+      smaller, cheaper real-time render region) is explicitly preferred over a literal one-giant-canvas
+      implementation if it gets the same feel for a fraction of the cost.
+- [ ] **Camera framing/composition must be locked and verified at whatever final canvas dimensions are
+      used** — don't assume framing that worked at one aspect ratio carries over to another.
+- [ ] **Check the existing avatar state before building new fallback logic.** Doc 09 documents a `Home
+      avatar state` already handling "static fallback, 3D scene readiness, and reduced-motion handling"
+      for the Dashboard avatar — reuse/extend this rather than inventing a parallel mechanism.
+- [ ] Reconsider whether the bloom postprocessing (per doc 11's stack) is a significant thermal
+      contributor — a cheaper faked-glow (emissive material, no real bloom pass) may look nearly identical
+      at a fraction of the cost.
+- [ ] **Definition of done for this item is a real performance check, not a screenshot.** Test with CPU/
+      GPU throttling (e.g. Chrome DevTools mobile/low-tier throttling profile) at minimum; flag clearly if
+      you cannot verify real device thermals so the owner can spot-check on an actual phone before this is
+      considered closed.
+- [ ] Legibility over the background remains the bar for panel treatment — check text contrast, adjust
+      tint/opacity as needed, whatever technique is used.
+- [ ] While inspecting the existing avatar setup, confirm (or correct, if untrue) the pedestal-fusion
+      detail above and log it in `.claude/memory/architecture-decisions.md` — Part 3 depends on knowing
+      which is actually the case.
+
+Screenshot both screens with the new environment. Self-check against `DESIGN.md` and the mood references
+— specifically judge whether it feels alive without feeling heavy or busy. **Then stop and show the
+owner for review before starting Part 2.**
+
+### Part 2 — Muscle-group highlighting spike
+Do in isolation before wiring into the real screen — same spirit as the original avatar spike in doc 10
+Phase 1.
+
+- [ ] Current state: color overlay doesn't align to actual muscle boundaries (e.g. a "chest" highlight
+      bleeds into the abdomen), and uses colors outside the design system.
+- [ ] Needed: precise per-muscle-group masking with a defined edge, styled as a glow/outline highlight
+      consistent with the hologram look (not a paint-fill look). Palette must come from the existing
+      cyan/lavender/green accent system in `DESIGN.md` — no new colors.
+- [ ] **Open decision, resolve before building the real implementation:** does accurate masking need the
+      mesh re-exported with real muscle-group vertex groups/sub-meshes, or can it be done with a UV
+      mask/shader approach on the existing mesh? Check what 3D tooling is actually available in this
+      environment before assuming either option is off the table. Time-box this as a real spike — get
+      each viable approach to a rough proof-of-concept, not a finished feature, enough to judge edge
+      accuracy and how well it can carry a glow/outline treatment. Report a recommendation and reasoning.
+      **Then stop and wait for owner go-ahead before building the real implementation into the Volume
+      screen.**
+
+### Part 3 — Muscle-select interaction (only after Part 2 is approved)
+Replace the current "click a muscle group → recolor it beige" interaction. It should feel like a
+deliberate cinematic zoom/focus onto the selected muscle region — a camera pushing in and bringing that
+area into focus — and must **not** look like an object being snapped or dragged to a new spot, the way it
+would look mid-edit in 3D modeling software.
+
+- [ ] Mechanism is flexible: camera movement, movement of the figure itself, or a combination — pick
+      whichever reads best and is cheapest to implement well, given the pedestal-fusion constraint logged
+      in Part 1. Camera movement is the likely simplest default since it sidesteps that constraint
+      entirely, but use judgment.
+- [ ] Ease the transition — no instant snaps.
+- [ ] Screenshot or short recording, self-check against `DESIGN.md`.
 
 ## Batch B — Frontend engineering, needs more investigation
 Not simple styling fixes — each needs either a root-cause dig or an interaction decision first.
