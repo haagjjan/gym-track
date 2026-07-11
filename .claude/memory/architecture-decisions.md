@@ -89,6 +89,16 @@ Consequences for later Batch C work:
   adds **no platform under the figure** — the fused pedestal remains the only platform.
   Its room floor is an environment surround for depth/reflection only.
 
+**PARTIALLY SUPERSEDED (2026-07-11): the fusion is now separable at runtime.**
+`statue-core.tsx#getStatueParts` splits the merged mesh into figure/pedestal
+BufferGeometries per TRIANGLE using the mesh-audit predicate (below the tier plate,
+far-out/up-facing at sole level, high side console) — no re-export/DCC needed. The
+dashboard spins the FIGURE part alone (pedestal static, +4mm figure lift against
+sole/plate z-fighting); `<Statue part="figure"|"pedestal">`, omit `part` for the legacy
+fused render. The pedestal is now an independently replaceable mesh (owner wants a more
+metallic version like the mood refs eventually). The volume screen still uses the fused
+mesh + shader discard — untouched.
+
 ## 3D Environment Architecture — Bounded Canvas + Static Ambience (docs/14 Batch C Part 1 rework)
 
 The full-viewport live-canvas approach was tried and rejected (doc 14 REWORK note: broke
@@ -162,6 +172,36 @@ authored art — refine the SVGs, not code. Constraints that must hold:
   selection eases target height / azimuth side / push-in distance; deselect eases back;
   FRONT/BACK snaps stay instant; a user drag cancels any ease in flight. Camera movement
   sidesteps the pedestal fusion and keeps picking coordinates stable.
+
+## Dashboard Connector Lines — Split at the Canvas Boundary (docs/14 Batch B, built)
+
+Leader lines from data cards to body landmarks are TWO cooperating pieces: an SVG stub
+from the card edge across the page gap to the canvas edge (static content beneath —
+legal overlay), and **real 3D geometry inside the scene** (`ConnectorBeams` in
+`avatar-stage.tsx`): world-space landmark nodes (emissive sphere + additive halo) with
+beams to the canvas edge, unprojected at the landmark's depth. `ConnectorLayer` measures
+cards vs the `[data-connector-id="avatar-stage"]` element and feeds `{landmarkId, side,
+ndcY}` to the stage. Landmarks are FIXED in world space — they do not ride the spinning
+figure (calm scan-points, no swaying lines). Desktop-only, like the old overlay.
+
+## Progress Chart — Interaction + Rendering Rules (docs/14 Batches A/B, built)
+
+- **Pinned axes**: never `hide` a Recharts axis whose layout slot must exist — `hide`
+  skips BOTH rendering and layout reservation. Use invisible-but-present axes
+  (`tick/axisLine/tickLine={false}` + explicit width/height) in the scrollable chart AND
+  the two overlay strips, or every pinned label drifts from its true value row.
+- **Zoom within a window** (owner delegated the interaction choice): pinch on touch +
+  ctrl/cmd-wheel on desktop (trackpad pinch emits ctrl+wheel), focal-point anchored via
+  an RTL-normalized scroll offset; pan = the existing swipe/drag scroll; window chips
+  reset zoom; ZOOM ×N — RESET chip appears when ≠1. Zoom compounding writes the zoom ref
+  IMMEDIATELY (events outpace renders).
+- **Draw-in animation is a feature** (owner): left→right, 900ms, restart-proofed by
+  `scrollbar-gutter: stable` on the scroll container (the doc-14 "MAX glitch" was the
+  scrollbar appearing mid-draw and remeasuring). Paused during zoom gestures; disabled
+  under prefers-reduced-motion.
+- **FOOTGUN**: the chart component's prop is named `window` and SHADOWS the global —
+  always use `globalThis` for timers/matchMedia inside it (a `window.setTimeout` there
+  shipped a runtime crash caught by the error boundary).
 
 ## ADR Gate
 
