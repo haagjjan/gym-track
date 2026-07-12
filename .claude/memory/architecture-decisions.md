@@ -99,6 +99,21 @@ fused render. The pedestal is now an independently replaceable mesh (owner wants
 metallic version like the mood refs eventually). The volume screen still uses the fused
 mesh + shader discard — untouched.
 
+**REPLACED ON THE DASHBOARD (2026-07-12, owner-directed optimization round):** the FBX
+pedestal part is no longer rendered anywhere on the dashboard. Its split geometry carried
+sole slices of the feet (yn<0.033 triangles) that stayed static while the figure spun —
+visible ghosting the owner flagged. `HologramBay` now owns a **procedural pedestal**
+(`PedestalTiers` in `hologram-bay.tsx`, modeled on `docs/design-refs/hologram-bay-mood*.png`):
+low concentric metal tiers + recessed cyan LED bands + glowing projector pad, top face at
+`PEDESTAL_TOP_Y = 0.5` so the figure part's audited sole line (y≈0.4994 + 4mm turntable
+lift) lands inside the pad glow, which also hides the open sole cut. The readiness ring
+(avatar-stage) rides the pad top at r 0.545–0.615. Do not reintroduce `<Statue
+part="pedestal">` on the dashboard; the FBX pedestal remains available for the legacy
+fused render and the volume screen's shader-discard path. Bay lighting rules from the same
+round: no visible light sources — the pilaster strips and ceiling bars are gone; light =
+overhead spotlight (source above frame), pedestal LED bands/uplight, and a one-shot PMREM
+env map (bars exist only as floor/drum reflections; no per-frame reflection passes).
+
 ## 3D Environment Architecture — Bounded Canvas + Static Ambience (docs/14 Batch C Part 1 rework)
 
 The full-viewport live-canvas approach was tried and rejected (doc 14 REWORK note: broke
