@@ -99,20 +99,28 @@ fused render. The pedestal is now an independently replaceable mesh (owner wants
 metallic version like the mood refs eventually). The volume screen still uses the fused
 mesh + shader discard — untouched.
 
-**REPLACED ON THE DASHBOARD (2026-07-12, owner-directed optimization round):** the FBX
-pedestal part is no longer rendered anywhere on the dashboard. Its split geometry carried
-sole slices of the feet (yn<0.033 triangles) that stayed static while the figure spun —
-visible ghosting the owner flagged. `HologramBay` now owns a **procedural pedestal**
-(`PedestalTiers` in `hologram-bay.tsx`, modeled on `docs/design-refs/hologram-bay-mood*.png`):
-low concentric metal tiers + recessed cyan LED bands + glowing projector pad, top face at
-`PEDESTAL_TOP_Y = 0.5` so the figure part's audited sole line (y≈0.4994 + 4mm turntable
-lift) lands inside the pad glow, which also hides the open sole cut. The readiness ring
-(avatar-stage) rides the pad top at r 0.545–0.615. Do not reintroduce `<Statue
-part="pedestal">` on the dashboard; the FBX pedestal remains available for the legacy
-fused render and the volume screen's shader-discard path. Bay lighting rules from the same
-round: no visible light sources — the pilaster strips and ceiling bars are gone; light =
-overhead spotlight (source above frame), pedestal LED bands/uplight, and a one-shot PMREM
-env map (bars exist only as floor/drum reflections; no per-frame reflection passes).
+**REPLACED ON THE DASHBOARD (2026-07-12, owner-directed optimization round):** the
+avatar-base FBX pedestal part is no longer rendered anywhere on the dashboard. Its split
+geometry carried sole slices of the feet (yn<0.033 triangles) that stayed static while the
+figure spun — visible ghosting the owner flagged. Do not reintroduce `<Statue
+part="pedestal">` on the dashboard; the avatar-base pedestal remains available only for the
+legacy fused render and the volume screen's shader-discard path.
+
+The dashboard pedestal is now a **separate owner-supplied model** `base-v-2.fbx`, rendered
+by `features/avatar/pedestal.tsx` (`BayPedestal`) inside `HologramBay` in a `<Suspense>`.
+(An intermediate fully-procedural `PedestalTiers` was built and REJECTED by the owner —
+he wanted the sculpted tiered shape kept, just without the ghost feet, and shaded like
+`docs/design-refs/hologram-bay-mood*.png`.) The pedestal model has no feet, so the ghost
+problem is gone by construction; it is shaded dark reflective metal (shared bay PMREM env
+map) with cyan LED rings addressed by world RADIUS (clean concentric rings; height bands
+smear on the tier slope) + a fresnel edge, a dedicated cool downlight for tier form, and a
+low cyan point light as the "bottom light" on the wet floor. `PEDESTAL_TOP_Y` (now exported
+from pedestal.tsx, ≈0.505) still anchors the projector pad glow + readiness ring; the pad
+glow hides the figure's open sole cut. Full audit/scale/LED specifics live in the
+project-memory avatar-3d-asset-facts note. Bay lighting rules from the same round: no
+visible light sources — the pilaster strips and ceiling bars are gone; light = overhead
+spotlight (source above frame), pedestal LEDs/uplight, and a one-shot PMREM env map (bars
+exist only as floor/pedestal reflections; no per-frame reflection passes).
 
 ## 3D Environment Architecture — Bounded Canvas + Static Ambience (docs/14 Batch C Part 1 rework)
 
