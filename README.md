@@ -2,11 +2,11 @@
 
 Gym Progress Tracker is a TypeScript and PostgreSQL web app for logging strength workouts, tracking exercise progress, and reviewing weekly training volume.
 
-The repository is past the planning stage and into the MVP foundation. The backend, database, auth, workout logging, analytics, CI, and deployment scaffolding are in place. The main active area is the UI redesign and polish.
+The repository is past the planning stage and into V1 release verification. The backend, database, hardened auth, workout logging, analytics, responsive UI, CI, and deployment scaffolding are in place.
 
 ## What Is Implemented
 
-- Email/password signup, login, logout, and current-user flows
+- Email/password signup, verification, login, logout, password reset, account lockout, and current-user flows
 - Workout session create, list, detail, and end flows
 - Workout logging for session exercises and sets
 - Shared exercise library and seeded muscle group lookup
@@ -28,7 +28,6 @@ What is already working well:
 
 What still needs work before this feels like a full product:
 
-- Email verification and password reset
 - Account settings and account deletion/export workflows
 - Production tester rollout and real-world QA
 - Final polish for mobile gym usage and edge cases
@@ -103,8 +102,11 @@ If you want the individual commands:
 pnpm type-check
 pnpm lint
 pnpm test
+pnpm test:performance
 pnpm build
 ```
+
+`pnpm test:performance` runs the API and web pure-function performance suites sequentially. These timing ceilings are generous algorithmic regression gates; they are not browser page-load targets or a substitute for real-user monitoring.
 
 Database-backed integration coverage:
 
