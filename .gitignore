@@ -37,6 +37,7 @@ test-results/
 
 # local data/runtime
 cookies.txt
+ops/monitoring/secrets/
 *.sqlite
 *.sqlite3
 tmp/
