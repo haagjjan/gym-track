@@ -1,0 +1,660 @@
+.historyPage {
+  background:
+    linear-gradient(rgba(0, 219, 231, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 219, 231, 0.035) 1px, transparent 1px),
+    radial-gradient(circle at 82% 18%, rgba(0, 219, 231, 0.12), transparent 28%),
+    var(--cockpit-color-background);
+  background-size: 48px 48px, 48px 48px, auto, auto;
+  color: var(--cockpit-color-text);
+  gap: var(--cockpit-space-6);
+}
+
+.historyHero,
+.historyMetricGrid,
+.historyLogDeck,
+.csvPanel {
+  margin-inline: auto;
+  width: min(100%, 1180px);
+}
+
+.historyHero {
+  align-items: end;
+  display: grid;
+  gap: var(--cockpit-space-5);
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 460px);
+}
+
+.historyHero h1,
+.historyHero p {
+  margin: 0;
+}
+
+.historyHero h1 {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-heading);
+  font-size: clamp(2.4rem, 5vw, 4.4rem);
+  letter-spacing: 0;
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+.historyHero .eyebrow {
+  color: var(--cockpit-color-cyan-strong);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-bottom: var(--cockpit-space-3);
+}
+
+.historyHero .leadText {
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-body);
+  max-width: 760px;
+}
+
+.historyPage .pageNav {
+  gap: var(--cockpit-space-2);
+  margin-bottom: var(--cockpit-space-5);
+}
+
+.historyPage .backLink,
+.historyPage .secondaryLink,
+.historyPage .primaryLink {
+  border-radius: var(--cockpit-radius-md);
+  font-family: var(--cockpit-font-heading);
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.historyPage .backLink {
+  border: 1px solid rgba(0, 219, 231, 0.16);
+  color: var(--cockpit-color-text-muted);
+  font-size: 0.75rem;
+  min-height: 34px;
+  padding: var(--cockpit-space-2) var(--cockpit-space-3);
+}
+
+.historyPage .backLink:hover,
+.historyPage .backLink:focus-visible,
+.historyPage .secondaryLink:hover,
+.historyPage .secondaryLink:focus-visible,
+.historyPage .primaryLink:hover,
+.historyPage .primaryLink:focus-visible {
+  border-color: var(--cockpit-color-cyan);
+  box-shadow: var(--cockpit-glow-cyan);
+  color: var(--cockpit-color-cyan-soft);
+  outline: 2px solid transparent;
+}
+
+.historySearch {
+  background: rgba(19, 19, 19, 0.82);
+  border: 1px solid rgba(0, 219, 231, 0.22);
+  border-radius: var(--cockpit-radius-lg);
+  display: grid;
+  gap: var(--cockpit-space-2);
+  padding: var(--cockpit-space-4);
+}
+
+.historySearch span,
+.historyDeckHeader p,
+.historyMetricCard span,
+.historyCardMetrics dt,
+.historyDetailHeader span,
+.historyExerciseDetail header p,
+.csvPanel summary span,
+.csvImportForm label {
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.historySearch input {
+  background: rgba(0, 0, 0, 0.42);
+  border: 1px solid rgba(58, 73, 75, 0.92);
+  border-radius: var(--cockpit-radius-md);
+  color: var(--cockpit-color-text);
+  font-family: var(--cockpit-font-body);
+  min-height: 52px;
+  padding: 0 var(--cockpit-space-4);
+  width: 100%;
+}
+
+.historySearch input:focus {
+  border-color: var(--cockpit-color-cyan);
+  box-shadow: var(--cockpit-glow-cyan);
+  outline: 2px solid transparent;
+}
+
+.historyMetricGrid {
+  display: grid;
+  gap: var(--cockpit-space-4);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.historyMetricCard,
+.historyCard {
+  --cockpit-pointer-rotate-x: 0deg;
+  --cockpit-pointer-rotate-y: 0deg;
+  --cockpit-pointer-x: 50%;
+  --cockpit-pointer-y: 50%;
+  background:
+    radial-gradient(
+      circle at var(--cockpit-pointer-x) var(--cockpit-pointer-y),
+      var(--cockpit-reactive-spotlight),
+      transparent 38%
+    ),
+    rgba(19, 19, 19, 0.82);
+  border: 1px solid rgba(0, 219, 231, 0.2);
+  border-radius: var(--cockpit-radius-lg);
+  overflow: hidden;
+  transform:
+    perspective(1100px)
+    rotateX(var(--cockpit-pointer-rotate-x))
+    rotateY(var(--cockpit-pointer-rotate-y));
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.historyMetricCard:hover,
+.historyMetricCard:focus-within,
+.historyCard:hover,
+.historyCard:focus-within {
+  border-color: rgba(0, 219, 231, 0.46);
+  box-shadow:
+    var(--cockpit-reactive-glow),
+    0 18px 44px rgba(0, 0, 0, 0.28);
+}
+
+.historyMetricCard {
+  border-left: 4px solid var(--cockpit-color-cyan-strong);
+  display: grid;
+  gap: var(--cockpit-space-3);
+  min-height: 112px;
+  padding: var(--cockpit-space-5);
+}
+
+.historyMetricCard[data-tone="green"] {
+  border-left-color: var(--cockpit-color-green);
+}
+
+.historyMetricCard[data-tone="violet"] {
+  border-left-color: var(--cockpit-color-lavender);
+}
+
+.historyMetricCard strong {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-body);
+  font-size: clamp(1.3rem, 2.4vw, 2rem);
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+.historyMetricCard[data-tone="green"] strong {
+  color: var(--cockpit-color-green);
+}
+
+.historyMetricCard[data-tone="violet"] strong {
+  color: var(--cockpit-color-lavender);
+}
+
+.historyLogDeck {
+  display: grid;
+  gap: var(--cockpit-space-4);
+}
+
+.historyDeckHeader {
+  align-items: flex-end;
+  display: flex;
+  gap: var(--cockpit-space-4);
+  justify-content: space-between;
+}
+
+.historyDeckHeader p,
+.historyDeckHeader h2 {
+  margin: 0;
+}
+
+.historyDeckHeader h2 {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-heading);
+  font-size: 1.5rem;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.historyDeckHeader > span {
+  color: var(--cockpit-color-green);
+  font-family: var(--cockpit-font-body);
+  font-weight: 800;
+}
+
+.historyCard {
+  color: var(--cockpit-color-text);
+  display: grid;
+}
+
+.historyCard[data-expanded="true"] {
+  border-color: rgba(0, 219, 231, 0.52);
+  box-shadow:
+    var(--cockpit-glow-cyan),
+    0 20px 54px rgba(0, 0, 0, 0.34);
+}
+
+.historyCardMain {
+  align-items: center;
+  display: grid;
+  gap: var(--cockpit-space-5);
+  grid-template-columns: auto minmax(0, 1fr) minmax(320px, 0.7fr) auto;
+  min-height: 128px;
+  padding: var(--cockpit-space-5);
+}
+
+.historyGlyph {
+  align-items: center;
+  background: rgba(0, 219, 231, 0.08);
+  border: 1px solid rgba(0, 219, 231, 0.32);
+  border-radius: var(--cockpit-radius-lg);
+  color: var(--cockpit-color-cyan-strong);
+  display: inline-flex;
+  font-family: var(--cockpit-font-body);
+  font-weight: 800;
+  height: 56px;
+  justify-content: center;
+  width: 56px;
+}
+
+.historySessionTitle {
+  display: grid;
+  gap: var(--cockpit-space-2);
+  min-width: 0;
+}
+
+.historySessionTitle span {
+  color: var(--cockpit-color-cyan-strong);
+  font-family: var(--cockpit-font-body);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.historySessionTitle h2 {
+  color: var(--cockpit-color-text);
+  font-family: var(--cockpit-font-heading);
+  font-size: clamp(1.35rem, 3vw, 2rem);
+  letter-spacing: 0;
+  line-height: 1.05;
+  margin: 0;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
+.historySessionTitle p {
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-body);
+  line-height: 1.45;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.historyCardMetrics {
+  display: grid;
+  gap: var(--cockpit-space-3);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+}
+
+.historyCardMetrics div {
+  display: grid;
+  gap: var(--cockpit-space-1);
+  min-width: 0;
+}
+
+.historyCardMetrics dd {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-body);
+  font-weight: 800;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.historyExpandButton,
+.historyPage .secondaryAction,
+.historyPage .primaryAction {
+  border-radius: var(--cockpit-radius-md);
+  cursor: pointer;
+  font-family: var(--cockpit-font-heading);
+  font-weight: 800;
+  letter-spacing: 0;
+  min-height: 46px;
+  text-transform: uppercase;
+}
+
+.historyExpandButton {
+  background: rgba(19, 19, 19, 0.78);
+  border: 1px solid rgba(0, 219, 231, 0.3);
+  color: var(--cockpit-color-cyan-soft);
+  min-width: 116px;
+  padding-inline: var(--cockpit-space-4);
+}
+
+.historyExpandButton:hover,
+.historyExpandButton:focus-visible,
+.historyPage .secondaryAction:hover,
+.historyPage .secondaryAction:focus-visible,
+.historyPage .primaryAction:hover,
+.historyPage .primaryAction:focus-visible {
+  border-color: var(--cockpit-color-cyan);
+  box-shadow: var(--cockpit-glow-cyan);
+  outline: 2px solid transparent;
+}
+
+.historyDetailPanel {
+  border-top: 1px solid rgba(0, 219, 231, 0.2);
+  display: grid;
+  gap: var(--cockpit-space-4);
+  padding: 0 var(--cockpit-space-5) var(--cockpit-space-5);
+}
+
+.historyDetailHeader {
+  align-items: center;
+  display: flex;
+  gap: var(--cockpit-space-3);
+  justify-content: space-between;
+  padding-top: var(--cockpit-space-4);
+}
+
+.historyExerciseGrid {
+  display: grid;
+  gap: var(--cockpit-space-3);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+}
+
+.historyExerciseDetail {
+  background:
+    linear-gradient(90deg, rgba(0, 219, 231, 0.06), transparent 72%),
+    rgba(0, 0, 0, 0.24);
+  border: 1px solid rgba(0, 219, 231, 0.16);
+  border-radius: var(--cockpit-radius-md);
+  display: grid;
+  gap: var(--cockpit-space-3);
+  min-width: 0;
+  padding: var(--cockpit-space-4);
+}
+
+.historyExerciseDetail header {
+  align-items: start;
+  display: grid;
+  gap: var(--cockpit-space-3);
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.historyExerciseDetail header > span {
+  align-items: center;
+  border: 1px solid rgba(0, 219, 231, 0.34);
+  color: var(--cockpit-color-cyan);
+  display: inline-flex;
+  font-family: var(--cockpit-font-body);
+  font-size: 0.72rem;
+  height: 28px;
+  justify-content: center;
+  width: 28px;
+}
+
+.historyExerciseDetail h3,
+.historyExerciseDetail p {
+  margin: 0;
+}
+
+.historyExerciseDetail h3 {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-heading);
+  font-size: 1rem;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.historyExerciseDetail header strong {
+  color: var(--cockpit-color-green);
+  font-family: var(--cockpit-font-body);
+  font-size: 0.8rem;
+}
+
+.historySetGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cockpit-space-2);
+}
+
+.historySetPill {
+  border: 1px solid rgba(0, 219, 231, 0.18);
+  border-radius: var(--cockpit-radius-md);
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-body);
+  font-size: 0.76rem;
+  min-height: 30px;
+  padding: var(--cockpit-space-1) var(--cockpit-space-2);
+}
+
+.historySetPill[data-type="working"] {
+  border-color: rgba(0, 219, 231, 0.36);
+  color: var(--cockpit-color-cyan-soft);
+}
+
+.historyAlert,
+.historyLoadingState,
+.emptyHistory,
+.csvPanel {
+  background:
+    linear-gradient(90deg, rgba(0, 219, 231, 0.08), transparent 74%),
+    rgba(28, 27, 27, 0.84);
+  border: 1px solid rgba(0, 219, 231, 0.22);
+  border-radius: var(--cockpit-radius-lg);
+  color: var(--cockpit-color-text);
+  padding: var(--cockpit-space-5);
+}
+
+.historyLoadingState,
+.emptyHistory {
+  display: grid;
+  gap: var(--cockpit-space-3);
+}
+
+.historyLoadingState span,
+.emptyHistory p {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-heading);
+  font-weight: 800;
+  margin: 0;
+}
+
+.historyLoadingState strong,
+.emptyHistory span,
+.csvPanel p {
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-body);
+}
+
+.emptyHistory .primaryLink,
+.emptyHistory .secondaryAction {
+  justify-self: start;
+}
+
+.loadMoreAction {
+  justify-self: center;
+  margin-top: var(--cockpit-space-3);
+  min-width: 220px;
+}
+
+.csvPanel {
+  color: var(--cockpit-color-text);
+}
+
+.csvPanel summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: var(--cockpit-space-3);
+  justify-content: space-between;
+  list-style: none;
+}
+
+.csvPanel summary::-webkit-details-marker {
+  display: none;
+}
+
+.csvPanel summary strong {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-heading);
+  text-transform: uppercase;
+}
+
+.csvPanelBody {
+  border-top: 1px solid rgba(0, 219, 231, 0.16);
+  display: grid;
+  gap: var(--cockpit-space-4);
+  margin-top: var(--cockpit-space-4);
+  padding-top: var(--cockpit-space-4);
+}
+
+.csvPanel p,
+.csvPreviewPanel p,
+.csvReviewGroup h3,
+.csvReviewList,
+.inlineSuccess {
+  margin: 0;
+}
+
+.csvActions,
+.csvImportForm {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cockpit-space-3);
+}
+
+.csvImportForm label {
+  display: grid;
+  gap: var(--cockpit-space-2);
+}
+
+.csvImportForm input {
+  color: var(--cockpit-color-text-muted);
+  max-width: 300px;
+}
+
+.inlineSuccess {
+  color: var(--cockpit-color-green);
+  font-family: var(--cockpit-font-body);
+  font-weight: 800;
+}
+
+.csvPreviewPanel {
+  background: rgba(0, 0, 0, 0.24);
+  border: 1px solid rgba(0, 219, 231, 0.16);
+  border-radius: var(--cockpit-radius-md);
+  display: grid;
+  gap: var(--cockpit-space-3);
+  padding: var(--cockpit-space-4);
+}
+
+.csvReviewGroup {
+  display: grid;
+  gap: var(--cockpit-space-2);
+}
+
+.csvReviewGroup h3 {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.96rem;
+  letter-spacing: 0;
+}
+
+.csvReviewList {
+  color: var(--cockpit-color-text-muted);
+  display: grid;
+  gap: var(--cockpit-space-2);
+  padding-left: var(--cockpit-space-4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .historyMetricCard,
+  .historyCard {
+    transform: none;
+    transition: none;
+  }
+}
+
+@media (max-width: 1120px) {
+  .historyHero,
+  .historyCardMain {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .historyMetricGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .historyCardMetrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .historyPage {
+    padding: var(--cockpit-space-4);
+  }
+
+  .historyHero h1 {
+    font-size: 2.5rem;
+  }
+
+  .historyDeckHeader,
+  .historyDetailHeader {
+    align-items: start;
+    display: grid;
+  }
+
+  .historyCardMain {
+    gap: var(--cockpit-space-4);
+    padding: var(--cockpit-space-4);
+  }
+
+  .historyDetailPanel {
+    padding: 0 var(--cockpit-space-4) var(--cockpit-space-4);
+  }
+
+  .historyExerciseGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .historyMetricGrid,
+  .historyCardMetrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .historyExpandButton,
+  .historyPage .secondaryAction,
+  .historyPage .primaryAction,
+  .historyPage .secondaryLink,
+  .historyPage .primaryLink {
+    width: 100%;
+  }
+
+  .historyGlyph {
+    height: 44px;
+    width: 44px;
+  }
+
+  .csvPanel summary,
+  .csvActions,
+  .csvImportForm {
+    align-items: stretch;
+    display: grid;
+  }
+}

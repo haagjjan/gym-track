@@ -1,0 +1,319 @@
+.compactField {
+  display: grid;
+  gap: 6px;
+}
+
+.compactField span:first-child {
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.compactField input,
+.compactField select {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  min-height: 48px;
+  padding: 0 12px;
+  width: 100%;
+}
+
+.compactField input:focus,
+.compactField select:focus {
+  border-color: var(--brand);
+  outline: 3px solid rgba(47, 102, 85, 0.18);
+}
+
+.createExerciseForm {
+  border-block-start: 1px solid var(--line);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(180px, 1.2fr) minmax(150px, 0.9fr) minmax(140px, 0.8fr) minmax(120px, 0.7fr) auto;
+  padding-top: 16px;
+}
+
+.setList {
+  display: grid;
+  gap: 10px;
+}
+
+.setForm {
+  align-items: start;
+  background: #f9fbf7;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(120px, 0.8fr) minmax(100px, 0.7fr) minmax(90px, 0.6fr) minmax(80px, 0.5fr) minmax(100px, 0.7fr) minmax(180px, 1fr) auto;
+  padding: 14px;
+}
+
+.currentSetHeading {
+  border-block-end: 1px solid var(--line);
+  grid-column: 1 / -1;
+  padding-bottom: 10px;
+}
+
+.currentSetHeading span {
+  color: var(--brand-strong);
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.setRow {
+  align-items: start;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: auto minmax(105px, 0.7fr) minmax(86px, 0.6fr) minmax(72px, 0.5fr) minmax(70px, 0.5fr) minmax(78px, 0.6fr) minmax(160px, 1fr) auto auto auto;
+}
+
+.setSummaryRow {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: 10px;
+}
+
+.setSummaryText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.setSummaryText strong {
+  color: var(--ink);
+}
+
+.setSummaryText span {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.setSummaryActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.saveSetAction {
+  min-height: 52px;
+  padding-inline: 18px;
+}
+
+.wideField {
+  min-width: 0;
+}
+
+.workoutLogger .compactField {
+  min-width: 0;
+}
+
+.workoutLogger .compactField span:first-child {
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.74rem;
+  text-transform: uppercase;
+}
+
+.workoutLogger .compactField input,
+.workoutLogger .compactField select {
+  background: rgba(10, 10, 10, 0.72);
+  border: 1px solid rgba(58, 73, 75, 0.92);
+  border-radius: var(--cockpit-radius-md);
+  color: var(--cockpit-color-text);
+  font-family: var(--cockpit-font-body);
+  min-width: 0;
+}
+
+.workoutLogger .compactField input::placeholder {
+  color: rgba(185, 202, 203, 0.6);
+}
+
+.workoutLogger .compactField input:focus,
+.workoutLogger .compactField select:focus {
+  border-color: var(--cockpit-color-cyan);
+  box-shadow: var(--cockpit-glow-cyan);
+  outline: 2px solid transparent;
+}
+
+.workoutLogger .createExerciseForm {
+  border-block-start-color: rgba(0, 219, 231, 0.16);
+  grid-template-columns:
+    minmax(180px, 1.2fr)
+    minmax(150px, 0.9fr)
+    minmax(120px, 0.8fr)
+    minmax(112px, 0.7fr)
+    auto;
+}
+
+.workoutLogger .setForm,
+.workoutLogger .setRowEditing {
+  background:
+    linear-gradient(90deg, rgba(81, 251, 55, 0.07), transparent 62%),
+    rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(0, 219, 231, 0.22);
+  border-radius: var(--cockpit-radius-lg);
+  padding: var(--cockpit-space-4);
+}
+
+.workoutLogger .setForm {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.workoutLogger .setForm .wideField {
+  grid-column: span 2;
+}
+
+.workoutLogger .currentSetHeading {
+  border-block-end-color: rgba(0, 219, 231, 0.16);
+}
+
+.workoutLogger .currentSetHeading span {
+  color: var(--cockpit-color-green);
+  font-family: var(--cockpit-font-heading);
+}
+
+.workoutLogger .saveSetAction {
+  align-self: end;
+  box-shadow: 0 0 18px rgba(0, 242, 255, 0.18);
+  min-height: 54px;
+  width: 100%;
+}
+
+.workoutLogger .setSavedSignal {
+  align-items: center;
+  border: 1px solid rgba(81, 251, 55, 0.38);
+  border-radius: var(--cockpit-radius-md);
+  color: var(--cockpit-color-green);
+  display: inline-flex;
+  font-family: var(--cockpit-font-body);
+  font-size: 0.82rem;
+  font-weight: 800;
+  grid-column: 1 / -1;
+  min-height: 38px;
+  margin: 0;
+  padding: 0 var(--cockpit-space-3);
+}
+
+.workoutLogger .setList {
+  gap: var(--cockpit-space-3);
+}
+
+.workoutLogger .setSummaryRow {
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(0, 219, 231, 0.14);
+  border-radius: var(--cockpit-radius-md);
+  min-width: 0;
+}
+
+.workoutLogger .setSummaryText strong {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-body);
+}
+
+.workoutLogger .setSummaryText span {
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-body);
+}
+
+.workoutLogger .setRow {
+  grid-template-columns: auto repeat(3, minmax(0, 1fr));
+}
+
+.workoutLogger .setRow .wideField {
+  grid-column: 2 / -1;
+}
+
+.workoutLogger .fieldError {
+  color: #ffdad6;
+  font-family: var(--cockpit-font-body);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.workoutLogger .reviewPanel {
+  background: rgba(255, 218, 214, 0.07);
+  border: 1px solid rgba(255, 180, 171, 0.28);
+  color: var(--cockpit-color-text);
+}
+
+.workoutLogger .reviewList {
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-body);
+}
+
+@media (max-width: 900px) {
+  .createExerciseForm,
+  .setRow,
+  .setForm,
+  .setSummaryRow {
+    grid-template-columns: 1fr;
+  }
+
+  .setSummaryActions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .saveSetAction {
+    width: 100%;
+  }
+}
+
+@media (max-width: 760px) {
+  .workoutLogger .createExerciseForm,
+  .workoutLogger .setForm,
+  .workoutLogger .setRow,
+  .workoutLogger .setRowEditing {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .workoutLogger .currentSetHeading,
+  .workoutLogger .wideField,
+  .workoutLogger .setSavedSignal,
+  .workoutLogger .createExerciseForm .compactField:first-child,
+  .workoutLogger .createExerciseForm .secondaryAction,
+  .workoutLogger .saveSetAction,
+  .workoutLogger .setRow .setOrder {
+    grid-column: 1 / -1;
+  }
+
+  .workoutLogger .setSummaryRow {
+    align-items: start;
+  }
+}
+
+@media (max-width: 480px) {
+  .workoutLogger .setForm,
+  .workoutLogger .setRow,
+  .workoutLogger .setRowEditing {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .workoutLogger .setForm > .compactField,
+  .workoutLogger .setForm > .currentSetHeading,
+  .workoutLogger .setForm > .saveSetAction,
+  .workoutLogger .setForm > .setSavedSignal {
+    grid-column: 1 / -1;
+  }
+
+  .workoutLogger .setSummaryActions {
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+  }
+
+  .workoutLogger .currentSetHeading,
+  .workoutLogger .wideField,
+  .workoutLogger .setRow .setOrder {
+    grid-column: auto;
+  }
+}

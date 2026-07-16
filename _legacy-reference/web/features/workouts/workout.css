@@ -1,0 +1,1102 @@
+.workoutHeader,
+.workoutStats,
+.exercisePicker,
+.sessionExerciseList {
+  margin-inline: auto;
+  width: min(100%, 1080px);
+}
+
+.workoutPage {
+  display: grid;
+  gap: 22px;
+  min-height: 100vh;
+  padding: 28px;
+}
+
+.workoutHeader {
+  align-items: end;
+  border-block-start: 5px solid var(--accent);
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.backLink {
+  color: var(--brand-strong);
+  display: inline-block;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.pageNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.workoutStats {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.metric {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.metric span {
+  color: var(--muted);
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.metric strong {
+  color: var(--ink);
+  font-size: 1.45rem;
+}
+
+.exercisePicker {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+
+.toolbarLine {
+  align-items: end;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(220px, 1fr);
+}
+
+.exerciseResults {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.reviewPanel {
+  background: #f8fbf7;
+  border: 1px solid #c5d5ca;
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.reviewList {
+  color: var(--muted);
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.suggestionGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.exerciseOption {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+  min-height: 62px;
+  padding: 12px;
+  text-align: left;
+}
+
+.exerciseOption:hover {
+  border-color: var(--brand);
+}
+
+.exerciseOption span {
+  font-weight: 800;
+}
+
+.exerciseOption small,
+.mutedText {
+  color: var(--muted);
+}
+
+.sessionExerciseList {
+  display: grid;
+  gap: 16px;
+}
+
+.sessionExercise {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.sessionExerciseActive {
+  background: #ffffff;
+  border-color: var(--brand);
+  box-shadow: 0 14px 36px rgba(24, 33, 31, 0.08);
+  gap: 18px;
+  padding: 20px;
+}
+
+.sessionExercise:not(.sessionExerciseActive) {
+  gap: 12px;
+}
+
+.sessionExerciseHeader {
+  align-items: start;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.sessionExerciseTitle {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  min-width: 0;
+}
+
+.sessionExerciseHeader h2 {
+  font-size: 1.3rem;
+  letter-spacing: 0;
+  margin: 4px 0;
+  overflow-wrap: anywhere;
+}
+
+.sessionExerciseHeader p,
+.exerciseSummary dd,
+.exerciseSummary dt,
+.setSummaryText span,
+.inlineError,
+.mutedText {
+  line-height: 1.45;
+  margin: 0;
+}
+
+.positionBadge,
+.setOrder {
+  align-items: center;
+  background: #e6efe9;
+  border: 1px solid #b7c9bf;
+  border-radius: 999px;
+  color: var(--brand-strong);
+  display: inline-flex;
+  font-size: 0.82rem;
+  font-weight: 800;
+  justify-content: center;
+  min-height: 30px;
+  min-width: 30px;
+}
+
+.iconButtonRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.exerciseSummary {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.exerciseSummary div,
+.activeExerciseMeta {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.exerciseSummary dt,
+.activeExerciseMeta span {
+  color: var(--muted);
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 800;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.exerciseSummary dd,
+.activeExerciseMeta strong {
+  color: var(--ink);
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.draftIndicator {
+  background: #fff8e5;
+  border: 1px solid #ead9a5;
+  border-radius: 8px;
+  color: #6b5416;
+  font-size: 0.86rem;
+  font-weight: 800;
+  margin: 0;
+  padding: 10px 12px;
+}
+
+.activeExerciseMeta {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.smallAction,
+.dangerAction {
+  align-items: center;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  font-weight: 800;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 12px;
+}
+
+.compactAction {
+  min-height: 44px;
+  padding-inline: 14px;
+}
+
+.smallAction {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.dangerAction {
+  background: #fff7f5;
+  border: 1px solid #dfbbb5;
+  color: var(--danger);
+}
+
+.smallAction:disabled,
+.dangerAction:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.inlineError {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .workoutHeader,
+  .sessionExerciseHeader {
+    grid-template-columns: 1fr;
+  }
+
+  .headerActions,
+  .iconButtonRow {
+    justify-content: start;
+  }
+
+  .workoutStats {
+    grid-template-columns: 1fr;
+  }
+
+  .exerciseSummary {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .workoutPage {
+    padding: 16px;
+  }
+
+  .sessionExercise {
+    padding: 14px;
+  }
+
+  .iconButtonRow {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .iconButtonRow .compactAction,
+  .iconButtonRow .dangerAction {
+    grid-column: span 2;
+  }
+}
+
+.workoutLogger {
+  gap: var(--cockpit-space-6);
+  min-height: 100%;
+  padding: var(--cockpit-space-8);
+}
+
+.workoutCommandHeader,
+.workoutLoggerLayout,
+.workoutAlert {
+  margin-inline: auto;
+  width: min(100%, 1360px);
+}
+
+.workoutCommandHeader {
+  align-items: end;
+  border-left: 4px solid var(--cockpit-color-cyan-strong);
+  display: grid;
+  gap: var(--cockpit-space-5);
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding-left: var(--cockpit-space-6);
+}
+
+.workoutCommandHeader h1,
+.workoutCommandHeader p {
+  margin: 0;
+}
+
+.workoutCommandHeader h1 {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-heading);
+  font-size: 3rem;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+  text-shadow: 0 0 22px rgba(225, 253, 255, 0.22);
+}
+
+.workoutCommandHeader .eyebrow {
+  color: var(--cockpit-color-cyan-strong);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.workoutCommandHeader .leadText {
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-body);
+  line-height: 1.55;
+  margin-top: var(--cockpit-space-2);
+}
+
+.workoutCommandHeader__actions {
+  align-items: end;
+  display: grid;
+  gap: var(--cockpit-space-3);
+  justify-items: end;
+}
+
+.workoutLiveBadge {
+  align-items: center;
+  border: 1px solid rgba(0, 219, 231, 0.28);
+  border-radius: 999px;
+  color: var(--cockpit-color-cyan-soft);
+  display: inline-flex;
+  font-family: var(--cockpit-font-body);
+  font-size: 0.78rem;
+  gap: var(--cockpit-space-2);
+  min-height: 32px;
+  padding: 0 var(--cockpit-space-3);
+}
+
+.workoutLiveBadge span {
+  background: var(--cockpit-color-green);
+  border-radius: 999px;
+  box-shadow: 0 0 10px rgba(81, 251, 55, 0.58);
+  height: 8px;
+  width: 8px;
+}
+
+.workoutLiveBadge[data-status="closed"] span {
+  background: var(--cockpit-color-text-muted);
+  box-shadow: none;
+}
+
+.workoutCompleteAction {
+  min-width: 190px;
+}
+
+.workoutLoggerLayout {
+  align-items: start;
+  display: grid;
+  gap: var(--cockpit-space-5);
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+}
+
+.workoutMissionDeck {
+  display: grid;
+  gap: var(--cockpit-space-5);
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+}
+
+.workoutLogger .pageNav {
+  gap: var(--cockpit-space-2);
+  margin-bottom: var(--cockpit-space-4);
+}
+
+.workoutLogger .backLink {
+  border: 1px solid rgba(0, 219, 231, 0.16);
+  border-radius: var(--cockpit-radius-md);
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.75rem;
+  min-height: 34px;
+  padding: var(--cockpit-space-2) var(--cockpit-space-3);
+  text-transform: uppercase;
+}
+
+.workoutLogger .backLink:hover,
+.workoutLogger .backLink:focus-visible {
+  border-color: var(--cockpit-color-cyan);
+  box-shadow: var(--cockpit-glow-cyan);
+  color: var(--cockpit-color-cyan-soft);
+  outline: 2px solid transparent;
+}
+
+.activeExerciseFocus {
+  background:
+    radial-gradient(circle at 86% 30%, rgba(0, 242, 255, 0.18), transparent 28%),
+    linear-gradient(90deg, rgba(0, 219, 231, 0.12), rgba(0, 0, 0, 0.28));
+  border: 1px solid rgba(0, 219, 231, 0.24);
+  border-radius: var(--cockpit-radius-lg);
+  display: grid;
+  gap: var(--cockpit-space-3);
+  min-width: 0;
+  padding: var(--cockpit-space-6);
+}
+
+.activeExerciseFocus p,
+.activeExerciseFocus h2,
+.activeExerciseFocus span {
+  margin: 0;
+}
+
+.activeExerciseFocus p {
+  color: var(--cockpit-color-cyan-strong);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.activeExerciseFocus h2 {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-heading);
+  font-size: 2.1rem;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.activeExerciseFocus__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cockpit-space-2);
+}
+
+.activeExerciseFocus__meta span {
+  border: 1px solid rgba(225, 253, 255, 0.16);
+  color: rgba(225, 253, 255, 0.82);
+  font-family: var(--cockpit-font-body);
+  font-size: 0.72rem;
+  padding: var(--cockpit-space-2) var(--cockpit-space-3);
+}
+
+.activeExerciseFocus--empty h2 {
+  color: var(--cockpit-color-text);
+}
+
+.workoutInsertCommand {
+  align-items: center;
+  background:
+    linear-gradient(90deg, rgba(0, 219, 231, 0.08), transparent 66%),
+    rgba(19, 19, 19, 0.72);
+  border: 1px solid rgba(0, 219, 231, 0.18);
+  border-radius: var(--cockpit-radius-lg);
+  display: flex;
+  gap: var(--cockpit-space-4);
+  justify-content: space-between;
+  min-width: 0;
+  padding: var(--cockpit-space-4);
+}
+
+.workoutInsertCommand p,
+.workoutInsertCommand span {
+  margin: 0;
+}
+
+.workoutInsertCommand p {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.workoutInsertCommand span {
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-body);
+  font-size: 0.86rem;
+}
+
+.workoutInsertCommand--locked {
+  border-color: rgba(132, 148, 149, 0.28);
+}
+
+.insertExerciseAction {
+  min-width: 176px;
+}
+
+.workoutLogger .sessionExerciseList {
+  gap: var(--cockpit-space-4);
+  grid-template-columns: minmax(0, 1fr);
+  margin-inline: 0;
+  width: 100%;
+}
+
+.workoutLogger .sessionExercise {
+  background:
+    linear-gradient(90deg, rgba(0, 219, 231, 0.05), transparent 60%),
+    rgba(19, 19, 19, 0.72);
+  border: 1px solid rgba(0, 219, 231, 0.16);
+  border-radius: var(--cockpit-radius-lg);
+  color: var(--cockpit-color-text);
+  gap: var(--cockpit-space-4);
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  padding: var(--cockpit-space-5);
+  width: 100%;
+}
+
+.workoutLogger .sessionExerciseActive {
+  background:
+    radial-gradient(circle at 96% 12%, rgba(0, 242, 255, 0.14), transparent 28%),
+    linear-gradient(90deg, rgba(0, 219, 231, 0.1), rgba(19, 19, 19, 0.82));
+  border-color: rgba(0, 219, 231, 0.5);
+  box-shadow:
+    var(--cockpit-glow-cyan),
+    0 18px 44px rgba(0, 0, 0, 0.26);
+}
+
+.workoutLogger .sessionExerciseHeader h2,
+.workoutLogger .sessionExerciseHeader p {
+  margin: 0;
+}
+
+.workoutLogger .sessionExerciseHeader h2 {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-heading);
+  font-size: 1.35rem;
+}
+
+.workoutLogger .sessionExerciseHeader p {
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-body);
+  margin-top: var(--cockpit-space-1);
+}
+
+.workoutLogger .positionBadge,
+.workoutLogger .setOrder {
+  background: rgba(0, 219, 231, 0.08);
+  border: 1px solid rgba(0, 219, 231, 0.38);
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-body);
+}
+
+.workoutLogger .exerciseSummary {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.workoutLogger .exerciseSummary div,
+.workoutLogger .activeExerciseMeta {
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(0, 219, 231, 0.14);
+  border-radius: var(--cockpit-radius-md);
+}
+
+.workoutLogger .exerciseSummary dt,
+.workoutLogger .activeExerciseMeta span {
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-heading);
+}
+
+.workoutLogger .exerciseSummary dd,
+.workoutLogger .activeExerciseMeta strong {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-body);
+}
+
+.workoutLogger .draftIndicator {
+  background: rgba(0, 219, 231, 0.08);
+  border: 1px solid rgba(0, 219, 231, 0.28);
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-body);
+}
+
+.readOnlySessionNotice {
+  background: rgba(132, 148, 149, 0.08);
+  border: 1px solid rgba(132, 148, 149, 0.24);
+  border-radius: var(--cockpit-radius-md);
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin: 0;
+  padding: var(--cockpit-space-3);
+}
+
+.workoutLogger .smallAction,
+.workoutLogger .dangerAction,
+.workoutLogger .primaryAction,
+.workoutLogger .secondaryAction {
+  border-radius: var(--cockpit-radius-md);
+  font-family: var(--cockpit-font-heading);
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.workoutLogger .smallAction,
+.workoutLogger .secondaryAction {
+  background: rgba(19, 19, 19, 0.74);
+  border: 1px solid rgba(132, 148, 149, 0.52);
+  color: var(--cockpit-color-cyan-soft);
+}
+
+.workoutLogger .primaryAction {
+  background: var(--cockpit-color-cyan-strong);
+  border: 1px solid var(--cockpit-color-cyan-strong);
+  color: #002022;
+}
+
+.workoutLogger .dangerAction {
+  background: rgba(147, 0, 10, 0.42);
+  border: 1px solid rgba(255, 180, 171, 0.56);
+  color: #ffdad6;
+}
+
+.workoutLogger .smallAction:hover:not(:disabled),
+.workoutLogger .smallAction:focus-visible,
+.workoutLogger .secondaryAction:hover:not(:disabled),
+.workoutLogger .secondaryAction:focus-visible,
+.workoutLogger .primaryAction:hover:not(:disabled),
+.workoutLogger .primaryAction:focus-visible {
+  box-shadow: var(--cockpit-glow-cyan);
+  outline: 2px solid transparent;
+}
+
+.workoutLogger .dangerAction:hover:not(:disabled),
+.workoutLogger .dangerAction:focus-visible {
+  box-shadow: var(--cockpit-glow-red);
+  outline: 2px solid transparent;
+}
+
+.workoutTelemetryPanel {
+  display: grid;
+  gap: var(--cockpit-space-4);
+  min-width: 0;
+  position: sticky;
+  top: var(--cockpit-space-5);
+}
+
+.workoutTimerPanel,
+.exerciseNavigator,
+.workoutLogger .exercisePicker,
+.workoutEmptyExerciseState {
+  background:
+    linear-gradient(90deg, rgba(0, 219, 231, 0.08), transparent 70%),
+    rgba(28, 27, 27, 0.82);
+  border: 1px solid rgba(0, 219, 231, 0.2);
+  border-radius: var(--cockpit-radius-lg);
+  color: var(--cockpit-color-text);
+  min-width: 0;
+  padding: var(--cockpit-space-5);
+}
+
+.workoutTimerPanel {
+  display: grid;
+  gap: var(--cockpit-space-2);
+}
+
+.workoutTimerPanel span,
+.exerciseNavigator__header span,
+.workoutLogger .metric span {
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.workoutTimerPanel strong {
+  color: var(--cockpit-color-green);
+  font-family: var(--cockpit-font-body);
+  font-size: 2.2rem;
+  line-height: 1;
+}
+
+.workoutTimerPanel small {
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-body);
+}
+
+.workoutLogger .workoutStats {
+  display: grid;
+  gap: var(--cockpit-space-3);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+}
+
+.workoutLogger .metric {
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(0, 219, 231, 0.18);
+  border-radius: var(--cockpit-radius-md);
+  display: grid;
+  gap: var(--cockpit-space-1);
+  min-width: 0;
+  padding: var(--cockpit-space-4);
+}
+
+.workoutLogger .metric strong {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-body);
+  font-size: 1.15rem;
+  overflow-wrap: anywhere;
+}
+
+.exerciseNavigator {
+  display: grid;
+  gap: var(--cockpit-space-3);
+}
+
+.exerciseNavigator__header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.exerciseNavigator__header strong {
+  color: var(--cockpit-color-green);
+  font-family: var(--cockpit-font-body);
+}
+
+.exerciseNavigator__list {
+  display: grid;
+  gap: var(--cockpit-space-2);
+}
+
+.exerciseNavigator__item {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(0, 219, 231, 0.16);
+  border-radius: var(--cockpit-radius-md);
+  color: var(--cockpit-color-text);
+  cursor: pointer;
+  display: grid;
+  gap: var(--cockpit-space-2);
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: var(--cockpit-space-3);
+  text-align: left;
+}
+
+.exerciseNavigator__item[aria-current="true"] {
+  background: rgba(0, 219, 231, 0.12);
+  border-color: var(--cockpit-color-cyan);
+  box-shadow: var(--cockpit-glow-cyan);
+}
+
+.exerciseNavigator__item span {
+  align-items: center;
+  border: 1px solid rgba(0, 219, 231, 0.32);
+  color: var(--cockpit-color-cyan);
+  display: inline-flex;
+  font-family: var(--cockpit-font-body);
+  font-size: 0.72rem;
+  height: 28px;
+  justify-content: center;
+  width: 28px;
+}
+
+.exerciseNavigator__item strong,
+.exerciseNavigator__item small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.exerciseNavigator__item strong {
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.86rem;
+}
+
+.exerciseNavigator__item small {
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-body);
+  font-size: 0.72rem;
+  grid-column: 2;
+}
+
+.workoutLogger .exercisePicker {
+  display: grid;
+  gap: var(--cockpit-space-4);
+  margin-inline: 0;
+  width: 100%;
+}
+
+.workoutLogger .exercisePicker::before {
+  color: var(--cockpit-color-cyan-strong);
+  content: "INSERT_EXERCISE";
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.workoutLogger .exerciseResults {
+  display: grid;
+  gap: var(--cockpit-space-2);
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.workoutLogger .exerciseOption {
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(0, 219, 231, 0.18);
+  color: var(--cockpit-color-text);
+}
+
+.workoutLogger .exerciseOption:hover,
+.workoutLogger .exerciseOption:focus-visible {
+  border-color: var(--cockpit-color-cyan);
+  box-shadow: var(--cockpit-glow-cyan);
+  outline: 2px solid transparent;
+}
+
+.workoutLogger .exerciseOption small,
+.workoutLogger .mutedText {
+  color: var(--cockpit-color-text-muted);
+}
+
+.workoutEmptyExerciseState {
+  display: grid;
+  gap: var(--cockpit-space-2);
+}
+
+.workoutEmptyExerciseState p,
+.workoutEmptyExerciseState span {
+  margin: 0;
+}
+
+.workoutEmptyExerciseState p {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-heading);
+  font-weight: 700;
+}
+
+.workoutEmptyExerciseState span {
+  color: var(--cockpit-color-text-muted);
+  font-family: var(--cockpit-font-body);
+}
+
+.workoutAlert {
+  background: rgba(255, 180, 171, 0.1);
+  border: 1px solid rgba(255, 180, 171, 0.32);
+  border-radius: var(--cockpit-radius-md);
+  color: #ffdad6;
+  padding: var(--cockpit-space-4);
+}
+
+.workoutAlert.mutedText {
+  background: rgba(0, 219, 231, 0.08);
+  border-color: rgba(0, 219, 231, 0.28);
+  color: var(--cockpit-color-text-muted);
+}
+
+.exerciseInsertOverlay {
+  align-items: stretch;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(10px);
+  display: grid;
+  inset: 0;
+  justify-items: end;
+  padding: var(--cockpit-space-5);
+  position: fixed;
+  z-index: 100;
+}
+
+.exerciseInsertDialog {
+  background:
+    linear-gradient(180deg, rgba(0, 219, 231, 0.08), transparent 38%),
+    rgba(10, 10, 10, 0.96);
+  border: 1px solid rgba(0, 219, 231, 0.36);
+  border-radius: var(--cockpit-radius-lg);
+  box-shadow:
+    0 0 32px rgba(0, 242, 255, 0.18),
+    0 26px 80px rgba(0, 0, 0, 0.54);
+  color: var(--cockpit-color-text);
+  display: grid;
+  gap: var(--cockpit-space-4);
+  max-height: calc(100vh - 40px);
+  min-width: 0;
+  overflow: auto;
+  padding: var(--cockpit-space-5);
+  width: min(640px, 100%);
+}
+
+.exerciseInsertHeader {
+  align-items: start;
+  border-block-end: 1px solid rgba(0, 219, 231, 0.18);
+  display: grid;
+  gap: var(--cockpit-space-4);
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding-bottom: var(--cockpit-space-4);
+}
+
+.exerciseInsertHeader p,
+.exerciseInsertHeader h2,
+.exerciseInsertHeader span {
+  margin: 0;
+}
+
+.exerciseInsertHeader p {
+  color: var(--cockpit-color-cyan-strong);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.exerciseInsertHeader h2 {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-heading);
+  font-size: 1.7rem;
+  line-height: 1.1;
+  margin-top: var(--cockpit-space-1);
+}
+
+.exerciseInsertHeader span {
+  color: var(--cockpit-color-text-muted);
+  display: block;
+  font-family: var(--cockpit-font-body);
+  margin-top: var(--cockpit-space-2);
+}
+
+.exerciseInsertClose {
+  min-width: 92px;
+}
+
+.exerciseInsertDialog .createExerciseForm {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.exerciseInsertDialog .createExerciseForm .compactField:first-child,
+.exerciseInsertDialog .createExerciseForm .secondaryAction {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 1120px) {
+  .workoutCommandHeader,
+  .workoutLoggerLayout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .workoutCommandHeader__actions {
+    justify-items: start;
+  }
+
+  .workoutTelemetryPanel {
+    position: static;
+  }
+}
+
+@media (max-width: 760px) {
+  .workoutLogger {
+    padding: var(--cockpit-space-4);
+  }
+
+  .workoutCommandHeader {
+    border-left-width: 2px;
+    padding-left: var(--cockpit-space-4);
+  }
+
+  .workoutCommandHeader h1 {
+    font-size: 2.2rem;
+  }
+
+  .workoutLogger .workoutStats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .activeExerciseFocus,
+  .workoutInsertCommand,
+  .workoutTimerPanel,
+  .exerciseNavigator,
+  .workoutLogger .exercisePicker,
+  .workoutEmptyExerciseState {
+    padding: var(--cockpit-space-4);
+  }
+
+  .exerciseInsertOverlay {
+    padding: var(--cockpit-space-3);
+  }
+}
+
+@media (max-width: 480px) {
+  .workoutCommandHeader h1,
+  .activeExerciseFocus h2 {
+    font-size: 1.85rem;
+  }
+
+  .workoutCompleteAction,
+  .insertExerciseAction,
+  .workoutLogger .exercisePicker .secondaryAction {
+    width: 100%;
+  }
+
+  .workoutInsertCommand,
+  .exerciseInsertHeader {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .workoutInsertCommand {
+    align-items: stretch;
+    display: grid;
+  }
+
+  .exerciseInsertOverlay {
+    align-items: end;
+    padding: 0;
+  }
+
+  .exerciseInsertDialog {
+    border-end-end-radius: 0;
+    border-end-start-radius: 0;
+    max-height: 92vh;
+    padding: var(--cockpit-space-4);
+    width: 100%;
+  }
+
+  .exerciseInsertDialog .createExerciseForm {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
