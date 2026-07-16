@@ -1,0 +1,367 @@
+.homeHudField {
+  --home-base-rotate-y: 0deg;
+  --cockpit-pointer-rotate-x: 0deg;
+  --cockpit-pointer-rotate-y: 0deg;
+  --cockpit-pointer-shift-x: 0px;
+  --cockpit-pointer-shift-y: 0px;
+  --cockpit-pointer-x: 50%;
+  --cockpit-pointer-y: 50%;
+  background:
+    radial-gradient(
+      circle at var(--cockpit-pointer-x) var(--cockpit-pointer-y),
+      var(--cockpit-reactive-spotlight),
+      transparent 40%
+    ),
+    linear-gradient(90deg, rgba(0, 219, 231, 0.08), transparent 74%);
+  border-block: 1px solid rgba(0, 219, 231, 0.28);
+  color: var(--cockpit-color-cyan-soft);
+  display: grid;
+  gap: var(--cockpit-space-4);
+  padding: var(--cockpit-space-3) 0;
+  transform:
+    perspective(960px)
+    rotateY(calc(var(--home-base-rotate-y) + var(--cockpit-pointer-rotate-y)))
+    rotateX(var(--cockpit-pointer-rotate-x))
+    translate3d(var(--cockpit-pointer-shift-x), var(--cockpit-pointer-shift-y), 0);
+  transition:
+    filter 160ms ease,
+    text-shadow 160ms ease,
+    transform 160ms ease;
+  width: min(100%, 400px);
+}
+
+.homeHudField[data-anchor="left"] {
+  --home-base-rotate-y: 7deg;
+  text-align: left;
+  transform-origin: right center;
+}
+
+.homeHudField[data-anchor="right"] {
+  --home-base-rotate-y: -7deg;
+  text-align: right;
+  transform-origin: left center;
+}
+
+.homeHudField:hover,
+.homeHudField:focus-within {
+  filter: drop-shadow(0 0 18px rgba(0, 219, 231, 0.2));
+  text-shadow: var(--cockpit-reactive-text-glow);
+}
+
+.homeHudField__header {
+  align-items: center;
+  display: flex;
+  gap: var(--cockpit-space-2);
+}
+
+.homeHudField[data-anchor="right"] .homeHudField__header {
+  flex-direction: row-reverse;
+}
+
+.homeHudField__header span {
+  background: var(--cockpit-color-cyan-strong);
+  box-shadow: 0 0 12px rgba(0, 242, 255, 0.66);
+  height: 6px;
+  width: 6px;
+}
+
+.homeHudField__header h2 {
+  color: var(--cockpit-color-cyan-strong);
+  font-family: var(--cockpit-font-heading);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.homeHudField__metrics,
+.homeHudField__volume {
+  margin: 0;
+  transform: translateZ(28px);
+}
+
+.homeHudField__metrics {
+  display: grid;
+  gap: var(--cockpit-space-3);
+}
+
+.homeHudField__metrics div {
+  border-top: 1px solid rgba(0, 219, 231, 0.16);
+  display: grid;
+  gap: 4px;
+  padding-top: var(--cockpit-space-3);
+}
+
+.homeHudField__metrics div:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.homeHudField__metrics dt,
+.homeHudField__volume span {
+  color: rgba(185, 202, 203, 0.8);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.homeHudField__metrics dd {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-body);
+  font-size: 1.02rem;
+  font-weight: 600;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.homeHudField__metrics p,
+.homeHudField__status p {
+  color: rgba(225, 253, 255, 0.72);
+  font-size: 0.74rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.homeHudField__volume {
+  align-items: flex-end;
+  display: grid;
+  gap: 2px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  min-height: 168px;
+}
+
+.homeHudField__volume > div {
+  align-items: center;
+  display: grid;
+  gap: 7px;
+  justify-items: center;
+  min-width: 0;
+}
+
+.homeHudField__track {
+  align-items: flex-end;
+  border-top: 1px solid rgba(0, 219, 231, 0.24);
+  display: flex;
+  height: 112px;
+  justify-content: center;
+  width: 100%;
+}
+
+.homeHudField__track i {
+  background: linear-gradient(180deg, var(--cockpit-color-cyan-strong), rgba(0, 219, 231, 0.18));
+  box-shadow: 0 0 14px rgba(0, 219, 231, 0.34);
+  display: block;
+  min-height: 6px;
+  width: min(100%, 18px);
+}
+
+.homeHudField__volume span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.homeHudField__volume strong,
+.homeHudField__status strong {
+  color: var(--cockpit-color-green);
+  font-family: var(--cockpit-font-body);
+  font-size: 0.78rem;
+}
+
+.homeHudField__status {
+  border-top: 1px solid rgba(0, 219, 231, 0.16);
+  display: grid;
+  gap: var(--cockpit-space-2);
+  padding-top: var(--cockpit-space-3);
+  transform: translateZ(28px);
+}
+
+.homeSessionCta {
+  align-items: start;
+  background:
+    linear-gradient(90deg, transparent, rgba(0, 219, 231, 0.1), transparent),
+    rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(0, 219, 231, 0.24);
+  border-radius: var(--cockpit-radius-lg);
+  box-shadow: 0 0 34px rgba(0, 219, 231, 0.14);
+  display: grid;
+  gap: var(--cockpit-space-4);
+  padding: var(--cockpit-space-4);
+}
+
+.homeSessionCta__copy {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.homeSessionCta__eyebrow {
+  color: rgba(185, 202, 203, 0.78);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.homeSessionCta__copy h2 {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-heading);
+  font-size: clamp(1.15rem, 2vw, 1.45rem);
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.homeSessionCta__copy p {
+  color: var(--cockpit-color-text);
+  font-size: 0.78rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.homeSessionCta .appShellStartAction .cockpitButton {
+  border-radius: var(--cockpit-radius-md);
+  box-shadow: 0 0 24px rgba(0, 219, 231, 0.2);
+  min-height: 48px;
+  width: 100%;
+}
+
+.homeSessionCta .appShellStartAction {
+  justify-self: start;
+  width: min(100%, 180px);
+}
+
+.previousSessionsStrip {
+  background:
+    linear-gradient(90deg, rgba(0, 219, 231, 0.1), transparent 70%),
+    rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(0, 219, 231, 0.2);
+  border-radius: var(--cockpit-radius-lg);
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.22);
+  display: grid;
+  gap: var(--cockpit-space-3);
+  min-width: 0;
+  padding: var(--cockpit-space-4);
+}
+
+.previousSessionsStrip__header {
+  align-items: flex-end;
+  display: flex;
+  gap: var(--cockpit-space-3);
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.previousSessionsStrip__eyebrow {
+  color: var(--cockpit-color-cyan-strong);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.previousSessionsStrip__header h2 {
+  color: rgba(225, 253, 255, 0.72);
+  font-family: var(--cockpit-font-body);
+  font-size: 0.74rem;
+  font-weight: 500;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.previousSessionsStrip__list {
+  display: grid;
+  gap: var(--cockpit-space-2);
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  min-width: 0;
+}
+
+.previousSessionsStrip__item {
+  border-left: 1px solid rgba(0, 219, 231, 0.28);
+  color: var(--cockpit-color-text);
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: var(--cockpit-space-2) var(--cockpit-space-3);
+  text-decoration: none;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.previousSessionsStrip__item:hover,
+.previousSessionsStrip__item:focus-visible {
+  background: rgba(0, 219, 231, 0.08);
+  border-color: var(--cockpit-color-cyan-strong);
+  box-shadow: var(--cockpit-glow-cyan);
+  outline: 2px solid transparent;
+}
+
+.previousSessionsStrip__item span,
+.previousSessionsStrip__item strong,
+.previousSessionsStrip__item small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.previousSessionsStrip__item span {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.previousSessionsStrip__item strong,
+.previousSessionsStrip__item small {
+  font-family: var(--cockpit-font-body);
+}
+
+.previousSessionsStrip__item strong {
+  color: var(--cockpit-color-cyan);
+  font-size: 0.72rem;
+}
+
+.previousSessionsStrip__item small {
+  color: rgba(185, 202, 203, 0.72);
+  font-size: 0.68rem;
+}
+
+@media (max-width: 760px) {
+  .homeHudField {
+    --home-base-rotate-y: 0deg;
+    text-align: left;
+    transform-origin: center;
+    width: 100%;
+  }
+
+  .homeHudField[data-anchor="right"] .homeHudField__header {
+    flex-direction: row;
+  }
+
+  .homeSessionCta .appShellStartAction,
+  .homeSessionCta .appShellStartAction .cockpitButton {
+    width: 100%;
+  }
+
+  .previousSessionsStrip__header {
+    align-items: start;
+    display: grid;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .homeHudField {
+    transform: none;
+    transition: none;
+  }
+}

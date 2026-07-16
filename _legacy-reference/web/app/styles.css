@@ -1,0 +1,225 @@
+:root {
+  color: #18211f;
+  background:
+    linear-gradient(135deg, rgba(231, 236, 226, 0.92), rgba(244, 240, 231, 0.88)),
+    #f4f0e7;
+  --bg: #f4f0e7;
+  --panel: #fffdf7;
+  --ink: #18211f;
+  --muted: #5b6762;
+  --line: #c9d0c5;
+  --brand: #2f6655;
+  --brand-strong: #20483d;
+  --accent: #d89f38;
+  --danger: #a64034;
+  font-family:
+    Avenir Next, Avenir, Candara, Trebuchet MS, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.appShell {
+  align-content: center;
+  display: grid;
+  gap: 24px;
+  min-height: 100vh;
+  padding: 32px;
+}
+
+.welcomePanel,
+.dashboardHeader,
+.sectionPanel {
+  width: min(100%, 860px);
+}
+
+.welcomePanel,
+.dashboardHeader,
+.sectionPanel {
+  margin-inline: auto;
+}
+
+.welcomePanel,
+.dashboardHeader {
+  border-block-start: 5px solid var(--accent);
+  display: grid;
+  gap: 20px;
+}
+
+.eyebrow {
+  color: var(--brand);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+h1 {
+  color: var(--ink);
+  font-size: 3.5rem;
+  letter-spacing: 0;
+  line-height: 1.04;
+  margin: 0;
+}
+
+.leadText {
+  color: var(--muted);
+  font-size: 1.05rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.actionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.primaryLink,
+.secondaryLink,
+.primaryAction,
+.secondaryAction {
+  align-items: center;
+  border-radius: 8px;
+  display: inline-flex;
+  font-weight: 800;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 18px;
+  text-decoration: none;
+}
+
+.primaryLink,
+.primaryAction {
+  background: var(--brand);
+  border: 1px solid var(--brand);
+  color: #ffffff;
+}
+
+.primaryLink:hover,
+.primaryAction:hover {
+  background: var(--brand-strong);
+}
+
+.secondaryLink,
+.secondaryAction {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.primaryAction,
+.secondaryAction {
+  cursor: pointer;
+}
+
+.primaryAction:disabled,
+.secondaryAction:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
+.appErrorPage {
+  align-items: center;
+  background:
+    radial-gradient(circle at 50% 24%, rgba(0, 219, 231, 0.16), transparent 34%),
+    var(--cockpit-color-background, #0a0a0a);
+  color: var(--cockpit-color-text, #e5e2e1);
+  display: grid;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.appErrorPage .cockpitState {
+  margin-inline: auto;
+  max-width: 620px;
+  width: min(100%, 620px);
+}
+
+.appErrorActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.appErrorDigest {
+  color: var(--cockpit-color-text, #e5e2e1);
+  display: block;
+  margin-top: 8px;
+}
+
+.dashboardHeader {
+  align-items: end;
+  grid-template-columns: 1fr auto;
+}
+
+.sectionGrid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.areaTile {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  min-height: 112px;
+  padding: 18px;
+}
+
+.areaTileLink {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.areaTileLink:hover {
+  border-color: var(--brand);
+}
+
+.areaTile span {
+  color: var(--ink);
+  display: block;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.areaTile p {
+  color: var(--muted);
+  line-height: 1.45;
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .appShell {
+    padding: 20px;
+  }
+
+  .dashboardHeader {
+    align-items: start;
+    grid-template-columns: 1fr;
+  }
+
+  .sectionGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  h1 {
+    font-size: 2.45rem;
+  }
+}

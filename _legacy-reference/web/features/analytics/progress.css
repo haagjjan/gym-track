@@ -1,0 +1,344 @@
+.progressPage {
+  background:
+    radial-gradient(circle at 12% 10%, rgba(0, 219, 231, 0.16), transparent 30%),
+    radial-gradient(circle at 88% 18%, rgba(217, 185, 255, 0.14), transparent 26%),
+    linear-gradient(rgba(0, 219, 231, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 219, 231, 0.035) 1px, transparent 1px),
+    var(--cockpit-color-background);
+  background-size: auto, auto, 46px 46px, 46px 46px, auto;
+  color: var(--cockpit-color-text);
+  gap: var(--cockpit-space-6);
+  min-height: calc(100vh - 72px);
+  padding: var(--cockpit-space-8);
+}
+
+.progressHero,
+.progressWorkspace,
+.progressPage .analyticsMessage {
+  margin-inline: auto;
+  width: min(100%, 1360px);
+}
+
+.progressHero {
+  align-items: end;
+  display: grid;
+  gap: var(--cockpit-space-6);
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
+}
+
+.progressHero h1,
+.progressHero p,
+.progressStageHeader h2,
+.progressStageHeader p,
+.progressSectionHeader h2,
+.progressSectionHeader p {
+  margin: 0;
+}
+
+.progressHero h1 {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-heading);
+  font-size: clamp(2.4rem, 5vw, 5.8rem);
+  letter-spacing: 0;
+  line-height: 0.92;
+  text-transform: uppercase;
+}
+
+.progressPage .eyebrow {
+  color: var(--cockpit-color-cyan-strong);
+  font-family: var(--cockpit-font-heading);
+}
+
+.progressHero .leadText {
+  color: rgba(225, 253, 255, 0.74);
+  font-family: var(--cockpit-font-body);
+  font-size: 0.92rem;
+  margin-top: var(--cockpit-space-3);
+  max-width: 620px;
+}
+
+.progressPage .pageNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cockpit-space-2);
+  margin-bottom: var(--cockpit-space-5);
+}
+
+.progressPage .backLink,
+.progressGhostButton {
+  align-items: center;
+  background: rgba(10, 10, 10, 0.64);
+  border: 1px solid rgba(0, 219, 231, 0.28);
+  border-radius: var(--cockpit-radius-md);
+  color: var(--cockpit-color-cyan-soft);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.76rem;
+  font-weight: 700;
+  justify-content: center;
+  letter-spacing: 0;
+  min-height: 38px;
+  padding: 0 var(--cockpit-space-3);
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.progressPage .backLink:hover,
+.progressPage .backLink:focus-visible,
+.progressGhostButton:hover,
+.progressGhostButton:focus-visible {
+  border-color: var(--cockpit-color-cyan);
+  box-shadow: var(--cockpit-glow-cyan);
+  outline: 2px solid transparent;
+}
+
+.progressHeroBadge,
+.progressSelectorPanel,
+.progressStageHeader,
+.progressMetricCard,
+.progressChartPanel,
+.progressLogPanel,
+.progressSetLogCard,
+.exerciseChoice {
+  border: 1px solid rgba(0, 219, 231, 0.22);
+  color: var(--cockpit-color-text);
+  position: relative;
+}
+
+.progressHeroBadge {
+  background:
+    linear-gradient(135deg, rgba(0, 242, 255, 0.14), rgba(217, 185, 255, 0.08)),
+    rgba(13, 17, 18, 0.78);
+  border-radius: var(--cockpit-radius-xl);
+  display: grid;
+  gap: var(--cockpit-space-2);
+  min-height: 124px;
+  padding: var(--cockpit-space-5);
+}
+
+.progressHeroBadge span,
+.progressHeroBadge strong {
+  font-family: var(--cockpit-font-body);
+  overflow-wrap: anywhere;
+}
+
+.progressHeroBadge span {
+  color: rgba(185, 202, 203, 0.82);
+  font-size: 0.72rem;
+}
+
+.progressHeroBadge strong {
+  color: var(--cockpit-color-green);
+  font-size: 1.04rem;
+}
+
+.progressWorkspace {
+  align-items: start;
+  display: grid;
+  gap: var(--cockpit-space-5);
+  grid-template-columns: minmax(260px, 360px) minmax(0, 1fr);
+}
+
+.progressSelectorPanel,
+.progressAnalysisStack,
+.progressMetricDeck,
+.progressLogPanel,
+.progressSetLogGrid {
+  display: grid;
+  gap: var(--cockpit-space-4);
+}
+
+.progressSelectorPanel {
+  background: rgba(12, 14, 15, 0.88);
+  border-radius: var(--cockpit-radius-xl);
+  padding: var(--cockpit-space-5);
+  position: sticky;
+  top: var(--cockpit-space-5);
+}
+
+.progressReactive {
+  --cockpit-pointer-rotate-x: 0deg;
+  --cockpit-pointer-rotate-y: 0deg;
+  --cockpit-pointer-x: 50%;
+  --cockpit-pointer-y: 50%;
+  overflow: hidden;
+  transform:
+    perspective(980px)
+    rotateX(var(--cockpit-pointer-rotate-x))
+    rotateY(var(--cockpit-pointer-rotate-y));
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.progressReactive::before {
+  background:
+    radial-gradient(
+      circle at var(--cockpit-pointer-x) var(--cockpit-pointer-y),
+      var(--cockpit-reactive-spotlight),
+      transparent 42%
+    );
+  content: "";
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  transition: opacity 160ms ease;
+}
+
+.progressReactive:hover,
+.progressReactive:focus-within {
+  border-color: rgba(0, 242, 255, 0.48);
+  box-shadow: var(--cockpit-reactive-glow);
+}
+
+.progressReactive:hover::before,
+.progressReactive:focus-within::before {
+  opacity: 1;
+}
+
+.progressReactive > * {
+  position: relative;
+  z-index: 1;
+}
+
+.progressSectionHeader,
+.progressStageHeader {
+  align-items: end;
+  display: grid;
+  gap: var(--cockpit-space-4);
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.progressSectionHeader h2,
+.progressStageHeader h2 {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-heading);
+  font-size: 1.2rem;
+  letter-spacing: 0;
+  line-height: 1.18;
+  text-transform: uppercase;
+}
+
+.progressStageHeader {
+  background:
+    linear-gradient(90deg, rgba(0, 219, 231, 0.12), transparent),
+    rgba(14, 17, 18, 0.78);
+  border-radius: var(--cockpit-radius-xl);
+  padding: var(--cockpit-space-5);
+}
+
+.progressStageHeader p,
+.progressEmptyState p,
+.progressMetricCard p,
+.progressLogPanel .eyebrow + h2 + p {
+  color: rgba(225, 253, 255, 0.7);
+  font-family: var(--cockpit-font-body);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.progressSearchField {
+  display: grid;
+  gap: var(--cockpit-space-2);
+}
+
+.progressSearchField span,
+.progressSelectorMeta span,
+.progressMetricCard span,
+.progressSetLogCard span,
+.progressSetLogCard dt {
+  color: rgba(185, 202, 203, 0.82);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.progressSearchField input,
+.progressSearchField select {
+  background: rgba(3, 8, 9, 0.74);
+  border: 1px solid rgba(0, 219, 231, 0.22);
+  border-radius: var(--cockpit-radius-md);
+  color: var(--cockpit-color-text);
+  min-height: 44px;
+  padding: 0 var(--cockpit-space-3);
+  width: 100%;
+}
+
+.progressSearchField input:focus,
+.progressSearchField select:focus {
+  border-color: var(--cockpit-color-cyan);
+  box-shadow: var(--cockpit-glow-cyan);
+  outline: 2px solid transparent;
+}
+
+.progressSelectorMeta,
+.exerciseChoice__meta {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cockpit-space-2);
+}
+
+.progressSelectorMeta {
+  justify-content: space-between;
+}
+
+.progressExerciseList {
+  display: grid;
+  gap: var(--cockpit-space-2);
+  max-height: min(58vh, 620px);
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.progressPage .exerciseChoice {
+  background:
+    radial-gradient(
+      circle at var(--cockpit-pointer-x, 50%) var(--cockpit-pointer-y, 50%),
+      var(--cockpit-reactive-spotlight),
+      transparent 44%
+    ),
+    rgba(18, 23, 24, 0.9);
+  border-radius: var(--cockpit-radius-lg);
+  cursor: pointer;
+  display: grid;
+  gap: var(--cockpit-space-2);
+  min-height: 92px;
+  padding: var(--cockpit-space-4);
+  text-align: left;
+  transform:
+    perspective(820px)
+    rotateX(var(--cockpit-pointer-rotate-x, 0deg))
+    rotateY(var(--cockpit-pointer-rotate-y, 0deg));
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+  width: 100%;
+}
+
+.progressPage .exerciseChoice:hover,
+.progressPage .exerciseChoice:focus-visible,
+.progressPage .exerciseChoice[data-selected="true"] {
+  border-color: var(--cockpit-color-cyan);
+  box-shadow: inset 3px 0 0 var(--cockpit-color-cyan), var(--cockpit-glow-cyan);
+  outline: 2px solid transparent;
+}
+
+.exerciseChoice__name {
+  color: var(--cockpit-color-cyan-soft);
+  font-family: var(--cockpit-font-heading);
+  font-size: 0.96rem;
+}
+
+.exerciseChoice__meta strong,
+.exerciseChoice__date {
+  color: rgba(225, 253, 255, 0.76);
+  font-family: var(--cockpit-font-body);
+  font-size: 0.72rem;
+}

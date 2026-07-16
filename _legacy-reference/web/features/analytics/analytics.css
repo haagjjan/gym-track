@@ -1,0 +1,8 @@
+.analyticsPage {
+  display: grid;
+  min-height: 100vh;
+}
+
+.analyticsMessage {
+  margin-inline: auto;
+}
