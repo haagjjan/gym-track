@@ -26,7 +26,7 @@ Generated files, lockfiles, migrations, documentation, and framework-required co
 
 ## TypeScript Rules
 
-- Enable strict TypeScript settings once the toolchain exists.
+- Keep strict TypeScript settings enabled, including unused local and unused parameter checks.
 - Prefer functions, plain objects, and small modules over class hierarchies.
 - Use classes only when they clearly model stateful behavior or framework integration.
 - Do not use `any` without a local comment explaining why a safer type is not practical.
@@ -150,3 +150,7 @@ Once application code exists:
 - Add regression tests for bugs before or with the fix.
 - Keep tests close to the behavior they verify unless shared fixtures reduce real duplication.
 - Do not rely on manual testing alone for authentication, workout logging, database migrations, or analytics.
+- Keep performance regression tests isolated from the normal unit suite and run package suites sequentially to limit CPU contention.
+- Warm up timed pure functions, use the median of repeated samples, and assert output counts as well as elapsed time so a shortcut cannot satisfy a timing gate.
+- Use representative fixed workloads and generous ceilings that detect algorithmic regressions. Adjust a ceiling only with a measured rationale.
+- Treat pure-function timing gates as algorithm checks, not browser page-load NFR coverage or a replacement for real-user monitoring.
