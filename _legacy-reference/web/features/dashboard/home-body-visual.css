@@ -1,0 +1,209 @@
+.homeBodyVisual {
+  align-items: flex-end;
+  display: flex;
+  height: clamp(430px, 54vw, 700px);
+  justify-content: center;
+  position: relative;
+  width: min(100%, 620px);
+}
+
+.homeBodyVisual__spotlight,
+.homeBodyVisual__mist,
+.homeBodyVisual__scanline {
+  pointer-events: none;
+  position: absolute;
+}
+
+.homeBodyVisual__spotlight {
+  background:
+    radial-gradient(circle at 50% 0, rgba(225, 253, 255, 0.88), transparent 24%),
+    linear-gradient(
+      180deg,
+      rgba(115, 244, 255, 0.72),
+      rgba(0, 219, 231, 0.22) 45%,
+      transparent 100%
+    );
+  clip-path: polygon(40% 0, 60% 0, 78% 100%, 22% 100%);
+  inset: 0 18% 10%;
+  opacity: 0.82;
+}
+
+.homeBodyVisual__mist {
+  background:
+    radial-gradient(circle at 50% 24%, rgba(255, 255, 255, 0.12), transparent 22%),
+    radial-gradient(circle at 50% 82%, rgba(0, 219, 231, 0.16), transparent 26%),
+    radial-gradient(circle at 28% 70%, rgba(255, 255, 255, 0.08), transparent 18%),
+    radial-gradient(circle at 72% 64%, rgba(255, 255, 255, 0.06), transparent 16%);
+  inset: 18% 0 6%;
+  opacity: 0.9;
+}
+
+.homeBodyVisual__scanline {
+  background: linear-gradient(90deg, transparent, rgba(0, 219, 231, 0.44), transparent);
+  height: 1px;
+  left: 8%;
+  right: 8%;
+  top: 18%;
+  z-index: 4;
+}
+
+.homeBodyVisual__scene {
+  inset: 0 0 3%;
+  opacity: 0;
+  pointer-events: auto;
+  position: absolute;
+  transition: opacity 280ms ease;
+  z-index: 3;
+}
+
+.homeBodyVisual--threeReady .homeBodyVisual__scene {
+  opacity: 1;
+}
+
+.homeAvatarScene {
+  contain: layout paint;
+  height: 100%;
+  width: 100%;
+}
+
+.homeAvatarScene canvas {
+  display: block;
+  filter:
+    drop-shadow(0 0 20px rgba(0, 219, 231, 0.34))
+    drop-shadow(0 0 54px rgba(0, 219, 231, 0.16));
+  height: 100%;
+  width: 100%;
+}
+
+.homeBodyVisual__avatar {
+  filter:
+    drop-shadow(0 0 18px rgba(0, 219, 231, 0.42))
+    drop-shadow(0 0 42px rgba(0, 219, 231, 0.18));
+  height: auto;
+  max-height: min(100%, 540px);
+  max-width: min(70%, 320px);
+  position: relative;
+  width: 320px;
+  z-index: 2;
+}
+
+.homeBodyVisual--threeReady .homeBodyVisual__avatar {
+  opacity: 0.14;
+  transform: scale(0.985);
+  transition:
+    opacity 260ms ease,
+    transform 260ms ease;
+}
+
+.homeBodyVisual__avatar-fill {
+  fill: url(#body-cockpit-avatar);
+}
+
+.homeBodyVisual__avatar-stroke {
+  fill: rgba(225, 253, 255, 0.08);
+  stroke: rgba(225, 253, 255, 0.76);
+  stroke-width: 2;
+}
+
+.homeBodyVisual__avatar-lines {
+  fill: none;
+  stroke: rgba(225, 253, 255, 0.46);
+  stroke-dasharray: 5 10;
+  stroke-linecap: round;
+  stroke-width: 1.6;
+}
+
+.homeBodyVisual__platform {
+  bottom: 6%;
+  height: 170px;
+  left: 50%;
+  position: absolute;
+  transform: translateX(-50%);
+  width: min(100%, 480px);
+  z-index: 1;
+}
+
+.homeBodyVisual--threeReady .homeBodyVisual__platform {
+  opacity: 0.66;
+}
+
+.homeBodyVisual__platform span {
+  border: 1px solid rgba(0, 219, 231, 0.4);
+  border-radius: 50%;
+  box-shadow:
+    0 0 22px rgba(0, 219, 231, 0.18),
+    inset 0 0 24px rgba(255, 255, 255, 0.06);
+  inset: auto 0 0;
+  position: absolute;
+}
+
+.homeBodyVisual__platform span:first-child {
+  background:
+    radial-gradient(circle at 50% 40%, rgba(225, 253, 255, 0.42), transparent 30%),
+    linear-gradient(180deg, rgba(0, 219, 231, 0.2), rgba(0, 0, 0, 0.78));
+  bottom: 0;
+  height: 116px;
+  left: 12%;
+  right: 12%;
+}
+
+.homeBodyVisual__platform span:nth-child(2) {
+  bottom: 14px;
+  height: 88px;
+  left: 18%;
+  right: 18%;
+}
+
+.homeBodyVisual__platform span:last-child {
+  background: radial-gradient(circle, rgba(0, 219, 231, 0.36), transparent 62%);
+  bottom: -8px;
+  height: 148px;
+  left: 22%;
+  right: 22%;
+}
+
+@media (max-width: 1200px) {
+  .homeBodyVisual {
+    width: min(100%, 560px);
+  }
+}
+
+@media (max-width: 760px) {
+  .homeBodyVisual {
+    height: 420px;
+    width: 100%;
+  }
+
+}
+
+@media (max-width: 480px) {
+  .homeBodyVisual {
+    height: 360px;
+  }
+
+  .homeBodyVisual__platform {
+    bottom: 4%;
+    height: 124px;
+    width: min(100%, 320px);
+  }
+
+  .homeBodyVisual__platform span:first-child {
+    height: 88px;
+  }
+
+  .homeBodyVisual__platform span:nth-child(2) {
+    height: 66px;
+  }
+
+  .homeBodyVisual__platform span:last-child {
+    height: 116px;
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .homeBodyVisual__scene,
+  .homeBodyVisual__avatar {
+    transition: none;
+  }
+}
