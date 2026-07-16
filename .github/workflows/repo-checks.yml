@@ -94,6 +94,9 @@ jobs:
       - name: Run project checks
         run: pnpm check
 
+      - name: Run performance regression tests
+        run: pnpm test:performance
+
   api-integration:
     name: API database integration
     runs-on: ubuntu-latest
