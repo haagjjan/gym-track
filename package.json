@@ -21,11 +21,15 @@
     "migrate:down": "pnpm --filter @gym-progress-tracker/api migrate:down",
     "migrate:redo": "pnpm --filter @gym-progress-tracker/api migrate:redo",
     "migrate:up": "pnpm --filter @gym-progress-tracker/api migrate:up",
+    "ops:monitoring:config": "docker compose -f compose.yaml -f compose.monitoring.yaml config",
+    "ops:monitoring:start": "docker compose -f compose.yaml -f compose.monitoring.yaml up --build -d",
+    "ops:monitoring:stop": "docker compose -f compose.yaml -f compose.monitoring.yaml down",
     "start": "docker compose up --build",
     "stop": "docker compose down",
     "smoke:web": "playwright test",
     "test": "pnpm -r --if-present test",
     "test:integration": "pnpm --filter @gym-progress-tracker/api test:integration",
+    "test:performance": "pnpm --filter @gym-progress-tracker/api test:performance && pnpm --filter @gym-progress-tracker/web test:performance",
     "type-check": "pnpm -r --if-present type-check"
   },
   "devDependencies": {
