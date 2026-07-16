@@ -2,7 +2,7 @@
 
 ## Current State
 
-The repository currently contains product and data-planning documentation for a gym progress tracker plus the local development, database migration, first runnable app foundation, and deployment readiness path. The pnpm workspace, shared TypeScript tooling, Docker Compose local app orchestration, initial PostgreSQL migrations, Fastify health endpoint, database connectivity check, API auth foundation, workout session API foundation, exercise library and muscle group lookup API foundation, workout logging API foundation, analytics API foundation, canonical CSV workout import/export, first Next.js auth UI slice, first workout logging UI slice, workout history/detail screens, Progress and Weekly Volume screens, full project CI checks, API database integration coverage, web smoke test, Render deployment Blueprint, small-batch operations runbook, and structured API logging configuration have been introduced.
+The repository currently contains product and data-planning documentation for a gym progress tracker plus the local development, database migration, first runnable app foundation, and deployment readiness path. The pnpm workspace, shared TypeScript tooling, Docker Compose local app orchestration, initial PostgreSQL migrations, Fastify health endpoint, database connectivity check, API auth foundation, workout session API foundation, exercise library and muscle group lookup API foundation, workout logging API foundation, analytics API foundation, canonical CSV workout import/export, first Next.js auth UI slice, first workout logging UI slice, workout history/detail screens, Progress and Weekly Volume screens, full project CI checks, API database integration coverage, web smoke test, Render deployment Blueprint, small-batch operations runbook, structured API logging, Prometheus API metrics, and a private provisioned Grafana monitoring overlay have been introduced.
 
 The source-of-truth documents are:
 
@@ -53,6 +53,14 @@ ADR 0005 records the first deployment target:
 - API pre-deploy migrations using `node-pg-migrate`
 - Secure production environment variables, managed backups, and basic health/log monitoring before inviting testers
 
+ADR 0008 records the first private observability topology:
+
+- An opt-in Compose overlay rather than a replacement for local development or Render configuration
+- Prometheus plus Grafana with version-controlled data source and dashboard provisioning
+- Node, container, and PostgreSQL exporters on an internal Docker network
+- A disabled-by-default internal Fastify metrics endpoint with bounded labels and release identity
+- Loopback-only Grafana access until the owner configures a reviewed private access path
+
 CSV workout import/export uses one canonical format first, with arbitrary legacy CSV mapping deferred until there is real need.
 
 API logging stays on Fastify's Pino foundation. `LOG_LEVEL` controls verbosity, local development uses `pino-pretty`, production emits structured JSON logs, tests default to disabled logging, and sensitive request values such as cookies, authorization headers, and session tokens are redacted.
@@ -88,9 +96,11 @@ apps/
   api/
 docs/
   decisions/
+ops/
+  monitoring/
 ```
 
-Root tooling, local infrastructure, and documentation live at the repository root. The current repo map is documented in `docs/repository-structure.md`.
+Root tooling, local infrastructure overlays, and documentation live at the repository root. Versioned Prometheus, Grafana, exporter, and PostgreSQL monitoring-role assets live under `ops/monitoring`. The current repo map is documented in `docs/repository-structure.md`.
 
 Within each app, organize by feature/domain first, then by technical role. Current API features are `auth`, `health`, `workouts`, `exercises`, and `analytics`. Expected future domains include `users`.
 
