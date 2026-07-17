@@ -25,8 +25,9 @@ class FakeAnalyticsRepository implements AnalyticsRepository {
     private readonly weeklySets: WeeklyVolumeSetRecord[] = weeklyRows()
   ) {}
 
-  public async findCompletedExercises(userId: string): Promise<CompletedExerciseRecord[]> {
+  public async findCompletedExercises(userId: string, timeZone: string): Promise<CompletedExerciseRecord[]> {
     void userId;
+    void timeZone;
 
     return this.completedExercises;
   }
@@ -69,10 +70,11 @@ describe("analytics service", () => {
 
   it("lists completed exercises sorted by repository order", async () => {
     const service = createAnalyticsService({ repository: new FakeAnalyticsRepository() });
-    const result = await service.listCompletedExercises("user-1");
+    const result = await service.listCompletedExercises("user-1", { timeZone: "Europe/Zurich" });
 
     assert.equal(result.items[0]?.id, "exercise-1");
     assert.equal(result.items[0]?.lastDoneAt, sunday.toISOString());
+    assert.equal(result.items[0]?.plottedSetCount, 2);
     assert.equal(result.items[0]?.totalSets, 3);
     assert.equal(result.items[0]?.secondaryMuscleGroups[0]?.slug, "triceps");
   });
@@ -164,6 +166,7 @@ function completedExerciseRows(): CompletedExerciseRecord[] {
         secondaryMuscleGroups: [muscleGroup({ id: "muscle-3", slug: "triceps", name: "Triceps" })]
       },
       lastDoneAt: sunday,
+      plottedSetCount: 2,
       totalSets: 3
     }
   ];

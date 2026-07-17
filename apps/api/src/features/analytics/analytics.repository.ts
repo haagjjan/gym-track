@@ -1,5 +1,6 @@
 import type { Kysely } from "kysely";
 import type { AppDatabase } from "../../db/database.js";
+import { findSecondaryMuscleGroups, groupCompletedExercises } from "./analytics-exercise-list.repository.js";
 
 export interface AnalyticsSetFilters {
   endDate: Date | undefined;
@@ -19,6 +20,7 @@ export interface WeeklyVolumeFilters {
 export interface CompletedExerciseRecord {
   exercise: AnalyticsExerciseRecord;
   lastDoneAt: Date;
+  plottedSetCount: number;
   totalSets: number;
 }
 
@@ -59,14 +61,14 @@ export interface WeeklyVolumeSetRecord {
 }
 
 export interface AnalyticsRepository {
-  findCompletedExercises(userId: string): Promise<CompletedExerciseRecord[]>;
+  findCompletedExercises(userId: string, timeZone: string): Promise<CompletedExerciseRecord[]>;
   findExerciseSets(filters: AnalyticsSetFilters): Promise<AnalyticsSetRecord[]>;
   findWeeklyVolumeSets(filters: WeeklyVolumeFilters): Promise<WeeklyVolumeSetRecord[]>;
 }
 
 export function createAnalyticsRepository(db: Kysely<AppDatabase>): AnalyticsRepository {
   return {
-    async findCompletedExercises(userId) {
+    async findCompletedExercises(userId, timeZone) {
       const rows = await db
         .selectFrom("sets")
         .innerJoin("session_exercises", "session_exercises.id", "sets.session_exercise_id")
@@ -77,6 +79,7 @@ export function createAnalyticsRepository(db: Kysely<AppDatabase>): AnalyticsRep
           "exercises.id as exerciseId",
           "exercises.name as exerciseName",
           "workout_sessions.started_at as sessionDate",
+          "sets.set_type as setType",
           "muscle_groups.id as primaryMuscleGroupId",
           "muscle_groups.slug as primaryMuscleGroupSlug",
           "muscle_groups.name as primaryMuscleGroupName",
@@ -93,7 +96,7 @@ export function createAnalyticsRepository(db: Kysely<AppDatabase>): AnalyticsRep
         [...new Set(rows.map((row) => row.exerciseId))]
       );
 
-      return groupCompletedExercises(rows, secondaryMuscles);
+      return groupCompletedExercises(rows, secondaryMuscles, timeZone);
     },
     async findExerciseSets(filters) {
       const rows = await db
@@ -136,7 +139,11 @@ export function createAnalyticsRepository(db: Kysely<AppDatabase>): AnalyticsRep
         .innerJoin("session_exercises", "session_exercises.id", "sets.session_exercise_id")
         .innerJoin("workout_sessions", "workout_sessions.id", "session_exercises.workout_session_id")
         .innerJoin("exercises", "exercises.id", "session_exercises.exercise_id")
-        .innerJoin("muscle_groups", "muscle_groups.id", "exercises.primary_muscle_group_id")
+        .innerJoin("exercise_muscle_groups", (join) =>
+          join.onRef("exercise_muscle_groups.exercise_id", "=", "exercises.id")
+            .on("exercise_muscle_groups.role", "=", "PRIMARY")
+        )
+        .innerJoin("muscle_groups", "muscle_groups.id", "exercise_muscle_groups.muscle_group_id")
         .select([
           "workout_sessions.id as workoutId",
           "workout_sessions.started_at as sessionDate",
@@ -181,90 +188,4 @@ export function createAnalyticsRepository(db: Kysely<AppDatabase>): AnalyticsRep
       }));
     }
   };
-}
-
-async function findSecondaryMuscleGroups(
-  db: Kysely<AppDatabase>,
-  exerciseIds: string[]
-): Promise<Map<string, AnalyticsMuscleGroupRecord[]>> {
-  const grouped = new Map<string, AnalyticsMuscleGroupRecord[]>();
-
-  if (exerciseIds.length === 0) {
-    return grouped;
-  }
-
-  const rows = await db
-    .selectFrom("exercise_secondary_muscles")
-    .innerJoin("muscle_groups", "muscle_groups.id", "exercise_secondary_muscles.muscle_group_id")
-    .select([
-      "exercise_secondary_muscles.exercise_id as exerciseId",
-      "muscle_groups.id as id",
-      "muscle_groups.slug as slug",
-      "muscle_groups.name as name",
-      "muscle_groups.sort_order as sortOrder"
-    ])
-    .where("exercise_secondary_muscles.exercise_id", "in", exerciseIds)
-    .orderBy("muscle_groups.sort_order", "asc")
-    .execute();
-
-  for (const row of rows) {
-    grouped.set(row.exerciseId, [
-      ...(grouped.get(row.exerciseId) ?? []),
-      {
-        id: row.id,
-        slug: row.slug,
-        name: row.name,
-        sortOrder: row.sortOrder
-      }
-    ]);
-  }
-
-  return grouped;
-}
-
-function groupCompletedExercises(
-  rows: CompletedExerciseRow[],
-  secondaryMuscles: Map<string, AnalyticsMuscleGroupRecord[]>
-): CompletedExerciseRecord[] {
-  const grouped = new Map<string, CompletedExerciseRecord>();
-
-  for (const row of rows) {
-    const current = grouped.get(row.exerciseId);
-
-    if (current) {
-      current.totalSets += 1;
-      if (row.sessionDate > current.lastDoneAt) {
-        current.lastDoneAt = row.sessionDate;
-      }
-      continue;
-    }
-
-    grouped.set(row.exerciseId, {
-      exercise: {
-        id: row.exerciseId,
-        name: row.exerciseName,
-        primaryMuscleGroup: {
-          id: row.primaryMuscleGroupId,
-          slug: row.primaryMuscleGroupSlug,
-          name: row.primaryMuscleGroupName,
-          sortOrder: row.primaryMuscleGroupSortOrder
-        },
-        secondaryMuscleGroups: secondaryMuscles.get(row.exerciseId) ?? []
-      },
-      lastDoneAt: row.sessionDate,
-      totalSets: 1
-    });
-  }
-
-  return [...grouped.values()].sort((left, right) => right.lastDoneAt.getTime() - left.lastDoneAt.getTime());
-}
-
-interface CompletedExerciseRow {
-  exerciseId: string;
-  exerciseName: string;
-  sessionDate: Date;
-  primaryMuscleGroupId: string;
-  primaryMuscleGroupSlug: string;
-  primaryMuscleGroupName: string;
-  primaryMuscleGroupSortOrder: number;
 }

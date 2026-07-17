@@ -13,6 +13,10 @@ export const analyticsExerciseParamsSchema = z.object({
   exerciseId: uuidSchema
 });
 
+export const completedExercisesQuerySchema = z.object({
+  timeZone: z.string().trim().max(100).default("UTC").refine(isValidTimeZone, "Invalid IANA time zone.")
+});
+
 export const exerciseProgressQuerySchema = withDateRangeRefinement(
   z.object({
     ...dateRangeShape,
@@ -52,6 +56,7 @@ export const weeklyVolumeQuerySchema = withDateRangeRefinement(
 
 export type ExerciseProgressQuery = z.infer<typeof exerciseProgressQuerySchema>;
 export type ExerciseSummaryQuery = z.infer<typeof exerciseSummaryQuerySchema>;
+export type CompletedExercisesQuery = z.infer<typeof completedExercisesQuerySchema>;
 export type WeeklyVolumeQuery = z.infer<typeof weeklyVolumeQuerySchema>;
 
 function withDateRangeRefinement<T extends z.ZodRawShape>(schema: z.ZodObject<T>) {
@@ -91,4 +96,13 @@ function isValidDateOnly(value: string): boolean {
   const parsed = new Date(`${value}T00:00:00.000Z`);
 
   return !Number.isNaN(parsed.getTime()) && parsed.toISOString().startsWith(value);
+}
+
+function isValidTimeZone(value: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: value }).format();
+    return true;
+  } catch {
+    return false;
+  }
 }

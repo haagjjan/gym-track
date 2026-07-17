@@ -14,6 +14,7 @@ import type {
 import type {
   ExerciseProgressQuery,
   ExerciseSummaryQuery,
+  CompletedExercisesQuery,
   WeeklyVolumeQuery
 } from "./analytics.schemas.js";
 
@@ -23,11 +24,12 @@ const user: PublicUser = {
   id: "user-1",
   email: "jan@example.com",
   username: "jan",
+  emailVerified: false,
   createdAt: "2026-05-20T10:00:00.000Z"
 };
 
 class FakeAnalyticsService implements AnalyticsService {
-  public listCall: { userId: string } | null = null;
+  public listCall: { userId: string; input: CompletedExercisesQuery } | null = null;
   public progressCall:
     | { userId: string; exerciseId: string; input: ExerciseProgressQuery }
     | null = null;
@@ -36,8 +38,8 @@ class FakeAnalyticsService implements AnalyticsService {
     | null = null;
   public weeklyCall: { userId: string; input: WeeklyVolumeQuery } | null = null;
 
-  public async listCompletedExercises(userId: string): Promise<CompletedExerciseList> {
-    this.listCall = { userId };
+  public async listCompletedExercises(userId: string, input: CompletedExercisesQuery): Promise<CompletedExerciseList> {
+    this.listCall = { userId, input };
 
     return { items: [] };
   }
@@ -89,7 +91,20 @@ function authService(authenticated = true): AuthService {
     },
     async currentUser() {
       return authenticated ? { ok: true, value: user } : { ok: false, reason: "unauthorized" };
-    }
+    },
+    async requestEmailVerification() {
+      return { sent: true };
+    },
+    async verifyEmail() {
+      return { ok: true, value: { verified: true } };
+    },
+    async requestPasswordReset() {
+      return { requested: true };
+    },
+    async resetPassword() {
+      return { ok: true, value: { reset: true } };
+    },
+    async cleanupExpiredAuthRecords() {}
   };
 }
 
@@ -123,11 +138,20 @@ describe("analytics routes", () => {
   it("lists completed exercises for progress navigation", async () => {
     const service = new FakeAnalyticsService();
     const server = await buildAnalyticsServer(service);
-    const response = await server.inject("/api/v1/analytics/exercises");
+    const response = await server.inject("/api/v1/analytics/exercises?timeZone=Europe%2FZurich");
 
     assert.equal(response.statusCode, 200);
     assert.deepEqual(response.json(), { data: { items: [] } });
     assert.equal(service.listCall?.userId, "user-1");
+    assert.equal(service.listCall?.input.timeZone, "Europe/Zurich");
+  });
+
+  it("rejects an invalid progress-navigation time zone", async () => {
+    const server = await buildAnalyticsServer(new FakeAnalyticsService());
+    const response = await server.inject("/api/v1/analytics/exercises?timeZone=not-a-zone");
+
+    assert.equal(response.statusCode, 422);
+    assert.equal(response.json().error.code, "VALIDATION_ERROR");
   });
 
   it("parses exercise progress query parameters", async () => {

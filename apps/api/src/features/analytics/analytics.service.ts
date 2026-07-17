@@ -6,6 +6,7 @@ import type {
 import type {
   ExerciseProgressQuery,
   ExerciseSummaryQuery,
+  CompletedExercisesQuery,
   WeeklyVolumeQuery
 } from "./analytics.schemas.js";
 import {
@@ -64,11 +65,12 @@ interface CompletedExercise {
   primaryMuscleGroup: MuscleGroupShape;
   secondaryMuscleGroups: MuscleGroupShape[];
   lastDoneAt: string;
+  plottedSetCount: number;
   totalSets: number;
 }
 
 export interface AnalyticsService {
-  listCompletedExercises(userId: string): Promise<CompletedExerciseList>;
+  listCompletedExercises(userId: string, input: CompletedExercisesQuery): Promise<CompletedExerciseList>;
   getExerciseProgress(
     userId: string,
     exerciseId: string,
@@ -88,8 +90,8 @@ interface AnalyticsServiceOptions {
 
 export function createAnalyticsService(options: AnalyticsServiceOptions): AnalyticsService {
   return {
-    async listCompletedExercises(userId) {
-      const rows = await options.repository.findCompletedExercises(userId);
+    async listCompletedExercises(userId, input) {
+      const rows = await options.repository.findCompletedExercises(userId, input.timeZone);
 
       return {
         items: rows.map(toCompletedExercise)
@@ -155,6 +157,7 @@ function toCompletedExercise(record: CompletedExerciseRecord): CompletedExercise
     primaryMuscleGroup: toMuscleGroupShape(record.exercise.primaryMuscleGroup),
     secondaryMuscleGroups: record.exercise.secondaryMuscleGroups.map(toMuscleGroupShape),
     lastDoneAt: record.lastDoneAt.toISOString(),
+    plottedSetCount: record.plottedSetCount,
     totalSets: record.totalSets
   };
 }
