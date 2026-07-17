@@ -16,7 +16,24 @@ const server = await buildServer(
   createApiLogger({
     level: env.LOG_LEVEL,
     nodeEnv: env.NODE_ENV
-  })
+  }),
+  {
+    appBaseUrl: env.APP_BASE_URL,
+    trustProxy: env.API_TRUST_PROXY,
+    ...(env.METRICS_ENABLED
+      ? {
+          metrics: {
+            environment: env.APP_ENV,
+            release: env.APP_RELEASE
+          }
+        }
+      : {}),
+    mailerEnv: {
+      RESEND_API_KEY: env.RESEND_API_KEY,
+      EMAIL_FROM: env.EMAIL_FROM,
+      NODE_ENV: env.NODE_ENV
+    }
+  }
 );
 
 async function shutdown(): Promise<void> {
