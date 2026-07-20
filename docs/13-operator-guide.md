@@ -55,7 +55,7 @@ someone during support).
    ```
    auth email (log transport)
      to: "jan@example.com"
-     subject: "Verify your Body Cockpit email"
+     subject: "Verify your Gym Progress Tracker email"
      body: "...http://localhost:3000/verify-email?token=XXXXX..."
    ```
    Copy that URL into your browser to complete verification during local testing.
@@ -85,7 +85,7 @@ actually send verification/reset emails:
 2. Set in `.env` (or your hosting provider's environment variables):
    ```
    RESEND_API_KEY=re_your_key_here
-   EMAIL_FROM=Body Cockpit <no-reply@yourdomain.com>
+   EMAIL_FROM=Gym Progress Tracker <no-reply@yourdomain.com>
    APP_BASE_URL=https://your-real-domain.com   # so emailed links point at prod, not localhost
    ```
 3. Restart the API. That's it — no code changes. Swapping to a different provider later means
@@ -145,6 +145,8 @@ land in the `app_events` table in your own Postgres.
 | `workout_completed` | A session is ended |
 | `set_logged` | A set is saved during a workout |
 | `csv_imported` | A workout-history CSV import succeeds |
+| `workout_session_edited` | A session's title or start/end time is edited after the fact (properties list the changed fields) |
+| `exercise_merged` | One exercise's history is merged into another (properties carry both exercise ids and the affected set count) |
 
 Each row has `user_id` (nullable — some events, like a failed forgot-password, don't have one),
 `event_name`, a `properties` JSON blob with event-specific extras, and `created_at`.
@@ -254,3 +256,56 @@ development) — recreate it if you need fresh demo data: hit `POST /auth/signup
 `POST /workouts` with a backdated `startedAt`, add exercises and sets, then `POST
 /workouts/:id/end` with a backdated `endedAt`. All of this works through the normal API with
 no special seed mode.
+
+---
+
+## 8. Private Stage 1 monitoring
+
+The Stage 1 monitoring overlay runs Prometheus, Grafana, `node_exporter`, cAdvisor, and
+`postgres_exporter` beside the existing application Compose services. It provisions three
+operator dashboards automatically:
+
+- **Service overview** — request/status rates, p50/p95/p99 latency, slow normalized routes,
+  in-flight requests, release, and API/container uptime.
+- **Host and containers** — CPU, memory/swap, filesystem, disk I/O, network, and container
+  resource/restart signals.
+- **PostgreSQL** — availability, connections/saturation, transactions, deadlocks,
+  long-running transactions, database size, and locks.
+
+One-time secret creation and the idempotent `pg_monitor` role setup are documented in
+`ops/monitoring/README.md`. After that setup:
+
+```sh
+pnpm ops:monitoring:config
+pnpm ops:monitoring:start
+```
+
+Open `http://127.0.0.1:3001`. Grafana is deliberately loopback-only; Prometheus and every
+exporter have no published host port. PostgreSQL and the API also bind their development host
+ports to loopback, while the web entry point remains unchanged.
+
+Set these deployment identifiers before startup:
+
+| Variable | Purpose | Safe local default |
+| --- | --- | --- |
+| `APP_ENV` | Stable environment label | `local` |
+| `APP_RELEASE` | Git SHA or release tag shown in Grafana | `development` |
+| `METRICS_ENABLED` | Registers the internal API metrics endpoint | overlay forces `true` |
+| `PROMETHEUS_RETENTION_TIME` | Metrics retention | `30d` |
+| `GRAFANA_PORT` | Loopback Grafana port | `3001` |
+
+The metrics endpoint is disabled outside the overlay unless explicitly enabled. Render remains
+the accepted first hosted target, and its public API therefore does not gain a metrics endpoint
+from this change.
+
+### First checks when a panel is empty
+
+1. Run the Prometheus target check from `ops/monitoring/README.md`.
+2. Confirm the affected target is `UP` and inspect its last scrape error.
+3. For API panels, make a few real application requests and confirm `APP_RELEASE` is set.
+4. For PostgreSQL, verify the `gym_progress_monitor` password matches the Docker secret.
+5. For host panels, confirm the production host is native Linux. Docker Desktop reports its VM,
+   not the physical macOS host.
+
+The cAdvisor restart panel is a best-effort signal. Confirm suspected restarts with
+`docker compose ps` and container logs before taking action.

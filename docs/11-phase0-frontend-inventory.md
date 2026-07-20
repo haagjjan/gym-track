@@ -1,6 +1,6 @@
 # Phase 0 — Frontend Inventory & Tech Stack (Functionality Contract)
 
-**Status:** Confirmed 2026-07-02. This is the functionality contract for the frontend rework
+**Status:** Confirmed 2026-07-13. This is the functionality contract for the frontend rework
 (see `10-frontend-rework-brief.md`). Nothing on this list may be lost in the rebuild.
 
 ## Confirmed decisions
@@ -140,17 +140,17 @@ Implementation notes: Client diagnostics listener records API/chart events; keep
 
 ---
 
-## Tech stack (confirmed)
+## Tech stack (confirmed - 2026-07-13)
 
 | Piece | Choice |
 |---|---|
 | Framework | Next.js 15 (App Router) + React 19 — keep |
-| 3D | react-three-fiber + @react-three/drei (+ postprocessing for bloom) |
+| 3D | Three.js via react-three-fiber + @react-three/drei; @react-three/postprocessing is available for experimental/spike scenes, while the current production avatar uses emissive-material glow |
 | Styling | Tailwind CSS v4 — `DESIGN.md` tokens as CSS-first `@theme` variables |
 | Charts | Recharts, restyled to the token system |
 | Data fetching | TanStack Query |
 | Fonts | Space Grotesk + JetBrains Mono via `next/font` |
-| Validation | zod — keep |
+| Validation | Zod remains the shared API validation library and web dependency; current web forms use native/manual validation rather than importing Zod directly |
 
 Rationale: the frontend has a real BFF layer (~25 proxy routes doing cookie forwarding to Fastify) plus
 server-side auth gating, and the pnpm workspace, Dockerfile, and Render config all build Next.js today —
@@ -158,4 +158,4 @@ switching frameworks rebuilds that proxy/deploy story for zero user-visible gain
 idiomatic React 3D approach; SSR-safety via client-component `dynamic(…, { ssr: false })` is already proven
 in this codebase. Tailwind v4 fits because `DESIGN.md` is literally a token sheet mapping 1:1 onto `@theme`
 variables, and glass/glow composes as a few custom utilities. TanStack Query replaces the hand-rolled
-loading/error/abort plumbing in every current page, protecting the no-regressions bar in the rebuilt logger.
+loading/error/abort plumbing in the data-backed pages, protecting the no-regressions bar in the rebuilt logger. Zod remains the validation standard at API boundaries; the existing auth screens have not yet migrated their client-side field checks to it.
