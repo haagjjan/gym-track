@@ -1,0 +1,109 @@
+services:
+  postgres:
+    networks:
+      - default
+      - observability
+
+  api:
+    environment:
+      APP_ENV: ${APP_ENV:-local}
+      APP_RELEASE: ${APP_RELEASE:-development}
+      METRICS_ENABLED: "true"
+    networks:
+      - default
+      - observability
+
+  prometheus:
+    image: prom/prometheus:v3.5.2
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yaml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION_TIME:-30d}
+    volumes:
+      - ./ops/monitoring/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - observability
+
+  node-exporter:
+    image: prom/node-exporter:v1.11.1
+    restart: unless-stopped
+    pid: host
+    command:
+      - --path.rootfs=/host
+      - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/containers/storage/.+)($$|/)
+    volumes:
+      - /:/host:ro,rslave
+    networks:
+      - observability
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.57.0
+    restart: unless-stopped
+    privileged: true
+    devices:
+      - /dev/kmsg:/dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /dev/disk:/dev/disk:ro
+    networks:
+      - observability
+
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.19.1
+    restart: unless-stopped
+    command:
+      - --collector.long_running_transactions
+    environment:
+      DATA_SOURCE_URI: postgres:5432/${POSTGRES_DB:-gym_progress_tracker}?sslmode=disable
+      DATA_SOURCE_USER: gym_progress_monitor
+      DATA_SOURCE_PASS_FILE: /run/secrets/postgres_monitor_password
+      PG_EXPORTER_COLLECTION_TIMEOUT: 10s
+    secrets:
+      - postgres_monitor_password
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - observability
+
+  grafana:
+    image: grafana/grafana:13.1.0
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD__FILE: /run/secrets/grafana_admin_password
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+    secrets:
+      - grafana_admin_password
+    ports:
+      - 127.0.0.1:${GRAFANA_PORT:-3001}:3000
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./ops/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./ops/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    networks:
+      - observability
+
+networks:
+  observability:
+    internal: true
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
+secrets:
+  postgres_monitor_password:
+    file: ${POSTGRES_MONITOR_PASSWORD_FILE:?Set POSTGRES_MONITOR_PASSWORD_FILE to the monitoring database password file}
+  grafana_admin_password:
+    file: ${GRAFANA_ADMIN_PASSWORD_FILE:?Set GRAFANA_ADMIN_PASSWORD_FILE to the Grafana admin password file}
