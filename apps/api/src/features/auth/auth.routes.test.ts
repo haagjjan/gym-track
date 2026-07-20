@@ -9,6 +9,7 @@ const user: PublicUser = {
   id: "user-1",
   email: "jan@example.com",
   username: "jan",
+  emailVerified: false,
   createdAt: "2026-05-20T10:00:00.000Z"
 };
 
@@ -32,6 +33,19 @@ function authService(overrides: Partial<AuthService> = {}): AuthService {
     async currentUser() {
       return { ok: true, value: user };
     },
+    async requestEmailVerification() {
+      return { sent: true };
+    },
+    async verifyEmail() {
+      return { ok: true, value: { verified: true } };
+    },
+    async requestPasswordReset() {
+      return { requested: true };
+    },
+    async resetPassword() {
+      return { ok: true, value: { reset: true } };
+    },
+    async cleanupExpiredAuthRecords() {},
     ...overrides
   };
 }
@@ -61,7 +75,7 @@ describe("auth routes", () => {
       payload: {
         email: "jan@example.com",
         username: "jan",
-        password: "secret"
+        password: "long-enough-secret"
       }
     });
 
@@ -134,5 +148,89 @@ describe("auth routes", () => {
     assert.equal(response.statusCode, 200);
     assert.deepEqual(response.json(), { data: { loggedOut: true } });
     assert.match(response.headers["set-cookie"]?.toString() ?? "", /gym_progress_session=/);
+  });
+
+  it("returns 423 when the account is locked", async () => {
+    const server = await buildAuthServer(
+      authService({
+        async login() {
+          return { ok: false, reason: "locked" };
+        }
+      })
+    );
+    const response = await server.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      payload: { username: "jan", password: "whatever" }
+    });
+
+    assert.equal(response.statusCode, 423);
+    assert.equal(response.json().error.code, "ACCOUNT_LOCKED");
+  });
+
+  it("verifies an email token", async () => {
+    const server = await buildAuthServer(authService());
+    const response = await server.inject({
+      method: "POST",
+      url: "/api/v1/auth/verify-email",
+      payload: { token: "raw-verification-token-value" }
+    });
+
+    assert.equal(response.statusCode, 200);
+    assert.deepEqual(response.json(), { data: { verified: true } });
+  });
+
+  it("rejects invalid verification tokens with 400", async () => {
+    const server = await buildAuthServer(
+      authService({
+        async verifyEmail() {
+          return { ok: false, reason: "invalid_token" };
+        }
+      })
+    );
+    const response = await server.inject({
+      method: "POST",
+      url: "/api/v1/auth/verify-email",
+      payload: { token: "raw-verification-token-value" }
+    });
+
+    assert.equal(response.statusCode, 400);
+    assert.equal(response.json().error.code, "INVALID_TOKEN");
+  });
+
+  it("always reports success for forgot-password requests", async () => {
+    const server = await buildAuthServer(authService());
+    const response = await server.inject({
+      method: "POST",
+      url: "/api/v1/auth/forgot-password",
+      payload: { email: "ghost@example.com" }
+    });
+
+    assert.equal(response.statusCode, 200);
+    assert.deepEqual(response.json(), { data: { requested: true } });
+  });
+
+  it("resets a password with a valid token", async () => {
+    const server = await buildAuthServer(authService());
+    const response = await server.inject({
+      method: "POST",
+      url: "/api/v1/auth/reset-password",
+      payload: { token: "raw-reset-token-value-here", password: "brand-new-secret" }
+    });
+
+    assert.equal(response.statusCode, 200);
+    assert.deepEqual(response.json(), { data: { reset: true } });
+  });
+
+  it("rejects weak passwords on reset", async () => {
+    const server = await buildAuthServer(authService());
+    const response = await server.inject({
+      method: "POST",
+      url: "/api/v1/auth/reset-password",
+      payload: { token: "raw-reset-token-value-here", password: "short" }
+    });
+
+    assert.equal(response.statusCode, 422);
+    assert.equal(response.json().error.code, "VALIDATION_ERROR");
   });
 });
