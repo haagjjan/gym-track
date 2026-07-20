@@ -42,3 +42,21 @@ ops/monitoring/secrets/
 *.sqlite3
 tmp/
 temp/
+
+# SSH 
+id_rsa*
+id_ed25519*
+gym_prod_ed25519*
+
+# Server
+secrets/
+backups/
+*.dump
+*.sql
+*.log
+
+# Other Server docs
+*.pem
+*.key
+*.p12
+*.pfx
