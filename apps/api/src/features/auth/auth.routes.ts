@@ -1,24 +1,22 @@
 import type { FastifyInstance, FastifyReply } from "fastify";
-import type { ZodError } from "zod";
-import type { AuthService, AuthenticatedUser } from "./auth.service.js";
+import { noopEventTracker } from "../../shared/events.js";
+import { sendValidationError } from "../../shared/http-validation.js";
+import { registerAuthActionRoutes } from "./auth-action.routes.js";
+import {
+  authRateLimit,
+  type AuthCookieOptions,
+  type AuthRouteOptions
+} from "./auth-route-config.js";
 import { loginRequestSchema, signupRequestSchema } from "./auth.schemas.js";
-
-interface AuthCookieOptions {
-  name: string;
-  secure: boolean;
-  maxAgeSeconds: number;
-}
-
-interface AuthRouteOptions {
-  service: AuthService;
-  cookie: AuthCookieOptions;
-}
+import type { AuthenticatedUser } from "./auth.service.js";
 
 export async function registerAuthRoutes(
   server: FastifyInstance,
   options: AuthRouteOptions
 ): Promise<void> {
-  server.post("/api/v1/auth/signup", async (request, reply) => {
+  const events = options.events ?? noopEventTracker;
+
+  server.post("/api/v1/auth/signup", { config: authRateLimit }, async (request, reply) => {
     const parsed = signupRequestSchema.safeParse(request.body);
 
     if (!parsed.success) {
@@ -36,6 +34,7 @@ export async function registerAuthRoutes(
       });
     }
 
+    events.track("user_signed_up", result.value.user.id);
     setSessionCookie(reply, options.cookie, result.value);
 
     return reply.status(201).send({
@@ -45,7 +44,7 @@ export async function registerAuthRoutes(
     });
   });
 
-  server.post("/api/v1/auth/login", async (request, reply) => {
+  server.post("/api/v1/auth/login", { config: authRateLimit }, async (request, reply) => {
     const parsed = loginRequestSchema.safeParse(request.body);
 
     if (!parsed.success) {
@@ -55,6 +54,15 @@ export async function registerAuthRoutes(
     const result = await options.service.login(parsed.data);
 
     if (!result.ok) {
+      if (result.reason === "locked") {
+        return reply.status(423).send({
+          error: {
+            code: "ACCOUNT_LOCKED",
+            message: "Too many failed attempts. Try again in a few minutes."
+          }
+        });
+      }
+
       return reply.status(401).send({
         error: {
           code: "INVALID_CREDENTIALS",
@@ -63,6 +71,7 @@ export async function registerAuthRoutes(
       });
     }
 
+    events.track("user_logged_in", result.value.user.id);
     setSessionCookie(reply, options.cookie, result.value);
 
     return reply.send({
@@ -101,6 +110,8 @@ export async function registerAuthRoutes(
       }
     });
   });
+
+  registerAuthActionRoutes(server, options);
 }
 
 function setSessionCookie(
@@ -116,25 +127,4 @@ function setSessionCookie(
     sameSite: "lax",
     secure: options.secure
   });
-}
-
-function sendValidationError(reply: FastifyReply, error: ZodError) {
-  return reply.status(422).send({
-    error: {
-      code: "VALIDATION_ERROR",
-      message: "One or more fields are invalid.",
-      fields: toFieldErrors(error)
-    }
-  });
-}
-
-function toFieldErrors(error: ZodError): Record<string, string[]> {
-  const fields: Record<string, string[]> = {};
-
-  for (const issue of error.issues) {
-    const key = String(issue.path[0] ?? "body");
-    fields[key] = [...(fields[key] ?? []), issue.message];
-  }
-
-  return fields;
 }
