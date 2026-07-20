@@ -157,6 +157,19 @@ Workout logging routes own auth checks, request validation, and HTTP response ma
 
 Status: implemented for adding, reordering, and removing session exercises, plus adding, updating, and removing sets.
 
+## Workout Template Slice
+
+The template feature follows the same route/service/repository boundary:
+
+- Fastify endpoints under `/api/v1/workout-templates` own authenticated list/read/create/update/duplicate/delete/start operations.
+- `POST /api/v1/workouts/:workoutId/templates` saves a completed session structure, and `POST /api/v1/workout-templates/:templateId/from-workout` explicitly updates a source template.
+- Repository transactions preserve ordered duplicate exercise occurrences and copy template rows into normal session exercise rows without sets.
+- Next.js route handlers proxy all browser template access through the same-origin BFF.
+- TanStack Query owns template server state and invalidation.
+- The reusable exercise picker is shared by active-session and template insertion. Both destinations stage multi-selection, preserve click order, and append only when `Add selected exercises (n)` is committed; template rows have remove/reorder but no per-row Replace flow.
+
+Status: implemented for ordered exercise-only templates and explicit completion-time copy/update workflows.
+
 ## Web Workout Logging Slice
 
 The first workout logging UI follows the same web feature-slice pattern:
@@ -184,6 +197,24 @@ The workout history UI follows the same web feature-slice pattern:
 Browser code continues to call Next route handlers first so auth cookies stay same-origin and the API does not need CORS.
 
 Status: implemented for viewing workout history and opening workout detail.
+
+## V1 gym-use remediation slice
+
+The usability-audit-v2/v3 remediation and audit-v4 beta refinements continue the same feature-owned boundaries:
+
+- `users` owns the authenticated volume heat preference route/service/repository.
+- Workout, template, and exercise repositories own complete-list search/facet/sort semantics; the web does not filter only loaded pages. Exercise ownership filtering is API-side and receives the authenticated user ID.
+- The shared web facet component owns responsive inline controls and the mobile filter sheet, while each entity supplies its allowed sorts. A small versioned storage helper persists validated filter/sort state under user-and-surface-specific `sessionStorage` keys; search remains transient and Clear deletes that surface's entry.
+- The shared exercise catalog owns search, multi-muscle AND facets, equipment/type, sorting, and ordered staged selection for both live workouts and templates.
+- Live-session UI is split into header, vertical exercise list, exercise/set mode navigation, active exercise panel, staged multi-add sheet, saved-set editor, new-set composer, draft storage, and timer components. Mobile editor presentation is a viewport-fixed safe-area bottom sheet; the mobile timer is a compact fixed dock hidden while an editor is open. Desktop presentation stays inline.
+- The live header is the single elapsed-time authority (`LIVE · hh:mm:ss`) and uses `Finish`/`Confirm finish`. Set rows always include a type label; Exercise Mode includes tap guidance and row chevrons, and directional mode transitions are disabled when reduced motion is requested.
+- New-set drafts are the only local workout state persisted between reloads. Server state remains in TanStack Query and incomplete sets are never posted.
+- Progress daily best-set selection, range construction, tonnage formatting, and volume heat bucketing/ranges/proportional widths are pure feature helpers with direct tests. Progress keeps an unbounded summary for all-time best metrics and a range-keyed summary for selected-window total sets/tonnage.
+- Coarse-pointer Volume controls arbitrate touch direction: vertical movement remains native page scroll, horizontal movement drives orbit, taps keep muscle selection, and touch zoom is disabled. Desktop mouse orbit/zoom remains unchanged.
+- The shell/chrome uses honest product/state labels and centralized semantic colors; the five-stage Volume heat scale remains a separate data-visualization palette with non-color cues.
+- Audit v4 reuses existing columns and analytics range parameters, so it requires no schema migration or architecture ADR.
+
+Status: implemented for the V1 responsive web remediation described by `docs/Usability_Audit/usability-audit-v4.md`, with v3 and v2 retained only where v4 does not supersede them.
 
 ## Analytics API Slice
 
@@ -215,12 +246,13 @@ Status: implemented for the first combined analytics UI; superseded by the UI re
 The quality slice keeps checks close to the existing app boundaries:
 
 - GitHub Actions installs pnpm dependencies with the lockfile and runs `pnpm check`.
+- GitHub Actions runs `pnpm test:performance` after the normal project checks so timing gates do not compete with the unit suite.
 - API database integration tests use the real Fastify server, Kysely repositories, migrations, and PostgreSQL.
 - Web smoke tests use Playwright against the production-like Docker Compose app stack.
 - Production auth cookies default to secure when `NODE_ENV=production`, while local Compose can keep `AUTH_COOKIE_SECURE=false`.
 - Deployment target decisions live in ADRs before deployment config is added.
 
-Status: implemented for full project CI checks, one core API/database flow, one core browser smoke flow, secure production cookie defaulting, and the first deployment target ADR.
+Status: implemented for full project and performance CI checks, one core API/database flow, one core browser smoke flow, secure production cookie defaulting, and the first deployment target ADR.
 
 ## Deployment Configuration And Small-Batch Operations Slice
 
@@ -246,6 +278,19 @@ The logging slice configures Fastify's existing Pino logger instead of adding a 
 
 Status: implemented for API startup logging configuration, safe redaction, local pretty logs, production JSON logs, and quiet default tests.
 
+## Stage 1 Metrics And Dashboard Slice
+
+The first operations dashboard slice stays outside the product UI:
+
+- `apps/api/src/shared/metrics.ts` owns the optional Prometheus registry, default Node.js metrics, normalized-route HTTP metrics, and the internal metrics route.
+- Metrics are disabled unless `METRICS_ENABLED=true`; the home-host monitoring overlay enables them on a private Docker network.
+- Labels stay bounded to service, environment, release, HTTP method, normalized route template, and status class. Request/user/session/workout/exercise identifiers are fields for logs, not metric dimensions.
+- `compose.monitoring.yaml` extends the existing application stack with Prometheus, Grafana, node/container/PostgreSQL exporters, private networking, and persistent monitoring data.
+- `ops/monitoring` owns Prometheus scrape configuration, Grafana data source/dashboard provisioning, the three Stage 1 dashboards, and the idempotent PostgreSQL monitoring-role setup.
+- The monitoring overlay extends ADR 0005 without removing the Render configuration or adding monitoring concerns to the user-facing dashboard feature.
+
+Status: implemented for the E2-E4 source and provisioning foundation. Runtime host validation, private remote access, alert delivery, and production screenshots remain owner/deployment verification work.
+
 ## UI And Analytics Rework Slice
 
 The UI rework should polish the existing app screens without introducing a full design system:
@@ -255,12 +300,12 @@ The UI rework should polish the existing app screens without introducing a full 
 - Treat Progress and Weekly Volume as distinct app destinations rather than one mixed analytics page; target `/progress` and `/weekly-volume` for the rework unless implementation discovers a stronger existing route constraint.
 - Progress is exercise-first: start with completed exercises, support last-done and muscle-group filtering, then open a selected exercise into a time-series view.
 - Progress charts use date on the x axis and both weight and reps on the y axis: weight as a solid line, reps as a dotted non-continuous line that restarts or changes color when weight changes.
-- Progress supports 1 week, 2 weeks, 4 weeks, 3 months, 1 year, and all-entry windows, with 2 weeks as the default.
-- Weekly Volume is muscle-map-first: show an anatomical body with separated muscles, color trained muscles from light yellow through red to deep violet as weekly working sets increase, and show selected-muscle stats next to the figure.
+- Progress supports 1 week, 1 month, 3 months, and all-entry windows; selected-window summary totals accompany the daily strongest-working-set plot.
+- Weekly Volume is muscle-map-first: show an anatomical body with separated muscles, use the exact five-stage purple working-set heat scale, and show selected-muscle stats next to the figure.
 - Prefer a real interactive 3D body map when it fits the slice; otherwise ship a clear 2D front/back muscle map first and keep the implementation ready to replace with 3D later.
 - Use `recharts` for conventional Progress charts. Use Three.js only if the Weekly Volume body map is implemented as a real 3D scene.
 
-Status: implemented for separate `/progress` and `/weekly-volume` destinations, completed-exercise progress navigation, `recharts` weight/reps progress charts, and a first anatomical 2D SVG weekly muscle-map view.
+Status: implemented for separate `/progress` and `/weekly-volume` destinations, completed-exercise progress navigation, `recharts` weight/reps progress charts, an interactive anatomical 3D weekly muscle map, and an optional device-local 2D front/back view selected in Settings.
 
 ## CSV Workout Import/Export Slice
 
@@ -272,5 +317,31 @@ The CSV slice should add one canonical workout-history CSV format:
 - Validate the whole file before writing and reject malformed files with row-level errors.
 - Create or reuse global exercises by case-insensitive name, require known primary muscle group slugs, and run the shared exercise-name quality evaluator before preview/import.
 - Do not partially import on validation failure.
+- Workout History provides a responsive `View CSV format` dialog/sheet from the same canonical contract, including all headers, field rules, accepted values, timestamp/order rules, one complete row, and a downloadable sample CSV.
 
-Status: implemented for authenticated canonical CSV workout-history export/import, same-origin web proxy routes, preview-first review, whole-file validation with row-level errors, exercise-name warning/block handling, global exercise reuse/creation by case-insensitive name, and no partial import on validation failure.
+Status: implemented for authenticated canonical CSV workout-history export/import, same-origin web proxy routes, preview-first review, whole-file validation with row-level errors, exercise-name warning/block handling, global exercise reuse/creation by case-insensitive name, no partial import on validation failure, and in-app format/sample guidance.
+
+## Cleanup And Performance Regression Slice
+
+The cleanup keeps public behavior stable while restoring the documented boundaries:
+
+- Shared web primitives live in `apps/web/src/shared/ui`; feature-specific UI stays in its owning feature.
+- Auth session behavior remains behind `createAuthService`, while verification and password-reset actions use a focused internal action service. Route registration keeps the public `registerAuthRoutes` entry point and the existing endpoint paths.
+- Fastify cookie authentication and Zod error response mapping use shared API helpers where three or more routes need the same boundary behavior.
+- Workout and exercise services expose focused operations and delegate database-row response shaping to feature-owned mapping modules.
+- CSV grouping and Volume aggregation use indexed maps/sets. Exercise-name suggestions use a bounded two-row Levenshtein calculation because suggestions beyond the accepted distance cannot appear in the response.
+- `pnpm test:performance` runs API and web packages sequentially on fixed workloads, after warmups, using the median of three samples. Every gate also checks output counts.
+
+The performance workloads and ceilings are recorded in `docs/Usability_Audit/performance-audit-v1.md`. They detect pure-function algorithmic regressions only; browser page-load NFRs and real-user performance still need separate measurement.
+
+Status: implemented without endpoint, database, public response-shape, or storage-key changes.
+
+## Current Size-Limit Exceptions
+
+The following source files remain above the normal review targets after cleanup:
+
+- `apps/web/src/features/avatar/avatar-stage.tsx` and `hologram-bay.tsx` exceed 400 lines because they contain one cohesive Three.js scene/shader pipeline. Their rendering math is intentionally unchanged; split them only at a real scene-responsibility boundary.
+- `apps/web/src/features/volume/muscle-spike.tsx` and `muscle-spike-scene.tsx` exceed the 250-line target as a development-only anatomy authoring tool. They are not a product route and should be split only if the tool gains another stable responsibility.
+- `apps/api/src/features/exercises/exercise-name-catalog.ts` exceeds 400 lines because it is a static, curated name and blocked-term catalog rather than orchestration logic.
+
+Other files between 250 and 400 lines remain visible review triggers under `ENGINEERING.md`; this cleanup does not grant them a permanent exception.

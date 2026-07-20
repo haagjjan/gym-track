@@ -5,8 +5,11 @@
 - Phases 0-7 are implemented for the current foundation: repository setup, MVP docs, query/data/schema planning, stack decisions, local tooling, Docker Compose local app orchestration, and SQL migrations.
 - Phase 8 is implemented for the current MVP API foundation: health, auth, workout session, exercise library, muscle group lookup, workout logging, set, and analytics routes exist.
 - Phase 9 has started with a minimal Next.js shell, the first auth UI slice, the first workout logging UI slice, workout history/detail UI, and analytics UI.
-- Phase 10 is implemented for the current foundation with unit tests, an API database integration flow, a Playwright web smoke flow, and GitHub Actions jobs that run project checks.
-- Phase 11 has started with an accepted deployment target ADR, Render Blueprint, deployment runbook, backup/restore checklist, monitoring checklist, structured API logging, Progress/Weekly Volume UI rework with an anatomical SVG weekly body map, and canonical CSV workout import/export. Hosted production credentials, custom domains, and first tester launch execution are still future work.
+- Phase 10 is implemented for the current foundation with unit tests, pure-function performance regression suites, an API database integration flow, a Playwright web smoke flow, and GitHub Actions jobs that run project and performance checks.
+- Phase 11 has started with an accepted deployment target ADR, Render Blueprint, deployment runbook, backup/restore checklist, structured API logging, Prometheus API metrics, a private provisioned Grafana monitoring overlay with service/host/PostgreSQL dashboards, Progress/Weekly Volume UI rework, and canonical CSV workout import/export. Runtime host verification, alerts, hosted production credentials, custom domains, and first tester launch execution are still future work.
+- Phase 12 now includes normalized multi-muscle exercise classification, the shared exercise picker, and ordered exercise-only workout templates with explicit session copy/update semantics.
+- Phase 13 implements the usability-audit-v2 remediation plus the audit-v3 refinements: aligned list actions, app-dialog exercise-name review, one plotted Progress set per local day, proportional Volume bars with inspectable ranges, staged multi-exercise adding, and separate live exercise/set modes.
+- Phase 14 implements the audit-v4 beta refinements: honest `Gym Progress Tracker` chrome and semantic colors, tab-session facet persistence, an in-app canonical CSV guide, staged catalog selection for sessions/templates, exercise editability filtering, range-aware Progress totals/tonnage, mobile-safe Volume gestures, and live-session bottom-sheet/timer/header discovery refinements. Broader import/export, exercise naming, and history-reset rework remains post-beta.
 
 ## Phase 0 — Project Setup & Working Style
 
@@ -216,7 +219,7 @@ Stop regressions and build confidence.
 - Core flows are tested and breakages are caught early.
 
 ### Status
-- Implemented for the current foundation. API health/auth/workout/exercise/logging/analytics unit tests, an API database integration test, a Playwright web smoke test, root `pnpm check`, and GitHub Actions jobs exist.
+- Implemented for the current foundation. API health/auth/workout/exercise/logging/analytics unit tests, API/web performance regression suites, an API database integration test, a Playwright web smoke test, root `pnpm check`, root `pnpm test:performance`, and GitHub Actions jobs exist.
 
 ---
 
@@ -235,16 +238,18 @@ Run it online for a small set of testers.
 - A user can sign up and use the app remotely.
 
 ### Status
-- Started. ADR 0005 records Render Web Services plus Render PostgreSQL as the first small-batch deployment target. `render.yaml` defines the Render services/database, and `docs/deployment-runbook.md` records deployment, migration, backup, restore-test, and monitoring steps. Fastify/Pino structured logging is configured for API services, Progress/Weekly Volume screens are split for tester clarity with an anatomical SVG weekly body map, and canonical CSV import/export is implemented for workout history. Hosted credentials, custom domains, and the first tester launch remain.
+- Started. ADR 0005 records Render Web Services plus Render PostgreSQL as the first small-batch deployment target. ADR 0008 adds an opt-in private home-host observability overlay without superseding Render. `render.yaml` defines the Render services/database, and `docs/deployment-runbook.md` records deployment, migration, backup, restore-test, and monitoring steps. Fastify/Pino structured logging and disabled-by-default Prometheus API metrics are configured, and Prometheus/Grafana/exporter provisioning owns the three Stage 1 operations dashboards. Runtime host validation, alert delivery, hosted credentials, custom domains, and the first tester launch remain.
 
 ---
 
 ## Phase 12 — Iteration & v1 Improvements
 
 ### Likely next upgrades
-- Workout history import/export (CSV)
+- Broader data import/export UX beyond the implemented canonical CSV flow and format guide
+- Intelligent exercise-name conventions and spelling suggestions beyond the current quality gate
+- User-controlled complete workout-history reset
 - Better muscle attribution (secondary muscles + weighting)
-- Templates (saved workouts)
+- Advanced template planning, folders, or sharing beyond ordered exercise-only templates
 - PR detection (rep PR, weight PR)
 - 1RM estimation options
 - RPE support (if desired)

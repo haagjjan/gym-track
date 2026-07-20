@@ -49,6 +49,7 @@ Common status codes:
 - `403 Forbidden` - authenticated but not allowed
 - `404 Not Found` - resource not found or not visible to user
 - `409 Conflict` - uniqueness or state conflict
+- `423 Locked` - temporary account lockout after repeated failed logins
 - `422 Unprocessable Entity` - validation error
 - `500 Internal Server Error` - unexpected server error
 
@@ -82,6 +83,19 @@ Returns `503` when the API process is running but the database check fails:
 }
 ```
 
+### `GET /api/v1/metrics` (internal only)
+
+Returns Prometheus text exposition for the API process when `METRICS_ENABLED=true`.
+
+This endpoint is an operations boundary, not a browser API:
+
+- It is disabled by default and is not proxied through the Next.js BFF.
+- The Stage 1 monitoring overlay enables it only on the private Docker network.
+- It exposes default Node.js process metrics, normalized-route HTTP request/response/latency/in-flight metrics, and bounded service/environment/release identity.
+- Route labels use Fastify route templates such as `/api/v1/workouts/:workoutId`, never raw request paths.
+- User IDs, request IDs, emails, session/workout/exercise IDs, and credentials are never metric labels.
+- Deployments that publish the API directly must leave it disabled unless an independently reviewed protection layer is present.
+
 ## Shared Shapes
 
 ### `User`
@@ -91,6 +105,7 @@ Returns `503` when the API process is running but the database check fails:
   "id": "uuid",
   "email": "jan@example.com",
   "username": "jan",
+  "emailVerified": false,
   "createdAt": "2026-05-15T10:00:00Z"
 }
 ```
@@ -114,6 +129,10 @@ Returns `503` when the API process is running but the database check fails:
   "name": "Bench Press",
   "equipment": "barbell",
   "exerciseType": "compound",
+  "primaryMuscleGroups": [
+    { "id": "uuid", "slug": "chest", "name": "Chest" },
+    { "id": "uuid", "slug": "triceps", "name": "Triceps" }
+  ],
   "primaryMuscleGroup": {
     "id": "uuid",
     "slug": "chest",
@@ -125,6 +144,10 @@ Returns `503` when the API process is running but the database check fails:
       "slug": "triceps",
       "name": "Triceps"
     }
+  ],
+  "muscleGroups": [
+    { "id": "uuid", "slug": "chest", "name": "Chest", "role": "PRIMARY" },
+    { "id": "uuid", "slug": "triceps", "name": "Triceps", "role": "PRIMARY" }
   ],
   "createdByUserId": "uuid",
   "createdAt": "2026-05-15T10:00:00Z",
@@ -226,6 +249,7 @@ Response `201`:
       "id": "uuid",
       "email": "jan@example.com",
       "username": "jan",
+      "emailVerified": false,
       "createdAt": "2026-05-15T10:00:00Z"
     }
   }
@@ -235,6 +259,7 @@ Response `201`:
 Behavior:
 
 - Sets the auth session cookie.
+- Issues a 24-hour single-use verification token and attempts to send the verification email without making email delivery a signup failure.
 - Returns `409` if email or username already exists.
 - Passwords are hashed with Argon2.
 
@@ -260,6 +285,7 @@ Response `200`:
       "id": "uuid",
       "email": "jan@example.com",
       "username": "jan",
+      "emailVerified": false,
       "createdAt": "2026-05-15T10:00:00Z"
     }
   }
@@ -270,6 +296,8 @@ Behavior:
 
 - Sets the auth session cookie.
 - Returns `401` for invalid credentials.
+- After 10 failed attempts, temporarily locks the account for 15 minutes and returns `423` while the lock is active.
+- A successful login clears prior failure and lockout state.
 
 ### `POST /api/v1/auth/logout`
 
@@ -298,6 +326,7 @@ Response `200`:
       "id": "uuid",
       "email": "jan@example.com",
       "username": "jan",
+      "emailVerified": false,
       "createdAt": "2026-05-15T10:00:00Z"
     }
   }
@@ -305,6 +334,95 @@ Response `200`:
 ```
 
 Returns `401` when no valid auth session exists.
+
+### `POST /api/v1/auth/verify-email`
+
+Consumes a single-use email-verification token.
+
+Request:
+
+```json
+{
+  "token": "raw-action-token"
+}
+```
+
+Response `200`:
+
+```json
+{
+  "data": {
+    "verified": true
+  }
+}
+```
+
+Returns `400` with `INVALID_TOKEN` when the token is invalid, expired, already used, or has the wrong purpose.
+
+### `POST /api/v1/auth/resend-verification`
+
+Attempts to send a new verification email for the authenticated user.
+
+Response `200`:
+
+```json
+{
+  "data": {
+    "sent": true
+  }
+}
+```
+
+`sent` is `false` when the account is already verified or delivery fails. Returns `401` without a valid auth session.
+
+### `POST /api/v1/auth/forgot-password`
+
+Requests a single-use password-reset link.
+
+Request:
+
+```json
+{
+  "email": "jan@example.com"
+}
+```
+
+Response `200`:
+
+```json
+{
+  "data": {
+    "requested": true
+  }
+}
+```
+
+The response is identical whether the email exists or email delivery succeeds, preventing account enumeration. Existing accounts receive a token that expires after 60 minutes.
+
+### `POST /api/v1/auth/reset-password`
+
+Consumes a password-reset token and replaces the account password.
+
+Request:
+
+```json
+{
+  "token": "raw-action-token",
+  "password": "new correct horse battery staple"
+}
+```
+
+Response `200`:
+
+```json
+{
+  "data": {
+    "reset": true
+  }
+}
+```
+
+Successful reset marks the email verified, revokes all existing sessions, and clears login failure state. Returns `400` with `INVALID_TOKEN` when the token is invalid, expired, already used, or has the wrong purpose.
 
 ## Workout Endpoints
 
@@ -415,7 +533,19 @@ Response `200`:
               "id": "uuid",
               "slug": "chest",
               "name": "Chest"
-            }
+            },
+            "primaryMuscleGroups": [
+              { "id": "uuid", "slug": "chest", "name": "Chest" },
+              { "id": "uuid", "slug": "triceps", "name": "Triceps" }
+            ],
+            "secondaryMuscleGroups": [
+              { "id": "uuid", "slug": "shoulders", "name": "Shoulders" }
+            ],
+            "muscleGroups": [
+              { "id": "uuid", "slug": "chest", "name": "Chest", "role": "PRIMARY" },
+              { "id": "uuid", "slug": "triceps", "name": "Triceps", "role": "PRIMARY" },
+              { "id": "uuid", "slug": "shoulders", "name": "Shoulders", "role": "SECONDARY" }
+            ]
           },
           "sets": []
         }
@@ -426,6 +556,8 @@ Response `200`:
 ```
 
 Returns `404` if the workout does not exist or belongs to another user.
+
+Workout details resolve these muscle fields from the exercise's current normalized classification; the session does not contain a classification snapshot.
 
 ### `PATCH /api/v1/workouts/:workoutId`
 
@@ -517,6 +649,22 @@ CSV import/export uses one canonical row-per-set workout-history format. The col
 
 ```text
 workout_started_at,workout_ended_at,workout_type,workout_title,workout_notes,exercise_name,primary_muscle_group_slug,equipment,exercise_type,exercise_position,set_order,set_type,weight_kg,reps,rir,rest_time_seconds,set_note
+```
+
+The Workout History `View CSV format` dialog/sheet presents this exact contract and a downloadable sample:
+
+- All 17 canonical header columns are required and extra columns are rejected, even when a column's row value is optional.
+- Required values: `workout_started_at`, `workout_ended_at`, `exercise_name`, `primary_muscle_group_slug`, `exercise_position`, `set_order`, `set_type`, `weight_kg`, `reps`, and `rir`.
+- Optional values may be blank: `workout_type`, `workout_title`, `workout_notes`, `equipment`, `exercise_type`, `rest_time_seconds`, and `set_note`.
+- Timestamps are ISO 8601 instants with offsets; the end must be after the start. Use one row per set and repeat workout/exercise fields on every row.
+- `exercise_position` values are compact positive integers starting at `1` within each workout. `set_order` values are compact positive integers starting at `1` within each exercise occurrence.
+- `set_type` is `working` or `warmup`. Equipment is blank or one of `barbell`, `dumbbell`, `kettlebell`, `cable`, `machine`, `plate-loaded machine`, `Smith machine`, `resistance band`, `bodyweight`, or `other`. Exercise type is blank or one of `compound`, `isolation`, `isometric`, or `other`.
+- Seeded primary muscle slugs are `chest`, `back`, `shoulders`, `biceps`, `triceps`, `forearms`, `quads`, `hamstrings`, `glutes`, `calves`, `abs`, and `traps`.
+
+Complete example row:
+
+```csv
+2026-07-10T17:00:00.000Z,2026-07-10T18:00:00.000Z,upper,Push Day,,Bench Press,chest,barbell,compound,1,1,working,80,8,2,120,Controlled reps
 ```
 
 ### `GET /api/v1/workouts/export.csv`
@@ -845,9 +993,23 @@ Lists selectable exercises from the shared global exercise library.
 Query parameters:
 
 - `search` string, optional
-- `primaryMuscleGroupId` UUID, optional
+- `primaryMuscleGroupId` UUID, optional legacy primary-role filter
+- `muscleGroupId` UUID, optional legacy either-role filter
+- `muscleGroupIds` repeated or comma-separated UUIDs, optional; every selected muscle must match the exercise in either role
+- `equipment` canonical value or `unspecified`, optional
+- `exerciseType` canonical value or `unspecified`, optional
+- `ownership=editable|readOnly`, optional; omitted means all selectable exercises
+- `sort=name|muscle|equipment|type`, optional
 - `limit` integer, default `50`, max `100`
 - `offset` integer, default `0`
+
+Behavior:
+
+- Requires authentication and applies the authenticated user ID to ownership filtering.
+- Search covers exercise name, primary/secondary muscle names, and equipment.
+- Muscle, equipment, type, and ownership filters compose before pagination; response items remain unique and pagination `total` reflects the filtered result.
+- `ownership=editable` matches `created_by_user_id = authenticated user`. `ownership=readOnly` matches system exercises (`created_by_user_id IS NULL`) and exercises created by another user.
+- The response shape is unchanged; `createdByUserId` continues to let the web explain why an exercise is read-only.
 
 Response `200`:
 
@@ -891,7 +1053,7 @@ Request:
   "name": "Incline Dumbbell Press",
   "equipment": "dumbbell",
   "exerciseType": "compound",
-  "primaryMuscleGroupId": "uuid",
+  "primaryMuscleGroupIds": ["uuid", "uuid"],
   "secondaryMuscleGroupIds": ["uuid"],
   "confirmNameWarning": false
 }
@@ -930,6 +1092,9 @@ Behavior:
   - hard-block rule or blacklist match: reject
   - plausible but unapproved name: require explicit confirmation
 - If the existing record is soft-deleted, implementation should restore/reuse it instead of creating a duplicate.
+- At least one primary ID is required; IDs must be unique with no overlap between roles.
+- `PATCH /api/v1/exercises/:exerciseId` accepts the same classification shape and is restricted to the user who created the exercise.
+- Exercise search matches exercise names and current primary or secondary muscle names. Results expose structured role data.
 
 Review-required response `422`:
 
@@ -986,11 +1151,67 @@ Response `200`:
 }
 ```
 
+## Workout Template Endpoints
+
+Template responses contain `id`, `name`, `createdAt`, `updatedAt`, and ordered `exercises`. Each entry has its own ID/position plus the referenced exercise's current structured `muscleGroups`. Templates never contain sets or performance fields.
+
+### `GET /api/v1/workout-templates`
+
+Lists only the current user's templates, newest updated first.
+
+### `GET /api/v1/workout-templates/:templateId`
+
+Reads one owned template. Missing and foreign IDs both return `404`.
+
+### `POST /api/v1/workout-templates`
+
+```json
+{ "name": "Push A", "exerciseIds": ["uuid", "uuid", "uuid"] }
+```
+
+Creates the template transactionally. Order and duplicate IDs are preserved. Every exercise must currently be selectable.
+
+### `PATCH /api/v1/workout-templates/:templateId`
+
+Accepts `name`, `exerciseIds`, or both. Replacing the ordered IDs implements add, remove, replace, and reorder operations in one transaction.
+
+### `POST /api/v1/workout-templates/:templateId/duplicate`
+
+Creates an independent owned copy. An optional `name` overrides the default `"<name> Copy"`.
+
+### `DELETE /api/v1/workout-templates/:templateId`
+
+Deletes the template and its child rows. Session source references become `NULL`; workout sessions and history are never deleted.
+
+### `POST /api/v1/workout-templates/:templateId/start`
+
+Creates a normal open workout and copies ordered exercise occurrences into session exercise rows in one transaction. No set rows are created. Returns `409 OPEN_WORKOUT_EXISTS` when the user already has an active workout.
+
+### `POST /api/v1/workouts/:workoutId/templates`
+
+```json
+{ "name": "Push A Result" }
+```
+
+Creates a new template from an owned completed workout's current ordered exercise IDs, excluding all set/performance data.
+
+### `POST /api/v1/workout-templates/:templateId/from-workout`
+
+```json
+{ "workoutId": "uuid" }
+```
+
+Explicitly replaces an owned source template's exercise structure with an owned completed workout's structure, preserving the template name.
+
 ## Analytics Endpoints
 
 ### `GET /api/v1/analytics/exercises`
 
 Returns exercises the current user has logged, sorted by most recently trained first. This supports the Progress exercise list and excludes exercises that have never appeared in the user's workout history.
+
+Query parameters:
+
+- `timeZone` IANA time zone, optional, defaults to `UTC`; used to count unique local plotted days
 
 Response `200`:
 
@@ -1014,6 +1235,7 @@ Response `200`:
           }
         ],
         "lastDoneAt": "2026-05-15T10:00:00Z",
+        "plottedSetCount": 12,
         "totalSets": 24
       }
     ]
@@ -1026,6 +1248,7 @@ Behavior:
 - User-scoped; another user's workout history is not visible.
 - Sorts by `lastDoneAt` descending.
 - Counts non-deleted sets from non-deleted workout data.
+- `plottedSetCount` counts unique local calendar days containing at least one working set. It matches the maximum number of daily points shown by the Progress plot over full history.
 
 ### `GET /api/v1/analytics/exercises/:exerciseId/progress`
 
@@ -1101,6 +1324,8 @@ Response `200`:
 
 When no matching sets exist, numeric totals return zero, `averageRir` returns `null`, and `bestTopSet` returns `null`.
 
+`totalSets`, `totalReps`, and `totalVolumeKg` include both working and warmup sets in the requested range. The Progress UI requests the active 1W/1M/3M range for `TOTAL_SETS` and `TOTAL_TONNAGE`; MAX and the all-time `BEST_SET`/`EST_1RM` widgets use an unbounded request. `totalVolumeKg` is the sum of `weight × reps`.
+
 ### `GET /api/v1/analytics/weekly-volume`
 
 Returns weekly working-set counts by primary muscle group.
@@ -1153,7 +1378,7 @@ Response `200`:
 Behavior:
 
 - Counts working sets only.
-- Uses the exercise primary muscle group only.
+- Counts each current primary muscle assignment for the exercise; secondary assignments do not receive volume.
 - Includes per-muscle exercise totals and recent contributing sessions for the Weekly Volume detail panel.
 - Excludes soft-deleted workouts, session exercises, and sets.
 
@@ -1169,7 +1394,8 @@ Cardio is deferred from the MVP. Do not implement these endpoints in the first A
 - Required fields must be present and non-empty unless nullable.
 - `email` must be a valid email string.
 - `username` must be globally unique case-insensitively.
-- `password` must be 4-200 characters.
+- Signup and reset `password` values must be 10-200 characters.
+- Login accepts 1-200 password characters so accounts created under the earlier minimum can still authenticate.
 - `setType` must be `warmup` or `working`.
 - `weightKg` must be positive and fit `numeric(6,2)`.
 - `reps` must be a positive integer.
@@ -1178,9 +1404,62 @@ Cardio is deferred from the MVP. Do not implement these endpoints in the first A
 - `limit` must be positive and capped by the endpoint max.
 - `offset` must be a non-negative integer.
 
+## V1 usability contract additions
+
+These additions supersede older list behavior where it conflicts.
+
+### `GET /api/v1/workouts`
+
+Optional query values: `search`, repeated or comma-separated `muscleGroupIds`, `equipment`, `exerciseType`, `sort=newest|oldest|name`, `timeZone`, `limit`, and `offset`. `equipment` and `exerciseType` accept `unspecified` for `NULL`.
+
+Search and facets execute before pagination. Search covers title, workout type, locally displayed date formats, exercise name, muscle name, and equipment. All active exercise facets must match one contained exercise. Each summary also returns:
+
+```json
+{
+  "tonnageKg": "12500.00",
+  "exercisePreview": [
+    { "id": "uuid", "name": "Bench Press", "equipment": "barbell", "exerciseType": "compound" }
+  ]
+}
+```
+
+The list payload includes an unfiltered `allTimeSummary`:
+
+```json
+{
+  "totalSessions": 120,
+  "completedSessions": 115,
+  "cumulativeTonnageKg": "900000.00",
+  "averageCompletedDurationSeconds": 4200,
+  "completionRate": 0.9583
+}
+```
+
+### `GET /api/v1/workout-templates`
+
+Accepts `search`, `muscleGroupIds`, `equipment`, `exerciseType`, and `sort=lastUsed|name|lastEdited`. Facet semantics match workouts. Template exercises include `equipment` and `exerciseType`; templates include nullable `lastUsedAt`. Last use comes from the latest completed workout with the exact exercise multiset.
+
+### `GET /api/v1/exercises`
+
+Accepts `search`, repeated or comma-separated `muscleGroupIds`, `equipment`, `exerciseType`, `ownership=editable|readOnly`, `sort=name|muscle|equipment|type`, `limit`, and `offset`. Multiple muscles are AND conditions on the exercise. Search covers name, muscle, and equipment. Ownership uses the authenticated user: `editable` is user-created-by-me; `readOnly` is system-created or created by another user. Omitted ownership returns all selectable exercises. Every filter executes before pagination and response shapes remain unchanged.
+
+### `GET /api/v1/exercises/options`
+
+Returns authoritative `equipment` and `exerciseTypes` arrays from ADR 0007.
+
+### `GET /api/v1/exercises/name-suggestions?name=...`
+
+Returns at most five selectable existing exercises for creation-time reuse.
+
+### `GET|PATCH /api/v1/users/me/preferences`
+
+Returns or updates `{ "volumeHeatCeiling": 20 }`. PATCH requires a whole number from 5 through 50.
+
+### Exercise merge result
+
+Merge responses additionally include `reassignedTemplateExercises` and `affectedTemplates`. The operation reassigns only the requesting user's workout/template references. Source retirement follows the global active-reference rule in `docs/03-data-model-notes.md`.
+
 ## Follow-Up Decisions
 
-- Decide exact password length/hash requirements.
 - Decide whether API docs should later be generated from Zod or OpenAPI.
-- Decide final cookie name and environment-specific cookie flags during implementation.
-- Decide whether email verification and password reset are MVP or vNext.
+- The cookie name and secure flag remain environment-configured; document deployment values in the operations runbook rather than hard-coding them here.

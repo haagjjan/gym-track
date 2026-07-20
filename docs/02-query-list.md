@@ -53,8 +53,8 @@ The database schema, constraints, and indexes will be designed to support these 
 - Output: session_id, exercise windows
 
 ### Q8. Add exercise to session (ordered)
-- Input: session_id, exercise_id, position/order, workig mouscle groups
-- Output: session_exercise_id
+- Input: session_id, exercise_id, and position/order for each staged selection.
+- Output: session_exercise_id for each appended exercise; the web commits selections in click order.
 
 ### Q9. Add set to a session exercise (ordered)
 - Input: session_exercise_id (auto), set_order (auto), set_type, weight, reps, RIR, rest_time_seconds (auto)
@@ -77,9 +77,48 @@ The database schema, constraints, and indexes will be designed to support these 
 - Output: exercise_id, name, primary muscle group, optional secondary muscle group, equipment(optional), exercise type (isolation/compound)
 
 ### Q13. Add exercise to shared library
-- Input: user_id (for audit), name, primary muscle group, optional secondary muscle groups
+- Input: user_id (for audit), name, one or more primary muscle groups, optional secondary muscle groups
 - Output: exercise_id
 - Rule: exercise names are globally unique, case-insensitively
+
+### Q17. Search and filter selectable exercises
+- Input: current user, optional search, multiple muscle IDs, equipment, type, ownership (`editable` or `readOnly`), entity-specific sort, limit, and offset.
+- Output: unique selectable exercises with structured primary and secondary assignments and matching pagination totals.
+- Search: exercise name, primary/secondary muscle names, and equipment.
+- Filter: every selected muscle must match the same exercise in either role; equipment/type compose with those AND conditions.
+- Ownership: `editable` requires `created_by_user_id = current user`; `readOnly` includes system exercises and exercises created by another user. Omitted ownership returns all selectable exercises.
+
+### Q18. Manage workout templates
+- Input: current user, template name, ordered exercise IDs
+- Output: user-owned templates with ordered exercise occurrences and current muscle classifications
+- Actions: create, rename, staged multi-add, remove, reorder, duplicate, and delete. Template rows do not expose a per-exercise Replace action.
+
+### Q19. Start or save a template workout
+- Start: copy the template exercise occurrences into a new open session in one transaction
+- Save: copy a completed session's current exercise IDs/order into a new or existing template
+- Output: independent session/template records; no sets or performance values are copied
+
+### Q20. Search, facet, sort, and summarize complete workout history
+
+- Input: user, search text, time zone, optional multiple muscle IDs, equipment, exercise type, sort, limit, offset.
+- Search title/type, displayed local dates, exercise names, muscles, and equipment before pagination.
+- Facets require one contained exercise to satisfy every active exercise-level condition.
+- Output rows include tonnage and an exercise preview. `allTimeSummary` is unfiltered and includes total/completed sessions, total tonnage, average completed duration, and completion rate.
+- The History portability UI exposes the canonical row-per-set CSV headers, validation rules, accepted classifications, one complete row, and a downloadable sample without adding another database query.
+
+### Q21. Search and rank workout templates
+
+- Search template name or contained exercise data and apply the shared facets.
+- Derive `lastUsedAt` from completed workouts with the exact same exercise multiset: order ignored, duplicate counts preserved, extra/missing occurrences rejected.
+- Sort by last used, name, or last edited.
+
+### Q22. Canonical exercise discovery and preferences
+
+- List exercises by search, multiple muscle IDs, equipment, type, ownership/editability, and entity-specific sort.
+- Return the canonical equipment/type options and up to five existing-name suggestions.
+- Read and update the current user's 5–50 volume heat ceiling.
+- Merge user-scoped workout and template references and report both affected record types.
+- History, Template, and Exercise List filter/sort state is browser-tab-local and user-scoped; it does not add a database query. Search text is intentionally excluded from persistence.
 
 ---
 
@@ -87,6 +126,7 @@ The database schema, constraints, and indexes will be designed to support these 
 
 ### Q14. Exercise progress over time (sets)
 - Filter: user_id, exercise_id, time range, optionally set_type=working, set_id
+- Progress navigation also accepts the user's IANA time zone and returns the number of unique local days with working-set data for each exercise. This is the number of points eligible for the plot.
 - Output (time series), illustrated graphically:
   - session_date
   - weight, reps, RIR
@@ -95,6 +135,7 @@ The database schema, constraints, and indexes will be designed to support these 
   - weight, reps + RIR added
 - or
   - (optional) estimated_1RM
+- UI selection: choose one strongest working set per user-local calendar day. If more than one session exists on that day, all eligible sets compete for the single plotted point.
 
 ### Q15. Exercise summary stats for a time range
 - Filter: user_id, exercise_id, date range
@@ -104,6 +145,7 @@ The database schema, constraints, and indexes will be designed to support these 
   - average RIR
   - total time of doing this exercise
   - best_top_set (by weight or by estimated 1RM)
+- Range-aware `total_sets` and `total_volume` include both working and warmup sets. Progress requests the active 1W/1M/3M range for these widgets and uses the unbounded summary for all-time best-set and estimated-1RM widgets; MAX reuses the unbounded summary.
 
 ### Q16. Weekly sets per muscle group
 - Filter: user_id, time range

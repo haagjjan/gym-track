@@ -21,6 +21,8 @@ Draft rules for the first schema pass. These notes capture business rules and da
 - Exercise names are globally unique, case-insensitively.
 - User-added global exercises should keep audit metadata such as `created_by_user_id`.
 - Deleted exercises should no longer be selectable for new sessions, but historical workout data must remain readable.
+- Equipment and exercise type use the canonical nullable values accepted in ADR 0007; free-form classification values are not accepted.
+- System exercises are read-only. A shared user-created exercise is editable only by its creator.
 
 ### Ordering
 
@@ -62,10 +64,30 @@ Draft rules for the first schema pass. These notes capture business rules and da
 
 ### Muscle Attribution
 
-- Each exercise requires one primary muscle group.
-- Secondary muscle groups may be captured for future use, but MVP volume counts use primary muscle only.
+- Each exercise requires one or more primary muscle groups and may have zero or more secondary muscle groups.
+- The same muscle group may appear only once per exercise and cannot hold both roles.
+- Exercise muscle assignments are authoritative current classification data; sessions and templates do not snapshot them.
+- Historical workout displays and analytics use the exercise's current classification.
+- Weekly muscle volume counts each current primary muscle assignment; no stabilizer role or weighting exists.
 - Weekly muscle volume counts working sets only.
 - Warmup sets do not count toward weekly muscle volume.
+
+### Workout Templates
+
+- A workout template is user-owned and stores a required name plus ordered exercise occurrences only.
+- Duplicate exercise occurrences are preserved rather than deduplicated.
+- Starting a template copies its ordered exercise structure into independent `session_exercises` rows and creates no set rows.
+- Template edits never mutate active or historical sessions; session edits never mutate the template unless the user explicitly chooses the completion-time update action.
+- Deleting a template must leave every workout session valid.
+- Template last use is derived from completed workout exercise multisets. Order is ignored; duplicate counts and extra/missing exercises are significant.
+
+### V1 filtering, merging, and client drafts
+
+- Workout/template facet filters use one correlated exercise match: a single contained exercise must satisfy all selected muscles, equipment, and type.
+- Workout all-time summaries are computed over all non-deleted workouts and are independent of result pagination and active filters.
+- Exercise merges change only the requesting user's workout and template references. A personal source exercise is retired only when no active workout or template references remain for any user.
+- Unfinished new-set drafts are device-local values keyed by user, workout, and exercise. They are cleared after save, completion, discard, or explicit cancellation and never enter analytics.
+- Exercise progress selects one strongest working set per user-local calendar day across all sessions on that day. Load/Reps uses weight, reps, then lower RIR; EST 1RM uses Epley output with deterministic ties.
 
 ### Cardio
 

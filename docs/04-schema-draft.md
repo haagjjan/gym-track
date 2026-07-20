@@ -24,6 +24,10 @@ Stores application accounts for email/password login.
 | `email` | `text` | Required, globally unique case-insensitively |
 | `username` | `text` | Required, globally unique case-insensitively |
 | `password_hash` | `text` | Required |
+| `email_verified_at` | `timestamptz` | Nullable; set after successful verification or password reset |
+| `failed_login_attempts` | `integer` | Required, default 0 |
+| `locked_until` | `timestamptz` | Nullable; temporary login lockout deadline |
+| `volume_heat_ceiling` | `integer` | Required, default 20; check 5 through 50 |
 | `created_at` | `timestamptz` | Required, default now |
 | `updated_at` | `timestamptz` | Required, default now |
 
@@ -31,11 +35,6 @@ Constraints and indexes:
 
 - Unique index on `lower(email)`.
 - Unique index on `lower(username)`.
-
-Deferred:
-
-- Email verification fields.
-- Password reset fields.
 
 ### `user_sessions`
 
@@ -56,6 +55,43 @@ Constraints and indexes:
 - Index on `(user_id, expires_at)`.
 - Index on `session_token_hash`.
 - Active sessions are rows where `revoked_at IS NULL` and `expires_at > now()`.
+
+### `auth_action_tokens`
+
+Stores hashed, single-use email-verification and password-reset tokens.
+
+| Column | Type | Rules |
+| --- | --- | --- |
+| `id` | `uuid` | Primary key |
+| `user_id` | `uuid` | Required FK to `users.id` |
+| `purpose` | `text` | Required: `email_verification` or `password_reset` |
+| `token_hash` | `text` | Required, unique; raw tokens are never persisted |
+| `expires_at` | `timestamptz` | Required |
+| `used_at` | `timestamptz` | Nullable; set when the token is consumed |
+| `created_at` | `timestamptz` | Required, default now |
+
+Constraints and indexes:
+
+- Check constraint limits `purpose` to the two supported auth actions.
+- Unique index on `token_hash`.
+- Index on `(user_id, purpose, created_at DESC)` supports current-token lookup and cleanup.
+
+### `app_events`
+
+Stores bounded first-party product events emitted by the API. There is no client-ingest endpoint.
+
+| Column | Type | Rules |
+| --- | --- | --- |
+| `id` | `bigint` | Generated identity primary key |
+| `user_id` | `uuid` | Nullable FK to `users.id` |
+| `event_name` | `text` | Required |
+| `properties` | `jsonb` | Required, default empty object |
+| `created_at` | `timestamptz` | Required, default now |
+
+Constraints and indexes:
+
+- Index on `(event_name, created_at)` supports event-rate review.
+- Index on `(user_id, created_at)` supports user-scoped operational investigation.
 
 ### `muscle_groups`
 
@@ -91,9 +127,9 @@ Shared global exercise library.
 | --- | --- | --- |
 | `id` | `uuid` | Primary key |
 | `name` | `text` | Required, globally unique case-insensitively |
-| `equipment` | `text` | Nullable |
-| `exercise_type` | `text` | Nullable; examples: `compound`, `isolation` |
-| `primary_muscle_group_id` | `uuid` | Required FK to `muscle_groups.id` |
+| `equipment` | `text` | Nullable; canonical equipment check from ADR 0007 |
+| `exercise_type` | `text` | Nullable; `compound`, `isolation`, `isometric`, or `other` |
+| `primary_muscle_group_id` | `uuid` | Temporary legacy compatibility field; normalized assignments are authoritative |
 | `created_by_user_id` | `uuid` | Nullable FK to `users.id` |
 | `created_at` | `timestamptz` | Required, default now |
 | `updated_at` | `timestamptz` | Required, default now |
@@ -105,30 +141,37 @@ Constraints and indexes:
 - Index on `primary_muscle_group_id`.
 - Index on `lower(name)` for exercise search.
 - Selectable exercises are rows where `deleted_at IS NULL`.
+- `equipment` is null or one of the ten canonical equipment values.
+- `exercise_type` is null or one of the four canonical type values.
 
 Rules:
 
+- The system seed includes a read-only `Bench Press` exercise classified as `barbell`, `compound`, and primary `chest`, so a fresh database has a selectable exercise.
 - Soft-deleted exercise names should be restored/reused, not recreated as separate records.
 - Historical workout data must remain readable even if an exercise is soft-deleted.
 
-### `exercise_secondary_muscles`
+### `exercise_muscle_groups`
 
-Optional join table for secondary muscle assignments.
+Authoritative normalized primary and secondary muscle assignments.
 
 | Column | Type | Rules |
 | --- | --- | --- |
 | `exercise_id` | `uuid` | Required FK to `exercises.id` |
 | `muscle_group_id` | `uuid` | Required FK to `muscle_groups.id` |
+| `role` | `text` | Required: `PRIMARY` or `SECONDARY` |
 
 Constraints and indexes:
 
-- Primary key on `(exercise_id, muscle_group_id)`.
-- Index on `muscle_group_id`.
+- Primary key on `(exercise_id, muscle_group_id)` prevents overlap and duplicate roles.
+- Check constraint limits roles to `PRIMARY` and `SECONDARY`.
+- Deferred constraint triggers require at least one primary assignment at transaction commit.
+- Index on `(muscle_group_id, role, exercise_id)` supports picker filtering and analytics.
 
 Rules:
 
-- Secondary muscles are stored for future use.
-- MVP volume counts use only `exercises.primary_muscle_group_id`.
+- Multiple primary and secondary muscles are supported.
+- Current assignments are resolved for historical workout data; they are not snapshotted.
+- The legacy primary column and `exercise_secondary_muscles` table remain temporarily dual-written for rolling deployment compatibility.
 
 ### `workout_sessions`
 
@@ -143,6 +186,7 @@ User-owned workout sessions.
 | `workout_type` | `text` | Nullable; examples: `upper`, `lower`, `push`, `pull`, `legs` |
 | `title` | `text` | Nullable |
 | `notes` | `text` | Nullable |
+| `source_template_id` | `uuid` | Nullable FK to `workout_templates.id`, `ON DELETE SET NULL` |
 | `created_at` | `timestamptz` | Required, default now |
 | `updated_at` | `timestamptz` | Required, default now |
 | `deleted_at` | `timestamptz` | Nullable soft delete |
@@ -178,6 +222,32 @@ Constraints and indexes:
 Rules:
 
 - Position values should be compacted after reorder/delete.
+
+### `workout_templates`
+
+User-owned reusable workout structures.
+
+| Column | Type | Rules |
+| --- | --- | --- |
+| `id` | `uuid` | Primary key |
+| `user_id` | `uuid` | Required FK to `users.id` |
+| `name` | `text` | Required, trimmed length 1-120 |
+| `created_at` | `timestamptz` | Required |
+| `updated_at` | `timestamptz` | Required |
+
+### `workout_template_exercises`
+
+Ordered exercise occurrences. Duplicate `exercise_id` values are intentionally allowed.
+
+| Column | Type | Rules |
+| --- | --- | --- |
+| `id` | `uuid` | Primary key |
+| `workout_template_id` | `uuid` | Required FK, cascades only to template child rows |
+| `exercise_id` | `uuid` | Required FK to `exercises.id` |
+| `position` | `integer` | Required, positive and unique within template |
+| `created_at` | `timestamptz` | Required |
+
+Templates never contain sets, weights, reps, RIR, timers, or completion state. Starting a template copies these ordered rows into independent `session_exercises` rows.
 
 ### `sets`
 
@@ -219,8 +289,8 @@ Rules:
 
 | Query | Supported by |
 | --- | --- |
-| Q1 Create account | `users`, unique lower email/username indexes |
-| Q2 Login | `users`, `user_sessions`, username lookup, active session indexes |
+| Q1 Create account | `users`, `user_sessions`, `auth_action_tokens`, unique lower email/username indexes |
+| Q2 Login | `users`, `user_sessions`, failed-attempt/lockout fields, username lookup, active session indexes |
 | Q3 Recent sessions | `workout_sessions` index on `(user_id, started_at DESC)` |
 | Q4 Workout/history contingency | `workout_sessions`, `session_exercises`, `sets`, date-range and working-set filters |
 | Q5 Sessions by date range | `workout_sessions` index on `(user_id, started_at, ended_at)` |
@@ -235,10 +305,12 @@ Rules:
 | Q14 Exercise progress | Join `workout_sessions` -> `session_exercises` -> `sets` by user, exercise, date range |
 | Q15 Exercise summary | Same raw tables as Q14, computed aggregates on read |
 | Q16 Weekly sets per muscle | `sets` where `set_type = 'working'`, joined to exercise primary muscle |
+| Q17 Exercise muscle search/filter | `exercise_muscle_groups`, `muscle_groups`, lower-name search |
+| Q18 Template management | `workout_templates`, `workout_template_exercises` |
+| Q19 Template/session copying | template rows copied to `workout_sessions`, `session_exercises` transactionally |
 
 Cardio C1-C2 are deferred and intentionally unsupported by the first schema pass.
 
 ## Follow-Up Decisions
 
-- Decide whether email verification and password reset belong in MVP auth.
 - Decide whether `workout_type` should become a constrained lookup once workout splits are implemented.

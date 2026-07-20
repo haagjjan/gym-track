@@ -2,7 +2,7 @@
 
 ## 0. Meta
 - **Owner: Jan Haag**  
-- **Last updated:** 2026.02.04
+- **Last updated:** 2026.07.16
 - **Status:** Draft
 - **Target release:** MVP v0.1  
 
@@ -45,12 +45,19 @@ not good success metrics
 - Access past workout data: past logs
 - View visualised Data for a specified exercise: each set seperatly, as a bar chart (Weight, Reps, RIR), estimated 1 Rep max.
 - View weekly volume per musclegroup: count of workingsets per muscle group, for selected muscle groups
+- Classify an exercise with one or more primary and optional secondary muscle groups.
+- Create, manage, duplicate, and start reusable workout templates containing ordered exercises only.
+- Save a completed workout's exercise structure as a template or explicitly update its source template.
 
 ### 3.2 Out of scope (Non-goals for MVP)
 - Web sharing
 - Nutrition
 - Coaching
 - mobile application
+- Template planning data such as sets, rep ranges, weights, RIR/RPE, or template-specific rest times
+- Supersets, circuits, alternative suggestions, favorites, and recent/frequent exercise ranking
+- Template folders, tags, sharing, public templates, version history, and archiving
+- Stabilizer classifications, muscle-volume weighting, coaching recommendations, and automatic muscle-coverage warnings
 
 ### 3.3 Later (Nice-to-have / vNext)
 - Cardio logging and cardio history: date time, before/after workout, duration, type, distance
@@ -107,6 +114,23 @@ not good success metrics
 - [ ] User can see a chart for reps/weight trend over time
 - [ ] User can see weekly set totals and weekly averages per muscle group + exercises 
 - [ ] App works on latest Chrome + Firefox
+
+## 5.1 V1 mobile gym-use requirements
+
+- Responsive mobile web is the V1 phone experience; a native mobile app is not required.
+- Product chrome uses the `Gym Progress Tracker` name, a conventional settings cog, and only displays real application state; fake online/optimal/readiness labels and the idle figure overlay are absent. White is neutral titles/names/text/values, cyan is action/selection/focus/live input, lavender is secondary information/warmups/secondary muscles/non-destructive warning, green is confirmed success/completion/rest complete/genuine performance, and red is error/destructive. Volume retains its separate five-stage purple heat scale and every color-coded state also has a text, icon, value, or pattern cue.
+- Every workout control first navigates to the launch/resume flow. Starting an empty workout or a template is an explicit choice.
+- An empty workout name is valid. Names save on blur or Enter.
+- The live workout must support one-handed vertical exercise selection, staged multi-exercise adding, separate exercise-list and set-entry modes, 44px reorder/navigation/remove targets, and one set editor at a time. On mobile, set creation/editing uses a keyboard-aware, safe-area-aware fixed bottom sheet with initial focus plus Escape/cancel handling; the running rest timer uses a compact bottom dock that hides while an editor is open without stopping its countdown. Content padding prevents either surface from covering controls. Desktop editors and the timer remain inline.
+- Saved live-session sets always identify `Working` or `Warmup`. The workout header uses a muted `LIVE · hh:mm:ss` indicator with a subtle reduced-motion-safe status pulse, `Finish`/`Confirm finish`, and no duplicate large timer. Exercise Mode explains that tapping a row opens its sets and gives each row a trailing chevron; directional fade/slide mode transitions are disabled under reduced motion.
+- Unfinished new-set input remains device-local per user/workout/exercise and never creates an incomplete database set.
+- Workouts, templates, exercises, and the shared exercise picker use server-backed search plus muscle/equipment/type facets. Multiple muscles use AND semantics on one exercise; cards never duplicate. Picker selections are staged, retain click order, and are committed together to a workout or template.
+- History, Template, and Exercise List filters/sorts persist independently for the authenticated user during the current browser-tab session. Search text does not persist, invalid stored values are ignored, and Clear removes the saved state for that surface.
+- Workout History provides an in-app canonical CSV format guide with required/optional fields, accepted classifications, ordering/timestamp rules, a complete example row, and a downloadable sample.
+- Exercise List can filter `All`, `Editable by me`, or `Read-only`; system and other-user exercises are read-only. Primary and secondary muscle selectors start collapsed for both create and edit while retaining counts and the primary-muscle requirement.
+- Progress uses one best working set per user-local calendar day, including days with multiple sessions; exercise picker counts reflect those plotted days. The selected 1W/1M/3M/MAX window controls total sets and total tonnage, including working and warmup sets, while best set and estimated 1RM remain all-time.
+- Volume uses five exact purple heat stages, proportional bar lengths within a stage, inspectable set ranges, and an account-synced 5–50 ceiling. On touch devices, vertical movement beginning on the 3D figure scrolls the page, horizontal movement rotates, taps select muscles, and pinch zoom is disabled; the visible mobile hint explains sideways rotation versus vertical scrolling.
+- `docs/Usability_Audit/usability-audit-v4.md` supersedes audit v3 and audit v2 where they conflict; v3 and then v2 continue to define behavior not superseded by v4.
 
 ---
 
@@ -206,22 +230,23 @@ not good success metrics
 
 - **Goal:** User can add an exercise to the currently open session  
 - **Actor:** Logged-in user  
-- **Trigger:** User clicks **ADD EXERCISE**  
+- **Trigger:** User clicks **CHOOSE EXERCISES**
 - **Preconditions:**
   - User is logged in
   - A session is currently open
 
 **Main success path**
 1. User is on **GYM SESSION**
-2. User clicks **ADD EXERCISE**
-3. System opens **EXERCISE PICKER** (search + list)
-4. User searches or scrolls and selects an exercise
-5. System adds the exercise block to the current session (empty set list)
-6. User is returned to **GYM SESSION** with the new exercise visible
+2. User clicks **CHOOSE EXERCISES**.
+3. System opens the shared **EXERCISE PICKER** with search, multi-muscle AND filtering, equipment, type, and sorting.
+4. User toggles one or more exercises; selected rows receive a cyan outline but are not yet added.
+5. User clicks **ADD SELECTED EXERCISES (N)**.
+6. System appends the exercise blocks in selection order with empty set lists.
+7. User is returned to **GYM SESSION** with the new exercises visible.
 
 **Result / Postconditions**
-- The selected exercise is attached to the session
-- User can add sets to this exercise in this session
+- The selected exercises are attached to the session in click order.
+- User can add sets to each exercise in this session.
 
 **Variants / Exceptions**
 - No search results → show **NO MATCHES** + option **CREATE NEW EXERCISE**
@@ -229,8 +254,8 @@ not good success metrics
 - User cancels → return to session without changes
 
 **Notes / Decisions**
-- Exercise picker supports search by name (filters later)
-- Recommended: auto-save the “exercise added to session” action
+- The shared picker searches exercise name, muscle, and equipment and supports the same facets/sorts as Exercise List.
+- Selection is staged until the commit action; cancel leaves the destination unchanged.
 
 ### UF-12 — Add Exercise to Shared Library
 
@@ -281,15 +306,16 @@ not good success metrics
 1. User is on **GYM SESSION**
 2. User finds an exercise block
 3. User clicks **ADD SET**
-4. System creates a new set row with:
+4. On mobile, system opens a viewport-fixed, safe-area-aware bottom sheet; on desktop it opens the inline editor. The first input receives focus.
+5. The editor contains:
    - set type (warmup/working)
    - weight
    - reps
    - RIR
    - note (optional)
-5. User enters values
-6. System saves the set (auto-save or explicit **SAVE SET**)
-7. UI shows the saved set with set number
+6. User enters values.
+7. System saves the set through explicit **SAVE SET**.
+8. UI shows the saved set with set number and an explicit `Working` or `Warmup` label.
 
 **Result / Postconditions**
 - Set is stored and linked to the session + exercise
@@ -319,9 +345,10 @@ not good success metrics
 **Main success path (Edit)**
 1. User opens **SESSION DETAIL** or active session
 2. User clicks **EDIT** on a set row
-3. User updates weight/reps/RIR/type/note
-4. User clicks **SAVE**
-5. System validates and updates set
+3. On mobile, system opens the same bottom sheet used for new-set entry; on desktop it opens the inline editor.
+4. User updates weight/reps/RIR/type/note.
+5. User clicks **SAVE**.
+6. System validates and updates set.
 
 **Main success path (Delete)**
 1. User clicks trash icon
@@ -345,17 +372,18 @@ not good success metrics
 
 - **Goal:** User finishes workout and ensures it’s saved  
 - **Actor:** Logged-in user  
-- **Trigger:** User clicks **END SESSION**  
+- **Trigger:** User clicks **FINISH**
 - **Preconditions:**
   - User is logged in
   - A session is open
 
 **Main success path**
-1. User clicks **END SESSION**
-2. System checks if session contains data (optional rule)
-3. System marks session as closed
-4. System stores end timestamp
-5. System redirects to **SESSION SUMMARY** or **HOME**
+1. User clicks **FINISH**.
+2. The control arms as **CONFIRM FINISH** to protect against accidental taps.
+3. User confirms.
+4. System checks if session contains data (optional rule).
+5. System marks session as closed and stores the end timestamp.
+6. System redirects to **SESSION SUMMARY** or **HOME**.
 
 **Result / Postconditions**
 - Session is completed and visible in history
@@ -446,12 +474,13 @@ not good success metrics
 5. User expands a muscle group
 6. System lists primary-muscle exercises first, then secondary-muscle exercises
 7. User selects an exercise
-8. User selects time range (default: 2 weeks)
+8. User selects a 1W, 1M, 3M, or MAX time window.
 9. System loads sets within range
-10. System displays sets chronologically or grouped by session
+10. System displays one strongest working set per local calendar day and the matching recent plotted-set log.
+11. `TOTAL_SETS` and `TOTAL_TONNAGE` include working and warmup sets in the selected window; `BEST_SET` and `EST_1RM` remain all-time.
 
 **Result / Postconditions**
-- User sees full set history in selected period
+- User sees the selected-window progress summary and the sets represented by the active plot mode.
 
 **Variants / Exceptions**
 - No data → **NO SETS IN THIS RANGE**
@@ -472,7 +501,7 @@ not good success metrics
 
 **Main success path**
 1. User clicks **CHART**
-2. System renders graphs:
+2. System renders graphs from one strongest working set per user-local calendar day:
    - X axis is date
    - Y axis shows weight and reps
    - Weight is a solid line
@@ -480,7 +509,7 @@ not good success metrics
    - When weight changes, the reps line jumps or restarts and changes color
 3. User scrolls left to inspect older entries
 4. System prevents scrolling earlier than the first logged entry for the exercise
-5. User switches time windows: 1 week, 2 weeks, 4 weeks, 3 months, 1 year, or all entries
+5. User switches time windows: 1 week, 1 month, 3 months, or all entries.
 
 **Result / Postconditions**
 - User sees a clear visual trend for the exercise
@@ -490,8 +519,8 @@ not good success metrics
 - API/network error → **FAILED TO LOAD CHART DATA** + retry
 
 **Notes / Decisions**
-- Default time window is 2 weeks.
-- Keep all-set table/history available near the chart.
+- The EST 1RM information surface stays within the chart panel/viewport; prose may wrap and the formula remains a single line where space allows.
+- Keep only the sets represented by the active plot mode in the recent log near the chart.
 
 
 ### UF-50 — View Weekly Volume per Muscle Group
@@ -505,11 +534,12 @@ not good success metrics
 **Main success path**
 1. User clicks **WEEKLY VOLUME**
 2. System shows an anatomical body figure with separated muscles
-3. System colors muscles trained in the selected week
-4. Color intensity increases with weekly working-set count: light yellow, then red, then deep violet
+3. System colors muscles trained in the selected window.
+4. Color intensity uses the exact five-stage purple heat scale plus a neutral zero state.
 5. User clicks a muscle
 6. System shows the selected muscle's weekly volume stats beside the body figure
 7. Stats include weekly working sets, related exercises, and recent contributing sessions
+8. Clicking the selected muscle again clears the selection
 
 **Result / Postconditions**
 - User can see weekly working-set totals per selected muscle groups
@@ -523,7 +553,9 @@ not good success metrics
 - Recommended: “weekly” = ISO week (Mon–Sun)
 - Recommended: count only **working sets**, exclude warmups
 - Weekly Volume should be visually and navigationally distinct from Progress.
-- Prefer an interactive 3D body map if feasible; a clear 2D front/back body map is acceptable for the first pass.
+- The interactive 3D body map is the default. A device-local setting can select the lighter 2D front/back map.
+- Front/back view controls and muscle focus use the same smooth camera transition, except when reduced motion is requested.
+- On coarse-pointer/mobile devices, vertical movement that begins on the 3D canvas scrolls the page, horizontal movement rotates the figure, taps select muscles, and pinch zoom is disabled. Desktop keeps mouse orbit and zoom.
 
 
 ### UF-60 — Log Out
@@ -565,11 +597,13 @@ not good success metrics
 - **FR-08.1:** The user shall be able to edit a workout session.
 - **FR-09:** The user shall be able to close/end a workout session.
 - **FR-10:** The user shall be able to view a list of past workout sessions (history).
+- **FR-10.1:** History shall retain validated filters/sort for the current user and browser-tab session, keep search transient, and expose the canonical CSV format/sample guide.
 - **FR-11:** The user shall be able to view the full details of a past workout session.
 
 ### Exercises
-- **FR-12:** The user shall be able to select and add an exercise to a session from an exercise library.
+- **FR-12:** The user shall be able to stage one or more exercises from the shared faceted library and append them to a session or template in selection order.
 - **FR-13:** The user shall be able to add globally unique exercises to the shared exercise library with: name, equipment, primary muscle group, and optional secondary muscle group(s).
+- **FR-13.1:** Exercise List shall filter All, Editable by me, or Read-only using the authenticated creator relationship; system and other-user exercises are read-only.
 
 ### Sets (per exercise in a session)
 - **FR-14:** The user shall be able to log sets with reps, weight, and RIR.
@@ -584,18 +618,18 @@ not good success metrics
 
 ### Progress per exercise
 - **FR-20:** The user shall be able to view progress for a specified exercise over a selected time range.
-- **FR-21:** The user shall be able to view all sets (with reps/weight/RIR/type) for that exercise in the selected time range.
-- **FR-22:** The user shall be able to view a chart for exercise progress (weight/reps; optional RIR/estimated 1RM).
+- **FR-21:** The Progress recent-set log shall show the strongest working sets represented by the active plot mode; complete raw set history remains available through workout logs.
+- **FR-22:** The user shall be able to view a chart for exercise progress (weight/reps; optional RIR/estimated 1RM) using one strongest working set per local calendar day.
 - **FR-23:** The progress view shall start from exercises the user has logged, sorted by last done by default.
 - **FR-24:** The progress exercise list shall be filterable by muscle group, with primary-muscle exercises listed before secondary-muscle exercises.
-- **FR-25:** The progress chart shall support 1 week, 2 weeks, 4 weeks, 3 months, 1 year, and all-entry windows, defaulting to 2 weeks.
+- **FR-25:** The progress chart shall support 1 week, 1 month, 3 months, and all-entry windows. Total sets and total tonnage follow that window and include warmups; best set and estimated 1RM remain all-time.
 
 ### Weekly volume
 - **FR-30:** The user shall be able to view weekly working-set counts per muscle group.
 - **FR-31:** The user shall be able to view weekly working-set counts per exercise (optional: within muscle group view).
 - **FR-32:** The user shall be able to filter/select which muscle groups are displayed.
 - **FR-33:** The weekly volume view shall show an anatomical body visualization with separated muscles.
-- **FR-34:** The weekly volume body visualization shall color trained muscles from light yellow through red to deep violet as weekly working-set volume increases.
+- **FR-34:** The weekly volume body visualization shall use five exact purple heat stages (`#E9D5FF`, `#D8B4FE`, `#C084FC`, `#9333EA`, `#581C87`) as working-set volume increases; zero remains neutral and labels/values accompany color.
 - **FR-35:** The user shall be able to select a muscle and view its weekly volume details beside the body visualization.
 
 
@@ -619,7 +653,7 @@ not good success metrics
 ### AC-04 Progress chart
 - Given I have multiple logged sets for an exercise across dates  
 - When I open the chart view  
-- Then weight is plotted as a solid line and reps are plotted as a dotted non-continuous line over time
+- Then only one strongest working set is plotted per local day, the recent log matches the plotted sets, and total sets/tonnage match the selected window
 
 ### AC-05 Weekly sets summary
 - Given I have logged sessions in a time period  
@@ -638,7 +672,7 @@ not good success metrics
 
 ### AC-08 End session
 - Given I have an active session
-- When I click **END SESSION**
+- When I click **FINISH** and then **CONFIRM FINISH**
 - Then the session is marked closed and appears in history with the correct date
 
 ### AC-09 Cardio logging (deferred / vNext)
@@ -660,11 +694,11 @@ Deferred from MVP.
 - **NFR-02 (Performance):** Home, session, history, and progress pages load in **< 2 seconds** on a typical connection (excluding first load after deploy).
 - **NFR-03 (Privacy):** User workout data is only accessible to that user (auth required for all non-public endpoints).
 - **NFR-04 (Reliability):** After a successful save, data is not lost after refresh/crash.
-- **NFR-05 (Usability):** Logging a typical session (5 exercises × ~3 sets) should be possible in **≤ 5 minutes** on a laptop.
+- **NFR-05 (Usability):** Logging a typical session (5 exercises × ~3 sets) should be possible in **≤ 5 minutes** on responsive mobile web or a laptop.
 
 
 ## 11. Open Questions
 
 - Does the MVP include accounts/auth, or is it single-user/local first? (MVP Exit Criteria suggests yes: accounts exist)
 - Can muscle groups be assigned automatically?
-- For the progress chart: show **all sets** or only **best set per session** by default?
+- Whether a future Progress view should offer an optional all-set mode; V1 defaults to one strongest working set per local day.
