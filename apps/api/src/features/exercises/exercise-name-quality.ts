@@ -42,6 +42,7 @@ const urlOrEmailPattern = /https?:\/\/|www\.|[^\s]+@[^\s]+\.[^\s]+/i;
 const exportNoisePattern = /\b(?:csv|import|export|sheet|copy|backup|log|entry)\b/i;
 const rowMarkerPattern = /\brow\s+\d{4,}\b/i;
 const longNumericSuffixPattern = /(?:^|\s)\d{5,}(?:\s|$)/;
+const MAX_SUGGESTION_DISTANCE = 6;
 
 function normalizeExerciseName(name: string): string {
   return name.trim().replace(/\s+/g, " ");
@@ -179,34 +180,35 @@ function suggestionScore(source: string, candidate: string): number {
     return Math.abs(candidate.length - source.length);
   }
 
-  return levenshteinDistance(source, candidate);
+  return boundedLevenshteinDistance(source, candidate);
 }
 
-function levenshteinDistance(source: string, candidate: string): number {
-  const rows = source.length + 1;
-  const cols = candidate.length + 1;
-  const matrix = Array.from({ length: rows }, () => Array<number>(cols).fill(0));
-
-  for (let row = 0; row < rows; row += 1) {
-    matrix[row]![0] = row;
+function boundedLevenshteinDistance(source: string, candidate: string): number {
+  if (Math.abs(source.length - candidate.length) > MAX_SUGGESTION_DISTANCE) {
+    return MAX_SUGGESTION_DISTANCE + 1;
   }
 
-  for (let col = 0; col < cols; col += 1) {
-    matrix[0]![col] = col;
-  }
+  const [rows, columns] =
+    source.length >= candidate.length ? [source, candidate] : [candidate, source];
+  let previous = Uint16Array.from({ length: columns.length + 1 }, (_, index) => index);
+  let current = new Uint16Array(columns.length + 1);
 
-  for (let row = 1; row < rows; row += 1) {
-    for (let col = 1; col < cols; col += 1) {
-      const substitutionCost = source[row - 1] === candidate[col - 1] ? 0 : 1;
-      matrix[row]![col] = Math.min(
-        matrix[row - 1]![col]! + 1,
-        matrix[row]![col - 1]! + 1,
-        matrix[row - 1]![col - 1]! + substitutionCost
+  for (let row = 1; row <= rows.length; row += 1) {
+    current[0] = row;
+
+    for (let column = 1; column <= columns.length; column += 1) {
+      const substitutionCost = rows[row - 1] === columns[column - 1] ? 0 : 1;
+      current[column] = Math.min(
+        previous[column]! + 1,
+        current[column - 1]! + 1,
+        previous[column - 1]! + substitutionCost
       );
     }
+
+    [previous, current] = [current, previous];
   }
 
-  return matrix[rows - 1]![cols - 1]!;
+  return Math.min(previous[columns.length]!, MAX_SUGGESTION_DISTANCE + 1);
 }
 
 function escapeRegExp(value: string): string {
