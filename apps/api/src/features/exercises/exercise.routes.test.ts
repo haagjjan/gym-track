@@ -6,10 +6,13 @@ import type { AuthService, PublicUser } from "../auth/auth.service.js";
 import { registerExerciseRoutes } from "./exercise.routes.js";
 import type {
   CreateExerciseRequest,
-  ListExercisesQuery
+  ListExercisesQuery,
+  MergeExerciseRequest,
+  UpdateExerciseRequest
 } from "./exercise.schemas.js";
 import type {
   ExerciseList,
+  ExerciseMergeSummary,
   ExerciseResult,
   ExerciseService,
   ExerciseShape,
@@ -23,6 +26,7 @@ const user: PublicUser = {
   id: "user-1",
   email: "jan@example.com",
   username: "jan",
+  emailVerified: false,
   createdAt: "2026-05-20T10:00:00.000Z"
 };
 const exercise: ExerciseShape = {
@@ -35,26 +39,52 @@ const exercise: ExerciseShape = {
     slug: "chest",
     name: "Chest"
   },
+  primaryMuscleGroups: [{ id: chestId, slug: "chest", name: "Chest" }],
   secondaryMuscleGroups: [],
+  muscleGroups: [{ id: chestId, slug: "chest", name: "Chest", role: "PRIMARY" }],
   createdByUserId: null,
   createdAt: "2026-05-20T10:00:00.000Z",
   updatedAt: "2026-05-20T10:00:00.000Z"
 };
 
+const mergeSummary: ExerciseMergeSummary = {
+  source: { id: "44444444-4444-4444-8444-444444444444", name: "Bench Pres", retired: true },
+  target: { id: exercise.id, name: exercise.name },
+  reassignedSessionExercises: 3,
+  reassignedTemplateExercises: 2,
+  affectedWorkouts: 2,
+  affectedTemplates: 1,
+  affectedSets: 9
+};
+
 class FakeExerciseService implements ExerciseService {
   public listMuscleGroupsCalled = false;
-  public listCall: ListExercisesQuery | null = null;
+  public listCall: { userId: string; input: ListExercisesQuery } | null = null;
   public createCall: { userId: string; input: CreateExerciseRequest } | null = null;
+  public updateCall: {
+    userId: string;
+    exerciseId: string;
+    input: UpdateExerciseRequest;
+  } | null = null;
+  public mergeCall: {
+    userId: string;
+    sourceExerciseId: string;
+    input: MergeExerciseRequest;
+  } | null = null;
 
   public constructor(
     private readonly createResult: ExerciseResult<ExerciseShape> = {
       ok: true,
       value: { ...exercise, createdByUserId: "user-1" }
+    },
+    private readonly mergeResult: ExerciseResult<ExerciseMergeSummary> = {
+      ok: true,
+      value: mergeSummary
     }
   ) {}
 
-  public async listExercises(input: ListExercisesQuery): Promise<ExerciseList> {
-    this.listCall = input;
+  public async listExercises(userId: string, input: ListExercisesQuery): Promise<ExerciseList> {
+    this.listCall = { userId, input };
 
     return {
       items: [exercise],
@@ -85,6 +115,14 @@ class FakeExerciseService implements ExerciseService {
     };
   }
 
+  public async listOptions(): Promise<{ equipment: readonly string[]; exerciseTypes: readonly string[] }> {
+    return { equipment: ["barbell"], exerciseTypes: ["compound"] };
+  }
+
+  public async findNameSuggestions(): Promise<ExerciseShape[]> {
+    return [exercise];
+  }
+
   public async createExercise(
     userId: string,
     input: CreateExerciseRequest
@@ -92,6 +130,26 @@ class FakeExerciseService implements ExerciseService {
     this.createCall = { userId, input };
 
     return this.createResult;
+  }
+
+  public async updateExercise(
+    userId: string,
+    exerciseId: string,
+    input: UpdateExerciseRequest
+  ): Promise<ExerciseResult<ExerciseShape>> {
+    this.updateCall = { userId, exerciseId, input };
+
+    return this.createResult;
+  }
+
+  public async mergeExercises(
+    userId: string,
+    sourceExerciseId: string,
+    input: MergeExerciseRequest
+  ): Promise<ExerciseResult<ExerciseMergeSummary>> {
+    this.mergeCall = { userId, sourceExerciseId, input };
+
+    return this.mergeResult;
   }
 }
 
@@ -108,7 +166,20 @@ function authService(authenticated = true): AuthService {
     },
     async currentUser() {
       return authenticated ? { ok: true, value: user } : { ok: false, reason: "unauthorized" };
-    }
+    },
+    async requestEmailVerification() {
+      return { sent: true };
+    },
+    async verifyEmail() {
+      return { ok: true, value: { verified: true } };
+    },
+    async requestPasswordReset() {
+      return { requested: true };
+    },
+    async resetPassword() {
+      return { ok: true, value: { reset: true } };
+    },
+    async cleanupExpiredAuthRecords() {}
   };
 }
 
@@ -147,7 +218,7 @@ describe("exercise routes", () => {
     const service = new FakeExerciseService();
     const server = await buildExerciseServer(service);
     const response = await server.inject(
-      `/api/v1/exercises?search=bench&primaryMuscleGroupId=${chestId}&limit=10&offset=5`
+      `/api/v1/exercises?search=bench&primaryMuscleGroupId=${chestId}&ownership=readOnly&limit=10&offset=5`
     );
 
     assert.equal(response.statusCode, 200);
@@ -161,8 +232,10 @@ describe("exercise routes", () => {
         }
       }
     });
-    assert.equal(service.listCall?.search, "bench");
-    assert.equal(service.listCall?.primaryMuscleGroupId, chestId);
+    assert.equal(service.listCall?.userId, user.id);
+    assert.equal(service.listCall?.input.search, "bench");
+    assert.equal(service.listCall?.input.primaryMuscleGroupId, chestId);
+    assert.equal(service.listCall?.input.ownership, "readOnly");
   });
 
   it("lists seeded muscle groups", async () => {
@@ -190,12 +263,32 @@ describe("exercise routes", () => {
     assert.equal(service.listMuscleGroupsCalled, true);
   });
 
+  it("lists canonical options and existing-name suggestions", async () => {
+    const service = new FakeExerciseService();
+    const server = await buildExerciseServer(service);
+    const options = await server.inject("/api/v1/exercises/options");
+    const suggestions = await server.inject("/api/v1/exercises/name-suggestions?name=bench");
+
+    assert.equal(options.statusCode, 200);
+    assert.deepEqual(options.json().data, {
+      equipment: ["barbell"],
+      exerciseTypes: ["compound"]
+    });
+    assert.equal(suggestions.statusCode, 200);
+    assert.deepEqual(suggestions.json().data.items, [exercise]);
+  });
+
   it("returns validation errors for invalid list queries", async () => {
     const server = await buildExerciseServer(new FakeExerciseService());
-    const response = await server.inject("/api/v1/exercises?limit=101");
+    const responses = await Promise.all([
+      server.inject("/api/v1/exercises?limit=101"),
+      server.inject("/api/v1/exercises?ownership=mine")
+    ]);
 
-    assert.equal(response.statusCode, 422);
-    assert.equal(response.json().error.code, "VALIDATION_ERROR");
+    for (const response of responses) {
+      assert.equal(response.statusCode, 422);
+      assert.equal(response.json().error.code, "VALIDATION_ERROR");
+    }
   });
 
   it("creates an exercise for the authenticated user", async () => {
@@ -218,6 +311,38 @@ describe("exercise routes", () => {
     assert.equal(service.createCall?.userId, "user-1");
     assert.equal(service.createCall?.input.name, "Incline Dumbbell Press");
     assert.equal(service.createCall?.input.equipment, "dumbbell");
+  });
+
+  it("accepts multiple primary muscles and secondary muscles", async () => {
+    const service = new FakeExerciseService();
+    const server = await buildExerciseServer(service);
+    const response = await server.inject({
+      method: "POST",
+      url: "/api/v1/exercises",
+      payload: {
+        name: "Machine Chest Press",
+        primaryMuscleGroupIds: [chestId, tricepsId],
+        secondaryMuscleGroupIds: []
+      }
+    });
+
+    assert.equal(response.statusCode, 201);
+    assert.deepEqual(service.createCall?.input.primaryMuscleGroupIds, [chestId, tricepsId]);
+  });
+
+  it("rejects missing, duplicate, and overlapping muscle assignments", async () => {
+    const server = await buildExerciseServer(new FakeExerciseService());
+    const payloads = [
+      { name: "No Primary", primaryMuscleGroupIds: [], secondaryMuscleGroupIds: [] },
+      { name: "Duplicate", primaryMuscleGroupIds: [chestId, chestId], secondaryMuscleGroupIds: [] },
+      { name: "Overlap", primaryMuscleGroupIds: [chestId], secondaryMuscleGroupIds: [chestId] }
+    ];
+
+    for (const payload of payloads) {
+      const response = await server.inject({ method: "POST", url: "/api/v1/exercises", payload });
+      assert.equal(response.statusCode, 422);
+      assert.equal(response.json().error.code, "VALIDATION_ERROR");
+    }
   });
 
   it("returns conflict when an active exercise name exists", async () => {
@@ -298,6 +423,60 @@ describe("exercise routes", () => {
 
     assert.equal(response.statusCode, 422);
     assert.equal(response.json().error.code, "VALIDATION_ERROR");
+  });
+
+  it("merges an exercise and returns the merge summary", async () => {
+    const service = new FakeExerciseService();
+    const server = await buildExerciseServer(service);
+    const sourceId = mergeSummary.source.id;
+    const response = await server.inject({
+      method: "POST",
+      url: `/api/v1/exercises/${sourceId}/merge`,
+      payload: {
+        targetExerciseId: exercise.id
+      }
+    });
+
+    assert.equal(response.statusCode, 200);
+    assert.deepEqual(response.json(), { data: { merge: mergeSummary } });
+    assert.equal(service.mergeCall?.userId, "user-1");
+    assert.equal(service.mergeCall?.sourceExerciseId, sourceId);
+    assert.equal(service.mergeCall?.input.targetExerciseId, exercise.id);
+  });
+
+  it("returns not found when a merge exercise is missing", async () => {
+    const server = await buildExerciseServer(
+      new FakeExerciseService(undefined, { ok: false, reason: "exercise_not_found" })
+    );
+    const response = await server.inject({
+      method: "POST",
+      url: `/api/v1/exercises/${mergeSummary.source.id}/merge`,
+      payload: {
+        targetExerciseId: exercise.id
+      }
+    });
+
+    assert.equal(response.statusCode, 404);
+    assert.equal(response.json().error.code, "EXERCISE_NOT_FOUND");
+  });
+
+  it("returns a validation error for a self merge", async () => {
+    const server = await buildExerciseServer(
+      new FakeExerciseService(undefined, { ok: false, reason: "merge_same_exercise" })
+    );
+    const response = await server.inject({
+      method: "POST",
+      url: `/api/v1/exercises/${exercise.id}/merge`,
+      payload: {
+        targetExerciseId: exercise.id
+      }
+    });
+
+    assert.equal(response.statusCode, 422);
+    assert.equal(
+      response.json().error.fields.targetExerciseId[0],
+      "An exercise cannot be merged into itself."
+    );
   });
 });
 

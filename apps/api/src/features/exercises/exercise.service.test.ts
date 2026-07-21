@@ -7,6 +7,7 @@ import type {
   ExerciseListResult,
   ExerciseRecord,
   ExerciseRepository,
+  MergeExerciseHistoryResult,
   MuscleGroupRecord,
   NewExercise,
   RestoreExerciseInput
@@ -22,6 +23,21 @@ class FakeExerciseRepository implements ExerciseRepository {
   public listFilters: ExerciseListFilters | null = null;
   public createdExercise: NewExercise | null = null;
   public restoredExercise: RestoreExerciseInput | null = null;
+  public mergeCall: {
+    userId: string;
+    sourceExerciseId: string;
+    targetExerciseId: string;
+    mergedAt: Date;
+  } | null = null;
+  public activeExercisesById = new Map<string, ExerciseRecord>();
+  public mergeResult: MergeExerciseHistoryResult = {
+    reassignedSessionExercises: 3,
+    reassignedTemplateExercises: 2,
+    affectedWorkouts: 2,
+    affectedTemplates: 1,
+    affectedSets: 9,
+    sourceRetired: true
+  };
 
   public constructor(
     private readonly existingExercise: ExistingExerciseRecord | null = null,
@@ -43,6 +59,21 @@ class FakeExerciseRepository implements ExerciseRepository {
 
   public async findExerciseByName(): Promise<ExistingExerciseRecord | null> {
     return this.existingExercise;
+  }
+
+  public async findActiveExerciseById(exerciseId: string): Promise<ExerciseRecord | null> {
+    return this.activeExercisesById.get(exerciseId) ?? null;
+  }
+
+  public async mergeExerciseHistory(
+    userId: string,
+    sourceExerciseId: string,
+    targetExerciseId: string,
+    mergedAt: Date
+  ): Promise<MergeExerciseHistoryResult> {
+    this.mergeCall = { userId, sourceExerciseId, targetExerciseId, mergedAt };
+
+    return this.mergeResult;
   }
 
   public async findMuscleGroupsByIds(ids: string[]): Promise<MuscleGroupRecord[]> {
@@ -82,14 +113,19 @@ class FakeExerciseRepository implements ExerciseRepository {
       )
     });
   }
+
+  public async updateExercise(input: RestoreExerciseInput): Promise<ExerciseRecord> {
+    return this.restoreExercise(input);
+  }
 }
 
 describe("exercise service", () => {
   it("lists exercises through filters and pagination", async () => {
     const repository = new FakeExerciseRepository();
     const service = createExerciseService({ repository, now: () => now });
-    const result = await service.listExercises({
+    const result = await service.listExercises("user-1", {
       search: "bench",
+      ownership: "editable",
       primaryMuscleGroupId: chest.id,
       limit: 10,
       offset: 20
@@ -97,7 +133,13 @@ describe("exercise service", () => {
 
     assert.deepEqual(repository.listFilters, {
       search: "bench",
+      muscleGroupIds: [],
       primaryMuscleGroupId: chest.id,
+      equipment: undefined,
+      exerciseType: undefined,
+      ownership: "editable",
+      userId: "user-1",
+      sort: "name",
       limit: 10,
       offset: 20
     });
@@ -216,6 +258,69 @@ describe("exercise service", () => {
     assert.equal(repository.createdExercise, null);
     assert.equal(repository.restoredExercise, null);
   });
+
+  it("rejects merging an exercise into itself", async () => {
+    const repository = new FakeExerciseRepository();
+    const service = createExerciseService({ repository, now: () => now });
+    const result = await service.mergeExercises("user-1", "exercise-1", {
+      targetExerciseId: "exercise-1"
+    });
+
+    assert.deepEqual(result, { ok: false, reason: "merge_same_exercise" });
+    assert.equal(repository.mergeCall, null);
+  });
+
+  it("rejects a merge when either exercise is missing or deleted", async () => {
+    const repository = new FakeExerciseRepository();
+
+    repository.activeExercisesById.set("exercise-1", exerciseRecord());
+
+    const service = createExerciseService({ repository, now: () => now });
+    const result = await service.mergeExercises("user-1", "exercise-1", {
+      targetExerciseId: "exercise-2"
+    });
+
+    assert.deepEqual(result, { ok: false, reason: "exercise_not_found" });
+    assert.equal(repository.mergeCall, null);
+  });
+
+  it("merges an exercise into another and reports the affected history", async () => {
+    const repository = new FakeExerciseRepository();
+
+    repository.activeExercisesById.set(
+      "exercise-1",
+      exerciseRecord({ id: "exercise-1", name: "Bench Pres" })
+    );
+    repository.activeExercisesById.set(
+      "exercise-2",
+      exerciseRecord({ id: "exercise-2", name: "Bench Press" })
+    );
+
+    const service = createExerciseService({ repository, now: () => now });
+    const result = await service.mergeExercises("user-1", "exercise-1", {
+      targetExerciseId: "exercise-2"
+    });
+
+    assert.equal(result.ok, true);
+    assert.deepEqual(repository.mergeCall, {
+      userId: "user-1",
+      sourceExerciseId: "exercise-1",
+      targetExerciseId: "exercise-2",
+      mergedAt: now
+    });
+
+    if (result.ok) {
+      assert.deepEqual(result.value, {
+        source: { id: "exercise-1", name: "Bench Pres", retired: true },
+        target: { id: "exercise-2", name: "Bench Press" },
+        reassignedSessionExercises: 3,
+        reassignedTemplateExercises: 2,
+        affectedWorkouts: 2,
+        affectedTemplates: 1,
+        affectedSets: 9
+      });
+    }
+  });
 });
 
 function createInput() {
@@ -223,7 +328,7 @@ function createInput() {
     name: "Dumbbell Bench Press",
     equipment: "dumbbell",
     exerciseType: "compound",
-    primaryMuscleGroupId: chest.id,
+    primaryMuscleGroupIds: [chest.id],
     secondaryMuscleGroupIds: [triceps.id]
   };
 }
@@ -235,6 +340,7 @@ function exerciseRecord(overrides: Partial<ExerciseRecord> = {}): ExerciseRecord
     equipment: "barbell",
     exerciseType: "compound",
     primaryMuscleGroup: chest,
+    primaryMuscleGroups: [chest],
     secondaryMuscleGroups: [],
     createdByUserId: null,
     createdAt,
