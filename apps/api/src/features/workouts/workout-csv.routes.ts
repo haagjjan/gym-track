@@ -1,6 +1,8 @@
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import type { AuthService, PublicUser } from "../auth/auth.service.js";
+import { noopEventTracker, type EventTracker } from "../../shared/events.js";
+import { authenticateRequest } from "../auth/authenticate-request.js";
+import type { AuthService } from "../auth/auth.service.js";
 import type { WorkoutCsvError } from "./workout-csv.js";
 import type { WorkoutCsvService } from "./workout-csv.service.js";
 
@@ -8,12 +10,14 @@ interface WorkoutCsvRouteOptions {
   authService: AuthService;
   cookieName: string;
   csvService: WorkoutCsvService;
+  events?: EventTracker;
 }
 
 export async function registerWorkoutCsvRoutes(
   server: FastifyInstance,
   options: WorkoutCsvRouteOptions
 ): Promise<void> {
+  const events = options.events ?? noopEventTracker;
   const importQuerySchema = z.object({
     confirmNameWarnings: z.coerce.boolean().optional().default(false)
   });
@@ -25,7 +29,7 @@ export async function registerWorkoutCsvRoutes(
   );
 
   server.get("/api/v1/workouts/export.csv", async (request, reply) => {
-    const user = await authenticate(request, reply, options);
+    const user = await authenticateRequest(request, reply, options);
 
     if (!user) {
       return;
@@ -40,7 +44,7 @@ export async function registerWorkoutCsvRoutes(
   });
 
   server.post("/api/v1/workouts/import.csv", async (request, reply) => {
-    const user = await authenticate(request, reply, options);
+    const user = await authenticateRequest(request, reply, options);
 
     if (!user) {
       return;
@@ -83,13 +87,18 @@ export async function registerWorkoutCsvRoutes(
       });
     }
 
+    events.track("csv_imported", user.id, {
+      importedWorkouts: result.value.importedWorkouts,
+      importedRows: result.value.importedRows
+    });
+
     return reply.status(201).send({
       data: result.value
     });
   });
 
   server.post("/api/v1/workouts/import.csv/preview", async (request, reply) => {
-    const user = await authenticate(request, reply, options);
+    const user = await authenticateRequest(request, reply, options);
 
     if (!user) {
       return;
@@ -122,27 +131,6 @@ export async function registerWorkoutCsvRoutes(
       }
     });
   });
-}
-
-async function authenticate(
-  request: FastifyRequest,
-  reply: FastifyReply,
-  options: WorkoutCsvRouteOptions
-): Promise<PublicUser | null> {
-  const result = await options.authService.currentUser(request.cookies[options.cookieName]);
-
-  if (!result.ok) {
-    void reply.status(401).send({
-      error: {
-        code: "UNAUTHORIZED",
-        message: "Authentication is required."
-      }
-    });
-
-    return null;
-  }
-
-  return result.value;
 }
 
 function toRowErrors(errors: WorkoutCsvError[]): Record<string, string[]> {
