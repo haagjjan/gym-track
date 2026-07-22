@@ -5,6 +5,7 @@ import fastify from "fastify";
 import type { AuthService, PublicUser } from "../auth/auth.service.js";
 import { registerWorkoutRoutes } from "./workout.routes.js";
 import type {
+  DeletedWorkout,
   WorkoutDetail,
   WorkoutList,
   WorkoutResult,
@@ -12,7 +13,8 @@ import type {
 } from "./workout.service.js";
 import type {
   CreateWorkoutRequest,
-  ListWorkoutsQuery
+  ListWorkoutsQuery,
+  UpdateWorkoutRequest
 } from "./workout.schemas.js";
 
 const workoutId = "11111111-1111-4111-8111-111111111111";
@@ -20,6 +22,7 @@ const user: PublicUser = {
   id: "user-1",
   email: "jan@example.com",
   username: "jan",
+  emailVerified: false,
   createdAt: "2026-05-20T10:00:00.000Z"
 };
 const workout: WorkoutDetail = {
@@ -30,12 +33,19 @@ const workout: WorkoutDetail = {
   workoutType: "upper",
   title: "Upper A",
   notes: null,
+  sourceTemplateId: null,
   exercises: []
 };
 
 class FakeWorkoutService implements WorkoutService {
   public createCall: { userId: string; input: CreateWorkoutRequest } | null = null;
   public listCall: { userId: string; input: ListWorkoutsQuery } | null = null;
+  public updateCall: {
+    userId: string;
+    workoutId: string;
+    input: UpdateWorkoutRequest;
+  } | null = null;
+  public deleteCall: { userId: string; workoutId: string } | null = null;
 
   public constructor(
     private readonly createResult: WorkoutResult<WorkoutDetail> = {
@@ -49,6 +59,14 @@ class FakeWorkoutService implements WorkoutService {
     private readonly endResult: WorkoutResult<WorkoutDetail> = {
       ok: true,
       value: { ...workout, endedAt: "2026-05-20T11:00:00.000Z", isOpen: false }
+    },
+    private readonly updateResult: WorkoutResult<WorkoutDetail> = {
+      ok: true,
+      value: workout
+    },
+    private readonly deleteResult: WorkoutResult<DeletedWorkout> = {
+      ok: true,
+      value: { workoutId, wasOpen: true }
     }
   ) {}
 
@@ -65,7 +83,14 @@ class FakeWorkoutService implements WorkoutService {
     this.listCall = { userId, input };
 
     return {
-      items: [{ ...workout, totalExercises: 0, totalSets: 0 }],
+      items: [{ ...workout, totalExercises: 0, totalSets: 0, tonnageKg: "0", exercisePreview: [] }],
+      allTimeSummary: {
+        totalSessions: 1,
+        completedSessions: 0,
+        cumulativeTonnageKg: "0",
+        averageCompletedDurationSeconds: null,
+        completionRate: 0
+      },
       pagination: {
         limit: input.limit,
         offset: input.offset,
@@ -80,6 +105,25 @@ class FakeWorkoutService implements WorkoutService {
 
   public async endWorkout(): Promise<WorkoutResult<WorkoutDetail>> {
     return this.endResult;
+  }
+
+  public async updateWorkout(
+    userId: string,
+    workoutId: string,
+    input: UpdateWorkoutRequest
+  ): Promise<WorkoutResult<WorkoutDetail>> {
+    this.updateCall = { userId, workoutId, input };
+
+    return this.updateResult;
+  }
+
+  public async deleteWorkout(
+    userId: string,
+    deletedWorkoutId: string
+  ): Promise<WorkoutResult<DeletedWorkout>> {
+    this.deleteCall = { userId, workoutId: deletedWorkoutId };
+
+    return this.deleteResult;
   }
 }
 
@@ -96,7 +140,20 @@ function authService(authenticated = true): AuthService {
     },
     async currentUser() {
       return authenticated ? { ok: true, value: user } : { ok: false, reason: "unauthorized" };
-    }
+    },
+    async requestEmailVerification() {
+      return { sent: true };
+    },
+    async verifyEmail() {
+      return { ok: true, value: { verified: true } };
+    },
+    async requestPasswordReset() {
+      return { requested: true };
+    },
+    async resetPassword() {
+      return { ok: true, value: { reset: true } };
+    },
+    async cleanupExpiredAuthRecords() {}
   };
 }
 
@@ -232,5 +289,90 @@ describe("workout routes", () => {
 
     assert.equal(response.statusCode, 422);
     assert.equal(response.json().error.fields.endedAt[0], "endedAt must be after startedAt.");
+  });
+
+  it("updates a workout title and times", async () => {
+    const service = new FakeWorkoutService();
+    const server = await buildWorkoutServer(service);
+    const response = await server.inject({
+      method: "PATCH",
+      url: `/api/v1/workouts/${workoutId}`,
+      payload: {
+        title: "Upper B",
+        startedAt: "2026-05-20T09:30:00.000Z"
+      }
+    });
+
+    assert.equal(response.statusCode, 200);
+    assert.deepEqual(response.json(), { data: { workout } });
+    assert.equal(service.updateCall?.userId, "user-1");
+    assert.equal(service.updateCall?.workoutId, workoutId);
+    assert.equal(service.updateCall?.input.title, "Upper B");
+    assert.equal(
+      service.updateCall?.input.startedAt?.toISOString(),
+      "2026-05-20T09:30:00.000Z"
+    );
+  });
+
+  it("rejects a workout update without any fields", async () => {
+    const service = new FakeWorkoutService();
+    const server = await buildWorkoutServer(service);
+    const response = await server.inject({
+      method: "PATCH",
+      url: `/api/v1/workouts/${workoutId}`,
+      payload: {}
+    });
+
+    assert.equal(response.statusCode, 422);
+    assert.equal(response.json().error.code, "VALIDATION_ERROR");
+    assert.equal(service.updateCall, null);
+  });
+
+  it("returns conflict when editing the end time of an open workout", async () => {
+    const server = await buildWorkoutServer(
+      new FakeWorkoutService(undefined, undefined, undefined, {
+        ok: false,
+        reason: "workout_still_open"
+      })
+    );
+    const response = await server.inject({
+      method: "PATCH",
+      url: `/api/v1/workouts/${workoutId}`,
+      payload: {
+        endedAt: "2026-05-20T11:00:00.000Z"
+      }
+    });
+
+    assert.equal(response.statusCode, 409);
+    assert.equal(response.json().error.code, "WORKOUT_STILL_OPEN");
+  });
+
+  it("deletes an owned workout without returning a response body", async () => {
+    const service = new FakeWorkoutService();
+    const server = await buildWorkoutServer(service);
+    const response = await server.inject({
+      method: "DELETE",
+      url: `/api/v1/workouts/${workoutId}`
+    });
+
+    assert.equal(response.statusCode, 204);
+    assert.equal(response.body, "");
+    assert.deepEqual(service.deleteCall, { userId: user.id, workoutId });
+  });
+
+  it("returns not found when deleting an invisible workout", async () => {
+    const server = await buildWorkoutServer(
+      new FakeWorkoutService(undefined, undefined, undefined, undefined, {
+        ok: false,
+        reason: "not_found"
+      })
+    );
+    const response = await server.inject({
+      method: "DELETE",
+      url: `/api/v1/workouts/${workoutId}`
+    });
+
+    assert.equal(response.statusCode, 404);
+    assert.equal(response.json().error.code, "WORKOUT_NOT_FOUND");
   });
 });

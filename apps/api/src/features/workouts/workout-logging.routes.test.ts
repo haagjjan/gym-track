@@ -25,6 +25,7 @@ const user: PublicUser = {
   id: "user-1",
   email: "jan@example.com",
   username: "jan",
+  emailVerified: false,
   createdAt: "2026-05-20T10:00:00.000Z"
 };
 const sessionExercise: SessionExerciseShape = {
@@ -175,7 +176,20 @@ function authService(authenticated = true): AuthService {
     },
     async currentUser() {
       return authenticated ? { ok: true, value: user } : { ok: false, reason: "unauthorized" };
-    }
+    },
+    async requestEmailVerification() {
+      return { sent: true };
+    },
+    async verifyEmail() {
+      return { ok: true, value: { verified: true } };
+    },
+    async requestPasswordReset() {
+      return { requested: true };
+    },
+    async resetPassword() {
+      return { ok: true, value: { reset: true } };
+    },
+    async cleanupExpiredAuthRecords() {}
   };
 }
 

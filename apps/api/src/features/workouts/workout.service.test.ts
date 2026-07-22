@@ -7,6 +7,7 @@ import type {
   WorkoutListFilters,
   WorkoutListResult,
   WorkoutRepository,
+  WorkoutSessionPatch,
   WorkoutSessionRecord
 } from "./workout.repository.js";
 import { createWorkoutService } from "./workout.service.js";
@@ -26,6 +27,15 @@ class FakeWorkoutRepository implements WorkoutRepository {
         updatedAt: Date;
       }
     | null = null;
+  public updatedWorkout:
+    | {
+        userId: string;
+        workoutId: string;
+        patch: WorkoutSessionPatch;
+        updatedAt: Date;
+      }
+    | null = null;
+  public deletedWorkout: { userId: string; workoutId: string; deletedAt: Date } | null = null;
 
   public constructor(
     private readonly createResult: CreateWorkoutResult = {
@@ -64,10 +74,19 @@ class FakeWorkoutRepository implements WorkoutRepository {
         {
           ...sessionRecord({ endedAt }),
           totalExercises: 2,
-          totalSets: 6
+          totalSets: 6,
+          tonnageKg: "1200",
+          exercisePreview: []
         }
       ],
-      total: 1
+      total: 1,
+      allTimeSummary: {
+        totalSessions: 1,
+        completedSessions: 1,
+        cumulativeTonnageKg: "1200",
+        averageCompletedDurationSeconds: 3600,
+        completionRate: 1
+      }
     };
   }
 
@@ -93,6 +112,36 @@ class FakeWorkoutRepository implements WorkoutRepository {
     };
 
     return this.workout ? { ...this.workout, endedAt: workoutEndedAt } : null;
+  }
+
+  public async updateWorkout(
+    userId: string,
+    workoutId: string,
+    patch: WorkoutSessionPatch,
+    updatedAt: Date
+  ): Promise<WorkoutDetailRecord | null> {
+    this.updatedWorkout = { userId, workoutId, patch, updatedAt };
+
+    if (!this.workout) {
+      return null;
+    }
+
+    return {
+      ...this.workout,
+      startedAt: patch.startedAt ?? this.workout.startedAt,
+      endedAt: patch.endedAt !== undefined ? patch.endedAt : this.workout.endedAt,
+      title: patch.title !== undefined ? patch.title : this.workout.title
+    };
+  }
+
+  public async deleteWorkout(
+    userId: string,
+    workoutId: string,
+    deletedAt: Date
+  ): Promise<WorkoutSessionRecord | null> {
+    this.deletedWorkout = { userId, workoutId, deletedAt };
+
+    return this.workout;
   }
 }
 
@@ -193,6 +242,102 @@ describe("workout service", () => {
     const result = await service.endWorkout("user-1", "workout-1", {});
 
     assert.deepEqual(result, { ok: false, reason: "already_closed" });
+  });
+
+  it("renames a workout without touching its times", async () => {
+    const repository = new FakeWorkoutRepository(undefined, detailRecord({ endedAt }));
+    const service = createWorkoutService({ repository, now: () => now });
+    const result = await service.updateWorkout("user-1", "workout-1", { title: "Leg day" });
+
+    assert.equal(result.ok, true);
+    assert.deepEqual(repository.updatedWorkout?.patch, { title: "Leg day" });
+    assert.equal(repository.updatedWorkout?.updatedAt, now);
+
+    if (result.ok) {
+      assert.equal(result.value.title, "Leg day");
+    }
+  });
+
+  it("rejects editing the end time of an open workout", async () => {
+    const repository = new FakeWorkoutRepository(undefined, detailRecord());
+    const service = createWorkoutService({ repository, now: () => now });
+    const result = await service.updateWorkout("user-1", "workout-1", {
+      endedAt: new Date("2026-05-20T11:30:00.000Z")
+    });
+
+    assert.deepEqual(result, { ok: false, reason: "workout_still_open" });
+    assert.equal(repository.updatedWorkout, null);
+  });
+
+  it("rejects a time edit that puts the end before the start", async () => {
+    const repository = new FakeWorkoutRepository(undefined, detailRecord({ endedAt }));
+    const service = createWorkoutService({ repository, now: () => now });
+    const result = await service.updateWorkout("user-1", "workout-1", {
+      startedAt: new Date("2026-05-20T11:30:00.000Z")
+    });
+
+    assert.deepEqual(result, { ok: false, reason: "ended_before_started" });
+    assert.equal(repository.updatedWorkout, null);
+  });
+
+  it("updates both times of a closed workout together", async () => {
+    const repository = new FakeWorkoutRepository(undefined, detailRecord({ endedAt }));
+    const service = createWorkoutService({ repository, now: () => now });
+    const newStartedAt = new Date("2026-05-20T09:00:00.000Z");
+    const newEndedAt = new Date("2026-05-20T10:15:00.000Z");
+    const result = await service.updateWorkout("user-1", "workout-1", {
+      startedAt: newStartedAt,
+      endedAt: newEndedAt
+    });
+
+    assert.equal(result.ok, true);
+    assert.deepEqual(repository.updatedWorkout?.patch, {
+      startedAt: newStartedAt,
+      endedAt: newEndedAt
+    });
+
+    if (result.ok) {
+      assert.equal(result.value.startedAt, newStartedAt.toISOString());
+      assert.equal(result.value.endedAt, newEndedAt.toISOString());
+    }
+  });
+
+  it("returns not found when updating a workout that is not visible", async () => {
+    const service = createWorkoutService({
+      repository: new FakeWorkoutRepository(undefined, null),
+      now: () => now
+    });
+
+    const result = await service.updateWorkout("user-1", "workout-1", { title: "X" });
+
+    assert.deepEqual(result, { ok: false, reason: "not_found" });
+  });
+
+  it("soft deletes an owned active workout", async () => {
+    const repository = new FakeWorkoutRepository();
+    const service = createWorkoutService({ repository, now: () => now });
+    const result = await service.deleteWorkout("user-1", "workout-1");
+
+    assert.deepEqual(repository.deletedWorkout, {
+      userId: "user-1",
+      workoutId: "workout-1",
+      deletedAt: now
+    });
+    assert.deepEqual(result, {
+      ok: true,
+      value: { workoutId: "workout-1", wasOpen: true }
+    });
+  });
+
+  it("does not reveal an unauthorized workout during deletion", async () => {
+    const service = createWorkoutService({
+      repository: new FakeWorkoutRepository(undefined, null),
+      now: () => now
+    });
+
+    const result = await service.deleteWorkout("user-2", "workout-1");
+
+    assert.deepEqual(result, { ok: false, reason: "not_found" });
   });
 });
 
