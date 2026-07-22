@@ -23,10 +23,15 @@ interface SignupPayload {
 interface WorkoutPayload {
   workout: {
     id: string;
+    sourceTemplateId: string | null;
     exercises: {
       id: string;
       exercise: {
         name: string;
+        muscleGroups: Array<{
+          id: string;
+          role: "PRIMARY" | "SECONDARY";
+        }>;
       };
       sets: {
         reps: number;
@@ -75,6 +80,7 @@ interface CompletedExercisesPayload {
   items: {
     id: string;
     lastDoneAt: string;
+    plottedSetCount: number;
     totalSets: number;
   }[];
 }
@@ -103,7 +109,9 @@ describe("workout API database flow", { skip: databaseUrl ? false : "INTEGRATION
       const tag = `${Date.now()}_${process.pid}`;
       const firstUser = await signup(server, tag);
       const workoutId = await createWorkout(server, firstUser.cookie);
-      const exerciseId = await createExercise(server, firstUser.cookie, tag);
+      // Names ending in the numeric tag are blocked by the name-quality
+      // rules (looks_numeric), so the tag needs a word after it.
+      const exerciseId = await createExercise(server, firstUser.cookie, `${tag} Flow`);
       const sessionExerciseId = await addExerciseToWorkout(server, firstUser.cookie, workoutId, exerciseId);
       const setId = await addSet(server, firstUser.cookie, workoutId, sessionExerciseId);
 
@@ -111,7 +119,7 @@ describe("workout API database flow", { skip: databaseUrl ? false : "INTEGRATION
       await endWorkout(server, firstUser.cookie, workoutId);
 
       const detail = await getWorkout(server, firstUser.cookie, workoutId);
-      assert.equal(detail.exercises[0]?.exercise.name, `${exercisePrefix}${tag}`);
+      assert.equal(detail.exercises[0]?.exercise.name, `${exercisePrefix}${tag} Flow`);
       assert.equal(detail.exercises[0]?.sets[0]?.reps, 6);
       assert.equal(detail.exercises[0]?.sets[0]?.weightKg, "90.00");
 
@@ -129,9 +137,11 @@ describe("workout API database flow", { skip: databaseUrl ? false : "INTEGRATION
       const completedExercises = await listCompletedExercises(server, firstUser.cookie);
       assert.equal(completedExercises.items[0]?.id, exerciseId);
       assert.equal(completedExercises.items[0]?.totalSets, 1);
+      assert.equal(completedExercises.items[0]?.plottedSetCount, 1);
       assert.match(completedExercises.items[0]?.lastDoneAt ?? "", /^\d{4}-\d{2}-\d{2}T/);
 
-      const importedExerciseName = `${exercisePrefix}${tag} CSV`;
+      // "CSV" in a name trips the export-noise block; use a neutral word.
+      const importedExerciseName = `${exercisePrefix}${tag} Imported`;
       const importSummary = await importWorkoutCsv(server, firstUser.cookie, importedExerciseName);
 
       assert.equal(importSummary.importedRows, 1);
@@ -155,6 +165,544 @@ describe("workout API database flow", { skip: databaseUrl ? false : "INTEGRATION
       await server.close();
     }
   });
+
+  it("soft deletes owned completed and active workouts without cascading child data", async () => {
+    const server = await buildIntegrationServer(db);
+
+    try {
+      const tag = `${Date.now().toString(36)}${process.pid}delete`;
+      const owner = await signup(server, `${tag}o`);
+      const other = await signup(server, `${tag}x`);
+      const exerciseId = await createExercise(server, owner.cookie, `${tag} Lift`);
+      const completedWorkoutId = await createWorkout(server, owner.cookie);
+      const sessionExerciseId = await addExerciseToWorkout(
+        server,
+        owner.cookie,
+        completedWorkoutId,
+        exerciseId
+      );
+
+      await addSet(server, owner.cookie, completedWorkoutId, sessionExerciseId);
+      await endWorkout(server, owner.cookie, completedWorkoutId);
+
+      const forbidden = await server.inject({
+        method: "DELETE",
+        url: `/api/v1/workouts/${completedWorkoutId}`,
+        cookies: authCookies(other.cookie)
+      });
+      assert.equal(forbidden.statusCode, 404);
+
+      const deleted = await server.inject({
+        method: "DELETE",
+        url: `/api/v1/workouts/${completedWorkoutId}`,
+        cookies: authCookies(owner.cookie)
+      });
+      assert.equal(deleted.statusCode, 204);
+      assert.equal((await server.inject({
+        method: "GET",
+        url: `/api/v1/workouts/${completedWorkoutId}`,
+        cookies: authCookies(owner.cookie)
+      })).statusCode, 404);
+      assert.ok(!(await listWorkouts(server, owner.cookie)).items.some((item) => item.id === completedWorkoutId));
+      assert.equal((await getExerciseSummary(server, owner.cookie, exerciseId)).totalSets, 0);
+
+      const retainedSessionExercise = await db
+        .selectFrom("session_exercises")
+        .select("id")
+        .where("id", "=", sessionExerciseId)
+        .executeTakeFirst();
+      const retainedSet = await db
+        .selectFrom("sets")
+        .select("id")
+        .where("session_exercise_id", "=", sessionExerciseId)
+        .executeTakeFirst();
+      assert.equal(retainedSessionExercise?.id, sessionExerciseId);
+      assert.ok(retainedSet?.id);
+
+      const templateResponse = await server.inject({
+        method: "POST",
+        url: "/api/v1/workout-templates",
+        cookies: authCookies(owner.cookie),
+        payload: { name: "Deletion Source", exerciseIds: [exerciseId] }
+      });
+      const templateId = readData<{ template: { id: string } }>(templateResponse).template.id;
+      const started = await server.inject({
+        method: "POST",
+        url: `/api/v1/workout-templates/${templateId}/start`,
+        cookies: authCookies(owner.cookie),
+        payload: {}
+      });
+      const activeWorkoutId = readData<{ workout: { workoutId: string } }>(started).workout.workoutId;
+      assert.equal((await server.inject({
+        method: "DELETE",
+        url: `/api/v1/workouts/${activeWorkoutId}`,
+        cookies: authCookies(owner.cookie)
+      })).statusCode, 204);
+      assert.equal((await server.inject({
+        method: "GET",
+        url: `/api/v1/workout-templates/${templateId}`,
+        cookies: authCookies(owner.cookie)
+      })).statusCode, 200);
+      assert.ok(await createWorkout(server, owner.cookie));
+    } finally {
+      await server.close();
+    }
+  });
+
+  it("supports retroactive session edits and exercise merges", async () => {
+    const server = await buildIntegrationServer(db);
+
+    try {
+      const tag = `${Date.now()}_${process.pid}_batchd`;
+      const user = await signup(server, tag);
+      const workoutId = await createWorkout(server, user.cookie);
+      const duplicateExerciseId = await createExercise(server, user.cookie, `${tag} Dup`);
+      const targetExerciseId = await createExercise(server, user.cookie, `${tag} Target`);
+      const templateResponse = await server.inject({
+        method: "POST",
+        url: "/api/v1/workout-templates",
+        cookies: authCookies(user.cookie),
+        payload: {
+          name: "Merge References",
+          exerciseIds: [duplicateExerciseId, duplicateExerciseId]
+        }
+      });
+      const templateId = readData<{ template: { id: string } }>(templateResponse).template.id;
+      const sessionExerciseId = await addExerciseToWorkout(
+        server,
+        user.cookie,
+        workoutId,
+        duplicateExerciseId
+      );
+
+      await addSet(server, user.cookie, workoutId, sessionExerciseId);
+      await endWorkout(server, user.cookie, workoutId);
+
+      const patched = await server.inject({
+        method: "PATCH",
+        url: `/api/v1/workouts/${workoutId}`,
+        cookies: authCookies(user.cookie),
+        payload: {
+          title: "Integration Renamed",
+          startedAt: "2026-05-19T08:00:00.000Z",
+          endedAt: "2026-05-19T09:15:00.000Z"
+        }
+      });
+
+      assert.equal(patched.statusCode, 200);
+
+      const patchedWorkout = readData<{
+        workout: { title: string | null; startedAt: string; endedAt: string | null };
+      }>(patched).workout;
+
+      assert.equal(patchedWorkout.title, "Integration Renamed");
+      assert.equal(patchedWorkout.startedAt, "2026-05-19T08:00:00.000Z");
+      assert.equal(patchedWorkout.endedAt, "2026-05-19T09:15:00.000Z");
+
+      const invalidPatch = await server.inject({
+        method: "PATCH",
+        url: `/api/v1/workouts/${workoutId}`,
+        cookies: authCookies(user.cookie),
+        payload: {
+          startedAt: "2026-05-19T10:00:00.000Z"
+        }
+      });
+
+      assert.equal(invalidPatch.statusCode, 422);
+
+      const merged = await server.inject({
+        method: "POST",
+        url: `/api/v1/exercises/${duplicateExerciseId}/merge`,
+        cookies: authCookies(user.cookie),
+        payload: {
+          targetExerciseId
+        }
+      });
+
+      assert.equal(merged.statusCode, 200);
+
+      const mergeSummary = readData<{
+        merge: {
+          affectedSets: number;
+          affectedTemplates: number;
+          affectedWorkouts: number;
+          reassignedTemplateExercises: number;
+          source: { retired: boolean };
+          target: { id: string };
+        };
+      }>(merged).merge;
+
+      assert.equal(mergeSummary.affectedSets, 1);
+      assert.equal(mergeSummary.affectedWorkouts, 1);
+      assert.equal(mergeSummary.reassignedTemplateExercises, 2);
+      assert.equal(mergeSummary.affectedTemplates, 1);
+      assert.equal(mergeSummary.source.retired, true);
+      assert.equal(mergeSummary.target.id, targetExerciseId);
+
+      const detail = await getWorkout(server, user.cookie, workoutId);
+
+      assert.equal(detail.exercises[0]?.exercise.name, `${exercisePrefix}${tag} Target`);
+      const templateAfterMerge = await server.inject({
+        method: "GET",
+        url: `/api/v1/workout-templates/${templateId}`,
+        cookies: authCookies(user.cookie)
+      });
+      assert.deepEqual(
+        readData<{ template: { exercises: Array<{ exercise: { id: string } }> } }>(
+          templateAfterMerge
+        ).template.exercises.map((entry) => entry.exercise.id),
+        [targetExerciseId, targetExerciseId]
+      );
+    } finally {
+      await server.close();
+    }
+  });
+
+  it("copies duplicate-preserving templates into independent workout sessions", async () => {
+    const server = await buildIntegrationServer(db);
+
+    try {
+      const tag = `${Date.now().toString(36)}${process.pid}`;
+      const owner = await signup(server, `${tag}_owner`);
+      const other = await signup(server, `${tag}_other`);
+      const pressId = await createExercise(server, owner.cookie, `${tag} Press`);
+      const flyId = await createExercise(server, owner.cookie, `${tag} Fly`);
+      const created = await server.inject({
+        method: "POST",
+        url: "/api/v1/workout-templates",
+        cookies: authCookies(owner.cookie),
+        payload: { name: "Push A", exerciseIds: [pressId, flyId, pressId] }
+      });
+
+      assert.equal(created.statusCode, 201);
+      const template = readData<{ template: { id: string; exercises: Array<{ exercise: { id: string } }> } }>(created).template;
+      assert.deepEqual(template.exercises.map((entry) => entry.exercise.id), [pressId, flyId, pressId]);
+
+      const ownerList = await server.inject({ method: "GET", url: "/api/v1/workout-templates", cookies: authCookies(owner.cookie) });
+      const otherList = await server.inject({ method: "GET", url: "/api/v1/workout-templates", cookies: authCookies(other.cookie) });
+      assert.equal(readData<{ items: unknown[] }>(ownerList).items.length, 1);
+      assert.equal(readData<{ items: unknown[] }>(otherList).items.length, 0);
+
+      const foreignRead = await server.inject({ method: "GET", url: `/api/v1/workout-templates/${template.id}`, cookies: authCookies(other.cookie) });
+      assert.equal(foreignRead.statusCode, 404);
+      for (const request of [
+        { method: "PATCH" as const, payload: { name: "Stolen" }, url: `/api/v1/workout-templates/${template.id}` },
+        { method: "POST" as const, payload: {}, url: `/api/v1/workout-templates/${template.id}/duplicate` },
+        { method: "POST" as const, payload: {}, url: `/api/v1/workout-templates/${template.id}/start` },
+        { method: "DELETE" as const, url: `/api/v1/workout-templates/${template.id}` }
+      ]) {
+        const response = await server.inject({ ...request, cookies: authCookies(other.cookie) });
+        assert.equal(response.statusCode, 404);
+      }
+
+      const renamed = await server.inject({ method: "PATCH", url: `/api/v1/workout-templates/${template.id}`, cookies: authCookies(owner.cookie), payload: { name: "Push Renamed" } });
+      assert.equal(readData<{ template: { name: string } }>(renamed).template.name, "Push Renamed");
+
+      for (const exerciseIds of [
+        [pressId, flyId, pressId, flyId],
+        [pressId, pressId, flyId],
+        [pressId, flyId, flyId],
+        [flyId, pressId, flyId],
+        [pressId, flyId, pressId]
+      ]) {
+        const changed = await server.inject({ method: "PATCH", url: `/api/v1/workout-templates/${template.id}`, cookies: authCookies(owner.cookie), payload: { exerciseIds } });
+        assert.deepEqual(readData<{ template: { exercises: Array<{ exercise: { id: string } }> } }>(changed).template.exercises.map((entry) => entry.exercise.id), exerciseIds);
+      }
+
+      const duplicated = await server.inject({ method: "POST", url: `/api/v1/workout-templates/${template.id}/duplicate`, cookies: authCookies(owner.cookie), payload: {} });
+      assert.equal(duplicated.statusCode, 201);
+      const duplicatedTemplate = readData<{ template: { id: string; exercises: Array<{ exercise: { id: string } }> } }>(duplicated).template;
+      assert.deepEqual(duplicatedTemplate.exercises.map((entry) => entry.exercise.id), [pressId, flyId, pressId]);
+      assert.equal((await server.inject({ method: "DELETE", url: `/api/v1/workout-templates/${duplicatedTemplate.id}`, cookies: authCookies(owner.cookie) })).statusCode, 200);
+
+      const started = await server.inject({ method: "POST", url: `/api/v1/workout-templates/${template.id}/start`, cookies: authCookies(owner.cookie), payload: {} });
+      assert.equal(started.statusCode, 201);
+      const workoutId = readData<{ workout: { workoutId: string } }>(started).workout.workoutId;
+      const workout = await getWorkout(server, owner.cookie, workoutId);
+      assert.equal(workout.sourceTemplateId, template.id);
+      assert.deepEqual(workout.exercises.map((entry) => entry.exercise.name), [
+        `${exercisePrefix}${tag} Press`,
+        `${exercisePrefix}${tag} Fly`,
+        `${exercisePrefix}${tag} Press`
+      ]);
+      assert.ok(workout.exercises.every((entry) => entry.sets.length === 0));
+
+      const changedTemplate = await server.inject({ method: "PATCH", url: `/api/v1/workout-templates/${template.id}`, cookies: authCookies(owner.cookie), payload: { exerciseIds: [flyId] } });
+      assert.equal(changedTemplate.statusCode, 200);
+      assert.equal((await getWorkout(server, owner.cookie, workoutId)).exercises.length, 3);
+
+      await addExerciseToWorkout(server, owner.cookie, workoutId, flyId);
+      await endWorkout(server, owner.cookie, workoutId);
+      const unchangedSource = await server.inject({ method: "GET", url: `/api/v1/workout-templates/${template.id}`, cookies: authCookies(owner.cookie) });
+      assert.deepEqual(readData<{ template: { exercises: Array<{ exercise: { id: string } }> } }>(unchangedSource).template.exercises.map((entry) => entry.exercise.id), [flyId]);
+
+      const savedCopy = await server.inject({ method: "POST", url: `/api/v1/workouts/${workoutId}/templates`, cookies: authCookies(owner.cookie), payload: { name: "Push A Result" } });
+      assert.equal(savedCopy.statusCode, 201);
+      assert.equal(readData<{ template: { exercises: unknown[] } }>(savedCopy).template.exercises.length, 4);
+      const sourceAfterCopy = await server.inject({ method: "GET", url: `/api/v1/workout-templates/${template.id}`, cookies: authCookies(owner.cookie) });
+      assert.equal(readData<{ template: { exercises: unknown[] } }>(sourceAfterCopy).template.exercises.length, 1);
+
+      const updatedTemplate = await server.inject({ method: "POST", url: `/api/v1/workout-templates/${template.id}/from-workout`, cookies: authCookies(owner.cookie), payload: { workoutId } });
+      assert.equal(updatedTemplate.statusCode, 200);
+      assert.equal(readData<{ template: { exercises: unknown[] } }>(updatedTemplate).template.exercises.length, 4);
+      const exactMatchList = await server.inject({
+        method: "GET",
+        url: `/api/v1/workout-templates?search=${encodeURIComponent("Push Renamed")}`,
+        cookies: authCookies(owner.cookie)
+      });
+      assert.match(
+        readData<{ items: Array<{ id: string; lastUsedAt: string | null }> }>(exactMatchList)
+          .items.find((item) => item.id === template.id)?.lastUsedAt ?? "",
+        /^\d{4}-\d{2}-\d{2}T/
+      );
+
+      const noLongerExact = await server.inject({
+        method: "PATCH",
+        url: `/api/v1/workout-templates/${template.id}`,
+        cookies: authCookies(owner.cookie),
+        payload: { exerciseIds: [pressId, flyId, pressId] }
+      });
+      assert.equal(noLongerExact.statusCode, 200);
+      const mismatchList = await server.inject({
+        method: "GET",
+        url: `/api/v1/workout-templates?search=${encodeURIComponent("Push Renamed")}`,
+        cookies: authCookies(owner.cookie)
+      });
+      assert.equal(
+        readData<{ items: Array<{ id: string; lastUsedAt: string | null }> }>(mismatchList)
+          .items.find((item) => item.id === template.id)?.lastUsedAt,
+        null
+      );
+
+      const deleted = await server.inject({ method: "DELETE", url: `/api/v1/workout-templates/${template.id}`, cookies: authCookies(owner.cookie) });
+      assert.equal(deleted.statusCode, 200);
+      const retainedWorkout = await getWorkout(server, owner.cookie, workoutId);
+      assert.equal(retainedWorkout.exercises.length, 4);
+      assert.equal(retainedWorkout.sourceTemplateId, null);
+    } finally {
+      await server.close();
+    }
+  });
+
+  it("stores, searches, filters, and authorizes multi-muscle exercises", async () => {
+    const server = await buildIntegrationServer(db);
+
+    try {
+      const tag = `${Date.now().toString(36)}${process.pid}m`;
+      const owner = await signup(server, `${tag}o`);
+      const other = await signup(server, `${tag}x`);
+      const groupsResponse = await server.inject({ method: "GET", url: "/api/v1/muscle-groups", cookies: authCookies(owner.cookie) });
+      const groups = readData<{ items: Array<{ id: string; slug: string }> }>(groupsResponse).items;
+      const chestId = groups.find((group) => group.slug === "chest")?.id;
+      const tricepsId = groups.find((group) => group.slug === "triceps")?.id;
+      const shouldersId = groups.find((group) => group.slug === "shoulders")?.id;
+      assert.ok(chestId && tricepsId && shouldersId);
+
+      const created = await server.inject({
+        method: "POST",
+        url: "/api/v1/exercises",
+        cookies: authCookies(owner.cookie),
+        payload: {
+          name: `${exercisePrefix}${tag} Multi Press`,
+          equipment: "machine",
+          exerciseType: "compound",
+          primaryMuscleGroupIds: [chestId, tricepsId],
+          secondaryMuscleGroupIds: [shouldersId],
+          confirmNameWarning: true
+        }
+      });
+      assert.equal(created.statusCode, 201);
+      const exercise = readData<{ exercise: { id: string; muscleGroups: Array<{ id: string; role: string }> } }>(created).exercise;
+      assert.deepEqual(exercise.muscleGroups.map((muscle) => muscle.role), ["PRIMARY", "PRIMARY", "SECONDARY"]);
+
+      const search = await server.inject({ method: "GET", url: "/api/v1/exercises?search=triceps", cookies: authCookies(owner.cookie) });
+      assert.ok(readData<{ items: Array<{ id: string }> }>(search).items.some((item) => item.id === exercise.id));
+      const filter = await server.inject({ method: "GET", url: `/api/v1/exercises?muscleGroupId=${shouldersId}`, cookies: authCookies(owner.cookie) });
+      assert.ok(readData<{ items: Array<{ id: string }> }>(filter).items.some((item) => item.id === exercise.id));
+      const andFilter = await server.inject({
+        method: "GET",
+        url: `/api/v1/exercises?muscleGroupIds=${chestId},${tricepsId}&equipment=machine&exerciseType=compound`,
+        cookies: authCookies(owner.cookie)
+      });
+      assert.deepEqual(
+        readData<{ items: Array<{ id: string }> }>(andFilter).items.map((item) => item.id),
+        [exercise.id]
+      );
+
+      const ownershipFilters = `search=${encodeURIComponent(`${exercisePrefix}${tag} Multi Press`)}`
+        + `&muscleGroupIds=${chestId},${tricepsId}&equipment=machine&exerciseType=compound`;
+      const editable = await server.inject({
+        method: "GET",
+        url: `/api/v1/exercises?${ownershipFilters}&ownership=editable`,
+        cookies: authCookies(owner.cookie)
+      });
+      const readOnly = await server.inject({
+        method: "GET",
+        url: `/api/v1/exercises?${ownershipFilters}&ownership=readOnly`,
+        cookies: authCookies(other.cookie)
+      });
+      const otherEditable = await server.inject({
+        method: "GET",
+        url: `/api/v1/exercises?${ownershipFilters}&ownership=editable`,
+        cookies: authCookies(other.cookie)
+      });
+      const editablePayload = readData<{ items: Array<{ id: string }>; pagination: { total: number } }>(editable);
+      const readOnlyPayload = readData<{ items: Array<{ id: string }>; pagination: { total: number } }>(readOnly);
+      assert.deepEqual(editablePayload.items.map((item) => item.id), [exercise.id]);
+      assert.equal(editablePayload.pagination.total, 1);
+      assert.deepEqual(readOnlyPayload.items.map((item) => item.id), [exercise.id]);
+      assert.equal(readOnlyPayload.pagination.total, 1);
+      assert.equal(
+        readData<{ items: unknown[]; pagination: { total: number } }>(otherEditable).pagination.total,
+        0
+      );
+
+      const workoutId = await createWorkout(server, owner.cookie);
+      await addExerciseToWorkout(server, owner.cookie, workoutId, exercise.id);
+      const historicalBeforeUpdate = await getWorkout(server, owner.cookie, workoutId);
+      assert.deepEqual(
+        historicalBeforeUpdate.exercises[0]?.exercise.muscleGroups.map((muscle) => muscle.role),
+        ["PRIMARY", "PRIMARY", "SECONDARY"]
+      );
+
+      const forbidden = await server.inject({ method: "PATCH", url: `/api/v1/exercises/${exercise.id}`, cookies: authCookies(other.cookie), payload: { name: `${exercisePrefix}${tag} Changed`, primaryMuscleGroupIds: [chestId], secondaryMuscleGroupIds: [] } });
+      assert.equal(forbidden.statusCode, 403);
+      const updated = await server.inject({ method: "PATCH", url: `/api/v1/exercises/${exercise.id}`, cookies: authCookies(owner.cookie), payload: { name: `${exercisePrefix}${tag} Changed`, primaryMuscleGroupIds: [tricepsId], secondaryMuscleGroupIds: [chestId], confirmNameWarning: true } });
+      assert.equal(updated.statusCode, 200);
+      const historicalAfterUpdate = await getWorkout(server, owner.cookie, workoutId);
+      assert.deepEqual(
+        historicalAfterUpdate.exercises[0]?.exercise.muscleGroups.map((muscle) => ({
+          id: muscle.id,
+          role: muscle.role
+        })),
+        [{ id: tricepsId, role: "PRIMARY" }, { id: chestId, role: "SECONDARY" }]
+      );
+    } finally {
+      await server.close();
+    }
+  });
+
+  it("searches beyond page one and keeps all-time history statistics unfiltered", async () => {
+    const server = await buildIntegrationServer(db);
+
+    try {
+      const tag = `${Date.now().toString(36)}${process.pid}history`;
+      const user = await signup(server, tag);
+      const exerciseId = await createExercise(server, user.cookie, `${tag} Search Lift`);
+      const chestId = await getChestMuscleGroupId(server, user.cookie);
+      let needleWorkoutId = "";
+
+      for (let index = 0; index < 21; index += 1) {
+        const created = await server.inject({
+          method: "POST",
+          url: "/api/v1/workouts",
+          cookies: authCookies(user.cookie),
+          payload: {
+            title: index === 0 ? `Needle ${tag}` : `Routine ${tag} ${index}`,
+            workoutType: "upper"
+          }
+        });
+        assert.equal(created.statusCode, 201);
+        const workoutId = readData<WorkoutPayload>(created).workout.id;
+
+        if (index === 0) {
+          needleWorkoutId = workoutId;
+          const sessionExerciseId = await addExerciseToWorkout(
+            server,
+            user.cookie,
+            workoutId,
+            exerciseId
+          );
+          await addSet(server, user.cookie, workoutId, sessionExerciseId);
+        }
+
+        await endWorkout(server, user.cookie, workoutId);
+      }
+
+      const unfiltered = await server.inject({
+        method: "GET",
+        url: "/api/v1/workouts",
+        cookies: authCookies(user.cookie)
+      });
+      const unfilteredData = readData<{
+        items: Array<{ id: string }>;
+        pagination: { total: number };
+        allTimeSummary: {
+          totalSessions: number;
+          completedSessions: number;
+          cumulativeTonnageKg: string;
+          completionRate: number;
+        };
+      }>(unfiltered);
+      assert.equal(unfilteredData.items.length, 20);
+      assert.equal(unfilteredData.pagination.total, 21);
+      assert.equal(unfilteredData.allTimeSummary.totalSessions, 21);
+      assert.equal(unfilteredData.allTimeSummary.completedSessions, 21);
+      assert.equal(unfilteredData.allTimeSummary.cumulativeTonnageKg, "450.00");
+      assert.equal(unfilteredData.allTimeSummary.completionRate, 1);
+
+      const searched = await server.inject({
+        method: "GET",
+        url: `/api/v1/workouts?search=${encodeURIComponent(`Needle ${tag}`)}`,
+        cookies: authCookies(user.cookie)
+      });
+      const searchedData = readData<{
+        items: Array<{ id: string }>;
+        pagination: { total: number };
+        allTimeSummary: { totalSessions: number };
+      }>(searched);
+      assert.deepEqual(searchedData.items.map((item) => item.id), [needleWorkoutId]);
+      assert.equal(searchedData.pagination.total, 1);
+      assert.equal(searchedData.allTimeSummary.totalSessions, 21);
+
+      const facets = await server.inject({
+        method: "GET",
+        url: `/api/v1/workouts?muscleGroupIds=${chestId}&equipment=barbell&exerciseType=compound`,
+        cookies: authCookies(user.cookie)
+      });
+      assert.deepEqual(
+        readData<{ items: Array<{ id: string }> }>(facets).items.map((item) => item.id),
+        [needleWorkoutId]
+      );
+
+      const localDate = new Intl.DateTimeFormat("sv-SE", {
+        timeZone: "Europe/Zurich"
+      }).format(new Date());
+      const dateSearch = await server.inject({
+        method: "GET",
+        url: `/api/v1/workouts?search=${localDate}&timeZone=Europe%2FZurich`,
+        cookies: authCookies(user.cookie)
+      });
+      assert.equal(
+        readData<{ pagination: { total: number } }>(dateSearch).pagination.total,
+        21
+      );
+
+      const updatedPreferences = await server.inject({
+        method: "PATCH",
+        url: "/api/v1/users/me/preferences",
+        cookies: authCookies(user.cookie),
+        payload: { volumeHeatCeiling: 37 }
+      });
+      assert.equal(
+        readData<{ preferences: { volumeHeatCeiling: number } }>(updatedPreferences)
+          .preferences.volumeHeatCeiling,
+        37
+      );
+      const persistedPreferences = await server.inject({
+        method: "GET",
+        url: "/api/v1/users/me/preferences",
+        cookies: authCookies(user.cookie)
+      });
+      assert.equal(
+        readData<{ preferences: { volumeHeatCeiling: number } }>(persistedPreferences)
+          .preferences.volumeHeatCeiling,
+        37
+      );
+    } finally {
+      await server.close();
+    }
+  });
 });
 
 async function buildIntegrationServer(db: Kysely<AppDatabase>): Promise<FastifyInstance> {
@@ -172,7 +720,7 @@ async function signup(server: FastifyInstance, tag: string): Promise<{ cookie: s
     payload: {
       email: `${userPrefix}${tag}@example.com`,
       username: `${userPrefix}${tag}`,
-      password: "secret"
+      password: "integration-secret-1"
     }
   });
 
@@ -438,15 +986,16 @@ async function cleanupIntegrationData(db: Kysely<AppDatabase>): Promise<void> {
   }
 
   if (exerciseIds.length > 0) {
-    await db
-      .deleteFrom("exercise_secondary_muscles")
-      .where("exercise_id", "in", exerciseIds)
-      .execute();
-    await db.deleteFrom("exercises").where("id", "in", exerciseIds).execute();
+    await db.transaction().execute(async (trx) => {
+      await trx.deleteFrom("exercise_muscle_groups").where("exercise_id", "in", exerciseIds).execute();
+      await trx.deleteFrom("exercise_secondary_muscles").where("exercise_id", "in", exerciseIds).execute();
+      await trx.deleteFrom("exercises").where("id", "in", exerciseIds).execute();
+    });
   }
 }
 
 async function cleanupUserData(db: Kysely<AppDatabase>, userIds: string[]): Promise<void> {
+  await db.deleteFrom("workout_templates").where("user_id", "in", userIds).execute();
   const workouts = await db
     .selectFrom("workout_sessions")
     .select("id")
@@ -478,5 +1027,7 @@ async function cleanupUserData(db: Kysely<AppDatabase>, userIds: string[]): Prom
     .where("name", "like", `${exercisePrefix}%`)
     .execute();
   await db.deleteFrom("user_sessions").where("user_id", "in", userIds).execute();
+  await db.deleteFrom("auth_action_tokens").where("user_id", "in", userIds).execute();
+  await db.deleteFrom("app_events").where("user_id", "in", userIds).execute();
   await db.deleteFrom("users").where("id", "in", userIds).execute();
 }
