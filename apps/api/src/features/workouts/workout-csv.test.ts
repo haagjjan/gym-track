@@ -133,4 +133,56 @@ describe("workout CSV parsing", () => {
 
     assert.equal(result.errors[0]?.field, "set_order");
   });
+
+  it("groups multiple workouts and sorts out-of-order exercise and set rows", () => {
+    const result = parseWorkoutCsv(
+      unparseWorkoutCsv([
+        csvRow({ exercise_name: "Squat", exercise_position: "2" }),
+        csvRow({ set_order: "2" }),
+        csvRow(),
+        csvRow({
+          workout_started_at: "2026-05-21T10:00:00.000Z",
+          workout_ended_at: "2026-05-21T11:00:00.000Z"
+        })
+      ])
+    );
+
+    assert.equal(result.ok, true);
+    if (!result.ok) return;
+
+    assert.equal(result.workouts.length, 2);
+    assert.deepEqual(
+      result.workouts[0]?.exercises.map((exercise) => exercise.name),
+      ["Bench Press", "Squat"]
+    );
+    assert.deepEqual(
+      result.workouts[0]?.exercises[0]?.sets.map((set) => set.setOrder),
+      [1, 2]
+    );
+  });
 });
+
+type WorkoutCsvInputRow = Parameters<typeof unparseWorkoutCsv>[0][number];
+
+function csvRow(overrides: Partial<WorkoutCsvInputRow> = {}): WorkoutCsvInputRow {
+  return {
+    workout_started_at: "2026-05-20T10:00:00.000Z",
+    workout_ended_at: "2026-05-20T11:00:00.000Z",
+    workout_type: "upper",
+    workout_title: "Upper A",
+    workout_notes: "",
+    exercise_name: "Bench Press",
+    primary_muscle_group_slug: "chest",
+    equipment: "barbell",
+    exercise_type: "compound",
+    exercise_position: "1",
+    set_order: "1",
+    set_type: "working",
+    weight_kg: "80",
+    reps: "8",
+    rir: "2",
+    rest_time_seconds: "120",
+    set_note: "",
+    ...overrides
+  };
+}
