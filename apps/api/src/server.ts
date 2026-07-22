@@ -36,6 +36,7 @@ import { createEventTracker, noopEventTracker, type EventTracker } from "./share
 import { createMailerFromEnv, type Mailer } from "./shared/mailer.js";
 import type { ApiLogger } from "./shared/logger.js";
 import { registerApiMetrics, type ApiMetricsOptions } from "./shared/metrics.js";
+import { createRequestId, registerApiRequestLogging } from "./shared/request-logging.js";
 
 export interface ServerAuthConfig {
   cookieName: string;
@@ -77,8 +78,11 @@ export async function buildServer(
   const server = fastify({
     logger,
     bodyLimit: BODY_LIMIT_BYTES,
-    trustProxy: extras.trustProxy ?? false
+    trustProxy: extras.trustProxy ?? false,
+    disableRequestLogging: true,
+    genReqId: (request) => createRequestId(request.headers["x-request-id"])
   });
+  registerApiRequestLogging(server);
   registerApiMetrics(server, extras.metrics);
   const events =
     extras.events === "off"
