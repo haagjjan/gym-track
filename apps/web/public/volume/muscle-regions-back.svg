@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 660 1024">
+  <!--
+    Muscle-region ID map — BACK view (as seen from behind: image left =
+    the figure's anatomical left = world −z). Coordinates: x maps lateral
+    zn ∈ [−1.15, +1.15] left→right, y maps yn head(0)→feet(1024).
+    Fill encodes the region id via REGION_PALETTE (region-map.ts); background/gaps are id 0 (black).
+    Every path carries a background-colored stroke so touching/overlapping
+    shapes always keep a separation gap (painter's order resolves overlaps:
+    later shapes sit on top). Left-side shapes are mirrored via <use>;
+    symmetric center shapes overhang x=330 so the mirror's fill covers the
+    center-line stroke (no black spine seam).
+    Region ids: 2 back, 3 traps, 4 shoulders, 5 biceps, 6 triceps,
+    7 forearms, 9 glutes, 11 hamstrings, 12 calves. The biceps is only a small
+    anterior edge from this view; the triceps owns the large posterior mass.
+    Shapes may overhang the silhouette to keep side-facing blends colored.
+    The 2D body-map view restyles via data-region.
+  -->
+  <rect width="660" height="1024" fill="rgb(0,0,0)" data-region="none" />
+
+  <g id="back-left" stroke="rgb(0,0,0)" stroke-width="5">
+    <!-- back: lats + mid/lower back as one slab, blades to waist; bulges past
+         the silhouette at the lat sweep so it reads from the side too.
+         Authored as ONE symmetric full-width shape: the <use> mirror maps it
+         onto itself exactly, so no center-line stroke can show as a spine seam. -->
+    <path data-region="back" fill="rgb(0,255,0)"
+      d="M204,306 C200,262 220,226 256,210 C270,202 300,202 330,204 C360,202 390,202 404,210 C440,226 460,262 456,306 C450,358 426,408 394,440 C370,448 344,448 330,446 C316,448 290,448 266,440 C234,408 210,358 204,306 Z" />
+    <!-- biceps: limited anterior/upper edge visible from behind. -->
+    <path data-region="biceps" fill="rgb(255,0,255)"
+      d="M195,151 C167,141 128,139 99,147 C92,153 90,162 92,171 C111,181 142,187 175,193 C188,195 199,190 205,181 C208,169 204,158 195,151 Z" />
+    <!-- triceps: large posterior upper-arm mass, tapering before the elbow. -->
+    <path data-region="triceps" fill="rgb(0,255,255)"
+      d="M98,169 C126,160 165,165 199,178 C213,184 220,197 218,211 C216,226 204,237 189,243 C158,250 121,247 96,238 C88,232 84,221 85,207 C86,191 90,177 98,169 Z" />
+    <!-- forearms: flexor/extensor mass from below the elbow to the wrist. The
+         tighter silhouette keeps the elbow, fist, and upper-arm bellies clear. -->
+    <path data-region="forearms" fill="rgb(255,128,0)"
+      d="M114,66 C128,64 141,71 146,83 C150,97 145,116 141,134 C137,150 130,164 119,176 C111,184 101,189 92,187 C81,185 72,180 69,172 C67,162 72,151 79,137 C87,121 94,105 101,88 C105,77 109,69 114,66 Z" />
+    <!-- traps: one continuous muscle — wide wings out to the delts (meeting the
+         front map's band over the shoulder line), kite tail to mid-back.
+         Symmetric full-width shape for the same no-spine-seam reason as back. -->
+    <path data-region="traps" fill="rgb(0,0,255)"
+      d="M330,132 C306,134 268,144 226,158 C218,166 220,178 230,184 C276,196 310,244 320,310 C325,316 335,316 340,310 C350,244 384,196 430,184 C440,178 442,166 434,158 C392,144 354,134 330,132 Z" />
+    <!-- shoulders: posterior + lateral deltoid cap. Painting after traps lets
+         the cap remain round at their superior boundary. -->
+    <path data-region="shoulders" fill="rgb(255,255,0)"
+      d="M185,139 C203,132 228,133 248,142 C258,149 261,160 258,172 C254,187 244,199 231,205 C217,210 202,205 194,195 C188,187 187,177 180,171 C175,166 175,156 179,149 C181,145 183,142 185,139 Z" />
+    <!-- glutes -->
+    <path data-region="glutes" fill="rgb(128,255,0)"
+      d="M326,444 C296,438 266,450 256,476 C250,504 262,532 288,542 C312,548 326,538 328,512 C330,488 330,462 326,444 Z" />
+    <!-- hamstrings: rear thigh, ending above the knee crease -->
+    <path data-region="hamstrings" fill="rgb(0,128,255)"
+      d="M312,556 C278,548 244,560 236,590 C231,624 238,654 258,668 C280,680 304,674 310,650 C316,616 316,584 312,556 Z" />
+    <!-- calves: big gastroc mass — nearly the whole back of the lower leg,
+         from below the knee to the achilles taper, overhanging the outer edge -->
+    <path data-region="calves" fill="rgb(255,255,255)"
+      d="M296,716 C265,705 231,713 220,744 C214,783 221,827 239,862 C251,883 273,894 291,884 C305,872 311,844 309,808 C307,766 307,731 296,716 Z" />
+  </g>
+  <use href="#back-left" transform="translate(660,0) scale(-1,1)" />
+</svg>

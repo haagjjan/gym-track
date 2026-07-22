@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 1024">
+  <!--
+    Muscle-region sparse override map — anatomical RIGHT side (+z).
+    Coordinates: x maps front/back depth xn ∈ [-1.15, +1.15] left→right;
+    y maps yn head(0)→feet(1024). The anatomical-left view mirrors this map.
+
+    Transparent pixels keep the front/back projection. Exact REGION_PALETTE
+    colors override it. Opaque black explicitly clears projection spill at
+    joints and other neutral gaps. Projection code applies this map to +z-facing
+    surfaces and mirrors it for the anatomical-left (-z) side.
+  -->
+  <g id="side-right" stroke="rgb(0,0,0)" stroke-width="5">
+    <!-- shoulders: the lateral deltoid bridges the anterior and posterior
+         caps. Its posterior shift avoids the overlapping raised forearm while
+         letting the round cap reclaim the superior edge from the traps. -->
+    <path data-region="shoulders" fill="rgb(255,255,0)" stroke="rgb(255,255,0)"
+      d="M252,142 C267,132 288,132 304,142 C315,152 318,168 313,184 C308,199 296,209 281,212 C266,211 252,203 246,190 C240,176 241,156 252,142 Z" />
+    <!-- forearms: continuous lateral forearm belly, stopping before both the
+         fist and elbow joint. -->
+    <path data-region="forearms" fill="rgb(255,128,0)" stroke="rgb(255,128,0)"
+      d="M338,65 C355,59 379,63 391,78 C398,93 395,113 391,133 C387,151 381,168 374,181 C367,190 356,193 345,188 C335,183 331,174 333,162 C337,145 339,128 337,112 C334,94 328,77 338,65 Z" />
+
+    <!-- quads: anterior/lateral thigh from below the hip crease to above the
+         knee; the posterior thigh remains the front/back fallback. -->
+    <path data-region="quads" fill="rgb(255,0,128)" stroke="rgb(255,0,128)"
+      d="M310,454 C332,449 353,464 361,490 C368,531 367,579 359,622 C354,655 344,681 330,694 C317,697 306,685 303,666 C302,625 305,581 304,539 C303,502 301,472 310,454 Z" />
+
+    <!-- calves: one continuous posterior/posteromedial lower-leg mass. -->
+    <path data-region="calves" fill="rgb(255,255,255)" stroke="rgb(255,255,255)"
+      d="M286,715 C270,728 264,764 268,807 C272,846 286,878 302,888 C314,884 320,856 318,817 C316,778 312,738 301,718 C296,712 291,711 286,715 Z" />
+
+    <!-- Explicit neutral erasers protect the fist and elbow seam at side and
+         three-quarter normals. Transparent pixels elsewhere retain front/back. -->
+    <path data-region="none" fill="rgb(0,0,0)"
+      d="M341,27 C359,22 388,27 401,39 C406,48 406,61 401,70 C389,77 367,79 347,73 C339,62 337,43 341,27 Z" />
+    <path data-region="none" fill="rgb(0,0,0)"
+      d="M328,176 C342,171 361,174 372,183 C378,193 375,207 366,215 C352,220 335,217 326,207 C321,197 321,185 328,176 Z" />
+    <path data-region="none" fill="rgb(0,0,0)"
+      d="M286,688 C308,680 342,682 359,695 C366,706 362,721 351,729 C329,735 301,731 284,719 C278,708 279,697 286,688 Z" />
+    <path data-region="none" fill="rgb(0,0,0)"
+      d="M318,724 C334,720 352,726 359,742 C363,783 360,830 351,872 C344,895 331,904 318,895 C316,849 318,782 318,724 Z" />
+    <path data-region="none" fill="rgb(0,0,0)"
+      d="M276,884 C298,876 328,880 344,894 C351,910 346,931 333,941 C311,946 286,940 272,925 C267,909 268,895 276,884 Z" />
+    <path data-region="none" fill="rgb(0,0,0)"
+      d="M264,934 C302,924 359,930 397,951 C407,970 403,996 391,1018 L264,1018 C254,994 254,957 264,934 Z" />
+  </g>
+</svg>

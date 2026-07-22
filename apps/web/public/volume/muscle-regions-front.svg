@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 660 1024">
+  <!--
+    Muscle-region ID map — FRONT view (as seen from the front: image left =
+    the figure's anatomical right = world +z). Coordinates: x maps lateral
+    zn ∈ [+1.15, −1.15] left→right, y maps yn head(0)→feet(1024).
+    Fill encodes the region id via REGION_PALETTE (region-map.ts); background/gaps are id 0 (black).
+    Every path carries a background-colored stroke so touching/overlapping
+    shapes always keep a separation gap (painter's order resolves overlaps:
+    later shapes sit on top). Left-side shapes are mirrored via <use>.
+    Region ids: 1 chest, 2 back (lat sliver), 3 traps, 4 shoulders, 5 biceps,
+    6 triceps, 7 forearms, 8 abs, 10 quads, 12 calves. Biceps own the rounded
+    anterior upper-arm belly; the front-visible triceps stay on its underside.
+    Shapes may overhang the body
+    silhouette: the projection only shows them where fragments exist, and the
+    overhang keeps side-facing fragments (front/back blend) fully colored.
+    The 2D body-map view restyles via data-region.
+  -->
+  <rect width="660" height="1024" fill="rgb(0,0,0)" data-region="none" />
+
+  <g id="front-left" stroke="rgb(0,0,0)" stroke-width="5">
+    <!-- back: lat sliver at the torso edge — lats pop out beside the chest,
+         mostly outside the front silhouette so it colors side-facing blends -->
+    <path data-region="back" fill="rgb(0,255,0)"
+      d="M228,280 C212,274 198,280 194,296 C190,326 196,360 208,388 C216,402 230,402 236,390 C232,354 230,314 228,280 Z" />
+    <!-- biceps: continuous rounded anterior upper-arm belly, tapering before
+         the neutral elbow and before the deltoid cap. -->
+    <path data-region="biceps" fill="rgb(255,0,255)"
+      d="M203,151 C170,138 127,135 96,145 C89,153 87,165 88,177 C90,193 98,205 113,212 C145,223 182,218 208,202 C215,182 213,163 203,151 Z" />
+    <!-- triceps: smaller front-visible underside of the upper arm; the large
+         posterior mass is authored on the back map. -->
+    <path data-region="triceps" fill="rgb(0,255,255)"
+      d="M98,214 C128,216 169,220 207,217 C215,227 218,240 214,251 C181,258 139,254 104,244 C92,239 87,230 88,220 C90,217 93,215 98,214 Z" />
+    <!-- forearms: flexor/extensor mass from below the elbow to the wrist. The
+         tighter silhouette keeps the elbow, fist, and upper-arm bellies clear. -->
+    <path data-region="forearms" fill="rgb(255,128,0)"
+      d="M114,66 C128,64 141,71 146,83 C150,97 145,116 141,134 C137,150 130,164 119,176 C111,184 101,189 92,187 C81,185 72,180 69,172 C67,162 72,151 79,137 C87,121 94,105 101,88 C105,77 109,69 114,66 Z" />
+    <!-- chest: pec plate, rounded out toward the arm/armpit (sternum gap at center) -->
+    <path data-region="chest" fill="rgb(255,0,0)"
+      d="M324,208 C296,200 252,204 234,228 C226,242 224,260 232,277 C242,296 262,308 288,310 C308,310 320,306 324,300 Z" />
+    <!-- traps: neck→shoulder slope, one continuous band over to the back map -->
+    <path data-region="traps" fill="rgb(0,0,255)"
+      d="M318,156 C290,138 252,138 218,152 C214,160 216,168 224,172 C256,162 292,170 314,184 C318,175 320,165 318,156 Z" />
+    <!-- shoulders: anterior + lateral deltoid cap. It paints after the traps so
+         the round cap can reclaim the small superior/lateral overlap. -->
+    <path data-region="shoulders" fill="rgb(255,255,0)"
+      d="M186,140 C203,133 227,133 247,140 C258,144 263,153 260,163 C257,176 248,188 237,195 C225,201 211,198 202,190 C195,183 193,172 185,167 C178,163 176,153 181,146 C182,144 184,142 186,140 Z" />
+    <!-- abs: central plate (symmetric, mirror overlays itself) -->
+    <path data-region="abs" fill="rgb(128,0,255)"
+      d="M298,314 L362,314 C372,348 372,398 360,430 L300,430 C288,398 288,348 298,314 Z" />
+    <!-- quads: front thigh, ending above the knee cap -->
+    <path data-region="quads" fill="rgb(255,0,128)"
+      d="M244,446 C216,462 203,515 210,576 C215,622 232,657 259,668 C284,674 303,655 309,616 C315,558 310,501 296,463 C285,445 261,439 244,446 Z" />
+    <!-- calves: posteromedial sliver only. The shin stays neutral and the main
+         continuous gastrocnemius mass lives on the back/side maps. -->
+    <path data-region="calves" fill="rgb(255,255,255)"
+      d="M294,718 C284,727 279,752 280,788 C281,826 287,856 296,873 C303,880 309,873 309,858 C307,820 307,776 309,741 C309,725 304,716 294,718 Z" />
+  </g>
+  <use href="#front-left" transform="translate(660,0) scale(-1,1)" />
+</svg>
