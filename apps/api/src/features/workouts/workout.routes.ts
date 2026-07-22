@@ -1,10 +1,13 @@
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import type { ZodError } from "zod";
-import type { AuthService, PublicUser } from "../auth/auth.service.js";
+import type { FastifyInstance, FastifyReply } from "fastify";
+import { noopEventTracker, type EventTracker } from "../../shared/events.js";
+import { sendValidationError } from "../../shared/http-validation.js";
+import { authenticateRequest } from "../auth/authenticate-request.js";
+import type { AuthService } from "../auth/auth.service.js";
 import {
   createWorkoutRequestSchema,
   endWorkoutRequestSchema,
   listWorkoutsQuerySchema,
+  updateWorkoutRequestSchema,
   workoutParamsSchema
 } from "./workout.schemas.js";
 import type { WorkoutService } from "./workout.service.js";
@@ -13,14 +16,17 @@ interface WorkoutRouteOptions {
   authService: AuthService;
   cookieName: string;
   workoutService: WorkoutService;
+  events?: EventTracker;
 }
 
 export async function registerWorkoutRoutes(
   server: FastifyInstance,
   options: WorkoutRouteOptions
 ): Promise<void> {
+  const events = options.events ?? noopEventTracker;
+
   server.post("/api/v1/workouts", async (request, reply) => {
-    const user = await authenticate(request, reply, options);
+    const user = await authenticateRequest(request, reply, options);
 
     if (!user) {
       return;
@@ -38,6 +44,8 @@ export async function registerWorkoutRoutes(
       return sendWorkoutError(reply, result.reason);
     }
 
+    events.track("workout_created", user.id);
+
     return reply.status(201).send({
       data: {
         workout: result.value
@@ -46,7 +54,7 @@ export async function registerWorkoutRoutes(
   });
 
   server.get("/api/v1/workouts", async (request, reply) => {
-    const user = await authenticate(request, reply, options);
+    const user = await authenticateRequest(request, reply, options);
 
     if (!user) {
       return;
@@ -66,7 +74,7 @@ export async function registerWorkoutRoutes(
   });
 
   server.get("/api/v1/workouts/:workoutId", async (request, reply) => {
-    const user = await authenticate(request, reply, options);
+    const user = await authenticateRequest(request, reply, options);
 
     if (!user) {
       return;
@@ -92,7 +100,7 @@ export async function registerWorkoutRoutes(
   });
 
   server.post("/api/v1/workouts/:workoutId/end", async (request, reply) => {
-    const user = await authenticate(request, reply, options);
+    const user = await authenticateRequest(request, reply, options);
 
     if (!user) {
       return;
@@ -120,39 +128,100 @@ export async function registerWorkoutRoutes(
       return sendWorkoutError(reply, result.reason);
     }
 
+    events.track("workout_completed", user.id, {
+      exercises: result.value.exercises.length
+    });
+
     return reply.send({
       data: {
         workout: result.value
       }
     });
   });
-}
 
-async function authenticate(
-  request: FastifyRequest,
-  reply: FastifyReply,
-  options: WorkoutRouteOptions
-): Promise<PublicUser | null> {
-  const result = await options.authService.currentUser(request.cookies[options.cookieName]);
+  server.patch("/api/v1/workouts/:workoutId", async (request, reply) => {
+    const user = await authenticateRequest(request, reply, options);
 
-  if (!result.ok) {
-    void reply.status(401).send({
-      error: {
-        code: "UNAUTHORIZED",
-        message: "Authentication is required."
-      }
+    if (!user) {
+      return;
+    }
+
+    const params = workoutParamsSchema.safeParse(request.params);
+
+    if (!params.success) {
+      return sendValidationError(reply, params.error);
+    }
+
+    const body = updateWorkoutRequestSchema.safeParse(request.body ?? {});
+
+    if (!body.success) {
+      return sendValidationError(reply, body.error);
+    }
+
+    const result = await options.workoutService.updateWorkout(
+      user.id,
+      params.data.workoutId,
+      body.data
+    );
+
+    if (!result.ok) {
+      return sendWorkoutError(reply, result.reason);
+    }
+
+    events.track("workout_session_edited", user.id, {
+      fields: Object.keys(body.data)
     });
 
-    return null;
-  }
+    return reply.send({
+      data: {
+        workout: result.value
+      }
+    });
+  });
 
-  return result.value;
+  server.delete("/api/v1/workouts/:workoutId", async (request, reply) => {
+    const user = await authenticateRequest(request, reply, options);
+
+    if (!user) {
+      return;
+    }
+
+    const params = workoutParamsSchema.safeParse(request.params);
+
+    if (!params.success) {
+      return sendValidationError(reply, params.error);
+    }
+
+    const result = await options.workoutService.deleteWorkout(user.id, params.data.workoutId);
+
+    if (!result.ok) {
+      return sendWorkoutError(reply, result.reason);
+    }
+
+    events.track(result.value.wasOpen ? "workout_discarded" : "workout_deleted", user.id);
+
+    return reply.status(204).send();
+  });
 }
 
 function sendWorkoutError(
   reply: FastifyReply,
-  reason: "already_closed" | "ended_before_started" | "not_found" | "open_workout_exists"
+  reason:
+    | "already_closed"
+    | "ended_before_started"
+    | "not_found"
+    | "open_workout_exists"
+    | "workout_still_open"
 ) {
+  if (reason === "workout_still_open") {
+    return reply.status(409).send({
+      error: {
+        code: "WORKOUT_STILL_OPEN",
+        message: "The end time can only be edited after the workout is completed."
+      }
+    });
+  }
+
   if (reason === "open_workout_exists") {
     return reply.status(409).send({
       error: {
@@ -189,25 +258,4 @@ function sendWorkoutError(
       message: "Workout was not found."
     }
   });
-}
-
-function sendValidationError(reply: FastifyReply, error: ZodError) {
-  return reply.status(422).send({
-    error: {
-      code: "VALIDATION_ERROR",
-      message: "One or more fields are invalid.",
-      fields: toFieldErrors(error)
-    }
-  });
-}
-
-function toFieldErrors(error: ZodError): Record<string, string[]> {
-  const fields: Record<string, string[]> = {};
-
-  for (const issue of error.issues) {
-    const key = String(issue.path[0] ?? "body");
-    fields[key] = [...(fields[key] ?? []), issue.message];
-  }
-
-  return fields;
 }

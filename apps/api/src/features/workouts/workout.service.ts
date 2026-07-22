@@ -1,77 +1,26 @@
 import { randomUUID } from "node:crypto";
 import type {
   NewWorkoutSession,
-  WorkoutDetailRecord,
   WorkoutListFilters,
-  WorkoutListRecord,
   WorkoutRepository
 } from "./workout.repository.js";
+import {
+  toWorkoutDetail,
+  toWorkoutSummary,
+  type WorkoutDetail,
+  type WorkoutList
+} from "./workout-shapes.js";
+export type { WorkoutDetail, WorkoutList } from "./workout-shapes.js";
 import type {
   CreateWorkoutRequest,
   EndWorkoutRequest,
-  ListWorkoutsQuery
+  ListWorkoutsQuery,
+  UpdateWorkoutRequest
 } from "./workout.schemas.js";
 
-interface WorkoutSummary {
-  id: string;
-  startedAt: string;
-  endedAt: string | null;
-  isOpen: boolean;
-  workoutType: string | null;
-  title: string | null;
-  notes: string | null;
-  totalExercises: number;
-  totalSets: number;
-}
-
-interface MuscleGroupShape {
-  id: string;
-  slug: string;
-  name: string;
-}
-
-interface WorkoutSetShape {
-  id: string;
-  setOrder: number;
-  setType: string;
-  weightKg: string;
-  reps: number;
-  rir: number;
-  restTimeSeconds: number | null;
-  note: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface SessionExerciseShape {
-  id: string;
-  position: number;
-  exercise: {
-    id: string;
-    name: string;
-    primaryMuscleGroup: MuscleGroupShape;
-  };
-  sets: WorkoutSetShape[];
-}
-
-export interface WorkoutDetail {
-  id: string;
-  startedAt: string;
-  endedAt: string | null;
-  isOpen: boolean;
-  workoutType: string | null;
-  title: string | null;
-  notes: string | null;
-  exercises: SessionExerciseShape[];
-}
-
-export interface WorkoutList {
-  items: WorkoutSummary[];
-  pagination: {
-    limit: number;
-    offset: number;
-    total: number;
-  };
+export interface DeletedWorkout {
+  workoutId: string;
+  wasOpen: boolean;
 }
 
 export type WorkoutResult<T> =
@@ -82,7 +31,8 @@ export type WorkoutResult<T> =
         | "already_closed"
         | "ended_before_started"
         | "not_found"
-        | "open_workout_exists";
+        | "open_workout_exists"
+        | "workout_still_open";
     };
 
 export interface WorkoutService {
@@ -94,6 +44,12 @@ export interface WorkoutService {
     workoutId: string,
     input: EndWorkoutRequest
   ): Promise<WorkoutResult<WorkoutDetail>>;
+  updateWorkout(
+    userId: string,
+    workoutId: string,
+    input: UpdateWorkoutRequest
+  ): Promise<WorkoutResult<WorkoutDetail>>;
+  deleteWorkout(userId: string, workoutId: string): Promise<WorkoutResult<DeletedWorkout>>;
 }
 
 interface WorkoutServiceOptions {
@@ -101,84 +57,142 @@ interface WorkoutServiceOptions {
   now?: () => Date;
 }
 
+interface WorkoutServiceContext {
+  repository: WorkoutRepository;
+  now: () => Date;
+}
+
 export function createWorkoutService(options: WorkoutServiceOptions): WorkoutService {
-  const now = options.now ?? (() => new Date());
+  const context = {
+    repository: options.repository,
+    now: options.now ?? (() => new Date())
+  };
 
   return {
-    async createWorkout(userId, input) {
-      const workout = newWorkoutSession(userId, input, now());
-      const result = await options.repository.createWorkout(workout);
-
-      if (result.status === "conflict") {
-        return { ok: false, reason: "open_workout_exists" };
-      }
-
-      return {
-        ok: true,
-        value: toWorkoutDetail({ ...result.workout, exercises: [] })
-      };
-    },
-    async listWorkouts(userId, input) {
-      const filters: WorkoutListFilters = {
-        userId,
-        startDate: input.startDate,
-        endDate: input.endDate,
-        limit: input.limit,
-        offset: input.offset
-      };
-      const result = await options.repository.listWorkouts(filters);
-
-      return {
-        items: result.items.map(toWorkoutSummary),
-        pagination: {
-          limit: input.limit,
-          offset: input.offset,
-          total: result.total
-        }
-      };
-    },
-    async getWorkout(userId, workoutId) {
-      const workout = await options.repository.findWorkoutDetail(userId, workoutId);
-
-      if (!workout) {
-        return { ok: false, reason: "not_found" };
-      }
-
-      return {
-        ok: true,
-        value: toWorkoutDetail(workout)
-      };
-    },
-    async endWorkout(userId, workoutId, input) {
-      const workout = await options.repository.findWorkoutSession(userId, workoutId);
-
-      if (!workout) {
-        return { ok: false, reason: "not_found" };
-      }
-
-      if (workout.endedAt) {
-        return { ok: false, reason: "already_closed" };
-      }
-
-      const updatedAt = now();
-      const endedAt = input.endedAt ?? updatedAt;
-
-      if (endedAt < workout.startedAt) {
-        return { ok: false, reason: "ended_before_started" };
-      }
-
-      const updated = await options.repository.endWorkout(userId, workoutId, endedAt, updatedAt);
-
-      if (!updated) {
-        return { ok: false, reason: "not_found" };
-      }
-
-      return {
-        ok: true,
-        value: toWorkoutDetail(updated)
-      };
-    }
+    createWorkout: (userId, input) => createWorkout(context, userId, input),
+    listWorkouts: (userId, input) => listWorkouts(context, userId, input),
+    getWorkout: (userId, workoutId) => getWorkout(context, userId, workoutId),
+    endWorkout: (userId, workoutId, input) =>
+      endWorkout(context, userId, workoutId, input),
+    updateWorkout: (userId, workoutId, input) =>
+      updateWorkout(context, userId, workoutId, input),
+    deleteWorkout: (userId, workoutId) => deleteWorkout(context, userId, workoutId)
   };
+}
+
+async function createWorkout(
+  context: WorkoutServiceContext,
+  userId: string,
+  input: CreateWorkoutRequest
+): Promise<WorkoutResult<WorkoutDetail>> {
+  const workout = newWorkoutSession(userId, input, context.now());
+  const result = await context.repository.createWorkout(workout);
+
+  return result.status === "conflict"
+    ? { ok: false, reason: "open_workout_exists" }
+    : { ok: true, value: toWorkoutDetail({ ...result.workout, exercises: [] }) };
+}
+
+async function listWorkouts(
+  context: WorkoutServiceContext,
+  userId: string,
+  input: ListWorkoutsQuery
+): Promise<WorkoutList> {
+  const filters: WorkoutListFilters = {
+    userId,
+    startDate: input.startDate,
+    endDate: input.endDate,
+    search: input.search,
+    muscleGroupIds: input.muscleGroupIds ?? [],
+    equipment: input.equipment,
+    exerciseType: input.exerciseType,
+    sort: input.sort ?? "newest",
+    timeZone: input.timeZone ?? "UTC",
+    limit: input.limit,
+    offset: input.offset
+  };
+  const result = await context.repository.listWorkouts(filters);
+
+  return {
+    items: result.items.map(toWorkoutSummary),
+    allTimeSummary: result.allTimeSummary,
+    pagination: { limit: input.limit, offset: input.offset, total: result.total }
+  };
+}
+
+async function getWorkout(
+  context: WorkoutServiceContext,
+  userId: string,
+  workoutId: string
+): Promise<WorkoutResult<WorkoutDetail>> {
+  const workout = await context.repository.findWorkoutDetail(userId, workoutId);
+  return workout
+    ? { ok: true, value: toWorkoutDetail(workout) }
+    : { ok: false, reason: "not_found" };
+}
+
+async function endWorkout(
+  context: WorkoutServiceContext,
+  userId: string,
+  workoutId: string,
+  input: EndWorkoutRequest
+): Promise<WorkoutResult<WorkoutDetail>> {
+  const workout = await context.repository.findWorkoutSession(userId, workoutId);
+  if (!workout) return { ok: false, reason: "not_found" };
+  if (workout.endedAt) return { ok: false, reason: "already_closed" };
+
+  const updatedAt = context.now();
+  const endedAt = input.endedAt ?? updatedAt;
+  if (endedAt < workout.startedAt) return { ok: false, reason: "ended_before_started" };
+
+  const updated = await context.repository.endWorkout(userId, workoutId, endedAt, updatedAt);
+  return updated
+    ? { ok: true, value: toWorkoutDetail(updated) }
+    : { ok: false, reason: "not_found" };
+}
+
+async function updateWorkout(
+  context: WorkoutServiceContext,
+  userId: string,
+  workoutId: string,
+  input: UpdateWorkoutRequest
+): Promise<WorkoutResult<WorkoutDetail>> {
+  const workout = await context.repository.findWorkoutSession(userId, workoutId);
+  if (!workout) return { ok: false, reason: "not_found" };
+  if (input.endedAt !== undefined && workout.endedAt === null) {
+    return { ok: false, reason: "workout_still_open" };
+  }
+
+  const nextStartedAt = input.startedAt ?? workout.startedAt;
+  const nextEndedAt = input.endedAt ?? workout.endedAt;
+  if (nextEndedAt && nextEndedAt < nextStartedAt) {
+    return { ok: false, reason: "ended_before_started" };
+  }
+
+  const updated = await context.repository.updateWorkout(
+    userId,
+    workoutId,
+    {
+      ...(input.startedAt !== undefined ? { startedAt: input.startedAt } : {}),
+      ...(input.endedAt !== undefined ? { endedAt: input.endedAt } : {}),
+      ...(input.title !== undefined ? { title: input.title } : {})
+    },
+    context.now()
+  );
+  return updated
+    ? { ok: true, value: toWorkoutDetail(updated) }
+    : { ok: false, reason: "not_found" };
+}
+
+async function deleteWorkout(
+  context: WorkoutServiceContext,
+  userId: string,
+  workoutId: string
+): Promise<WorkoutResult<DeletedWorkout>> {
+  const deleted = await context.repository.deleteWorkout(userId, workoutId, context.now());
+  return deleted
+    ? { ok: true, value: { workoutId: deleted.id, wasOpen: deleted.endedAt === null } }
+    : { ok: false, reason: "not_found" };
 }
 
 function newWorkoutSession(
@@ -193,56 +207,5 @@ function newWorkoutSession(
     workoutType: input.workoutType ?? null,
     title: input.title ?? null,
     notes: input.notes ?? null
-  };
-}
-
-function toWorkoutSummary(record: WorkoutListRecord): WorkoutSummary {
-  return {
-    id: record.id,
-    startedAt: record.startedAt.toISOString(),
-    endedAt: record.endedAt?.toISOString() ?? null,
-    isOpen: record.endedAt === null,
-    workoutType: record.workoutType,
-    title: record.title,
-    notes: record.notes,
-    totalExercises: record.totalExercises,
-    totalSets: record.totalSets
-  };
-}
-
-function toWorkoutDetail(record: WorkoutDetailRecord): WorkoutDetail {
-  return {
-    id: record.id,
-    startedAt: record.startedAt.toISOString(),
-    endedAt: record.endedAt?.toISOString() ?? null,
-    isOpen: record.endedAt === null,
-    workoutType: record.workoutType,
-    title: record.title,
-    notes: record.notes,
-    exercises: record.exercises.map((item) => ({
-      id: item.id,
-      position: item.position,
-      exercise: {
-        id: item.exercise.id,
-        name: item.exercise.name,
-        primaryMuscleGroup: item.exercise.primaryMuscleGroup
-      },
-      sets: item.sets.map(toWorkoutSet)
-    }))
-  };
-}
-
-function toWorkoutSet(record: WorkoutDetailRecord["exercises"][number]["sets"][number]) {
-  return {
-    id: record.id,
-    setOrder: record.setOrder,
-    setType: record.setType,
-    weightKg: record.weightKg,
-    reps: record.reps,
-    rir: record.rir,
-    restTimeSeconds: record.restTimeSeconds,
-    note: record.note,
-    createdAt: record.createdAt.toISOString(),
-    updatedAt: record.updatedAt.toISOString()
   };
 }
