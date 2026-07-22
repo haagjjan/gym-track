@@ -9,11 +9,17 @@ describe("readEnv", () => {
     assert.deepEqual(readEnv({ DATABASE_URL: databaseUrl }), {
       API_HOST: "0.0.0.0",
       API_PORT: 4000,
+      API_TRUST_PROXY: false,
+      APP_BASE_URL: "http://localhost:3000",
+      APP_ENV: "development",
+      APP_RELEASE: "unknown",
       AUTH_COOKIE_NAME: "gym_progress_session",
       AUTH_COOKIE_SECURE: false,
       AUTH_SESSION_TTL_DAYS: 30,
       DATABASE_URL: databaseUrl,
+      EMAIL_FROM: "Gym Progress Tracker <onboarding@resend.dev>",
       LOG_LEVEL: "info",
+      METRICS_ENABLED: false,
       NODE_ENV: "development"
     });
   });
@@ -47,6 +53,20 @@ describe("readEnv", () => {
     });
 
     assert.equal(env.AUTH_COOKIE_SECURE, true);
+    assert.equal(env.APP_ENV, "production");
+  });
+
+  it("parses metrics and release settings", () => {
+    const env = readEnv({
+      APP_ENV: "home-production",
+      APP_RELEASE: "git-abc123",
+      DATABASE_URL: databaseUrl,
+      METRICS_ENABLED: "true"
+    });
+
+    assert.equal(env.APP_ENV, "home-production");
+    assert.equal(env.APP_RELEASE, "git-abc123");
+    assert.equal(env.METRICS_ENABLED, true);
   });
 
   it("parses LOG_LEVEL", () => {
