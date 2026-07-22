@@ -1,6 +1,8 @@
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import type { ZodError } from "zod";
-import type { AuthService, PublicUser } from "../auth/auth.service.js";
+import type { FastifyInstance, FastifyReply } from "fastify";
+import { noopEventTracker, type EventTracker } from "../../shared/events.js";
+import { sendValidationError } from "../../shared/http-validation.js";
+import { authenticateRequest } from "../auth/authenticate-request.js";
+import type { AuthService } from "../auth/auth.service.js";
 import {
   addSessionExerciseRequestSchema,
   addSetRequestSchema,
@@ -16,14 +18,17 @@ interface WorkoutLoggingRouteOptions {
   authService: AuthService;
   cookieName: string;
   loggingService: WorkoutLoggingService;
+  events?: EventTracker;
 }
 
 export async function registerWorkoutLoggingRoutes(
   server: FastifyInstance,
   options: WorkoutLoggingRouteOptions
 ): Promise<void> {
+  const events = options.events ?? noopEventTracker;
+
   server.post("/api/v1/workouts/:workoutId/exercises", async (request, reply) => {
-    const user = await authenticate(request, reply, options);
+    const user = await authenticateRequest(request, reply, options);
 
     if (!user) {
       return;
@@ -54,7 +59,7 @@ export async function registerWorkoutLoggingRoutes(
   });
 
   server.patch("/api/v1/workouts/:workoutId/exercises/reorder", async (request, reply) => {
-    const user = await authenticate(request, reply, options);
+    const user = await authenticateRequest(request, reply, options);
 
     if (!user) {
       return;
@@ -87,7 +92,7 @@ export async function registerWorkoutLoggingRoutes(
   server.delete(
     "/api/v1/workouts/:workoutId/exercises/:sessionExerciseId",
     async (request, reply) => {
-      const user = await authenticate(request, reply, options);
+      const user = await authenticateRequest(request, reply, options);
 
       if (!user) {
         return;
@@ -116,7 +121,7 @@ export async function registerWorkoutLoggingRoutes(
   server.post(
     "/api/v1/workouts/:workoutId/exercises/:sessionExerciseId/sets",
     async (request, reply) => {
-      const user = await authenticate(request, reply, options);
+      const user = await authenticateRequest(request, reply, options);
 
       if (!user) {
         return;
@@ -144,12 +149,14 @@ export async function registerWorkoutLoggingRoutes(
         return sendLoggingError(reply, result.reason);
       }
 
+      events.track("set_logged", user.id, { setType: body.data.setType });
+
       return reply.status(201).send({ data: { set: result.value } });
     }
   );
 
   server.patch("/api/v1/sets/:setId", async (request, reply) => {
-    const user = await authenticate(request, reply, options);
+    const user = await authenticateRequest(request, reply, options);
 
     if (!user) {
       return;
@@ -176,7 +183,7 @@ export async function registerWorkoutLoggingRoutes(
   });
 
   server.delete("/api/v1/sets/:setId", async (request, reply) => {
-    const user = await authenticate(request, reply, options);
+    const user = await authenticateRequest(request, reply, options);
 
     if (!user) {
       return;
@@ -198,27 +205,6 @@ export async function registerWorkoutLoggingRoutes(
   });
 }
 
-async function authenticate(
-  request: FastifyRequest,
-  reply: FastifyReply,
-  options: WorkoutLoggingRouteOptions
-): Promise<PublicUser | null> {
-  const result = await options.authService.currentUser(request.cookies[options.cookieName]);
-
-  if (!result.ok) {
-    void reply.status(401).send({
-      error: {
-        code: "UNAUTHORIZED",
-        message: "Authentication is required."
-      }
-    });
-
-    return null;
-  }
-
-  return result.value;
-}
-
 function sendLoggingError(reply: FastifyReply, reason: "invalid_order" | "not_found") {
   if (reason === "invalid_order") {
     return reply.status(409).send({
@@ -235,25 +221,4 @@ function sendLoggingError(reply: FastifyReply, reason: "invalid_order" | "not_fo
       message: "Workout logging resource was not found."
     }
   });
-}
-
-function sendValidationError(reply: FastifyReply, error: ZodError) {
-  return reply.status(422).send({
-    error: {
-      code: "VALIDATION_ERROR",
-      message: "One or more fields are invalid.",
-      fields: toFieldErrors(error)
-    }
-  });
-}
-
-function toFieldErrors(error: ZodError): Record<string, string[]> {
-  const fields: Record<string, string[]> = {};
-
-  for (const issue of error.issues) {
-    const key = String(issue.path[0] ?? "body");
-    fields[key] = [...(fields[key] ?? []), issue.message];
-  }
-
-  return fields;
 }
