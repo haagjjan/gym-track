@@ -19,12 +19,23 @@ describe("createApiLogger", () => {
   });
 
   it("keeps production logs structured as JSON", () => {
-    const logger = createApiLogger({ level: "warn", nodeEnv: "production" });
+    const logger = createApiLogger({
+      level: "warn",
+      nodeEnv: "production",
+      environment: "home-production",
+      version: "release-123"
+    });
 
     assertLoggerObject(logger);
     const options = logger as LoggerOptionsForTest;
     assert.equal(options.level, "warn");
     assert.equal(options.transport, undefined);
+    assert.deepEqual(options.base, {
+      service: "api",
+      environment: "home-production",
+      version: "release-123"
+    });
+    assert.equal(typeof options.timestamp, "function");
   });
 
   it("redacts request-scoped sensitive values", async () => {
@@ -48,7 +59,11 @@ describe("createApiLogger", () => {
             authorization: request.headers.authorization,
             cookie: request.headers.cookie
           },
-          sessionToken: "raw-session-token"
+          sessionToken: "raw-session-token",
+          nested: {
+            password: "raw-password",
+            email: "private@example.test"
+          }
         },
         "redaction check"
       );
@@ -71,6 +86,7 @@ describe("createApiLogger", () => {
     assert.doesNotMatch(logs, /raw-auth-token/);
     assert.doesNotMatch(logs, /raw-cookie/);
     assert.doesNotMatch(logs, /raw-session-token/);
+    assert.doesNotMatch(logs, /raw-password|private@example\.test/);
     assert.match(logs, /\[Redacted\]/);
   });
 });
@@ -83,6 +99,8 @@ function assertLoggerObject(logger: ApiLogger): asserts logger is Exclude<ApiLog
 
 interface LoggerOptionsForTest {
   level?: string;
+  base?: Record<string, string>;
+  timestamp?: () => string;
   redact?: {
     paths?: string[];
   };

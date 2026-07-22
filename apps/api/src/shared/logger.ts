@@ -10,6 +10,8 @@ interface LoggerStream {
 export interface ApiLoggerConfig {
   level: AppLogLevel;
   nodeEnv: "development" | "test" | "production";
+  environment?: string;
+  version?: string;
   stream?: LoggerStream;
 }
 
@@ -25,10 +27,26 @@ export const sensitiveLogPaths = [
   "request.headers.authorization",
   "request.headers.cookie",
   "request.cookies",
+  "body",
+  "req.body",
+  "request.body",
+  "response.body",
   "res.headers.set-cookie",
   "response.headers.set-cookie",
+  "password",
+  "token",
+  "secret",
+  "email",
+  "to",
+  "DATABASE_URL",
   "sessionToken",
   "sessionTokenHash",
+  "*.password",
+  "*.token",
+  "*.secret",
+  "*.email",
+  "*.to",
+  "*.DATABASE_URL",
   "*.sessionToken",
   "*.sessionTokenHash"
 ] as const;
@@ -40,6 +58,12 @@ export function createApiLogger(config: ApiLoggerConfig): ApiLogger {
 
   const logger = {
     level: config.level,
+    base: {
+      service: "api",
+      environment: config.environment ?? config.nodeEnv,
+      version: config.version ?? "unknown"
+    },
+    timestamp: () => `,"timestamp":"${new Date().toISOString()}"`,
     redact: {
       paths: [...sensitiveLogPaths],
       censor: "[Redacted]"
