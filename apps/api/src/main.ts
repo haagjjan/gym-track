@@ -15,7 +15,9 @@ const server = await buildServer(
   },
   createApiLogger({
     level: env.LOG_LEVEL,
-    nodeEnv: env.NODE_ENV
+    nodeEnv: env.NODE_ENV,
+    environment: env.APP_ENV,
+    version: env.APP_RELEASE
   }),
   {
     appBaseUrl: env.APP_BASE_URL,
