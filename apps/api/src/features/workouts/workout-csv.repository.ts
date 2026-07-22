@@ -192,6 +192,7 @@ async function findOrCreateExercise(
       updated_at: importedAt
     })
     .execute();
+  await replaceImportedExerciseMuscles(db, exerciseId, muscleGroupId);
 
   return exerciseId;
 }
@@ -215,6 +216,21 @@ async function restoreExercise(
     })
     .where("id", "=", exerciseId)
     .execute();
+  await replaceImportedExerciseMuscles(db, exerciseId, muscleGroupId);
+}
+
+async function replaceImportedExerciseMuscles(
+  db: DatabaseExecutor,
+  exerciseId: string,
+  muscleGroupId: string
+): Promise<void> {
+  await db.deleteFrom("exercise_muscle_groups").where("exercise_id", "=", exerciseId).execute();
+  await db.deleteFrom("exercise_secondary_muscles").where("exercise_id", "=", exerciseId).execute();
+  await db.insertInto("exercise_muscle_groups").values({
+    exercise_id: exerciseId,
+    muscle_group_id: muscleGroupId,
+    role: "PRIMARY"
+  }).execute();
 }
 
 async function findMuscleGroupId(db: DatabaseExecutor, slug: string): Promise<string> {

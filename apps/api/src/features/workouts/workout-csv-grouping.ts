@@ -5,32 +5,39 @@ import type {
   WorkoutCsvWorkout
 } from "./workout-csv.js";
 
+interface WorkoutGroup {
+  workout: WorkoutCsvWorkout;
+  exercisesByPosition: Map<number, WorkoutCsvExercise>;
+  setOrdersByExercise: Map<WorkoutCsvExercise, Set<number>>;
+}
+
 export function groupWorkoutCsvRows(
   rows: ParsedWorkoutCsvRow[]
 ): { ok: true; workouts: WorkoutCsvWorkout[] } | { ok: false; errors: WorkoutCsvError[] } {
-  const workouts = new Map<string, WorkoutCsvWorkout>();
+  const groups = new Map<string, WorkoutGroup>();
   const errors: WorkoutCsvError[] = [];
 
   for (const row of rows) {
-    const workout = getWorkoutGroup(workouts, row);
-    const exercise = getExerciseGroup(workout, row, errors);
+    const group = getWorkoutGroup(groups, row);
+    const exercise = getExerciseGroup(group, row, errors);
 
     if (exercise) {
-      addSet(exercise, row, errors);
+      addSet(group, exercise, row, errors);
     }
   }
 
-  for (const workout of workouts.values()) {
-    validateCompactOrders(workout, errors);
+  for (const group of groups.values()) {
+    validateCompactOrders(group.workout, errors);
   }
 
-  return errors.length > 0 ? { ok: false, errors } : { ok: true, workouts: [...workouts.values()] };
+  const workouts = [...groups.values()].map((group) => group.workout);
+  return errors.length > 0 ? { ok: false, errors } : { ok: true, workouts };
 }
 
 function getWorkoutGroup(
-  workouts: Map<string, WorkoutCsvWorkout>,
+  groups: Map<string, WorkoutGroup>,
   row: ParsedWorkoutCsvRow
-): WorkoutCsvWorkout {
+): WorkoutGroup {
   const key = [
     row.workoutStartedAt.toISOString(),
     row.workoutEndedAt.toISOString(),
@@ -38,31 +45,35 @@ function getWorkoutGroup(
     row.workoutTitle ?? "",
     row.workoutNotes ?? ""
   ].join("\u001f");
-  const existing = workouts.get(key);
+  const existing = groups.get(key);
 
   if (existing) {
     return existing;
   }
 
-  const workout: WorkoutCsvWorkout = {
-    startedAt: row.workoutStartedAt,
-    endedAt: row.workoutEndedAt,
-    workoutType: row.workoutType,
-    title: row.workoutTitle,
-    notes: row.workoutNotes,
-    exercises: []
+  const group: WorkoutGroup = {
+    workout: {
+      startedAt: row.workoutStartedAt,
+      endedAt: row.workoutEndedAt,
+      workoutType: row.workoutType,
+      title: row.workoutTitle,
+      notes: row.workoutNotes,
+      exercises: []
+    },
+    exercisesByPosition: new Map(),
+    setOrdersByExercise: new Map()
   };
 
-  workouts.set(key, workout);
-  return workout;
+  groups.set(key, group);
+  return group;
 }
 
 function getExerciseGroup(
-  workout: WorkoutCsvWorkout,
+  group: WorkoutGroup,
   row: ParsedWorkoutCsvRow,
   errors: WorkoutCsvError[]
 ): WorkoutCsvExercise | null {
-  const existing = workout.exercises.find((item) => item.position === row.exercisePosition);
+  const existing = group.exercisesByPosition.get(row.exercisePosition);
 
   if (!existing) {
     const exercise: WorkoutCsvExercise = {
@@ -74,7 +85,9 @@ function getExerciseGroup(
       row: row.row,
       sets: []
     };
-    workout.exercises.push(exercise);
+    group.workout.exercises.push(exercise);
+    group.exercisesByPosition.set(exercise.position, exercise);
+    group.setOrdersByExercise.set(exercise, new Set());
     return exercise;
   }
 
@@ -91,11 +104,18 @@ function getExerciseGroup(
 }
 
 function addSet(
+  group: WorkoutGroup,
   exercise: WorkoutCsvExercise,
   row: ParsedWorkoutCsvRow,
   errors: WorkoutCsvError[]
 ): void {
-  if (exercise.sets.some((set) => set.setOrder === row.setOrder)) {
+  const setOrders = group.setOrdersByExercise.get(exercise);
+
+  if (!setOrders) {
+    throw new Error("CSV exercise grouping index is missing.");
+  }
+
+  if (setOrders.has(row.setOrder)) {
     errors.push({
       row: row.row,
       field: "set_order",
@@ -104,6 +124,7 @@ function addSet(
     return;
   }
 
+  setOrders.add(row.setOrder);
   exercise.sets.push({
     setOrder: row.setOrder,
     setType: row.setType,
