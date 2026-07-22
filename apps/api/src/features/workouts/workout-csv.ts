@@ -87,6 +87,9 @@ export type WorkoutCsvParseResult =
 
 const isoInstantSchema = z.string().datetime({ offset: true });
 const decimalPattern = /^\d+(?:\.\d{1,2})?$/;
+// Caps the write amplification of one import request (bodyLimit caps bytes;
+// this caps how many rows those bytes may expand into).
+export const MAX_CSV_IMPORT_ROWS = 5_000;
 
 export function parseWorkoutCsv(input: string): WorkoutCsvParseResult {
   const parsed = Papa.parse<Record<string, string>>(input, {
@@ -95,6 +98,20 @@ export function parseWorkoutCsv(input: string): WorkoutCsvParseResult {
     transform: (value) => value.trim(),
     transformHeader: (header) => header.trim()
   });
+
+  if (parsed.data.length > MAX_CSV_IMPORT_ROWS) {
+    return {
+      ok: false,
+      errors: [
+        {
+          row: 1,
+          field: "csv",
+          message: `CSV imports are limited to ${MAX_CSV_IMPORT_ROWS} rows per request. Split the file and retry.`
+        }
+      ]
+    };
+  }
+
   const errors = [
     ...headerErrors(parsed.meta.fields ?? []),
     ...parsed.errors.map((error) => ({
