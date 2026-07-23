@@ -10,6 +10,10 @@
 - Phase 12 now includes normalized multi-muscle exercise classification, the shared exercise picker, and ordered exercise-only workout templates with explicit session copy/update semantics.
 - Phase 13 implements the usability-audit-v2 remediation plus the audit-v3 refinements: aligned list actions, app-dialog exercise-name review, one plotted Progress set per local day, proportional Volume bars with inspectable ranges, staged multi-exercise adding, and separate live exercise/set modes.
 - Phase 14 implements the audit-v4 beta refinements: honest `Gym Progress Tracker` chrome and semantic colors, tab-session facet persistence, an in-app canonical CSV guide, staged catalog selection for sessions/templates, exercise editability filtering, range-aware Progress totals/tonnage, mobile-safe Volume gestures, and live-session bottom-sheet/timer/header discovery refinements. Broader import/export, exercise naming, and history-reset rework remains post-beta.
+- Stage 1 repository readiness implements fail-closed production registration, the
+  `https://app.gymtrack.ch` canonical origin, secure-cookie enforcement, and same-origin
+  host/CSRF protection. DNS, Cloudflare Access/Tunnel, server configuration, deployment,
+  and external verification remain operator work.
 
 ## Phase 0 — Project Setup & Working Style
 
