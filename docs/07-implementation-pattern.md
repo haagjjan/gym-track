@@ -117,6 +117,11 @@ Browser code calls the Next route handlers to keep cookies same-origin and avoid
 
 Status: implemented for signup, login, logout, and authenticated home state.
 
+For Stage 1 production, `REGISTRATION_MODE=DISABLED` closes both the Next.js signup route
+and the authoritative Fastify endpoint. Production defaults closed when the value is
+missing; local Compose explicitly enables registration for disposable development and test
+accounts.
+
 ## Workout Sessions API Slice
 
 The workout sessions API follows the same feature-owned pattern:
@@ -250,6 +255,9 @@ The quality slice keeps checks close to the existing app boundaries:
 - API database integration tests use the real Fastify server, Kysely repositories, migrations, and PostgreSQL.
 - Web smoke tests use Playwright against the production-like Docker Compose app stack.
 - Production auth cookies default to secure when `NODE_ENV=production`, while local Compose can keep `AUTH_COOKIE_SECURE=false`.
+- Production requires an HTTPS `APP_BASE_URL`. The Next.js ingress accepts only configured
+  hosts and requires an allowed Origin for state-changing `/api` requests; Fastify remains
+  an internal BFF target with no browser CORS and `API_TRUST_PROXY=false`.
 - Deployment target decisions live in ADRs before deployment config is added.
 
 Status: implemented for full project and performance CI checks, one core API/database flow, one core browser smoke flow, secure production cookie defaulting, and the first deployment target ADR.
