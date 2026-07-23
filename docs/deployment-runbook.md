@@ -2,7 +2,7 @@
 
 ## Status
 
-Small-batch deployment runbook for the accepted Render target in ADR 0005.
+Small-batch deployment runbook for the retained Render alternative in ADR 0005. ADR 0009 selects the private `gym-prod` home server as the active operated target; that rollout follows the sequential runbooks under `docs/server/wave-b-application-platform/`.
 
 This runbook does not contain production secrets. Store hosted credentials only in Render environment variables and Render-managed database configuration.
 
