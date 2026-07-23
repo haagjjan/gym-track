@@ -15,3 +15,21 @@ export async function GET(
 
   return proxyWorkoutApiRequest(request, `workouts/${encodeURIComponent(workoutId)}`);
 }
+
+export async function PATCH(
+  request: NextRequest,
+  context: WorkoutRouteContext
+): Promise<Response> {
+  const { workoutId } = await context.params;
+
+  return proxyWorkoutApiRequest(request, `workouts/${encodeURIComponent(workoutId)}`);
+}
+
+export async function DELETE(
+  request: NextRequest,
+  context: WorkoutRouteContext
+): Promise<Response> {
+  const { workoutId } = await context.params;
+
+  return proxyWorkoutApiRequest(request, `workouts/${encodeURIComponent(workoutId)}`);
+}
