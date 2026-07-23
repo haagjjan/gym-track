@@ -19,7 +19,7 @@ This explicitly opens the backend, which the frontend-rework brief (docs/10) had
 | Area | Change |
 |---|---|
 | Password policy | Signup/reset now require ≥10 chars. Login stays permissive so pre-existing accounts can still sign in (they upgrade via reset). |
-| Rate limiting | `@fastify/rate-limit`: 300 req/min/IP globally; 10 req/15min/IP on signup, login, verify, resend, forgot, reset. `API_TRUST_PROXY` (default on in prod) makes limits see real client IPs behind a proxy. |
+| Rate limiting | `@fastify/rate-limit`: 300 req/min/IP globally; 10 req/15min/IP on signup, login, verify, resend, forgot, reset. Stage 1 keeps `API_TRUST_PROXY=false` because Fastify receives internal Next.js BFF traffic rather than the edge request; Caddy/Cloudflare logs own client attribution. |
 | Brute force | Per-account lockout: 10 consecutive failures → 15min lock (HTTP 423), independent of IP. Counter clears on success/reset. |
 | Security headers | `@fastify/helmet` (CSP off — JSON-only API): HSTS, nosniff, frame-options, etc. |
 | Payload bombs | Explicit 1 MiB `bodyLimit`; CSV imports additionally capped at 5,000 rows per request (bytes were already capped; this caps write amplification). |
@@ -33,8 +33,11 @@ Migration: `20260703120000000_add_auth_hardening_and_events.sql` (users columns:
 `email_verified_at`, `failed_login_attempts`, `locked_until`; tables `auth_action_tokens`,
 `app_events`).
 
-New env vars (all defaulted): `APP_BASE_URL`, `API_TRUST_PROXY`, `EMAIL_FROM`,
-`RESEND_API_KEY` (optional — set it in prod to actually send email).
+Configuration now also includes `REGISTRATION_MODE`, `APP_ALLOWED_HOSTS`, and
+`APP_ALLOWED_ORIGINS`. Production registration defaults closed, production `APP_BASE_URL`
+must be HTTPS, and production cookies cannot be configured insecurely. `RESEND_API_KEY`
+remains optional; without it, production auth mail is not delivered and message contents
+are not logged.
 
 Web: `/forgot-password`, `/reset-password`, `/verify-email` screens; forgot link on login;
 min-10 hint on signup; dashboard `EMAIL_UNVERIFIED` banner with resend.
