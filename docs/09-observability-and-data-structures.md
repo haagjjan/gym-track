@@ -89,26 +89,26 @@ interface ProgressChartErrorState {
 
 ### API Request Log Shape
 
-The API already uses Fastify/Pino request logging. The logger redacts auth headers, cookies, session tokens, and session token hashes.
-
-The next observability slice should standardize a request context:
+The API uses Fastify/Pino JSON logging in production. The logger redacts auth headers, cookies, session tokens, session token hashes, email fields, request bodies, database URLs, and common token/secret paths. Its implemented request lifecycle context is:
 
 ```ts
 interface ApiRequestLogContext {
-  reqId: string;
+  event: "request_completed" | "request_failed";
+  request_id: string;
   method: string;
-  route: string;
-  statusCode: number;
-  responseTimeMs: number;
-  userId?: string;
+  normalized_route: string;
+  status_code: number;
+  duration_ms: number;
+  error_type?: string;
+  error_code?: string;
 }
 ```
 
-`userId` should only be logged after authentication succeeds and should never include email, username, cookies, or tokens.
+User IDs are not logged by default. Unexpected errors may include a sanitized stack, but not the exception message's first line, request body, response body, email, username, cookie, token, or database URL. Next.js BFF failures propagate the same validated request ID and log only normalized target path, upstream, status, duration, and safe error classification.
 
 ### Correlation Plan
 
-- Keep Fastify `reqId` as the API-side correlation id.
+- Keep the validated `x-request-id` as the BFF/API correlation ID, generate a UUID when it is missing or malformed, and return it to the caller.
 - Add a browser-generated `clientEventId` for client errors.
 - Include `clientEventId` in any future client error report payload.
 - If a client error happens after an API request, include the route and recent request status in client diagnostics without storing full response bodies.
