@@ -22,15 +22,15 @@ Repo layout:
 - Core documentation and architecture decisions are in place.
 - Local dev foundation exists: workspace tooling, Docker Compose PostgreSQL/API/web orchestration, `.env.example`, and migration commands.
 - API foundation exists: health check, environment validation, database connectivity, logging, and server bootstrap.
-- Auth is implemented: signup, login, logout, current-user lookup, Argon2 hashing, DB-backed opaque sessions, secure cookie support.
+- Auth is implemented: signup, email verification/resend, login, logout, forgot/reset password, current-user lookup, account lockout, Argon2 hashing, DB-backed opaque sessions, and secure cookie support.
 - Workout sessions are implemented: create, list, detail, and end.
 - Exercise library is implemented: list selectable exercises, create or restore shared exercises, and list seeded muscle groups.
 - Workout logging is implemented: add/reorder/delete session exercises, add/update/delete sets.
 - Analytics is implemented: completed-exercise navigation, exercise progress, exercise summary, and weekly muscle volume.
 - CSV workout import/export is implemented on the API and wired into the web UI.
 - Web UI exists for signup/login/logout, authenticated home state, workout logging, workout history/detail, Progress, Weekly Volume, and CSV import/export controls.
-- Quality gates exist: unit tests, API database integration tests, Playwright smoke tests, and GitHub Actions checks.
-- Deployment and operations support exist: Render config, deployment runbook, backup/restore checklist, monitoring checklist, and structured API logging.
+- Quality gates exist: unit tests, sequential pure-function performance regression tests, API database integration tests, Playwright smoke tests, and GitHub Actions checks.
+- Deployment and operations support exist: Render config, an active private `gym-prod` deployment, structured logging, private monitoring and Telegram alerting, encrypted off-machine backups, isolated restore tests, and recovery runbooks.
 
 ## 3. Important Files And What They Do
 
@@ -42,10 +42,10 @@ Repo layout:
 - `docs/04-schema-draft.md`: PostgreSQL schema draft and query mapping.
 - `docs/05-api-contract.md`: REST contract for auth, workouts, exercise library, and analytics.
 - `docs/07-implementation-pattern.md`: feature-slice pattern for API and web code.
-- `docs/08-next-implementation-plan.md`: short fresh-session handoff; the old UX slice plan is superseded by the Stitch-based redesign docs.
-- `docs/design/stitch-redesign-v2/DESIGN.md`: visual design-system reference for the Body Cockpit redesign.
-- `docs/design/stitch-redesign-v2/design-notes.md`: screen behavior and UX reference for the Body Cockpit redesign.
-- `docs/design/stitch-redesign-v2/implementation-roadmap.md`: current source of truth for UI redesign execution order and Codex slice boundaries.
+- `docs/08-next-implementation-plan.md`: current V1 release-verification handoff.
+- `docs/Usability_Audit/usability-audit-v4.md`: latest V1 beta behavior, with v3/v2 consulted only where not superseded.
+- `docs/Usability_Audit/performance-audit-v1.md`: pure-function regression workloads, ceilings, commands, and limitations.
+- `docs/design/stitch-redesign-v2/*`: historical visual direction; it does not supersede the current usability audits or runtime behavior.
 - `docs/deployment-runbook.md`: Render deployment, migration, backup, restore, and monitoring checklist.
 - `docs/decisions/`: architecture decision records for stack and deployment direction.
 - `apps/api/src/server.ts`: wires Fastify plugins, repositories, and feature routes together.
@@ -63,8 +63,8 @@ Repo layout:
 - `docs/repository-structure.md` is the source of truth for where files belong.
 - `docs/decisions/0002-application-stack.md` through `0005-deployment-target.md` record the accepted stack and deployment direction.
 - `docs/Statusupdate-Whiteboxtesting.md` is a loose testing/status note and appears less authoritative than the roadmap docs.
-- The old roadmap docs still describe the project in phase language; `docs/08-next-implementation-plan.md` is now a short handoff pointer to `docs/design/stitch-redesign-v2/implementation-roadmap.md`.
-- `README.md` reflects the current implementation more directly than the older phase docs, including CSV import/export and the split Progress/Weekly Volume UI.
+- The old roadmap docs still describe the project in phase language; `docs/08-next-implementation-plan.md` is the current release-verification handoff.
+- `README.md` reflects the current implementation directly, including hardened auth, CSV import/export, split Progress/Weekly Volume UI, and performance checks.
 
 ## 5. Current Tests And Commands
 
@@ -72,6 +72,7 @@ Root scripts in `package.json`:
 
 - `pnpm check` runs type-check, lint, tests, and build.
 - `pnpm test` runs package tests.
+- `pnpm test:performance` runs API and web pure-function timing suites sequentially.
 - `pnpm test:integration` runs API database integration tests.
 - `pnpm smoke:web` runs Playwright smoke tests.
 - `pnpm start` launches the full Docker Compose stack.
@@ -82,7 +83,7 @@ Relevant repo checks:
 
 - `git diff --check`
 - `git status --short`
-- GitHub Actions runs project checks, API integration tests, and web smoke tests.
+- GitHub Actions runs project checks, sequential performance regression tests, API integration tests, and web smoke tests.
 
 ## 6. Open TODO / FIXME / NOTE Comments
 
@@ -92,23 +93,16 @@ Relevant repo checks:
 
 ## 7. Next Sensible Implementation Steps
 
-- Follow `docs/design/stitch-redesign-v2/implementation-roadmap.md`; it is now the source of truth for the UI redesign.
-- The backend/auth/database foundation should be kept. The UI surface is the main thing being rebuilt.
-- Current redesign status: foundation/auth/app shell work has started, but the logged-in home screen is still structurally wrong. It currently behaves like a card-grid dashboard instead of the intended cinematic cockpit home composition.
-- Next sensible slice: redo the home screen as a focused composition pass before moving to workout/start/active-logging screens.
-- The home rewrite should prioritize structure over perfect data integration:
-  - compact navigation shell stays
-  - central body/avatar/platform scene becomes the dominant visual anchor
-  - operator/body stats sit as overlays/side annotations
-  - previous sessions appear as a bottom strip/list
-  - one primary start/resume session CTA is integrated into the composition
-  - equal-weight dashboard cards and duplicate navigation blocks should be removed
-- Do not proceed to tester launch until the core mobile workout flow and main surfaces are redesigned and usable.
+- Follow `docs/08-next-implementation-plan.md` and run V1 release verification against a fresh migrated database, representative legacy data, and real mobile browsers.
+- Include type-check, lint, unit, performance, integration, smoke, build, and diff checks. Then perform the documented 390px, 430px, and 1440px interaction QA.
+- Fix observed release regressions only. Broad import/export redesign, more advanced exercise naming, and full workout-history reset remain post-beta.
+- Keep the backend, auth, database, public API behavior, and current responsive UI foundation unless verification finds a concrete defect.
 
 ## 8. Known Risks Or Unclear Parts
 
-- Some roadmap docs lag the code. For current UI redesign work, prefer `docs/design/stitch-redesign-v2/implementation-roadmap.md` over older workflow docs and older UX slice notes.
+- Some historical roadmap and design docs lag the code. Prefer `docs/08-next-implementation-plan.md`, then usability audit v4/v3/v2 in their documented precedence order.
 - `docs/01-requirements.md` still reads like an early draft in places, so treat it as requirement history plus current MVP intent, not a perfect implementation ledger.
 - The app now includes more implemented slices than the original MVP docs initially described, so the safest source for “what next” is `docs/08-next-implementation-plan.md` plus the current code tree.
-- Hosted credentials, custom domains, email verification, password reset, UX hardening follow-ups, and tester launch execution are still not implemented.
-- The current home screen implementation should not be incrementally polished as a card grid. It should be replaced with a composition-first home screen. If a file-size or line-count limit is used, split the implementation into small components rather than creating one large page file.
+- Hosted credentials, custom domains, production tester launch execution, and real-user performance monitoring remain outside the repository.
+- Pure-function timing gates catch algorithmic regressions but do not validate browser page-load NFRs, device GPU behavior, or production latency.
+- Intentional 3D scene/shader modules and the development-only muscle authoring tool retain documented size exceptions in `docs/07-implementation-pattern.md`.
