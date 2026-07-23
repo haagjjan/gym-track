@@ -14,6 +14,11 @@ Keep:
 
 The V1 usability-audit-v2/v3 remediation and audit-v4 beta refinements are now implemented across the workout flow, list surfaces, analytics, settings, API contracts, and schema foundation. The cleanup baseline also removes the obsolete avatar spike, restores shared web/API boundaries, and adds sequential pure-function performance gates. Existing uncommitted work remains authoritative and must be preserved.
 
+Stage 1 repository readiness now includes the fail-closed production registration mode,
+canonical HTTPS origin validation, secure-cookie enforcement, and Next.js host/Origin
+request guards recorded by ADR 0011. Server, Cloudflare, DNS, deployment, and external
+black-box work remain unexecuted.
+
 ## Source of truth for V1 UI behavior
 
 Use these sources in order:
