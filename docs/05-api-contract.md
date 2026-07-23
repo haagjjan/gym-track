@@ -228,7 +228,7 @@ This endpoint is an operations boundary, not a browser API:
 
 ### `POST /api/v1/auth/signup`
 
-Creates an account and starts an auth session.
+Creates an account and starts an auth session only when registration is enabled.
 
 Request:
 
@@ -258,10 +258,23 @@ Response `201`:
 
 Behavior:
 
+- When `REGISTRATION_MODE=DISABLED`, returns `403` with
+  `REGISTRATION_DISABLED` before request validation or any account/session side effect.
 - Sets the auth session cookie.
 - Issues a 24-hour single-use verification token and attempts to send the verification email without making email delivery a signup failure.
 - Returns `409` if email or username already exists.
 - Passwords are hashed with Argon2.
+
+Disabled response `403`:
+
+```json
+{
+  "error": {
+    "code": "REGISTRATION_DISABLED",
+    "message": "Registration is currently disabled."
+  }
+}
+```
 
 ### `POST /api/v1/auth/login`
 
@@ -1391,6 +1404,8 @@ Cardio is deferred from the MVP. Do not implement these endpoints in the first A
 
 ## Validation Rules
 
+- `REGISTRATION_MODE` accepts only `ENABLED` or `DISABLED`; production defaults to
+  `DISABLED` when the variable is absent.
 - Required fields must be present and non-empty unless nullable.
 - `email` must be a valid email string.
 - `username` must be globally unique case-insensitively.
