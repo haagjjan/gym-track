@@ -588,7 +588,9 @@ not good success metrics
 - **FR-02:** The web application shall support the latest Firefox version.
 
 ### Accounts / Auth
-- **FR-05:** The user shall be able to create an account using email, username, and password.
+- **FR-05:** The user shall be able to create an account using email, username, and password
+  when registration is enabled. Stage 1 single-owner production disables account creation
+  while retaining the existing owner login.
 - **FR-06:** The user shall be able to log in using username and password.
 - **FR-07:** The user shall be able to log out.
 
