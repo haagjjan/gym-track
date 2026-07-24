@@ -6,7 +6,8 @@ The repository is past the planning stage and into V1 release verification. The 
 
 ## What Is Implemented
 
-- Email/password signup, verification, login, logout, password reset, account lockout, and current-user flows
+- Configurable email/password signup plus verification, login, logout, password reset,
+  account lockout, and current-user flows
 - Workout session create, list, detail, and end flows
 - Workout logging for session exercises and sets
 - Shared exercise library and seeded muscle group lookup
@@ -122,9 +123,15 @@ pnpm smoke:web
 
 ## Deployment
 
-The accepted deployment target is Render. The deployment plan and operational checklist live in [docs/deployment-runbook.md](docs/deployment-runbook.md).
+The active private deployment target is the `gym-prod` home server described by ADR 0009 and the sequential server Wave B runbooks. Render remains a documented deployment alternative; its plan and operational checklist live in [docs/deployment-runbook.md](docs/deployment-runbook.md).
 
 The checked-in Render Blueprint is [render.yaml](render.yaml).
+
+Stage 1 repository configuration prepares `https://app.gymtrack.ch` as the canonical
+single-owner production origin. Production registration fails closed, while local Compose
+explicitly keeps registration enabled for development and test data. Cloudflare, DNS,
+server configuration, and deployment are separate operator steps and are not performed by
+repository checks.
 
 ## Source Docs
 
