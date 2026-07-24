@@ -14,17 +14,21 @@
     "migrate:up": "pnpm migrate up",
     "start": "node dist/main.js",
     "test": "node --import tsx --test \"src/**/*.test.ts\"",
+    "test:performance": "node --import tsx --test --test-concurrency=1 \"src/**/*.performance-test.ts\"",
     "test:integration": "node --import tsx --test \"src/**/*.integration-test.ts\"",
     "type-check": "tsc --noEmit --project tsconfig.json --pretty false"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
+    "@fastify/helmet": "^13.0.2",
+    "@fastify/rate-limit": "^11.1.0",
     "argon2": "^0.44.0",
     "dotenv": "^16.4.7",
     "fastify": "^5.2.1",
     "kysely": "^0.27.6",
     "papaparse": "^5.5.3",
     "pg": "^8.13.1",
+    "prom-client": "^15.1.3",
     "zod": "^3.24.2"
   },
   "devDependencies": {
