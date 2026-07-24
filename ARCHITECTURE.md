@@ -2,7 +2,7 @@
 
 ## Current State
 
-The repository currently contains product and data-planning documentation for a gym progress tracker plus the local development, database migration, first runnable app foundation, and deployment readiness path. The pnpm workspace, shared TypeScript tooling, Docker Compose local app orchestration, initial PostgreSQL migrations, Fastify health endpoint, database connectivity check, API auth foundation, workout session API foundation, exercise library and muscle group lookup API foundation, workout logging API foundation, analytics API foundation, canonical CSV workout import/export, first Next.js auth UI slice, first workout logging UI slice, workout history/detail screens, Progress and Weekly Volume screens, full project CI checks, API database integration coverage, web smoke test, Render deployment Blueprint, small-batch operations runbook, structured API logging, Prometheus API metrics, and a private provisioned Grafana monitoring overlay have been introduced.
+The repository currently contains product and data-planning documentation for a gym progress tracker plus the local development, database migration, first runnable app foundation, and deployment readiness path. The pnpm workspace, shared TypeScript tooling, Docker Compose local app orchestration, initial PostgreSQL migrations, Fastify health endpoint, database connectivity check, API auth foundation, workout session API foundation, exercise library and muscle group lookup API foundation, workout logging API foundation, analytics API foundation, canonical CSV workout import/export, first Next.js auth UI slice, first workout logging UI slice, workout history/detail screens, Progress and Weekly Volume screens, full project CI checks, API database integration coverage, web smoke test, Render deployment Blueprint, private `gym-prod` deployment, structured application logging, Prometheus API metrics and alert rules, private Alertmanager notifications, provisioned Grafana monitoring, encrypted off-machine backups, isolated restore tests, and recovery runbooks have been introduced.
 
 The source-of-truth documents are:
 
@@ -53,17 +53,43 @@ ADR 0005 records the first deployment target:
 - API pre-deploy migrations using `node-pg-migrate`
 - Secure production environment variables, managed backups, and basic health/log monitoring before inviting testers
 
+ADR 0009 records the active private deployment target:
+
+- The prepared `gym-prod` T2 Ubuntu host for the first operated private environment
+- Docker Compose for PostgreSQL 17, one-shot `node-pg-migrate` migrations, Fastify, and Next.js
+- A private-LAN reverse-proxy boundary with PostgreSQL and Fastify kept internal
+- Host state and secrets under `/srv/gym-tracker`, outside the cloned application repository
+- Retention of the Render configuration as an alternative rather than its removal
+
 ADR 0008 records the first private observability topology:
 
 - An opt-in Compose overlay rather than a replacement for local development or Render configuration
 - Prometheus plus Grafana with version-controlled data source and dashboard provisioning
+- Prometheus-managed alert rules and an unpublished Alertmanager with an internal scrape path, dedicated outbound egress, and one file-backed Telegram receiver
 - Node, container, and PostgreSQL exporters on an internal Docker network
 - A disabled-by-default internal Fastify metrics endpoint with bounded labels and release identity
 - Loopback-only Grafana access until the owner configures a reviewed private access path
 
+ADR 0010 records the private backup and recovery topology:
+
+- Restic encryption before off-machine SFTP storage
+- A hidden, chrooted, internal-SFTP-only MacBook destination account
+- Four daily opportunities for a 24-hour RPO and weekly retention maintenance
+- A separate protected recovery-password copy outside the SFTP chroot
+- Isolated PostgreSQL and configuration restore tests before claiming recovery
+
+ADR 0011 records the secure single-owner external-access application boundary:
+
+- `https://app.gymtrack.ch` as the canonical production origin
+- Cloudflare Access and Tunnel terminating at the existing Caddy ingress
+- fail-closed production registration with Fastify as the authoritative enforcement point
+- same-origin Next.js BFF host/Origin validation without browser CORS on Fastify
+- secure production cookies and `API_TRUST_PROXY=false` for the internal BFF-to-API hop
+- no new public application, database, or monitoring ports
+
 CSV workout import/export uses one canonical format first, with arbitrary legacy CSV mapping deferred until there is real need.
 
-API logging stays on Fastify's Pino foundation. `LOG_LEVEL` controls verbosity, local development uses `pino-pretty`, production emits structured JSON logs, tests default to disabled logging, and sensitive request values such as cookies, authorization headers, and session tokens are redacted.
+API logging stays on Fastify's Pino foundation. `LOG_LEVEL` controls verbosity, local development uses `pino-pretty`, production emits structured JSON logs, tests default to disabled logging, and sensitive request values such as cookies, authorization headers, session tokens, emails, and request bodies are redacted. API request lifecycle logs and Next.js BFF failure logs share propagated request IDs and normalized routes without logging user identifiers.
 
 ## Architecture Principles
 
@@ -97,10 +123,12 @@ apps/
 docs/
   decisions/
 ops/
+  backup/
+  logging/
   monitoring/
 ```
 
-Root tooling, local infrastructure overlays, and documentation live at the repository root. Versioned Prometheus, Grafana, exporter, and PostgreSQL monitoring-role assets live under `ops/monitoring`. The current repo map is documented in `docs/repository-structure.md`.
+Root tooling, local infrastructure overlays, and documentation live at the repository root. Encrypted backup, restore-test, systemd, recovery, and restricted destination setup assets live under `ops/backup`; versioned log-review scripts live under `ops/logging`; Prometheus, Alertmanager, Grafana, exporter, and PostgreSQL monitoring-role assets live under `ops/monitoring`. The current repo map is documented in `docs/repository-structure.md`.
 
 Within each app, organize by feature/domain first, then by technical role. Current API features are `auth`, `health`, `workouts`, `exercises`, and `analytics`. Expected future domains include `users`.
 
@@ -160,6 +188,7 @@ Small implementation choices inside an already approved stack can be documented 
 
 ## Current Open Decisions
 
-- Custom domain strategy
-- Production monitoring alert thresholds beyond the small-batch checklist
-- Backup retention and restore-test cadence after the first tester batch
+- Whether authenticated LAN access later receives a private HTTPS design; Stage 1 uses the
+  canonical external HTTPS hostname for authenticated production use
+- Alert-threshold tuning after enough private-production history exists
+- Secondary immutable backup destination and retention/restore cadence tuning after operational history exists

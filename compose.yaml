@@ -39,10 +39,14 @@ services:
     environment:
       API_HOST: 0.0.0.0
       API_PORT: 4000
+      API_TRUST_PROXY: ${API_TRUST_PROXY:-false}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:3000}
+      APP_ENV: ${APP_ENV:-local}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       AUTH_COOKIE_NAME: ${AUTH_COOKIE_NAME:-gym_progress_session}
       AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
       AUTH_SESSION_TTL_DAYS: ${AUTH_SESSION_TTL_DAYS:-30}
+      REGISTRATION_MODE: ${REGISTRATION_MODE:-ENABLED}
       DATABASE_URL: postgresql://${POSTGRES_USER:-gym_progress_tracker}:${POSTGRES_PASSWORD:-gym_progress_tracker_password}@postgres:5432/${POSTGRES_DB:-gym_progress_tracker}
     ports:
       - "127.0.0.1:${API_PORT:-4000}:4000"
@@ -67,8 +71,14 @@ services:
       context: .
       target: web
     environment:
+      APP_ALLOWED_HOSTS: ${APP_ALLOWED_HOSTS:-localhost,127.0.0.1,192.168.1.57}
+      APP_ALLOWED_ORIGINS: ${APP_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000,http://192.168.1.57}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:3000}
+      APP_ENV: ${APP_ENV:-local}
       API_BASE_URL: http://api:4000/api/v1
+      HSTS_ENABLED: ${HSTS_ENABLED:-false}
       NEXT_PUBLIC_API_BASE_URL: http://localhost:${API_PORT:-4000}/api/v1
+      REGISTRATION_MODE: ${REGISTRATION_MODE:-ENABLED}
       WEB_HOST: 0.0.0.0
       WEB_PORT: 3000
     ports:
