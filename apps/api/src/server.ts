@@ -41,6 +41,7 @@ import { createRequestId, registerApiRequestLogging } from "./shared/request-log
 export interface ServerAuthConfig {
   cookieName: string;
   cookieSecure: boolean;
+  registrationEnabled: boolean;
   sessionTtlDays: number;
 }
 
@@ -149,7 +150,8 @@ export async function buildServer(
       name: authConfig.cookieName,
       secure: authConfig.cookieSecure,
       maxAgeSeconds: authConfig.sessionTtlDays * 24 * 60 * 60
-    }
+    },
+    registrationEnabled: authConfig.registrationEnabled
   });
   await registerWorkoutRoutes(server, {
     authService,

@@ -16,33 +16,47 @@ export async function registerAuthRoutes(
 ): Promise<void> {
   const events = options.events ?? noopEventTracker;
 
-  server.post("/api/v1/auth/signup", { config: authRateLimit }, async (request, reply) => {
-    const parsed = signupRequestSchema.safeParse(request.body);
+  server.post(
+    "/api/v1/auth/signup",
+    {
+      config: authRateLimit,
+      onRequest: (_request, reply, done) => {
+        if (options.registrationEnabled) {
+          done();
+          return;
+        }
 
-    if (!parsed.success) {
-      return sendValidationError(reply, parsed.error);
-    }
+        sendRegistrationDisabled(reply);
+      }
+    },
+    async (request, reply) => {
+      const parsed = signupRequestSchema.safeParse(request.body);
 
-    const result = await options.service.signup(parsed.data);
+      if (!parsed.success) {
+        return sendValidationError(reply, parsed.error);
+      }
 
-    if (!result.ok) {
-      return reply.status(409).send({
-        error: {
-          code: "AUTH_CONFLICT",
-          message: "Email or username already exists."
+      const result = await options.service.signup(parsed.data);
+
+      if (!result.ok) {
+        return reply.status(409).send({
+          error: {
+            code: "AUTH_CONFLICT",
+            message: "Email or username already exists."
+          }
+        });
+      }
+
+      events.track("user_signed_up", result.value.user.id);
+      setSessionCookie(reply, options.cookie, result.value);
+
+      return reply.status(201).send({
+        data: {
+          user: result.value.user
         }
       });
     }
-
-    events.track("user_signed_up", result.value.user.id);
-    setSessionCookie(reply, options.cookie, result.value);
-
-    return reply.status(201).send({
-      data: {
-        user: result.value.user
-      }
-    });
-  });
+  );
 
   server.post("/api/v1/auth/login", { config: authRateLimit }, async (request, reply) => {
     const parsed = loginRequestSchema.safeParse(request.body);
@@ -83,7 +97,12 @@ export async function registerAuthRoutes(
 
   server.post("/api/v1/auth/logout", async (request, reply) => {
     await options.service.logout(request.cookies[options.cookie.name]);
-    reply.clearCookie(options.cookie.name, { path: "/" });
+    reply.clearCookie(options.cookie.name, {
+      httpOnly: true,
+      path: "/",
+      sameSite: "lax",
+      secure: options.cookie.secure
+    });
 
     return reply.send({
       data: {
@@ -126,5 +145,14 @@ function setSessionCookie(
     path: "/",
     sameSite: "lax",
     secure: options.secure
+  });
+}
+
+function sendRegistrationDisabled(reply: FastifyReply): void {
+  void reply.status(403).send({
+    error: {
+      code: "REGISTRATION_DISABLED",
+      message: "Registration is currently disabled."
+    }
   });
 }

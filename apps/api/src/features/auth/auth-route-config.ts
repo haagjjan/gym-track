@@ -11,6 +11,7 @@ export interface AuthRouteOptions {
   service: AuthService;
   cookie: AuthCookieOptions;
   events?: EventTracker;
+  registrationEnabled: boolean;
 }
 
 /** Strict per-route limits on credential and action-token endpoints. */

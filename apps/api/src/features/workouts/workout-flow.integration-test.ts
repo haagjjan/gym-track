@@ -102,6 +102,35 @@ describe("workout API database flow", { skip: databaseUrl ? false : "INTEGRATION
     await db.destroy();
   });
 
+  it("does not persist a user when registration is disabled", async () => {
+    const server = await buildIntegrationServer(db, false);
+    const tag = `${Date.now()}_${process.pid}_disabled`;
+    const email = `${userPrefix}${tag}@example.com`;
+
+    try {
+      const response = await server.inject({
+        method: "POST",
+        url: "/api/v1/auth/signup",
+        payload: {
+          email,
+          username: `${userPrefix}${tag}`,
+          password: "integration-secret-1"
+        }
+      });
+      const persisted = await db
+        .selectFrom("users")
+        .select("id")
+        .where("email", "=", email)
+        .executeTakeFirst();
+
+      assert.equal(response.statusCode, 403);
+      assert.equal(response.json().error.code, "REGISTRATION_DISABLED");
+      assert.equal(persisted, undefined);
+    } finally {
+      await server.close();
+    }
+  });
+
   it("persists auth, workout logging, history, and analytics across the database", async () => {
     const server = await buildIntegrationServer(db);
 
@@ -705,10 +734,14 @@ describe("workout API database flow", { skip: databaseUrl ? false : "INTEGRATION
   });
 });
 
-async function buildIntegrationServer(db: Kysely<AppDatabase>): Promise<FastifyInstance> {
+async function buildIntegrationServer(
+  db: Kysely<AppDatabase>,
+  registrationEnabled = true
+): Promise<FastifyInstance> {
   return buildServer(db, {
     cookieName,
     cookieSecure: false,
+    registrationEnabled,
     sessionTtlDays: 30
   });
 }

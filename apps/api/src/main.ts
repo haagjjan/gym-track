@@ -11,6 +11,7 @@ const server = await buildServer(
   {
     cookieName: env.AUTH_COOKIE_NAME,
     cookieSecure: env.AUTH_COOKIE_SECURE,
+    registrationEnabled: env.REGISTRATION_MODE === "ENABLED",
     sessionTtlDays: env.AUTH_SESSION_TTL_DAYS
   },
   createApiLogger({

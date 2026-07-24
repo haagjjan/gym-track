@@ -20,7 +20,8 @@ describe("readEnv", () => {
       EMAIL_FROM: "Gym Progress Tracker <onboarding@resend.dev>",
       LOG_LEVEL: "info",
       METRICS_ENABLED: false,
-      NODE_ENV: "development"
+      NODE_ENV: "development",
+      REGISTRATION_MODE: "ENABLED"
     });
   });
 
@@ -48,12 +49,85 @@ describe("readEnv", () => {
 
   it("defaults secure auth cookies on in production", () => {
     const env = readEnv({
+      APP_BASE_URL: "https://app.gymtrack.ch",
       DATABASE_URL: databaseUrl,
       NODE_ENV: "production"
     });
 
     assert.equal(env.AUTH_COOKIE_SECURE, true);
     assert.equal(env.APP_ENV, "production");
+    assert.equal(env.API_TRUST_PROXY, false);
+    assert.equal(env.REGISTRATION_MODE, "DISABLED");
+  });
+
+  it("parses an explicit registration mode", () => {
+    const env = readEnv({
+      DATABASE_URL: databaseUrl,
+      REGISTRATION_MODE: "DISABLED"
+    });
+
+    assert.equal(env.REGISTRATION_MODE, "DISABLED");
+  });
+
+  it("rejects an unknown registration mode", () => {
+    assert.throws(() =>
+      readEnv({
+        DATABASE_URL: databaseUrl,
+        REGISTRATION_MODE: "INVITE_ONLY"
+      })
+    );
+  });
+
+  it("requires a canonical HTTPS base URL in production", () => {
+    assert.throws(() =>
+      readEnv({
+        DATABASE_URL: databaseUrl,
+        NODE_ENV: "production"
+      })
+    );
+    assert.throws(() =>
+      readEnv({
+        APP_BASE_URL: "http://app.gymtrack.ch",
+        DATABASE_URL: databaseUrl,
+        NODE_ENV: "production"
+      })
+    );
+  });
+
+  it("rejects base URLs with paths, queries, or fragments", () => {
+    for (const APP_BASE_URL of [
+      "https://app.gymtrack.ch/base",
+      "https://app.gymtrack.ch?source=config",
+      "https://app.gymtrack.ch#fragment"
+    ]) {
+      assert.throws(() => readEnv({ APP_BASE_URL, DATABASE_URL: databaseUrl }));
+    }
+  });
+
+  it("rejects insecure production cookies", () => {
+    assert.throws(() =>
+      readEnv({
+        APP_BASE_URL: "https://app.gymtrack.ch",
+        AUTH_COOKIE_SECURE: "false",
+        DATABASE_URL: databaseUrl,
+        NODE_ENV: "production"
+      })
+    );
+  });
+
+  it("allows the explicit local Compose HTTP exception", () => {
+    const env = readEnv({
+      APP_BASE_URL: "http://localhost:3000",
+      APP_ENV: "local",
+      AUTH_COOKIE_SECURE: "false",
+      DATABASE_URL: databaseUrl,
+      NODE_ENV: "production",
+      REGISTRATION_MODE: "ENABLED"
+    });
+
+    assert.equal(env.APP_ENV, "local");
+    assert.equal(env.AUTH_COOKIE_SECURE, false);
+    assert.equal(env.REGISTRATION_MODE, "ENABLED");
   });
 
   it("parses metrics and release settings", () => {

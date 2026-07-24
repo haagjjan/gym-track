@@ -50,7 +50,10 @@ function authService(overrides: Partial<AuthService> = {}): AuthService {
   };
 }
 
-async function buildAuthServer(service: AuthService) {
+async function buildAuthServer(
+  service: AuthService,
+  options: { registrationEnabled?: boolean; secure?: boolean } = {}
+) {
   const server = fastify();
 
   await server.register(cookie);
@@ -58,9 +61,10 @@ async function buildAuthServer(service: AuthService) {
     service,
     cookie: {
       name: "gym_progress_session",
-      secure: false,
+      secure: options.secure ?? false,
       maxAgeSeconds: 60
-    }
+    },
+    registrationEnabled: options.registrationEnabled ?? true
   });
 
   return server;
@@ -98,6 +102,82 @@ describe("auth routes", () => {
 
     assert.equal(response.statusCode, 422);
     assert.equal(response.json().error.code, "VALIDATION_ERROR");
+  });
+
+  it("rejects registration before validating or creating an account when disabled", async () => {
+    let signupCalls = 0;
+    const server = await buildAuthServer(
+      authService({
+        async signup() {
+          signupCalls += 1;
+          return { ok: true, value: authenticatedUser };
+        }
+      }),
+      { registrationEnabled: false }
+    );
+
+    for (const payload of [
+      {
+        email: "blocked@example.invalid",
+        username: "blocked",
+        password: "long-enough-secret"
+      },
+      { email: "invalid", username: "", password: "short" }
+    ]) {
+      const response = await server.inject({
+        method: "POST",
+        url: "/api/v1/auth/signup",
+        payload
+      });
+
+      assert.equal(response.statusCode, 403);
+      assert.deepEqual(response.json(), {
+        error: {
+          code: "REGISTRATION_DISABLED",
+          message: "Registration is currently disabled."
+        }
+      });
+      assert.equal(response.headers["set-cookie"], undefined);
+    }
+
+    const malformedResponse = await server.inject({
+      method: "POST",
+      url: "/api/v1/auth/signup",
+      headers: { "content-type": "application/json" },
+      payload: "{not-json"
+    });
+
+    assert.equal(malformedResponse.statusCode, 403);
+    assert.equal(malformedResponse.json().error.code, "REGISTRATION_DISABLED");
+    assert.equal(signupCalls, 0);
+  });
+
+  it("sets hardened cookie attributes when secure cookies are enabled", async () => {
+    const server = await buildAuthServer(authService(), { secure: true });
+    const response = await server.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      payload: { username: "jan", password: "long-enough-secret" }
+    });
+    const setCookie = response.headers["set-cookie"]?.toString() ?? "";
+
+    assert.match(setCookie, /HttpOnly/i);
+    assert.match(setCookie, /Path=\//i);
+    assert.match(setCookie, /SameSite=Lax/i);
+    assert.match(setCookie, /Secure/i);
+  });
+
+  it("does not opt the internal API into cross-origin browser access", async () => {
+    const server = await buildAuthServer(authService());
+    const response = await server.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      headers: { origin: "https://attacker.example" },
+      payload: { username: "jan", password: "long-enough-secret" }
+    });
+
+    assert.equal(response.headers["access-control-allow-origin"], undefined);
+    assert.equal(response.headers["access-control-allow-credentials"], undefined);
   });
 
   it("returns 401 for invalid login credentials", async () => {
@@ -148,6 +228,23 @@ describe("auth routes", () => {
     assert.equal(response.statusCode, 200);
     assert.deepEqual(response.json(), { data: { loggedOut: true } });
     assert.match(response.headers["set-cookie"]?.toString() ?? "", /gym_progress_session=/);
+  });
+
+  it("clears a production cookie with the same hardened scope", async () => {
+    const server = await buildAuthServer(authService(), { secure: true });
+    const response = await server.inject({
+      method: "POST",
+      url: "/api/v1/auth/logout",
+      cookies: {
+        gym_progress_session: "raw-session-token"
+      }
+    });
+    const setCookie = response.headers["set-cookie"]?.toString() ?? "";
+
+    assert.match(setCookie, /HttpOnly/i);
+    assert.match(setCookie, /Path=\//i);
+    assert.match(setCookie, /SameSite=Lax/i);
+    assert.match(setCookie, /Secure/i);
   });
 
   it("returns 423 when the account is locked", async () => {
