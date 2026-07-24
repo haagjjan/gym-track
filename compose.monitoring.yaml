@@ -22,9 +22,50 @@ services:
       - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION_TIME:-30d}
     volumes:
       - ./ops/monitoring/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
+      - ./ops/monitoring/prometheus/rules:/etc/prometheus/rules:ro
       - prometheus_data:/prometheus
+    depends_on:
+      alertmanager:
+        condition: service_healthy
     networks:
       - observability
+
+  alertmanager:
+    image: docker.io/prom/alertmanager:v0.32.1@sha256:51a825c2a40acc3e338fdd00d622e01ec090f72be2b3ea46be0839cd47a4d286
+    restart: unless-stopped
+    user: "65534:65534"
+    read_only: true
+    init: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yaml
+      - --storage.path=/alertmanager
+      - --data.retention=120h
+      - --web.listen-address=0.0.0.0:9093
+      - --log.format=json
+    volumes:
+      - ./ops/monitoring/alertmanager/alertmanager.yaml:/etc/alertmanager/alertmanager.yaml:ro
+      - alertmanager_data:/alertmanager
+    secrets:
+      - alertmanager_telegram_bot_token
+      - alertmanager_telegram_chat_id
+    healthcheck:
+      test:
+        - CMD
+        - /bin/amtool
+        - --alertmanager.url=http://127.0.0.1:9093
+        - config
+        - show
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - observability
+      - alerting-egress
 
   node-exporter:
     image: prom/node-exporter:v1.11.1
@@ -33,13 +74,15 @@ services:
     command:
       - --path.rootfs=/host
       - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/containers/storage/.+)($$|/)
+      - --collector.textfile.directory=/var/lib/node-exporter/textfile
     volumes:
       - /:/host:ro,rslave
+      - ${NODE_EXPORTER_TEXTFILE_DIR:-./ops/monitoring/textfile}:/var/lib/node-exporter/textfile:ro
     networks:
       - observability
 
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.57.0
+    image: ghcr.io/google/cadvisor:v0.57.0
     restart: unless-stopped
     privileged: true
     devices:
@@ -81,6 +124,8 @@ services:
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_ANALYTICS_REPORTING_ENABLED: "false"
       GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_PLUGINS_PREINSTALL_DISABLED: "true"
+      GF_PLUGINS_PLUGIN_ADMIN_ENABLED: "false"
     secrets:
       - grafana_admin_password
     ports:
@@ -97,13 +142,19 @@ services:
 networks:
   observability:
     internal: true
+  alerting-egress: {}
 
 volumes:
   prometheus_data:
   grafana_data:
+  alertmanager_data:
 
 secrets:
   postgres_monitor_password:
     file: ${POSTGRES_MONITOR_PASSWORD_FILE:?Set POSTGRES_MONITOR_PASSWORD_FILE to the monitoring database password file}
   grafana_admin_password:
     file: ${GRAFANA_ADMIN_PASSWORD_FILE:?Set GRAFANA_ADMIN_PASSWORD_FILE to the Grafana admin password file}
+  alertmanager_telegram_bot_token:
+    file: ${ALERTMANAGER_TELEGRAM_BOT_TOKEN_FILE:?Set ALERTMANAGER_TELEGRAM_BOT_TOKEN_FILE to the Telegram bot token file}
+  alertmanager_telegram_chat_id:
+    file: ${ALERTMANAGER_TELEGRAM_CHAT_ID_FILE:?Set ALERTMANAGER_TELEGRAM_CHAT_ID_FILE to the Telegram chat ID file}
