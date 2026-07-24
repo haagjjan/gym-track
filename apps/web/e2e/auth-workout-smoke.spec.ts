@@ -55,7 +55,9 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   await expect(page.getByRole("button", { name: "SAVED" })).toBeVisible();
 
   // ---- Logout / login round-trip ----
-  await page.request.post("/api/auth/logout");
+  await page.request.post("/api/auth/logout", {
+    headers: { origin: new URL(page.url()).origin }
+  });
   await page.goto("/login");
   await page.locator('form[data-hydrated="true"]').waitFor();
   await page.getByLabel(/OPERATOR_ID/).fill(username);
@@ -158,7 +160,8 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   const oldStart = new Date(Date.now() - 120 * 24 * 60 * 60 * 1_000);
   const oldEnd = new Date(oldStart.getTime() + 60 * 60 * 1_000);
   const timeUpdate = await page.request.patch(`/api/workouts/${workoutId}`, {
-    data: { startedAt: oldStart.toISOString(), endedAt: oldEnd.toISOString() }
+    data: { startedAt: oldStart.toISOString(), endedAt: oldEnd.toISOString() },
+    headers: { origin: new URL(page.url()).origin }
   });
   expect(timeUpdate.ok()).toBe(true);
 
