@@ -4,19 +4,27 @@
   "private": true,
   "scripts": {
     "build": "next build",
-    "dev": "next dev --port ${WEB_PORT:-3000}",
+    "dev": "next dev --port ${PORT:-${WEB_PORT:-3000}}",
     "lint": "eslint . --no-error-on-unmatched-pattern --max-warnings=0",
     "start": "next start --hostname ${WEB_HOST:-0.0.0.0} --port ${WEB_PORT:-3000}",
+    "test": "node --import tsx --test \"src/**/*.test.ts\"",
+    "test:performance": "node --import tsx --test --test-concurrency=1 \"src/**/*.performance-test.ts\"",
     "type-check": "tsc --noEmit --project tsconfig.json --pretty false"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
     "@react-three/postprocessing": "^3.0.4",
+    "@tailwindcss/postcss": "^4.3.2",
+    "@tanstack/react-query": "^5.101.2",
     "next": "^15.2.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "recharts": "^3.8.1",
+    "tailwindcss": "^4.3.2",
     "three": "^0.184.0",
     "zod": "^3.24.2"
   },
@@ -24,6 +32,7 @@
     "@types/node": "20.17.6",
     "@types/react": "^19.0.12",
     "@types/react-dom": "^19.0.4",
-    "@types/three": "^0.184.1"
+    "@types/three": "^0.184.1",
+    "tsx": "^4.19.3"
   }
 }
