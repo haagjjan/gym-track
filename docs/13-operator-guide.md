@@ -47,7 +47,11 @@ There is no admin panel yet. Everything below is either through the running app'
 direct SQL against Postgres for the rare case the UI can't reach it (e.g. manually verifying
 someone during support).
 
-### Normal signup flow (what a real user experiences)
+Stage 1 production is single-owner and uses an existing account. It must run with
+`REGISTRATION_MODE=DISABLED`; there is no public or administrator account-creation endpoint.
+Local development and test stacks explicitly use `REGISTRATION_MODE=ENABLED`.
+
+### Development signup flow
 
 1. `/signup` → account is created immediately (no email wait to start using the app).
 2. A verification email is sent in the background. **Locally, with no `RESEND_API_KEY` set,
@@ -62,6 +66,11 @@ someone during support).
 3. Until verified, the dashboard shows an `EMAIL_UNVERIFIED` banner with a `RESEND_LINK`
    button — nothing else is blocked. This is intentional (see `docs/12`): don't lock users out
    over an unverified email at this stage.
+
+With registration disabled, `/signup` shows `REGISTRATION_UNAVAILABLE`, the login page does
+not link to account creation, and both `POST /api/auth/signup` and
+`POST /api/v1/auth/signup` return `403 REGISTRATION_DISABLED` without creating a user or
+session.
 
 ### Password reset flow
 
@@ -86,7 +95,7 @@ actually send verification/reset emails:
    ```
    RESEND_API_KEY=re_your_key_here
    EMAIL_FROM=Gym Progress Tracker <no-reply@yourdomain.com>
-   APP_BASE_URL=https://your-real-domain.com   # so emailed links point at prod, not localhost
+   APP_BASE_URL=https://app.gymtrack.ch   # so emailed links point at the canonical origin
    ```
 3. Restart the API. That's it — no code changes. Swapping to a different provider later means
    implementing one function (`send()`) in `apps/api/src/shared/mailer.ts`.
@@ -125,6 +134,11 @@ irreversibly hashed. To help someone log in, send them through `/forgot-password
   accounts, not just brute-forcing one. A legitimate user who mistypes a password 3 times
   won't notice either limit.
 - A correct login (or a password reset) clears the failure counter immediately.
+
+Fastify sees the internal Next.js BFF as its peer, so Stage 1 intentionally keeps
+`API_TRUST_PROXY=false`. Use Cloudflare Access and Caddy logs for external client-address
+investigation; do not enable Fastify proxy trust to consume browser-supplied forwarding
+headers.
 
 ---
 
@@ -237,13 +251,65 @@ template: `.env.example`.
 | Variable | Purpose | Default if unset |
 |---|---|---|
 | `DATABASE_URL` | Postgres connection string | — required |
-| `AUTH_COOKIE_SECURE` | HTTPS-only cookies | `true` in prod, `false` in dev |
+| `APP_ENV` | Deployment label and explicit local-Compose security exception | follows `NODE_ENV`; production must not use `local` |
+| `AUTH_COOKIE_SECURE` | HTTPS-only cookies | `true` in prod; explicit `false` is rejected in prod |
 | `AUTH_SESSION_TTL_DAYS` | How long a login lasts | 30 |
-| `API_TRUST_PROXY` | Trust `X-Forwarded-For` (needed behind any reverse proxy/CDN so rate limits see real client IPs, not the proxy's IP) | `true` in prod |
-| `APP_BASE_URL` | Used to build links inside emails | `http://localhost:3000` |
+| `REGISTRATION_MODE` | `ENABLED` or `DISABLED` account creation | `DISABLED` in prod, `ENABLED` otherwise |
+| `API_TRUST_PROXY` | Whether Fastify trusts forwarding headers | `false`; keep false for the BFF topology |
+| `APP_BASE_URL` | Canonical origin used for absolute action links | required HTTPS origin in prod |
+| `APP_ALLOWED_HOSTS` | Extra comma-separated hostnames accepted by Next.js | none beyond `APP_BASE_URL` host in prod |
+| `APP_ALLOWED_ORIGINS` | Extra comma-separated origins accepted for state-changing BFF requests | none beyond `APP_BASE_URL` origin in prod |
+| `HSTS_ENABLED` | Emit HSTS for the canonical HTTPS hostname | `false`; enable only after HTTPS stability is verified |
 | `EMAIL_FROM` | "From" address on outgoing mail | a Resend test address |
-| `RESEND_API_KEY` | Turns on real email sending | unset = log-only |
+| `RESEND_API_KEY` | Turns on real email sending | unset = local log transport; production delivery disabled |
 | `LOG_LEVEL` | API log verbosity | `info` |
+
+### Stage 1 production application values
+
+The reviewed non-secret application values for the active home-server release are:
+
+```dotenv
+NODE_ENV=production
+APP_ENV=production
+REGISTRATION_MODE=DISABLED
+APP_BASE_URL=https://app.gymtrack.ch
+APP_ALLOWED_HOSTS=app.gymtrack.ch,192.168.1.57
+APP_ALLOWED_ORIGINS=https://app.gymtrack.ch,http://192.168.1.57
+HSTS_ENABLED=false
+AUTH_COOKIE_SECURE=true
+API_TRUST_PROXY=false
+```
+
+The LAN entries preserve page reachability and same-origin request validation where
+possible. The production session cookie is Secure, so authenticated use must use
+`https://app.gymtrack.ch`; browsers will not send that cookie over
+`http://192.168.1.57`.
+
+The Next.js ingress rejects unexpected Host headers with `421`, rejects missing or
+unapproved Origins on state-changing `/api` requests with `403`, and rejects CORS
+preflights. Fastify remains internal and intentionally sends no
+`Access-Control-Allow-Origin` or credentialed-CORS headers. Application redirects are
+relative, so an untrusted Host cannot turn them into an external redirect.
+
+After deployment, verify the application boundary through Caddy—not by publishing Fastify:
+
+```sh
+curl -i -H 'Host: app.gymtrack.ch' http://127.0.0.1/
+curl -i -X POST \
+  -H 'Host: app.gymtrack.ch' \
+  -H 'Origin: https://app.gymtrack.ch' \
+  -H 'Content-Type: application/json' \
+  --data '{"email":"blocked@example.invalid","username":"blocked","password":"not-a-real-password"}' \
+  http://127.0.0.1/api/auth/signup
+```
+
+The second command must return `403 REGISTRATION_DISABLED`. Do not use a real personal
+email in verification payloads.
+
+After the external hostname, certificate, Access policy, tunnel recovery, and rollback path
+have been verified, set `HSTS_ENABLED=true`, restart only the web service through the
+approved deployment procedure, and confirm HSTS appears on `app.gymtrack.ch` but not the LAN
+IP. Do not enable HSTS during repository preparation.
 
 ---
 
