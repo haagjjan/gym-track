@@ -2,8 +2,8 @@
 
 **Server:** `gym-prod`  
 **Primary administrator:** `admin-gym`  
-**Current phase:** Wave A — host foundation  
-**Last updated:** 2026-07-20
+**Current phase:** Wave C complete — private production operations baseline
+**Last updated:** 2026-07-22
 
 ## Purpose
 
@@ -13,7 +13,7 @@ Codex must treat every stage document as a separate execution boundary. The exis
 
 The current factual handoff is:
 
-- [`server-status-gym-prod.md`](./server-status-gym-prod.md)
+- [`server-status-gym-prod.md`](../status/server-status-gym-prod.md)
 
 Codex must read that document before executing any stage.
 
@@ -51,13 +51,13 @@ Codex must not:
 
 | Wave | Stage | Document | Status | Execution permission |
 |---|---:|---|---|---|
-| Current state | 0 | `server-status-gym-prod.md` | Complete | Read only |
-| A | 1 | [`01-host-baseline-audit.md`](./wave-a/01-host-baseline-audit.md) | Pending | First executable stage |
-| A | 2 | [`02-os-admin-foundation.md`](./wave-a/02-os-admin-foundation.md) | Blocked by Stage 1 | Not yet |
-| A | 3 | [`03-access-network-hardening.md`](./wave-a/03-access-network-hardening.md) | Blocked by Stage 2 | Not yet |
-| A | 4 | [`04-docker-platform.md`](./wave-a/04-docker-platform.md) | Blocked by Stage 3 | Not yet |
-| B | 5–8 | [`wave-b/README.md`](./wave-b/README.md) | Planned | Not executable |
-| C | 9–11 | [`wave-c/README.md`](./wave-c/README.md) | Planned | Not executable |
+| Current state | 0 | [`server-status-gym-prod.md`](../status/server-status-gym-prod.md) | Complete through Stage 11 | Read only |
+| A | 1 | [`01-host-baseline-audit.md`](./wave-a-host-fundation/01-host-baseline-audit.md) | Complete | Read only |
+| A | 2 | [`02-os-admin-foundation.md`](./wave-a-host-fundation/02-os-admin-foundation.md) | Complete | Read only |
+| A | 3 | [`03-access-network-hardening.md`](./wave-a-host-fundation/03-access-network-hardening.md) | Complete | Read only |
+| A | 4 | [`04-docker-platform.md`](./wave-a-host-fundation/04-docker-platform.md) | Complete | Read only |
+| B | 5–8 | [`wave-b-application-platform/README.md`](./wave-b-application-platform/README.md) | Complete | Read only |
+| C | 9–11 | [`wave-c-operations-dashboard/README.md`](./wave-c-operations-dashboard/README.md) | Complete | Read only |
 
 Update this table only after a stage has been reviewed and accepted.
 
@@ -81,9 +81,9 @@ At the Wave A checkpoint, the server should be:
 
 ---
 
-## Planned Wave B outcome
+## Completed Wave B outcome
 
-Wave B will establish:
+Wave B established:
 
 - server filesystem conventions;
 - repository access and deployment structure;
@@ -92,13 +92,13 @@ Wave B will establish:
 - Gym Tracker application containers;
 - reverse proxy and private LAN access.
 
-Wave B files are not yet executable.
+Stages 5 through 8 are complete. Their reports are the source of truth for the active private application platform.
 
 ---
 
-## Planned Wave C outcome
+## Completed Wave C outcome
 
-Wave C will establish:
+Wave C established:
 
 - Prometheus and exporters;
 - Grafana dashboard provisioning;
@@ -106,7 +106,7 @@ Wave C will establish:
 - structured logging and initial alerts;
 - backups, restore testing, and recovery documentation.
 
-Wave C files are not yet executable.
+Stages 9 through 11 are complete. Their reports are the source of truth for monitoring, alerting, backup, restoration, and recovery.
 
 ---
 
@@ -125,6 +125,13 @@ Expected filenames:
 02-os-admin-foundation-report.md
 03-access-network-hardening-report.md
 04-docker-platform-report.md
+05-server-filesystem-and-repository-report.md
+06-postgresql-foundation-report.md
+07-gym-tracker-deployment-report.md
+08-reverse-proxy-and-private-lan-access-report.md
+09-monitoring-and-grafana-report.md
+10-logging-and-alerting-report.md
+11-backup-restore-and-disaster-recovery-report.md
 ```
 
 Reports must not contain:
