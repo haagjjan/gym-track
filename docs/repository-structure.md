@@ -134,6 +134,8 @@ apps/
 - `apps/api/src/shared` owns API-only shared boundaries such as environment validation, logger configuration, and common HTTP validation responses.
 - `apps/api/src/features/auth/authenticate-request.ts` owns shared Fastify session-cookie authentication for protected feature routes.
 - `apps/web` owns the Next.js App Router app plus the first auth, workout logging, workout history/detail, CSV import/export, analytics UI slices, and Playwright smoke tests.
+- `apps/web/src/middleware.ts` and `apps/web/src/request-security.ts` own the Next.js
+  host allowlist, same-origin state-change guard, and browser-facing security headers.
 - `apps/web/public/models/avatar/avatar-base.fbx` is the shared 3D human figure asset. The pedestal is fused into this FBX rather than stored as a separate model file.
 - `apps/web/src/features/avatar` owns the dashboard avatar scene, hologram bay, and runtime figure/pedestal separation and materials.
 - `apps/web/src/features/volume` owns the interactive muscle-volume figure view, which reuses the shared avatar FBX and applies the muscle-region visualization.
