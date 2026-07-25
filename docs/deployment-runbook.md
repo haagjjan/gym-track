@@ -41,7 +41,9 @@ The Render Blueprint uses:
 7. Deploy the API and confirm the pre-deploy migration step completes.
 8. Deploy the web service after the API health check is passing.
 9. Open the web service URL and complete a smoke flow:
-   - sign up
+   - log in with a pre-created test account
+   - confirm `/signup` reports registration unavailable
+   - confirm a direct signup request returns `403 REGISTRATION_DISABLED`
    - start a workout
    - create or pick an exercise
    - add one set
@@ -59,16 +61,27 @@ The Blueprint manages these non-secret values:
 | API | `PORT` | `10000` |
 | API | `API_HOST` | `0.0.0.0` |
 | API | `API_PORT` | `10000` |
+| API | `API_TRUST_PROXY` | `false` |
+| API | `APP_BASE_URL` | `https://app.gymtrack.ch` |
 | API | `LOG_LEVEL` | `info` |
 | API | `AUTH_COOKIE_NAME` | `gym_progress_session` |
 | API | `AUTH_COOKIE_SECURE` | `true` |
 | API | `AUTH_SESSION_TTL_DAYS` | `30` |
+| API | `REGISTRATION_MODE` | `DISABLED` |
 | API | `DATABASE_URL` | Render `fromDatabase` private connection string |
 | Web | `NODE_ENV` | `production` |
 | Web | `PORT` | `10000` |
 | Web | `WEB_HOST` | `0.0.0.0` |
 | Web | `WEB_PORT` | `10000` |
+| Web | `APP_BASE_URL` | `https://app.gymtrack.ch` |
+| Web | `APP_ALLOWED_HOSTS` | canonical hostname plus the Render health-check hostname |
+| Web | `HSTS_ENABLED` | `false` until canonical HTTPS stability is verified |
+| Web | `REGISTRATION_MODE` | `DISABLED` |
 | Web | `API_INTERNAL_HOSTPORT` | Render `fromService` private host and port |
+
+The Blueprint permits the Render hostname for GET health checks but does not add it as an
+allowed state-changing Origin. The canonical hostname remains the supported production
+application origin.
 
 Do not use `.env.example` values for hosted resources. If a future production-only secret is added, define it in Render with `sync: false` or a Render environment group, then document the key name here without committing the value.
 
