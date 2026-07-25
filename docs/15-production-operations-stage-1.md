@@ -6,6 +6,11 @@
 **Follows:** `12-saas-hardening.md`, `13-operator-guide.md`, `14-ui-polish-and-ops-round-2.md`  
 **Assumes:** Doc 14 Batches A, B, and C are closed. Batch D is functionally complete apart from minor frontend polish.
 
+> **Current Stage 1 authority:** For secure single-owner external access, the plans under
+> `docs/status/production-readiness/` and ADR 0011 supersede this document where they
+> conflict. In particular, public signup and production email onboarding are deferred;
+> Stage 1 uses an existing owner account with `REGISTRATION_MODE=DISABLED`.
+
 ---
 
 ## 1. Purpose
