@@ -1,7 +1,7 @@
 # Wave A — Host Foundation
 
-**Status:** Ready for sequential execution  
-**Target server:** `gym-prod`  
+**Status:** Complete — Stages 1 through 4 verified on `gym-prod`
+**Target server:** `gym-prod`
 **Primary user:** `admin-gym`
 
 ## Purpose
@@ -18,7 +18,7 @@ Codex must execute each stage separately and stop after completing its required 
 
 Before starting any Wave A stage, read:
 
-- [`../server-status-gym-prod.md`](../server-status-gym-prod.md)
+- [`../../status/server-status-gym-prod.md`](../../status/server-status-gym-prod.md)
 - [`../SERVER-SETUP-INDEX.md`](../SERVER-SETUP-INDEX.md)
 
 The status document describes the currently known server, network, SSH, firewall, T2-Ubuntu, and hardware state.
