@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { getCurrentUser } from "../../features/auth/server-auth";
-import { AppCockpitShell } from "../../features/navigation/app-cockpit-shell";
-import { WorkoutStart } from "../../features/workouts/workout-start";
+import { LaunchScreen } from "../../features/launch/launch-screen";
+import { AppShell } from "../../features/shell/app-shell";
+
+export const metadata = { title: "Start Session" };
 
 export default async function WorkoutStartPage(): Promise<ReactNode> {
   const user = await getCurrentUser();
@@ -12,8 +14,8 @@ export default async function WorkoutStartPage(): Promise<ReactNode> {
   }
 
   return (
-    <AppCockpitShell user={user}>
-      <WorkoutStart />
-    </AppCockpitShell>
+    <AppShell user={user}>
+      <LaunchScreen />
+    </AppShell>
   );
 }
