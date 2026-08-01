@@ -1,10 +1,12 @@
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { ProgressPage } from "../../features/analytics/progress-page";
 import { getCurrentUser } from "../../features/auth/server-auth";
-import { AppCockpitShell } from "../../features/navigation/app-cockpit-shell";
+import { ProgressScreen } from "../../features/progress/progress-screen";
+import { AppShell } from "../../features/shell/app-shell";
 
-export default async function ExerciseProgressPage(): Promise<ReactNode> {
+export const metadata = { title: "Progress" };
+
+export default async function ProgressPage(): Promise<ReactNode> {
   const user = await getCurrentUser();
 
   if (!user) {
@@ -12,8 +14,8 @@ export default async function ExerciseProgressPage(): Promise<ReactNode> {
   }
 
   return (
-    <AppCockpitShell user={user}>
-      <ProgressPage />
-    </AppCockpitShell>
+    <AppShell user={user}>
+      <ProgressScreen />
+    </AppShell>
   );
 }
