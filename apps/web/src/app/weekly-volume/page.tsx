@@ -1,10 +1,12 @@
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { WeeklyVolumePage } from "../../features/analytics/weekly-volume-page";
 import { getCurrentUser } from "../../features/auth/server-auth";
-import { AppCockpitShell } from "../../features/navigation/app-cockpit-shell";
+import { AppShell } from "../../features/shell/app-shell";
+import { VolumeScreen } from "../../features/volume/volume-screen";
 
-export default async function WeeklyTrainingVolumePage(): Promise<ReactNode> {
+export const metadata = { title: "Volume" };
+
+export default async function WeeklyVolumePage(): Promise<ReactNode> {
   const user = await getCurrentUser();
 
   if (!user) {
@@ -12,8 +14,8 @@ export default async function WeeklyTrainingVolumePage(): Promise<ReactNode> {
   }
 
   return (
-    <AppCockpitShell user={user}>
-      <WeeklyVolumePage />
-    </AppCockpitShell>
+    <AppShell user={user}>
+      <VolumeScreen />
+    </AppShell>
   );
 }
