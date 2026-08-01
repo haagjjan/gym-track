@@ -1,9 +1,8 @@
-import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
+import type { ReactNode } from "react";
 import { getCurrentUser } from "../features/auth/server-auth";
-import type { AuthUser } from "../features/auth/auth-types";
-import { AppCockpitShell } from "../features/navigation/app-cockpit-shell";
-import { DashboardHome } from "../features/dashboard";
+import { DashboardScreen } from "../features/dashboard/dashboard-screen";
+import { AppShell } from "../features/shell/app-shell";
 
 export default async function HomePage(): Promise<ReactNode> {
   const user = await getCurrentUser();
@@ -12,13 +11,9 @@ export default async function HomePage(): Promise<ReactNode> {
     redirect("/login");
   }
 
-  return <SignedInHome user={user} />;
-}
-
-function SignedInHome({ user }: { user: AuthUser }): ReactNode {
   return (
-    <AppCockpitShell user={user}>
-      <DashboardHome user={user} />
-    </AppCockpitShell>
+    <AppShell user={user}>
+      <DashboardScreen user={user} />
+    </AppShell>
   );
 }
