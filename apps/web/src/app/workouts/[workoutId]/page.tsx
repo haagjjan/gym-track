@@ -1,16 +1,17 @@
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { getCurrentUser } from "../../../features/auth/server-auth";
-import { AppCockpitShell } from "../../../features/navigation/app-cockpit-shell";
-import { WorkoutLogger } from "../../../features/workouts/workout-logger";
+import { SessionScreen } from "../../../features/session/session-screen";
 
-interface WorkoutPageProps {
-  params: Promise<{
-    workoutId: string;
-  }>;
+export const metadata = { title: "Live Session" };
+
+interface SessionPageProps {
+  params: Promise<{ workoutId: string }>;
+  searchParams: Promise<{ focusName?: string }>;
 }
 
-export default async function WorkoutPage({ params }: WorkoutPageProps): Promise<ReactNode> {
+// Focused fullscreen flow: no app shell, one job — log sets.
+export default async function SessionPage({ params, searchParams }: SessionPageProps): Promise<ReactNode> {
   const user = await getCurrentUser();
 
   if (!user) {
@@ -18,10 +19,7 @@ export default async function WorkoutPage({ params }: WorkoutPageProps): Promise
   }
 
   const { workoutId } = await params;
+  const query = await searchParams;
 
-  return (
-    <AppCockpitShell user={user}>
-      <WorkoutLogger workoutId={workoutId} />
-    </AppCockpitShell>
-  );
+  return <SessionScreen focusName={query.focusName === "1"} userId={user.id} workoutId={workoutId} />;
 }
