@@ -1,29 +1,35 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import type { ReactNode } from "react";
+import { QueryProvider } from "../shared/query-provider";
 import { ClientDiagnosticsListener } from "./client-diagnostics-listener";
-import "./styles.css";
-import "../shared/ui/cockpit/cockpit-tokens.css";
-import "../shared/ui/cockpit/cockpit.css";
-import "../shared/ui/cockpit/cockpit-password.css";
-import "../features/navigation/navigation.css";
-import "../features/analytics/analytics.css";
-import "../features/analytics/progress.css";
-import "../features/analytics/progress-analysis.css";
-import "../features/analytics/volume.css";
-import "../features/analytics/volume-panels.css";
-import "../features/analytics/volume-intelligence.css";
-import "../features/auth/auth.css";
-import "../features/dashboard/dashboard.css";
-import "../features/dashboard/dashboard-panels.css";
-import "../features/dashboard/home-body-visual.css";
-import "../features/workouts/workout.css";
-import "../features/workouts/workout-forms.css";
-import "../features/workouts/workout-history.css";
-import "../features/workouts/workout-start.css";
+import "./globals.css";
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-space-grotesk"
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains"
+});
 
 export const metadata: Metadata = {
-  title: "Gym Progress Tracker",
+  title: {
+    default: "Gym Progress Tracker",
+    template: "%s | Gym Progress Tracker"
+  },
   description: "Workout logging and progress tracking"
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0a0a0a",
+  width: "device-width",
+  initialScale: 1,
+  // Prevent accidental pinch-zoom while logging sets with sweaty thumbs.
+  maximumScale: 1,
+  userScalable: false
 };
 
 interface RootLayoutProps {
@@ -32,10 +38,10 @@ interface RootLayoutProps {
 
 export default function RootLayout({ children }: RootLayoutProps): ReactNode {
   return (
-    <html lang="en">
+    <html lang="en" className={`${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
       <body>
         <ClientDiagnosticsListener />
-        {children}
+        <QueryProvider>{children}</QueryProvider>
       </body>
     </html>
   );
