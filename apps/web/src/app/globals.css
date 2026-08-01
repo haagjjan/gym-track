@@ -1,0 +1,189 @@
+@import "tailwindcss";
+
+/*
+ * Aether Fitness System tokens — source of truth: docs/DESIGN.md.
+ * Color names map to usage, values map 1:1 to the DESIGN.md frontmatter.
+ */
+@theme {
+  /* Surfaces (obsidian stack) */
+  --color-void: #0a0a0a;
+  --color-surface: #131313;
+  --color-surface-low: #1c1b1b;
+  --color-surface-mid: #201f1f;
+  --color-surface-high: #2a2a2a;
+  --color-surface-highest: #353534;
+
+  /* Foreground */
+  --color-fg: #e5e2e1;
+  --color-fg-muted: #b9cacb;
+  --color-outline: #849495;
+  --color-outline-dim: #3a494b;
+
+  /* Primary — electric cyan (critical actions, active states, data peaks) */
+  --color-cyan: #00f2ff;
+  --color-cyan-bright: #e1fdff;
+  --color-cyan-dim: #00dbe7;
+  --color-cyan-deep: #006a71;
+  --color-on-cyan: #00363a;
+
+  /* Secondary — soft lavender (recovery, auxiliary data) */
+  --color-lavender: #d9b9ff;
+  --color-lavender-dim: #cba4fb;
+  --color-lavender-deep: #583584;
+
+  /* Tertiary — neon green (peak performance, success) */
+  --color-green: #51fb37;
+  --color-green-bright: #78ff5d;
+  --color-green-dim: #36e51c;
+  --color-green-deep: #0d7000;
+
+  /* Error */
+  --color-red: #ffb4ab;
+  --color-red-deep: #93000a;
+
+  /* Typography */
+  --font-display: var(--font-space-grotesk), "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Shape — "soft-tech" */
+  --radius-sm: 0.125rem;
+  --radius-DEFAULT: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+
+  /* Glow hierarchy */
+  --shadow-glow-cyan: 0 0 12px rgba(0, 242, 255, 0.35);
+  --shadow-glow-cyan-strong: 0 0 18px rgba(0, 242, 255, 0.55);
+  --shadow-glow-green: 0 0 12px rgba(81, 251, 55, 0.4);
+  --shadow-glow-lavender: 0 0 12px rgba(217, 185, 255, 0.3);
+
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@layer base {
+  html {
+    background: var(--color-void);
+  }
+
+  body {
+    background: var(--color-void);
+    color: var(--color-fg);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+  }
+
+  ::selection {
+    background: rgba(0, 242, 255, 0.25);
+    color: var(--color-cyan-bright);
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-surface-highest) transparent;
+  }
+
+  :focus-visible {
+    outline: 1px solid var(--color-cyan);
+    outline-offset: 2px;
+  }
+
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+}
+
+@keyframes session-mode-forward {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+}
+
+@keyframes session-mode-back {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .session-mode-forward {
+    animation: session-mode-forward 160ms ease-out;
+  }
+
+  .session-mode-back {
+    animation: session-mode-back 160ms ease-out;
+  }
+}
+
+/* Glassmorphic panel — depth via blur + glass border, never drop shadows.
+   Opacity tuned so panel text stays legible even over the bright accents of the
+   hologram-bay backdrop, while the environment still reads through. */
+@utility glass {
+  background: rgba(19, 19, 19, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(132, 148, 149, 0.16);
+}
+
+@utility glass-cyan {
+  background: rgba(14, 20, 21, 0.68);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 242, 255, 0.22);
+}
+
+/* Signature HUD chamfer — cut top-left / bottom-right corners */
+@utility chamfer {
+  clip-path: polygon(
+    14px 0,
+    100% 0,
+    100% calc(100% - 14px),
+    calc(100% - 14px) 100%,
+    0 100%,
+    0 14px
+  );
+}
+
+/* Space Grotesk tracked-out label */
+@utility label-caps {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 16px;
+  text-transform: uppercase;
+}
+
+/* Barely-visible HUD grid (5% white per DESIGN.md data-viz rules) */
+@utility hud-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* Status indicator square (DESIGN.md status cards) */
+@utility status-dot {
+  width: 4px;
+  height: 4px;
+  flex: none;
+  display: inline-block;
+}
