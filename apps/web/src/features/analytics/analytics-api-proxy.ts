@@ -1,21 +1,31 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getApiBaseUrl } from "../../shared/api-base-url";
+import {
+  createBffRequestContext,
+  finalizeBffResponse,
+  forwardBffRequestId,
+  logBffFailure
+} from "../../shared/server-logging";
 
 export async function proxyAnalyticsApiRequest(
   request: NextRequest,
   targetPath: string
 ): Promise<NextResponse> {
+  const logContext = createBffRequestContext(request, targetPath);
   try {
+    const headers = buildForwardHeaders(request);
+    forwardBffRequestId(headers, logContext);
     const upstream = await fetch(buildApiUrl(request, targetPath), {
       method: request.method,
-      headers: buildForwardHeaders(request),
+      headers,
       cache: "no-store"
     });
 
-    return await toProxyResponse(upstream);
-  } catch {
-    return NextResponse.json(
+    return finalizeBffResponse(logContext, await toProxyResponse(upstream));
+  } catch (error) {
+    logBffFailure(logContext, { statusCode: 502, errorCode: "API_UNAVAILABLE", error });
+    return finalizeUnavailableResponse(logContext.requestId, NextResponse.json(
       {
         error: {
           code: "API_UNAVAILABLE",
@@ -23,8 +33,13 @@ export async function proxyAnalyticsApiRequest(
         }
       },
       { status: 502 }
-    );
+    ));
   }
+}
+
+function finalizeUnavailableResponse(requestId: string, response: NextResponse): NextResponse {
+  response.headers.set("x-request-id", requestId);
+  return response;
 }
 
 function buildApiUrl(request: NextRequest, targetPath: string): string {
