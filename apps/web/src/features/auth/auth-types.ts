@@ -2,6 +2,7 @@ export interface AuthUser {
   id: string;
   email: string;
   username: string;
+  emailVerified: boolean;
   createdAt: string;
 }
 
@@ -24,6 +25,7 @@ export function isAuthUser(value: unknown): value is AuthUser {
     typeof candidate.id === "string" &&
     typeof candidate.email === "string" &&
     typeof candidate.username === "string" &&
+    typeof candidate.emailVerified === "boolean" &&
     typeof candidate.createdAt === "string"
   );
 }
