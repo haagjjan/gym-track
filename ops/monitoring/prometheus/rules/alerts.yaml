@@ -1,0 +1,305 @@
+groups:
+  - name: availability
+    rules:
+      - alert: GymTrackerApiTargetDown
+        expr: min(up{job="api"}) == 0 or absent(up{job="api"})
+        for: 2m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: Gym Tracker API metrics are unavailable
+          description: Prometheus has been unable to scrape the API target for two minutes.
+          first_action: Run /srv/gym-tracker/scripts/logs-errors.sh api and inspect the API container health.
+
+      - alert: GymTrackerPostgresUnavailable
+        expr: min(up{job="postgres"}) == 0 or min(pg_up{job="postgres"}) == 0 or absent(up{job="postgres"})
+        for: 2m
+        labels:
+          severity: critical
+          component: postgres
+        annotations:
+          summary: PostgreSQL monitoring or connectivity is unavailable
+          description: The PostgreSQL exporter is down or its database connectivity check is failing.
+          first_action: Run /srv/gym-tracker/scripts/logs-errors.sh postgres postgres-exporter and inspect both health states.
+
+      - alert: GymTrackerNodeExporterDown
+        expr: min(up{job="node"}) == 0 or absent(up{job="node"})
+        for: 5m
+        labels:
+          severity: warning
+          component: host
+        annotations:
+          summary: Host metrics are unavailable
+          description: Prometheus has not received Node Exporter metrics for five minutes.
+          first_action: Inspect the node-exporter container and run the monitoring status script.
+
+      - alert: GymTrackerCadvisorDown
+        expr: min(up{job="cadvisor"}) == 0 or absent(up{job="cadvisor"})
+        for: 5m
+        labels:
+          severity: warning
+          component: containers
+        annotations:
+          summary: Container metrics are unavailable
+          description: Prometheus has not received cAdvisor metrics for five minutes.
+          first_action: Inspect the cAdvisor container and its recent bounded logs.
+
+      - alert: GymTrackerProxyContainerMissing
+        expr: absent(container_last_seen{job="cadvisor",container_label_com_docker_compose_service="proxy"})
+        for: 3m
+        labels:
+          severity: critical
+          component: proxy
+        annotations:
+          summary: The private-LAN proxy container is missing
+          description: cAdvisor has not observed the Compose proxy container for three minutes.
+          first_action: Inspect proxy health and run /srv/gym-tracker/scripts/logs-errors.sh proxy.
+
+      - alert: GymTrackerWebContainerMissing
+        expr: absent(container_last_seen{job="cadvisor",container_label_com_docker_compose_service="web"})
+        for: 3m
+        labels:
+          severity: critical
+          component: web
+        annotations:
+          summary: The Next.js web container is missing
+          description: cAdvisor has not observed the Compose web container for three minutes.
+          first_action: Inspect web health and run /srv/gym-tracker/scripts/logs-errors.sh web.
+
+      - alert: GymTrackerAlertmanagerDown
+        expr: min(up{job="alertmanager"}) == 0 or absent(up{job="alertmanager"})
+        for: 5m
+        labels:
+          severity: critical
+          component: monitoring
+        annotations:
+          summary: Alertmanager is unavailable
+          description: Prometheus has been unable to scrape Alertmanager for five minutes.
+          first_action: Inspect Prometheus and Alertmanager health and their internal monitoring network.
+
+  - name: host-capacity
+    rules:
+      - alert: GymTrackerRootFilesystemLow
+        expr: 100 * node_filesystem_avail_bytes{job="node",mountpoint="/"} / node_filesystem_size_bytes{job="node",mountpoint="/"} < 15
+        for: 15m
+        labels:
+          severity: warning
+          component: host
+        annotations:
+          summary: Root filesystem free space is below 15 percent
+          description: The server root filesystem has remained below 15 percent free for 15 minutes.
+          first_action: Run ncdu read-only and inspect Docker and Prometheus growth before removing anything.
+
+      - alert: GymTrackerRootFilesystemCritical
+        expr: 100 * node_filesystem_avail_bytes{job="node",mountpoint="/"} / node_filesystem_size_bytes{job="node",mountpoint="/"} < 5
+        for: 5m
+        labels:
+          severity: critical
+          component: host
+        annotations:
+          summary: Root filesystem free space is below 5 percent
+          description: The server root filesystem has remained below 5 percent free for five minutes.
+          first_action: Inspect filesystem usage immediately and preserve database and backup data.
+
+      - alert: GymTrackerHostMemoryPressure
+        expr: 100 * (1 - node_memory_MemAvailable_bytes{job="node"} / node_memory_MemTotal_bytes{job="node"}) > 90
+        for: 15m
+        labels:
+          severity: warning
+          component: host
+        annotations:
+          summary: Host memory pressure is sustained
+          description: More than 90 percent of host memory has been unavailable for 15 minutes.
+          first_action: Inspect per-container memory and host processes before restarting any service.
+
+      - alert: GymTrackerHostCpuHigh
+        expr: 100 * (1 - avg(rate(node_cpu_seconds_total{job="node",mode="idle"}[5m]))) > 90
+        for: 20m
+        labels:
+          severity: warning
+          component: host
+        annotations:
+          summary: Host CPU utilization is sustained above 90 percent
+          description: Total host CPU use has remained above 90 percent for 20 minutes.
+          first_action: Inspect per-container CPU and htop to identify sustained work.
+
+      - alert: GymTrackerHostLoadHigh
+        expr: node_load1{job="node"} > 1.5 * count without (cpu, mode) (node_cpu_seconds_total{job="node",mode="idle"})
+        for: 20m
+        labels:
+          severity: warning
+          component: host
+        annotations:
+          summary: Host load is high for the available CPU count
+          description: One-minute load has exceeded 1.5 times the CPU count for 20 minutes.
+          first_action: Inspect CPU, disk I/O, blocked processes, and per-container usage.
+
+      - alert: GymTrackerSwapPressure
+        expr: node_memory_SwapTotal_bytes{job="node"} > 0 and 100 * (1 - node_memory_SwapFree_bytes{job="node"} / node_memory_SwapTotal_bytes{job="node"}) > 80
+        for: 15m
+        labels:
+          severity: warning
+          component: host
+        annotations:
+          summary: Host swap usage is above 80 percent
+          description: A configured swap area has remained more than 80 percent used for 15 minutes.
+          first_action: Inspect memory pressure and the largest host and container consumers.
+
+      - alert: GymTrackerRootFilesystemReadOnly
+        expr: node_filesystem_readonly{job="node",mountpoint="/"} == 1
+        for: 1m
+        labels:
+          severity: critical
+          component: host
+        annotations:
+          summary: Root filesystem is read-only
+          description: Node Exporter reports that the root filesystem is mounted read-only.
+          first_action: Stop write-heavy maintenance, inspect kernel and filesystem errors, and use recovery access if needed.
+
+      - alert: GymTrackerHostOomKill
+        expr: increase(node_vmstat_oom_kill{job="node"}[15m]) > 0
+        labels:
+          severity: critical
+          component: host
+        annotations:
+          summary: The host kernel killed a process for memory exhaustion
+          description: At least one OOM kill was observed in the last 15 minutes.
+          first_action: Inspect the system journal and per-container memory before restarting affected services.
+
+  - name: containers
+    rules:
+      - alert: GymTrackerContainerOom
+        expr: sum by (container_label_com_docker_compose_service) (increase(container_oom_events_total{job="cadvisor",container_label_com_docker_compose_service!=""}[15m])) > 0
+        labels:
+          severity: critical
+          component: containers
+        annotations:
+          summary: A Gym Tracker container had an OOM event
+          description: Container {{ $labels.container_label_com_docker_compose_service }} had an out-of-memory event in the last 15 minutes.
+          first_action: Inspect that service's bounded logs and memory trend before restarting it.
+
+      - alert: GymTrackerRepeatedContainerRestarts
+        expr: sum by (container_label_com_docker_compose_service) (changes(container_start_time_seconds{job="cadvisor",container_label_com_docker_compose_service!=""}[30m])) > 2
+        for: 2m
+        labels:
+          severity: warning
+          component: containers
+        annotations:
+          summary: A Gym Tracker container appears to be restarting repeatedly
+          description: Container {{ $labels.container_label_com_docker_compose_service }} changed start time more than twice in 30 minutes.
+          first_action: Confirm with Docker state and inspect the service's bounded error logs because this metric is best-effort.
+
+  - name: application
+    rules:
+      - alert: GymTrackerApiElevated5xx
+        expr: sum(increase(gym_progress_tracker_http_responses_total{service="api",status_class="5xx"}[10m])) >= 5
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: Gym Tracker API is returning repeated server errors
+          description: At least five API 5xx responses occurred in a ten-minute window and persisted for five minutes.
+          first_action: Run /srv/gym-tracker/scripts/logs-errors.sh api and correlate normalized routes by request ID.
+
+      - alert: GymTrackerApiLatencyHigh
+        expr: histogram_quantile(0.95, sum by (le) (rate(gym_progress_tracker_http_request_duration_seconds_bucket{service="api"}[5m]))) > 2 and on() sum(increase(gym_progress_tracker_http_requests_total{service="api"}[10m])) >= 20
+        for: 10m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: Gym Tracker API p95 latency is above two seconds
+          description: API p95 latency exceeded two seconds for ten minutes with enough traffic to evaluate it.
+          first_action: Compare the slow-route, API CPU/memory, host I/O, and PostgreSQL panels.
+
+      - alert: GymTrackerApiProcessRestarted
+        expr: changes(gym_progress_tracker_process_start_time_seconds{service="api"}[15m]) > 0
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: The Gym Tracker API process restarted
+          description: Prometheus observed a changed API process start time in the last 15 minutes.
+          first_action: Confirm the restart with Docker state and inspect API logs around the transition.
+
+  - name: postgresql
+    rules:
+      - alert: GymTrackerPostgresConnectionsHigh
+        expr: 100 * sum(pg_stat_database_numbackends{job="postgres",datname!~"template.*"}) / max(pg_settings_max_connections{job="postgres"}) > 70
+        for: 10m
+        labels:
+          severity: warning
+          component: postgres
+        annotations:
+          summary: PostgreSQL connection use is above 70 percent
+          description: Non-template database connections have exceeded 70 percent of the configured maximum for ten minutes.
+          first_action: Inspect active and idle connections and API pool behavior before terminating sessions.
+
+      - alert: GymTrackerPostgresDeadlock
+        expr: sum(increase(pg_stat_database_deadlocks{job="postgres",datname!~"template.*"}[15m])) > 0
+        labels:
+          severity: warning
+          component: postgres
+        annotations:
+          summary: PostgreSQL reported a deadlock
+          description: At least one database deadlock occurred in the last 15 minutes.
+          first_action: Inspect bounded PostgreSQL error logs and application request failures at the same time.
+
+      - alert: GymTrackerPostgresLongTransaction
+        expr: sum(pg_long_running_transactions{job="postgres"}) > 0
+        for: 10m
+        labels:
+          severity: warning
+          component: postgres
+        annotations:
+          summary: PostgreSQL has a sustained long-running transaction
+          description: The exporter has reported at least one long-running transaction for ten minutes.
+          first_action: Inspect connection state and lock activity without exposing or copying query text.
+
+  - name: backups
+    rules:
+      - alert: GymTrackerBackupMetricsMissing
+        expr: absent(gym_backup_last_run_success)
+        for: 15m
+        labels:
+          severity: critical
+          component: backups
+        annotations:
+          summary: Gym Tracker backup metrics are missing
+          description: Prometheus has not received the authoritative backup status metric for 15 minutes.
+          first_action: Run sudo /srv/gym-tracker/scripts/backup-status.sh and inspect Node Exporter textfile collection.
+
+      - alert: GymTrackerBackupLastRunFailed
+        expr: gym_backup_last_run_success == 0
+        for: 2m
+        labels:
+          severity: warning
+          component: backups
+        annotations:
+          summary: The latest Gym Tracker backup failed
+          description: The latest required backup attempt did not produce a verified off-machine Restic snapshot.
+          first_action: Inspect gym-tracker-backup.service and confirm the MacBook destination is awake and reachable.
+
+      - alert: GymTrackerBackupTooOld
+        expr: gym_backup_last_success_timestamp_seconds > 0 and time() - gym_backup_last_success_timestamp_seconds > 108000
+        for: 15m
+        labels:
+          severity: warning
+          component: backups
+        annotations:
+          summary: The latest Gym Tracker backup is older than 30 hours
+          description: No successful off-machine snapshot has completed within the 24-hour RPO plus a six-hour grace period.
+          first_action: Run sudo /srv/gym-tracker/scripts/backup-status.sh and restore destination reachability before the RPO is exceeded further.
+
+      - alert: GymTrackerBackupTooOldCritical
+        expr: gym_backup_last_success_timestamp_seconds > 0 and time() - gym_backup_last_success_timestamp_seconds > 172800
+        for: 15m
+        labels:
+          severity: critical
+          component: backups
+        annotations:
+          summary: The latest Gym Tracker backup is older than 48 hours
+          description: The off-machine backup is two days old and the approved 24-hour recovery-point objective is no longer being met.
+          first_action: Preserve local dumps, restore the MacBook destination or approve another repository, and run a verified backup immediately.
