@@ -1,0 +1,12 @@
+[Unit]
+Description=Run weekly Gym Tracker backup retention and repository verification
+
+[Timer]
+OnCalendar=Sun *-*-* 04:40:00
+RandomizedDelaySec=30m
+Persistent=true
+AccuracySec=1m
+Unit=gym-tracker-backup-maintenance.service
+
+[Install]
+WantedBy=timers.target

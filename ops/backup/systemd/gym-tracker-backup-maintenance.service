@@ -1,0 +1,25 @@
+[Unit]
+Description=Gym Tracker Restic retention and repository check
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0077
+ExecStart=/srv/gym-tracker/scripts/backup-maintenance.sh
+Nice=15
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/srv/gym-tracker/backups /srv/gym-tracker/state /srv/gym-tracker/data/node-exporter-textfile /run/lock /run/docker.sock
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=CAP_CHOWN CAP_DAC_OVERRIDE CAP_FOWNER
+
+[Install]
+WantedBy=multi-user.target

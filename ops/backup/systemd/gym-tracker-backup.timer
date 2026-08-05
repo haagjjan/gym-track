@@ -1,0 +1,12 @@
+[Unit]
+Description=Run Gym Tracker backup with four daily MacBook availability windows
+
+[Timer]
+OnCalendar=*-*-* 03,09,15,21:20:00
+RandomizedDelaySec=20m
+Persistent=true
+AccuracySec=1m
+Unit=gym-tracker-backup.service
+
+[Install]
+WantedBy=timers.target

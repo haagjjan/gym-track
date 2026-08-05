@@ -1,0 +1,13 @@
+[Unit]
+Description=One-time Gym Tracker Stage 11 post-reboot verification
+After=docker.service network-online.target gym-tracker-backup.timer
+Wants=docker.service network-online.target
+ConditionPathExists=/srv/gym-tracker/state/stage11-post-reboot-pending
+
+[Service]
+Type=oneshot
+ExecStartPre=/usr/bin/sleep 45
+ExecStart=/srv/gym-tracker/scripts/stage11-post-reboot-check.sh
+
+[Install]
+WantedBy=multi-user.target
