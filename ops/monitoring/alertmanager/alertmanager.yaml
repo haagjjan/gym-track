@@ -1,0 +1,43 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: telegram
+  group_by:
+    - alertname
+    - component
+    - severity
+  group_wait: 30s
+  group_interval: 1m
+  repeat_interval: 6h
+  routes:
+    - receiver: telegram
+      matchers:
+        - severity="critical"
+      repeat_interval: 1h
+
+receivers:
+  - name: telegram
+    telegram_configs:
+      - bot_token_file: /run/secrets/alertmanager_telegram_bot_token
+        chat_id_file: /run/secrets/alertmanager_telegram_chat_id
+        send_resolved: true
+        parse_mode: ""
+        message: |-
+          Status: {{ .Status }}
+          Alert: {{ .CommonLabels.alertname }}
+          Severity: {{ .CommonLabels.severity }}
+          Component: {{ .CommonLabels.component }}
+          {{ range .Alerts }}
+          Summary: {{ .Annotations.summary }}
+          Details: {{ .Annotations.description }}
+          First action: {{ .Annotations.first_action }}
+          {{ end }}
+
+inhibit_rules:
+  - source_matchers:
+      - severity="critical"
+    target_matchers:
+      - severity="warning"
+    equal:
+      - component
