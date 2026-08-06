@@ -8,6 +8,9 @@ export const EXERCISE_EQUIPMENT = [
   "Smith machine",
   "resistance band",
   "bodyweight",
+  "EZ bar",
+  "medicine ball",
+  "stability ball",
   "other"
 ] as const;
 
