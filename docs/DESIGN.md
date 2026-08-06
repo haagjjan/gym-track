@@ -108,8 +108,9 @@ The experience should feel technical, precise, and immersive. By utilizing deep 
 The palette is strictly high-contrast to ensure maximum legibility in low-light gym environments, utilizing a sophisticated synthetic color range.
 
 - **Primary (Electric Cyan):** Reserved for critical actions, active states, and data peaks. It should be used sparingly to maintain its impact.
-- **Secondary (Soft Lavender):** Used for auxiliary data, recovery metrics, and secondary progression indicators, providing a cool-toned counterpoint to the primary cyan.
-- **Tertiary (Neon Green):** Represents peak performance, success milestones, and high-vitality metrics. It provides a sharp, energetic accent for positive reinforcement.
+- **Secondary (Soft Lavender):** Used for working sets, auxiliary data, recovery metrics, and secondary progression indicators, providing a cool-toned counterpoint to the primary cyan.
+- **Warmup (Muted Light Green):** Used only for warmup-set context. It must remain visibly quieter than success green.
+- **Tertiary (Neon Green):** Represents confirmed success, completion, peak performance, and high-vitality metrics. It is not a generic set-type color.
 - **Neutrals:** The background uses a pure Deep Charcoal (`#0A0A0A`), while elevated containers use Obsidian (`#121212`). 
 - **The Glow:** Interactive elements should utilize a cyan or neon green outer glow (`0px 0px 12px neon-glow`) to simulate a light-emitting interface.
 
