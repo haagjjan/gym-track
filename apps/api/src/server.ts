@@ -6,6 +6,9 @@ import type { Kysely } from "kysely";
 import { createAnalyticsRepository } from "./features/analytics/analytics.repository.js";
 import { registerAnalyticsRoutes } from "./features/analytics/analytics.routes.js";
 import { createAnalyticsService } from "./features/analytics/analytics.service.js";
+import { createBetaRepository } from "./features/beta/beta.repository.js";
+import { registerBetaRoutes } from "./features/beta/beta.routes.js";
+import { createBetaService } from "./features/beta/beta.service.js";
 import { createAuthRepository } from "./features/auth/auth.repository.js";
 import { registerAuthRoutes } from "./features/auth/auth.routes.js";
 import { createAuthService } from "./features/auth/auth.service.js";
@@ -20,6 +23,8 @@ import { registerHealthRoutes } from "./features/health/health.routes.js";
 import { createTemplateRepository } from "./features/templates/template.repository.js";
 import { registerTemplateRoutes } from "./features/templates/template.routes.js";
 import { createTemplateService } from "./features/templates/template.service.js";
+import { createMessageRepository } from "./features/messages/message.repository.js";
+import { registerMessageRoutes } from "./features/messages/message.routes.js";
 import { createWorkoutLoggingRepository } from "./features/workouts/workout-logging.repository.js";
 import { registerWorkoutLoggingRoutes } from "./features/workouts/workout-logging.routes.js";
 import { createWorkoutLoggingService } from "./features/workouts/workout-logging.service.js";
@@ -32,16 +37,23 @@ import { createWorkoutService } from "./features/workouts/workout.service.js";
 import { createUserPreferencesRepository } from "./features/users/user-preferences.repository.js";
 import { registerUserPreferencesRoutes } from "./features/users/user-preferences.routes.js";
 import { createUserPreferencesService } from "./features/users/user-preferences.service.js";
+import { createUserAccountRepository } from "./features/users/user-account.repository.js";
+import { registerUserAccountRoutes } from "./features/users/user-account.routes.js";
+import { createUserAccountService } from "./features/users/user-account.service.js";
 import { createEventTracker, noopEventTracker, type EventTracker } from "./shared/events.js";
 import { createMailerFromEnv, type Mailer } from "./shared/mailer.js";
 import type { ApiLogger } from "./shared/logger.js";
 import { registerApiMetrics, type ApiMetricsOptions } from "./shared/metrics.js";
 import { createRequestId, registerApiRequestLogging } from "./shared/request-logging.js";
+import { noopOperatorNotifier, type OperatorNotifier } from "./shared/operator-notifier.js";
+import { trustedClientKey, verifiedClientIp } from "./shared/client-attribution.js";
 
 export interface ServerAuthConfig {
   cookieName: string;
   cookieSecure: boolean;
-  registrationEnabled: boolean;
+  registrationMode?: "ENABLED" | "INVITE_ONLY" | "DISABLED";
+  /** Backward-compatible test input; production uses registrationMode. */
+  registrationEnabled?: boolean;
   sessionTtlDays: number;
 }
 
@@ -52,6 +64,7 @@ export interface ServerExtras {
   mailerEnv?: {
     RESEND_API_KEY: string | undefined;
     EMAIL_FROM: string;
+    EMAIL_REPLY_TO?: string | undefined;
     NODE_ENV: "development" | "test" | "production";
   };
   /** Public web origin used in emailed action links. */
@@ -62,13 +75,17 @@ export interface ServerExtras {
   trustProxy?: boolean;
   /** Internal Prometheus endpoint and bounded API request instrumentation. */
   metrics?: ApiMetricsOptions;
+  operatorNotifier?: OperatorNotifier;
+  /** Shared only by the web BFF and API to authenticate edge-derived client IPs. */
+  clientIpSecret?: string;
+  supportEmail?: string;
 }
 
 // One JSON payload should never need more than this; CSV imports are the
 // largest legitimate bodies and stay under it too (decompression-bomb guard).
 const BODY_LIMIT_BYTES = 1 * 1024 * 1024;
 
-const AUTH_CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
+const AUTH_CLEANUP_INTERVAL_MS = 60 * 60 * 1000;
 
 export async function buildServer(
   db: Kysely<AppDatabase>,
@@ -84,6 +101,15 @@ export async function buildServer(
     genReqId: (request) => createRequestId(request.headers["x-request-id"])
   });
   registerApiRequestLogging(server);
+  if (extras.clientIpSecret) {
+    server.addHook("onRequest", async (request, reply) => {
+      const path = request.url.split("?", 1)[0];
+      if (path === "/api/v1/health" || path === "/api/v1/metrics" || verifiedClientIp(request, extras.clientIpSecret)) {
+        return;
+      }
+      return reply.status(403).send({ error: { code: "BFF_REQUIRED", message: "Requests must use the public web application." } });
+    });
+  }
   registerApiMetrics(server, extras.metrics);
   const events =
     extras.events === "off"
@@ -123,6 +149,21 @@ export async function buildServer(
   const userPreferencesService = createUserPreferencesService({
     repository: createUserPreferencesRepository(db)
   });
+  const betaService = createBetaService({
+    repository: createBetaRepository(db),
+    tokens: cryptoSessionTokenGenerator,
+    mailer,
+    notifier: extras.operatorNotifier ?? noopOperatorNotifier,
+    appBaseUrl: extras.appBaseUrl ?? "http://localhost:3000"
+  });
+  const userAccountService = createUserAccountService({
+    repository: createUserAccountRepository(db),
+    passwordHasher: argon2PasswordHasher,
+    tokens: cryptoSessionTokenGenerator,
+    mailer,
+    appBaseUrl: extras.appBaseUrl ?? "http://localhost:3000",
+    supportEmail: extras.supportEmail ?? "support"
+  });
 
   // JSON API: strict security headers, no CSP needed (nothing is rendered).
   await server.register(helmet, {
@@ -133,6 +174,7 @@ export async function buildServer(
   await server.register(rateLimit, {
     max: 300,
     timeWindow: "1 minute",
+    keyGenerator: (request) => trustedClientKey(request, extras.clientIpSecret),
     // Match the API's error envelope so clients render a real message.
     errorResponseBuilder: (_request, context) => ({
       error: {
@@ -151,7 +193,8 @@ export async function buildServer(
       secure: authConfig.cookieSecure,
       maxAgeSeconds: authConfig.sessionTtlDays * 24 * 60 * 60
     },
-    registrationEnabled: authConfig.registrationEnabled
+    registrationMode:
+      authConfig.registrationMode ?? (authConfig.registrationEnabled === false ? "DISABLED" : "ENABLED")
   });
   await registerWorkoutRoutes(server, {
     authService,
@@ -192,11 +235,34 @@ export async function buildServer(
     cookieName: authConfig.cookieName,
     service: userPreferencesService
   });
+  await registerBetaRoutes(server, {
+    authService,
+    betaService,
+    cookieName: authConfig.cookieName
+  });
+  await registerUserAccountRoutes(server, {
+    authService,
+    cookieName: authConfig.cookieName,
+    cookieSecure: authConfig.cookieSecure,
+    service: userAccountService
+  });
+  await registerMessageRoutes(server, {
+    authService,
+    cookieName: authConfig.cookieName,
+    repository: createMessageRepository(db)
+  });
 
-  // Daily hygiene: purge long-expired sessions and action tokens.
+  // Hourly lifecycle hygiene bounds deletion-deadline lag while also purging
+  // expired auth, invitation, event, response, and waitlist records.
   const cleanupTimer = setInterval(() => {
     authService.cleanupExpiredAuthRecords().catch((error: unknown) => {
       server.log.warn({ error }, "auth record cleanup failed");
+    });
+    betaService.cleanup().catch((error: unknown) => {
+      server.log.warn({ error }, "beta invitation cleanup failed");
+    });
+    userAccountService.cleanup().catch((error: unknown) => {
+      server.log.warn({ error }, "account lifecycle cleanup failed");
     });
   }, AUTH_CLEANUP_INTERVAL_MS);
 
