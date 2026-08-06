@@ -3,6 +3,7 @@ import { createDatabase } from "./db/database.js";
 import { readEnv } from "./shared/env.js";
 import { createApiLogger } from "./shared/logger.js";
 import { buildServer } from "./server.js";
+import { createTelegramOperatorNotifier } from "./shared/operator-notifier.js";
 
 const env = readEnv();
 const db = createDatabase(env.DATABASE_URL);
@@ -11,7 +12,7 @@ const server = await buildServer(
   {
     cookieName: env.AUTH_COOKIE_NAME,
     cookieSecure: env.AUTH_COOKIE_SECURE,
-    registrationEnabled: env.REGISTRATION_MODE === "ENABLED",
+    registrationMode: env.REGISTRATION_MODE,
     sessionTtlDays: env.AUTH_SESSION_TTL_DAYS
   },
   createApiLogger({
@@ -22,6 +23,8 @@ const server = await buildServer(
   }),
   {
     appBaseUrl: env.APP_BASE_URL,
+    ...(env.BFF_CLIENT_IP_SECRET ? { clientIpSecret: env.BFF_CLIENT_IP_SECRET } : {}),
+    ...(env.SUPPORT_EMAIL ? { supportEmail: env.SUPPORT_EMAIL } : {}),
     trustProxy: env.API_TRUST_PROXY,
     ...(env.METRICS_ENABLED
       ? {
@@ -34,8 +37,15 @@ const server = await buildServer(
     mailerEnv: {
       RESEND_API_KEY: env.RESEND_API_KEY,
       EMAIL_FROM: env.EMAIL_FROM,
+      EMAIL_REPLY_TO: env.SUPPORT_EMAIL,
       NODE_ENV: env.NODE_ENV
-    }
+    },
+    ...(env.TELEGRAM_BETA_BOT_TOKEN && env.TELEGRAM_BETA_CHAT_ID
+      ? { operatorNotifier: createTelegramOperatorNotifier({
+          botToken: env.TELEGRAM_BETA_BOT_TOKEN,
+          chatId: env.TELEGRAM_BETA_CHAT_ID
+        }) }
+      : {})
   }
 );
 
