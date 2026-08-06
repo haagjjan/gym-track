@@ -19,8 +19,120 @@ interface UsersTable {
   email_verified_at: NullableTimestampColumn;
   failed_login_attempts: ColumnType<number, number | undefined, number>;
   locked_until: NullableTimestampColumn;
+  role: ColumnType<"USER" | "ADMIN", "USER" | "ADMIN" | undefined, "USER" | "ADMIN">;
+  account_status: ColumnType<
+    "ACTIVE" | "DELETION_PENDING" | "SUSPENDED",
+    "ACTIVE" | "DELETION_PENDING" | "SUSPENDED" | undefined,
+    "ACTIVE" | "DELETION_PENDING" | "SUSPENDED"
+  >;
+  beta_cohort: string | null;
+  login_count: ColumnType<number, number | undefined, number>;
+  completed_workout_count: ColumnType<number, number | undefined, number>;
+  functional_storage_enabled: ColumnType<boolean, boolean | undefined, boolean>;
+  storage_preference_decided_at: NullableTimestampColumn;
+  analytics_enabled: ColumnType<boolean, boolean | undefined, boolean>;
+  feedback_prompts_enabled: ColumnType<boolean, boolean | undefined, boolean>;
+  terms_version: string | null;
+  privacy_version: string | null;
+  policy_accepted_at: NullableTimestampColumn;
+  adult_attested_at: NullableTimestampColumn;
+  deletion_requested_at: NullableTimestampColumn;
+  deletion_due_at: NullableTimestampColumn;
+  onboarding_version: ColumnType<number, number | undefined, number>;
+  onboarding_steps: ColumnType<unknown, string | undefined, string>;
   created_at: TimestampColumn;
   updated_at: TimestampColumn;
+}
+
+interface BetaSettingsTable {
+  singleton: ColumnType<boolean, boolean | undefined, boolean>;
+  waitlist_open: ColumnType<boolean, boolean | undefined, boolean>;
+  invitations_open: ColumnType<boolean, boolean | undefined, boolean>;
+  campaigns_open: ColumnType<boolean, boolean | undefined, boolean>;
+  account_cap: ColumnType<number, number | undefined, number>;
+  daily_approval_limit: ColumnType<number, number | undefined, number>;
+  updated_at: TimestampColumn;
+  updated_by_user_id: string | null;
+}
+
+interface BetaAccessRequestsTable {
+  id: string;
+  email: string;
+  status: "PENDING" | "INVITED" | "JOINED" | "EXPIRED" | "BLOCKED";
+  terms_version: string;
+  privacy_version: string;
+  policy_accepted_at: RequiredTimestampColumn;
+  adult_attested_at: RequiredTimestampColumn;
+  requested_at: TimestampColumn;
+  reviewed_at: NullableTimestampColumn;
+  reviewed_by_user_id: string | null;
+  invitation_token_hash: string | null;
+  invitation_expires_at: NullableTimestampColumn;
+  invitation_used_at: NullableTimestampColumn;
+  joined_user_id: string | null;
+  blocked_at: NullableTimestampColumn;
+}
+
+interface AdminAuditEventsTable {
+  id: ColumnType<string, never, never>;
+  admin_user_id: string | null;
+  action: string;
+  target_type: string;
+  target_id: string;
+  details: ColumnType<unknown, string | undefined, string>;
+  created_at: TimestampColumn;
+}
+
+interface AccountDeletionTokensTable {
+  id: string;
+  user_id: string;
+  token_hash: string;
+  expires_at: RequiredTimestampColumn;
+  used_at: NullableTimestampColumn;
+  created_at: TimestampColumn;
+}
+
+interface ErasureTombstonesTable {
+  user_id: string;
+  finalized_at: RequiredTimestampColumn;
+  expires_at: RequiredTimestampColumn;
+}
+
+interface CampaignsTable {
+  id: string;
+  title: string;
+  body: string;
+  status: "DRAFT" | "PUBLISHED" | "PAUSED" | "ENDED";
+  audience_type: "ALL" | "SELECTED";
+  trigger_type: "NEXT_LOGIN" | "NTH_LOGIN" | "NTH_WORKOUT" | "AFTER_WORKOUT" | "SCHEDULED";
+  trigger_threshold: number | null;
+  response_type: "ACKNOWLEDGEMENT" | "RATING" | "SINGLE_CHOICE" | "FREE_TEXT";
+  response_options: ColumnType<unknown, string | undefined, string>;
+  action_url: string | null;
+  essential: ColumnType<boolean, boolean | undefined, boolean>;
+  starts_at: NullableTimestampColumn;
+  ends_at: NullableTimestampColumn;
+  scheduled_at: NullableTimestampColumn;
+  created_by_user_id: string | null;
+  created_at: TimestampColumn;
+  published_at: NullableTimestampColumn;
+  ended_at: NullableTimestampColumn;
+}
+
+interface CampaignTargetsTable {
+  campaign_id: string;
+  user_id: string;
+}
+
+interface MessageDeliveriesTable {
+  campaign_id: string;
+  user_id: string;
+  eligible_at: TimestampColumn;
+  shown_at: NullableTimestampColumn;
+  dismissed_at: NullableTimestampColumn;
+  responded_at: NullableTimestampColumn;
+  response: ColumnType<unknown | null, string | null | undefined, string | null>;
+  trigger_count_target: number | null;
 }
 
 interface AuthActionTokensTable {
@@ -138,11 +250,19 @@ interface SetsTable {
 }
 
 export interface AppDatabase {
+  account_deletion_tokens: AccountDeletionTokensTable;
+  admin_audit_events: AdminAuditEventsTable;
   app_events: AppEventsTable;
   auth_action_tokens: AuthActionTokensTable;
+  beta_access_requests: BetaAccessRequestsTable;
+  beta_settings: BetaSettingsTable;
+  campaigns: CampaignsTable;
+  campaign_targets: CampaignTargetsTable;
   exercise_muscle_groups: ExerciseMuscleGroupsTable;
   exercise_secondary_muscles: ExerciseSecondaryMusclesTable;
   exercises: ExercisesTable;
+  erasure_tombstones: ErasureTombstonesTable;
+  message_deliveries: MessageDeliveriesTable;
   muscle_groups: MuscleGroupsTable;
   session_exercises: SessionExercisesTable;
   sets: SetsTable;
