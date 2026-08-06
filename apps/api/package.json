@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "admin:promote": "node scripts/promote-admin.mjs",
     "build": "tsc --project tsconfig.build.json --pretty false",
+    "catalog:build": "node scripts/build-system-exercise-catalog.mjs",
     "dev": "tsx watch src/main.ts",
     "lint": "eslint . --no-error-on-unmatched-pattern --max-warnings=0",
     "migrate": "node-pg-migrate --config-file db/migrate.json --envPath ../../.env",

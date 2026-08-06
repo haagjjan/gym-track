@@ -54,6 +54,7 @@ secrets/
 backups/
 *.dump
 *.sql
+!apps/api/db/migrations/*.sql
 *.log
 
 # Other Server docs
