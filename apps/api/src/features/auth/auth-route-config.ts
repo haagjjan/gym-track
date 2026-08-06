@@ -11,7 +11,13 @@ export interface AuthRouteOptions {
   service: AuthService;
   cookie: AuthCookieOptions;
   events?: EventTracker;
-  registrationEnabled: boolean;
+  registrationMode?: "ENABLED" | "INVITE_ONLY" | "DISABLED";
+  /** Backward-compatible test input. */
+  registrationEnabled?: boolean;
+}
+
+export function registrationMode(options: AuthRouteOptions): "ENABLED" | "INVITE_ONLY" | "DISABLED" {
+  return options.registrationMode ?? (options.registrationEnabled === false ? "DISABLED" : "ENABLED");
 }
 
 /** Strict per-route limits on credential and action-token endpoints. */
