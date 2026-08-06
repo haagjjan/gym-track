@@ -62,6 +62,8 @@ This file is the map for where things live in the Gym Progress Tracker repo. Kee
 │   │   └── systemd
 │   ├── logging
 │   │   └── scripts
+│   ├── status
+│   │   └── public
 │   └── monitoring
 │       ├── alertmanager
 │       ├── grafana
@@ -89,17 +91,21 @@ This file is the map for where things live in the Gym Progress Tracker repo. Kee
 ```text
 apps/
 |-- api/
+|   |-- catalog/
 |   |-- db/
 |   |   |-- migrate.json
 |   |   `-- migrations/
+|   |-- scripts/
 |   |-- tsconfig.build.json
 |   `-- src/
 |       |-- db/
 |       |-- features/
 |       |   |-- analytics/
 |       |   |-- auth/
+|       |   |-- beta/
 |       |   |-- exercises/
 |       |   |-- health/
+|       |   |-- messages/
 |       |   |-- templates/
 |       |   |-- users/
 |       |   `-- workouts/
@@ -111,12 +117,17 @@ apps/
     `-- src/
         |-- app/
         |-- features/
+        |   |-- admin/
         |   |-- analytics/
         |   |-- auth/
+        |   |-- beta/
         |   |-- dashboard/
         |   |-- navigation/
         |   |-- history/
         |   |-- launch/
+        |   |-- messages/
+        |   |-- onboarding/
+        |   |-- privacy/
         |   |-- progress/
         |   |-- session/
         |   |-- settings/
@@ -128,8 +139,9 @@ apps/
 ```
 
 - `apps/api` owns the Fastify API, Kysely database access, migrations, API feature slices, and API tests.
+- `apps/api/catalog` owns the reviewed exercise source manifest, legacy-name input, pinned-source review/exclusion record, and generation metadata. `apps/api/scripts/build-system-exercise-catalog.mjs` reproducibly rebuilds the generated runtime manifest and SQL migration from the pinned upstream revision.
 - `apps/api/tsconfig.build.json` owns the compiled API runtime build used by Docker.
-- `apps/api/src/features/<feature>` owns each API vertical slice. Current features are `analytics`, `auth`, `exercises`, `health`, `templates`, `users`, and `workouts`.
+- `apps/api/src/features/<feature>` owns each API vertical slice. Current features include `analytics`, `auth`, `beta`, `exercises`, `health`, `messages`, `templates`, `users`, and `workouts`.
 - `apps/api/src/db` owns database connection and database health helpers.
 - `apps/api/src/shared` owns API-only shared boundaries such as environment validation, logger configuration, and common HTTP validation responses.
 - `apps/api/src/features/auth/authenticate-request.ts` owns shared Fastify session-cookie authentication for protected feature routes.
@@ -209,6 +221,8 @@ docs/
 |-- 07-implementation-pattern.md
 |-- 08-next-implementation-plan.md
 |-- 09-observability-and-data-structures.md
+|-- 18-public-beta-handoff.md
+|-- beta-process/
 |-- Usability_Audit/
 |   |-- performance-audit-v1.md
 |   |-- usability-audit-v2.md
@@ -229,6 +243,8 @@ docs/
 - `docs/07-implementation-pattern.md` records the feature-slice pattern used by API and web work.
 - `docs/08-next-implementation-plan.md` records the current fresh-session handoff and remaining implementation blocks.
 - `docs/09-observability-and-data-structures.md` records implemented data structures and the planned logging/diagnostics approach for client and API failures.
+- `docs/beta-process/private-beta-1/` keeps the original report/evidence and its observation-to-code remediation matrix.
+- `docs/18-public-beta-handoff.md` is the Founding Beta implementation handoff; `docs/public-beta/` owns the processing inventory, DPIA screening, launch evidence gates, and erasure/restore runbook.
 - `docs/Usability_Audit/` records V1 responsive-web usability decisions and the pure-function performance regression baseline. Read usability audit v4 first, then v3 and v2 only for behavior not superseded by a newer audit; the audit-v4 rework list remains post-beta.
 - `docs/deployment-runbook.md` records Render deployment, migration, backup, restore-test, and monitoring steps for small-batch users.
 - `docs/status/` contains short-lived status reviews, audit notes, and private-beta readiness updates.
@@ -250,6 +266,8 @@ These files may exist locally but should not be committed:
 - `*.tsbuildinfo`
 - log files, coverage output, caches, and temporary runtime files
 - Playwright reports and test results
+
+`ops/status/public/` is committed static source intended for an independently hosted `status.gymtrack.ch`; it is not generated runtime output.
 
 Use `.env.example` for shared environment variable documentation. Do not commit secrets, cookie jars, database dumps, or generated build output.
 
