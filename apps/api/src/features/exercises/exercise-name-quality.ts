@@ -1,9 +1,17 @@
 import {
-  blockedExerciseNames,
-  blockedExerciseWordFragments,
   canonicalExerciseNames,
   priorityExerciseNames
 } from "./exercise-name-catalog.js";
+import {
+  blockedExerciseNames,
+  blockedExerciseWordFragments
+} from "./exercise-name-blocklist.js";
+import { resolveExerciseNameAlias } from "./exercise-name-aliases.js";
+import {
+  boundedExerciseNameDistance,
+  exerciseNameLookup,
+  normalizeExerciseName
+} from "./exercise-name-normalization.js";
 
 export interface ExerciseNameQualityIssue {
   code:
@@ -25,12 +33,11 @@ export interface ExerciseNameEvaluation {
 
 const normalizedCatalog = canonicalExerciseNames.map((name) => ({
   canonicalName: name,
-  normalizedName: normalizeExerciseName(name),
-  lookupName: normalizeExerciseName(name).toLowerCase(),
+  lookupName: exerciseNameLookup(name),
   priority: (priorityExerciseNames as readonly string[]).includes(name)
 }));
 
-const blockedNames = new Set(blockedExerciseNames.map((name) => normalizeExerciseName(name)));
+const blockedNames = new Set(blockedExerciseNames.map((name) => exerciseNameLookup(name)));
 const blockedWordPatterns = blockedExerciseWordFragments.map(
   (fragment) => new RegExp(`\\b${escapeRegExp(fragment)}\\b`, "i")
 );
@@ -44,13 +51,9 @@ const rowMarkerPattern = /\brow\s+\d{4,}\b/i;
 const longNumericSuffixPattern = /(?:^|\s)\d{5,}(?:\s|$)/;
 const MAX_SUGGESTION_DISTANCE = 6;
 
-function normalizeExerciseName(name: string): string {
-  return name.trim().replace(/\s+/g, " ");
-}
-
 export function evaluateExerciseName(name: string): ExerciseNameEvaluation {
   const normalizedName = normalizeExerciseName(name);
-  const normalizedLookup = normalizedName.toLowerCase();
+  const normalizedLookup = exerciseNameLookup(normalizedName);
   const blockedReasons = blockedReasonMatches(normalizedName, normalizedLookup);
 
   if (blockedReasons.length > 0) {
@@ -147,16 +150,33 @@ function looksNumeric(name: string): boolean {
 }
 
 function findSuggestions(name: string): string[] {
-  const normalizedLookup = name.toLowerCase();
+  const normalizedLookup = exerciseNameLookup(name);
+  const aliasTargets = new Map(
+    resolveExerciseNameAlias(name).map((target, index) => [target, index])
+  );
 
   return normalizedCatalog
     .map((item) => ({
       name: item.canonicalName,
+      rank: aliasTargets.has(item.canonicalName)
+        ? 0
+        : item.lookupName.startsWith(normalizedLookup)
+          ? 1
+          : item.lookupName.includes(normalizedLookup)
+            ? 2
+            : 3,
+      aliasOrder: aliasTargets.get(item.canonicalName) ?? Number.MAX_SAFE_INTEGER,
       priority: item.priority ? 0 : 1,
-      score: suggestionScore(normalizedLookup, item.lookupName)
+      score: boundedExerciseNameDistance(
+        normalizedLookup,
+        item.lookupName,
+        MAX_SUGGESTION_DISTANCE
+      )
     }))
-    .filter((item) => item.score < 7 || item.name.toLowerCase().includes(normalizedLookup))
+    .filter((item) => item.rank < 3 || item.score <= MAX_SUGGESTION_DISTANCE)
     .sort((left, right) => {
+      if (left.rank !== right.rank) return left.rank - right.rank;
+      if (left.aliasOrder !== right.aliasOrder) return left.aliasOrder - right.aliasOrder;
       if (left.priority !== right.priority) {
         return left.priority - right.priority;
       }
@@ -169,46 +189,6 @@ function findSuggestions(name: string): string[] {
     })
     .slice(0, 5)
     .map((item) => item.name);
-}
-
-function suggestionScore(source: string, candidate: string): number {
-  if (candidate === source) {
-    return 0;
-  }
-
-  if (candidate.includes(source) || source.includes(candidate)) {
-    return Math.abs(candidate.length - source.length);
-  }
-
-  return boundedLevenshteinDistance(source, candidate);
-}
-
-function boundedLevenshteinDistance(source: string, candidate: string): number {
-  if (Math.abs(source.length - candidate.length) > MAX_SUGGESTION_DISTANCE) {
-    return MAX_SUGGESTION_DISTANCE + 1;
-  }
-
-  const [rows, columns] =
-    source.length >= candidate.length ? [source, candidate] : [candidate, source];
-  let previous = Uint16Array.from({ length: columns.length + 1 }, (_, index) => index);
-  let current = new Uint16Array(columns.length + 1);
-
-  for (let row = 1; row <= rows.length; row += 1) {
-    current[0] = row;
-
-    for (let column = 1; column <= columns.length; column += 1) {
-      const substitutionCost = rows[row - 1] === columns[column - 1] ? 0 : 1;
-      current[column] = Math.min(
-        previous[column]! + 1,
-        current[column - 1]! + 1,
-        previous[column - 1]! + substitutionCost
-      );
-    }
-
-    [previous, current] = [current, previous];
-  }
-
-  return Math.min(previous[columns.length]!, MAX_SUGGESTION_DISTANCE + 1);
 }
 
 function escapeRegExp(value: string): string {
