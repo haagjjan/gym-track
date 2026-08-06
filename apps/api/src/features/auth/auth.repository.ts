@@ -9,6 +9,9 @@ export interface AuthUserRecord {
   emailVerifiedAt: Date | null;
   failedLoginAttempts: number;
   lockedUntil: Date | null;
+  role?: "USER" | "ADMIN";
+  accountStatus?: "ACTIVE" | "DELETION_PENDING" | "SUSPENDED";
+  betaCohort?: string | null;
   createdAt: Date;
 }
 
@@ -17,6 +20,9 @@ export interface NewAuthUser {
   email: string;
   username: string;
   passwordHash: string;
+  termsVersion?: string | undefined;
+  privacyVersion?: string | undefined;
+  adultAttestedAt?: Date | undefined;
 }
 
 export interface NewAuthSession {
@@ -48,6 +54,9 @@ const userColumns = [
   "users.email_verified_at as emailVerifiedAt",
   "users.failed_login_attempts as failedLoginAttempts",
   "users.locked_until as lockedUntil",
+  "users.role as role",
+  "users.account_status as accountStatus",
+  "users.beta_cohort as betaCohort",
   "users.created_at as createdAt"
 ] as const;
 
@@ -56,6 +65,12 @@ export interface AuthRepository {
     user: NewAuthUser,
     session: NewAuthSession
   ): Promise<CreateUserWithSessionResult>;
+  createInvitedUserWithSession?(
+    user: NewAuthUser,
+    session: NewAuthSession,
+    invitationTokenHash: string,
+    now: Date
+  ): Promise<CreateUserWithSessionResult | { status: "invalid_invitation" }>;
   createSession(session: NewAuthSession): Promise<void>;
   findUserByUsername(username: string): Promise<AuthUserRecord | null>;
   findUserByEmail(email: string): Promise<AuthUserRecord | null>;
@@ -66,6 +81,7 @@ export interface AuthRepository {
   registerFailedLogin(userId: string, now: Date): Promise<number>;
   lockUser(userId: string, lockedUntil: Date): Promise<void>;
   clearLoginFailures(userId: string): Promise<void>;
+  incrementLoginCount?(userId: string, updatedAt: Date): Promise<void>;
   markEmailVerified(userId: string, verifiedAt: Date): Promise<void>;
   updatePassword(userId: string, passwordHash: string, updatedAt: Date): Promise<void>;
   createActionToken(token: NewActionToken): Promise<void>;
@@ -88,7 +104,11 @@ export function createAuthRepository(db: Kysely<AppDatabase>): AuthRepository {
               id: user.id,
               email: user.email,
               username: user.username,
-              password_hash: user.passwordHash
+              password_hash: user.passwordHash,
+              terms_version: user.termsVersion ?? null,
+              privacy_version: user.privacyVersion ?? null,
+              policy_accepted_at: user.termsVersion && user.privacyVersion ? new Date() : null,
+              adult_attested_at: user.adultAttestedAt ?? null
             })
             .returning([
               "id",
@@ -98,6 +118,9 @@ export function createAuthRepository(db: Kysely<AppDatabase>): AuthRepository {
               "email_verified_at as emailVerifiedAt",
               "failed_login_attempts as failedLoginAttempts",
               "locked_until as lockedUntil",
+              "role as role",
+              "account_status as accountStatus",
+              "beta_cohort as betaCohort",
               "created_at as createdAt"
             ])
             .executeTakeFirstOrThrow();
@@ -124,6 +147,73 @@ export function createAuthRepository(db: Kysely<AppDatabase>): AuthRepository {
           return { status: "conflict" };
         }
 
+        throw error;
+      }
+    },
+    async createInvitedUserWithSession(user, session, invitationTokenHash, now) {
+      try {
+        return await db.transaction().execute(async (trx) => {
+          const invitation = await trx
+            .selectFrom("beta_access_requests")
+            .select(["id", "email"])
+            .where("invitation_token_hash", "=", invitationTokenHash)
+            .where("status", "=", "INVITED")
+            .where("invitation_used_at", "is", null)
+            .where("invitation_expires_at", ">", now)
+            .forUpdate()
+            .executeTakeFirst();
+
+          if (!invitation || invitation.email.toLowerCase() !== user.email.toLowerCase()) {
+            return { status: "invalid_invitation" } as const;
+          }
+
+          const insertedUser = await trx
+            .insertInto("users")
+            .values({
+              id: user.id,
+              email: user.email,
+              username: user.username,
+              password_hash: user.passwordHash,
+              email_verified_at: now,
+              beta_cohort: "FOUNDING_BETA_2026",
+              terms_version: user.termsVersion ?? null,
+              privacy_version: user.privacyVersion ?? null,
+              policy_accepted_at: now,
+              adult_attested_at: user.adultAttestedAt ?? now
+            })
+            .returning([
+              "id",
+              "email",
+              "username",
+              "password_hash as passwordHash",
+              "email_verified_at as emailVerifiedAt",
+              "failed_login_attempts as failedLoginAttempts",
+              "locked_until as lockedUntil",
+              "role as role",
+              "account_status as accountStatus",
+              "beta_cohort as betaCohort",
+              "created_at as createdAt"
+            ])
+            .executeTakeFirstOrThrow();
+
+          await trx.insertInto("user_sessions").values({
+            id: session.id,
+            user_id: session.userId,
+            session_token_hash: session.tokenHash,
+            expires_at: session.expiresAt
+          }).execute();
+          await trx.updateTable("beta_access_requests").set({
+            status: "JOINED",
+            joined_user_id: user.id,
+            invitation_used_at: now,
+            invitation_token_hash: null,
+            invitation_expires_at: null
+          }).where("id", "=", invitation.id).execute();
+
+          return { status: "created", user: insertedUser } as const;
+        });
+      } catch (error) {
+        if (isUniqueViolation(error)) return { status: "conflict" };
         throw error;
       }
     },
@@ -218,6 +308,12 @@ export function createAuthRepository(db: Kysely<AppDatabase>): AuthRepository {
         .set({ failed_login_attempts: 0, locked_until: null })
         .where("id", "=", userId)
         .execute();
+    },
+    async incrementLoginCount(userId, updatedAt) {
+      await db.updateTable("users").set((eb) => ({
+        login_count: eb("login_count", "+", 1),
+        updated_at: updatedAt
+      })).where("id", "=", userId).execute();
     },
     async markEmailVerified(userId, verifiedAt) {
       await db
