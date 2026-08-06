@@ -10,6 +10,7 @@
 - Phase 12 now includes normalized multi-muscle exercise classification, the shared exercise picker, and ordered exercise-only workout templates with explicit session copy/update semantics.
 - Phase 13 implements the usability-audit-v2 remediation plus the audit-v3 refinements: aligned list actions, app-dialog exercise-name review, one plotted Progress set per local day, proportional Volume bars with inspectable ranges, staged multi-exercise adding, and separate live exercise/set modes.
 - Phase 14 implements the audit-v4 beta refinements: honest `Gym Progress Tracker` chrome and semantic colors, tab-session facet persistence, an in-app canonical CSV guide, staged catalog selection for sessions/templates, exercise editability filtering, range-aware Progress totals/tonnage, mobile-safe Volume gestures, and live-session bottom-sheet/timer/header discovery refinements. Broader import/export, exercise naming, and history-reset rework remains post-beta.
+- Phase 15 implements the Private Beta 1 remediation: previous-performance context/prefill, keyboard-safe set entry and complete set editing, fixed paginated exercise picking, a reviewed 820-exercise system catalog with alias/trigram search, corrected set colors/navigation/tab stability, and a focused completion summary. Final device QA and the capped public-beta workstreams remain.
 - Stage 1 repository readiness implements fail-closed production registration, the
   `https://app.gymtrack.ch` canonical origin, secure-cookie enforcement, and same-origin
   host/CSRF protection. DNS, Cloudflare Access/Tunnel, server configuration, deployment,
@@ -258,3 +259,15 @@ Run it online for a small set of testers.
 - 1RM estimation options
 - RPE support (if desired)
 - Better analytics + dashboards
+
+---
+
+## Phase 13 — Curated Founding Beta
+
+### Goal
+
+Admit at most 50 worldwide-targeted, English-speaking adult founding members through an owner-curated invitation flow with transparent data handling and reversible grace-period deletion.
+
+### Status
+
+Repository foundation implemented: invite-only access and runtime controls, explicit admin authorization/audit, waitlist and PII-free alerts, export/deletion/erasure ledger, privacy/device controls, onboarding/help, in-app campaigns, public policy/support routes, external status source, signed client attribution, strict backup retention, ADRs and test coverage. Launch remains blocked on every unchecked item in `docs/public-beta/launch-gates.md`, especially qualified legal/DPIA approval and deployed operational evidence.
