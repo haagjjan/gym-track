@@ -2,7 +2,7 @@
 
 ## 0. Meta
 - **Owner: Jan Haag**  
-- **Last updated:** 2026.07.16
+- **Last updated:** 2026.08.04
 - **Status:** Draft
 - **Target release:** MVP v0.1  
 
@@ -118,19 +118,19 @@ not good success metrics
 ## 5.1 V1 mobile gym-use requirements
 
 - Responsive mobile web is the V1 phone experience; a native mobile app is not required.
-- Product chrome uses the `Gym Progress Tracker` name, a conventional settings cog, and only displays real application state; fake online/optimal/readiness labels and the idle figure overlay are absent. White is neutral titles/names/text/values, cyan is action/selection/focus/live input, lavender is secondary information/warmups/secondary muscles/non-destructive warning, green is confirmed success/completion/rest complete/genuine performance, and red is error/destructive. Volume retains its separate five-stage purple heat scale and every color-coded state also has a text, icon, value, or pattern cue.
+- Product chrome uses the `Gym Progress Tracker` name, a conventional settings cog, and only displays real application state; fake online/optimal/readiness labels and the idle figure overlay are absent. White is neutral titles/names/text/values, cyan is action/selection/focus/live input, lavender is working sets and secondary information, muted light green is warmup context, bright green is confirmed success/completion/rest complete/genuine performance, and red is error/destructive. Volume retains its separate five-stage purple heat scale and every color-coded state also has a text, icon, value, or pattern cue.
 - Every workout control first navigates to the launch/resume flow. Starting an empty workout or a template is an explicit choice.
 - An empty workout name is valid. Names save on blur or Enter.
-- The live workout must support one-handed vertical exercise selection, staged multi-exercise adding, separate exercise-list and set-entry modes, 44px reorder/navigation/remove targets, and one set editor at a time. On mobile, set creation/editing uses a keyboard-aware, safe-area-aware fixed bottom sheet with initial focus plus Escape/cancel handling; the running rest timer uses a compact bottom dock that hides while an editor is open without stopping its countdown. Content padding prevents either surface from covering controls. Desktop editors and the timer remain inline.
-- Saved live-session sets always identify `Working` or `Warmup`. The workout header uses a muted `LIVE · hh:mm:ss` indicator with a subtle reduced-motion-safe status pulse, `Finish`/`Confirm finish`, and no duplicate large timer. Exercise Mode explains that tapping a row opens its sets and gives each row a trailing chevron; directional fade/slide mode transitions are disabled under reduced motion.
+- The live workout must support one-handed vertical exercise selection, staged multi-exercise adding, separate exercise-list and set-entry modes, 44px reorder/navigation/remove targets, and one set editor at a time. The first exercise is initially selected and later valid choices remain selected for the page lifetime. On mobile, set creation/editing uses a keyboard-aware, safe-area-aware fixed bottom sheet without automatic field focus plus Escape/cancel handling; the running rest timer uses a compact bottom dock that hides while an editor is open without stopping its countdown. Content padding prevents either surface from covering controls. Desktop editors and the timer remain inline.
+- Saved live-session sets always identify `Working` or `Warmup`, and editing can change type, weight, reps, RIR, and note. The active exercise shows the heaviest working set from its latest earlier completed workout. A new draft uses the latest current-session set, then that previous performance weight, then 20 kg. Full exercise names wrap. The workout header uses a muted `LIVE · hh:mm:ss` indicator with a subtle reduced-motion-safe status pulse, `Finish`/`Confirm finish`, and no duplicate large timer. Exercise Mode explains that tapping a row opens its sets and gives each row a trailing chevron; directional fade/slide mode transitions are disabled under reduced motion.
 - Unfinished new-set input remains device-local per user/workout/exercise and never creates an incomplete database set.
-- Workouts, templates, exercises, and the shared exercise picker use server-backed search plus muscle/equipment/type facets. Multiple muscles use AND semantics on one exercise; cards never duplicate. Picker selections are staged, retain click order, and are committed together to a workout or template.
+- Workouts, templates, exercises, and the shared exercise picker use server-backed search plus muscle/equipment/type facets. Exercise search ranks exact names, approved aliases, prefix/substring matches, typo similarity, then muscle/equipment matches. Multiple muscles use AND semantics on one exercise; cards never duplicate. Picker results paginate beyond the first 100, selections are staged, retain click order, and are committed together to a workout or template. Picker search never autofocuses; on mobile only the result region scrolls.
 - History, Template, and Exercise List filters/sorts persist independently for the authenticated user during the current browser-tab session. Search text does not persist, invalid stored values are ignored, and Clear removes the saved state for that surface.
 - Workout History provides an in-app canonical CSV format guide with required/optional fields, accepted classifications, ordering/timestamp rules, a complete example row, and a downloadable sample.
-- Exercise List can filter `All`, `Editable by me`, or `Read-only`; system and other-user exercises are read-only. Primary and secondary muscle selectors start collapsed for both create and edit while retaining counts and the primary-muscle requirement.
+- Exercise List can filter `All`, `Editable by me`, or `Read-only`; system and other-user exercises are read-only. The reviewed system catalog should cover ordinary strength programs. Creation presents ranked existing matches but always allows an explicit warned custom-name choice. Primary and secondary muscle selectors use bounded overlays for both create and edit while retaining counts and the primary-muscle requirement without moving form actions.
 - Progress uses one best working set per user-local calendar day, including days with multiple sessions; exercise picker counts reflect those plotted days. The selected 1W/1M/3M/MAX window controls total sets and total tonnage, including working and warmup sets, while best set and estimated 1RM remain all-time.
 - Volume uses five exact purple heat stages, proportional bar lengths within a stage, inspectable set ranges, and an account-synced 5–50 ceiling. On touch devices, vertical movement beginning on the 3D figure scrolls the page, horizontal movement rotates, taps select muscles, and pinch zoom is disabled; the visible mobile hint explains sideways rotation versus vertical scrolling.
-- `docs/Usability_Audit/usability-audit-v4.md` supersedes audit v3 and audit v2 where they conflict; v3 and then v2 continue to define behavior not superseded by v4.
+- `docs/beta-process/private-beta-1/private-beta-1-report.md` supersedes usability audit v4, then v3, then v2 where they conflict; the older sources continue to define behavior not superseded by newer evidence.
 
 ---
 
@@ -601,11 +601,13 @@ not good success metrics
 - **FR-10:** The user shall be able to view a list of past workout sessions (history).
 - **FR-10.1:** History shall retain validated filters/sort for the current user and browser-tab session, keep search transient, and expose the canonical CSV format/sample guide.
 - **FR-11:** The user shall be able to view the full details of a past workout session.
+- **FR-11.1:** Workout detail shall expose the best working set from the latest earlier owned, non-deleted, completed workout for each exercise when one exists.
 
 ### Exercises
 - **FR-12:** The user shall be able to stage one or more exercises from the shared faceted library and append them to a session or template in selection order.
 - **FR-13:** The user shall be able to add globally unique exercises to the shared exercise library with: name, equipment, primary muscle group, and optional secondary muscle group(s).
 - **FR-13.1:** Exercise List shall filter All, Editable by me, or Read-only using the authenticated creator relationship; system and other-user exercises are read-only.
+- **FR-13.2:** Exercise discovery shall paginate the reviewed system catalog and rank exact-name, approved-alias, prefix/substring, typo-similarity, then muscle/equipment matches without silently replacing a custom exercise.
 
 ### Sets (per exercise in a session)
 - **FR-14:** The user shall be able to log sets with reps, weight, and RIR.
@@ -704,3 +706,13 @@ Deferred from MVP.
 - Does the MVP include accounts/auth, or is it single-user/local first? (MVP Exit Criteria suggests yes: accounts exist)
 - Can muscle groups be assigned automatically?
 - Whether a future Progress view should offer an optional all-set mode; V1 defaults to one strongest working set per local day.
+
+## 12. Founding Beta Requirements
+
+- Public intake is email-only with required 18+ attestation and Privacy acknowledgement; all outcomes are indistinguishable publicly.
+- Only `ADMIN` may approve. A seven-day, single-use invite reserves one of 50 seats and verifies the fixed email on signup. Initial approvals are limited to 10 in a rolling 24 hours.
+- Every account can export server data and request password-confirmed deletion with a locked seven-day grace, emailed cancellation and permanent live-data erasure.
+- Account-linked analytics and functional device storage are opt-in; browser data is per-user and legacy unscoped data is never imported silently.
+- First-run help is dismissible, resumable and repeatable; practice data is never persisted. Guidance never interrupts an active workout.
+- In-app campaigns are owner-to-user only, plain text, optional-response, dismissible, one at a time and suppressed during active editing. Users may opt out of non-essential prompts.
+- The service identifies the cohort honestly and permanently as Founding Beta. There are no fake counters, advertising trackers, user-to-user messaging, marketing email or access benefits for voluntary support.
