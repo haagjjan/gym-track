@@ -1,0 +1,994 @@
+{
+  "sourceRevision": "b0eed061e1c832b3ed815fbaa4b45b3cdc14df49",
+  "sourceRecordCount": 873,
+  "includedSourceRecordCount": 709,
+  "legacyCatalogNameCount": 152,
+  "finalRecordCount": 820,
+  "exclusionCount": 164,
+  "exclusions": [
+    {
+      "sourceId": "90_90_Hamstring",
+      "name": "90/90 Hamstring",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Adductor",
+      "name": "Adductor",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Adductor_Groin",
+      "name": "Adductor/Groin",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "All_Fours_Quad_Stretch",
+      "name": "All Fours Quad Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Ankle_Circles",
+      "name": "Ankle Circles",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Ankle_On_The_Knee",
+      "name": "Ankle On The Knee",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Anterior_Tibialis-SMR",
+      "name": "Anterior Tibialis-SMR",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Arm_Circles",
+      "name": "Arm Circles",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Backward_Drag",
+      "name": "Backward Drag",
+      "category": "strongman",
+      "reason": "strongman_movement_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Balance_Board",
+      "name": "Balance Board",
+      "category": "strength",
+      "reason": "movement_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Bear_Crawl_Sled_Drags",
+      "name": "Bear Crawl Sled Drags",
+      "category": "strongman",
+      "reason": "strongman_movement_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Behind_Head_Chest_Stretch",
+      "name": "Behind Head Chest Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Bench_Sprint",
+      "name": "Bench Sprint",
+      "category": "plyometrics",
+      "reason": "movement_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Bicycling",
+      "name": "Bicycling",
+      "category": "cardio",
+      "reason": "cardio_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Bicycling_Stationary",
+      "name": "Bicycling, Stationary",
+      "category": "cardio",
+      "reason": "cardio_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Brachialis-SMR",
+      "name": "Brachialis-SMR",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Calf_Stretch_Elbows_Against_Wall",
+      "name": "Calf Stretch Elbows Against Wall",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Calf_Stretch_Hands_Against_Wall",
+      "name": "Calf Stretch Hands Against Wall",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Calves-SMR",
+      "name": "Calves-SMR",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Cat_Stretch",
+      "name": "Cat Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Chair_Leg_Extended_Stretch",
+      "name": "Chair Leg Extended Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Chair_Lower_Back_Stretch",
+      "name": "Chair Lower Back Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Chair_Upper_Body_Stretch",
+      "name": "Chair Upper Body Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Chest_And_Front_Of_Shoulder_Stretch",
+      "name": "Chest And Front Of Shoulder Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Chest_Push_with_Run_Release",
+      "name": "Chest Push with Run Release",
+      "category": "plyometrics",
+      "reason": "movement_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Chest_Stretch_on_Stability_Ball",
+      "name": "Chest Stretch on Stability Ball",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Childs_Pose",
+      "name": "Child's Pose",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Chin_To_Chest_Stretch",
+      "name": "Chin To Chest Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Conans_Wheel",
+      "name": "Conan's Wheel",
+      "category": "strongman",
+      "reason": "strongman_movement_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Crossover_Reverse_Lunge",
+      "name": "Crossover Reverse Lunge",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Crucifix",
+      "name": "Crucifix",
+      "category": "strongman",
+      "reason": "strongman_movement_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Dancers_Stretch",
+      "name": "Dancer's Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Dynamic_Back_Stretch",
+      "name": "Dynamic Back Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Dynamic_Chest_Stretch",
+      "name": "Dynamic Chest Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Elbow_Circles",
+      "name": "Elbow Circles",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Elbows_Back",
+      "name": "Elbows Back",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Elliptical_Trainer",
+      "name": "Elliptical Trainer",
+      "category": "cardio",
+      "reason": "cardio_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Farmers_Walk",
+      "name": "Farmer's Walk",
+      "category": "strongman",
+      "reason": "strongman_movement_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Foot-SMR",
+      "name": "Foot-SMR",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Forward_Drag_with_Press",
+      "name": "Forward Drag with Press",
+      "category": "strongman",
+      "reason": "strongman_movement_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Frog_Hops",
+      "name": "Frog Hops",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Front_Leg_Raises",
+      "name": "Front Leg Raises",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Groin_and_Back_Stretch",
+      "name": "Groin and Back Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Groiners",
+      "name": "Groiners",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Hamstring-SMR",
+      "name": "Hamstring-SMR",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Hamstring_Stretch",
+      "name": "Hamstring Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Hip_Circles_prone",
+      "name": "Hip Circles (prone)",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Hug_A_Ball",
+      "name": "Hug A Ball",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Hug_Knees_To_Chest",
+      "name": "Hug Knees To Chest",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "IT_Band_and_Glute_Stretch",
+      "name": "IT Band and Glute Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Iliotibial_Tract-SMR",
+      "name": "Iliotibial Tract-SMR",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Inchworm",
+      "name": "Inchworm",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Intermediate_Groin_Stretch",
+      "name": "Intermediate Groin Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Intermediate_Hip_Flexor_and_Quad_Stretch",
+      "name": "Intermediate Hip Flexor and Quad Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Iron_Crosses_stretch",
+      "name": "Iron Crosses (stretch)",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Isometric_Chest_Squeezes",
+      "name": "Isometric Chest Squeezes",
+      "category": "plyometrics",
+      "reason": "movement_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Isometric_Neck_Exercise_-_Front_And_Back",
+      "name": "Isometric Neck Exercise - Front And Back",
+      "category": "strength",
+      "reason": "movement_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Isometric_Neck_Exercise_-_Sides",
+      "name": "Isometric Neck Exercise - Sides",
+      "category": "strength",
+      "reason": "movement_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Jogging_Treadmill",
+      "name": "Jogging, Treadmill",
+      "category": "cardio",
+      "reason": "cardio_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Keg_Load",
+      "name": "Keg Load",
+      "category": "strongman",
+      "reason": "strongman_movement_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Knee_Across_The_Body",
+      "name": "Knee Across The Body",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Knee_Circles",
+      "name": "Knee Circles",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Kneeling_Forearm_Stretch",
+      "name": "Kneeling Forearm Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Kneeling_Hip_Flexor",
+      "name": "Kneeling Hip Flexor",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Latissimus_Dorsi-SMR",
+      "name": "Latissimus Dorsi-SMR",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Leg-Up_Hamstring_Stretch",
+      "name": "Leg-Up Hamstring Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Looking_At_Ceiling",
+      "name": "Looking At Ceiling",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Lower_Back-SMR",
+      "name": "Lower Back-SMR",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Lower_Back_Curl",
+      "name": "Lower Back Curl",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Lunge_Sprint",
+      "name": "Lunge Sprint",
+      "category": "strength",
+      "reason": "movement_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Lying_Bent_Leg_Groin",
+      "name": "Lying Bent Leg Groin",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Lying_Crossover",
+      "name": "Lying Crossover",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Lying_Glute",
+      "name": "Lying Glute",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Lying_Hamstring",
+      "name": "Lying Hamstring",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Lying_Prone_Quadriceps",
+      "name": "Lying Prone Quadriceps",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Middle_Back_Stretch",
+      "name": "Middle Back Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Mountain_Climbers",
+      "name": "Mountain Climbers",
+      "category": "plyometrics",
+      "reason": "movement_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Neck-SMR",
+      "name": "Neck-SMR",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "On-Your-Back_Quad_Stretch",
+      "name": "On-Your-Back Quad Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "On_Your_Side_Quad_Stretch",
+      "name": "On Your Side Quad Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "One_Arm_Against_Wall",
+      "name": "One Arm Against Wall",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "One_Half_Locust",
+      "name": "One Half Locust",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "One_Handed_Hang",
+      "name": "One Handed Hang",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "One_Knee_To_Chest",
+      "name": "One Knee To Chest",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Overhead_Lat",
+      "name": "Overhead Lat",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Overhead_Stretch",
+      "name": "Overhead Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Overhead_Triceps",
+      "name": "Overhead Triceps",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Pelvic_Tilt_Into_Bridge",
+      "name": "Pelvic Tilt Into Bridge",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Peroneals-SMR",
+      "name": "Peroneals-SMR",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Peroneals_Stretch",
+      "name": "Peroneals Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Piriformis-SMR",
+      "name": "Piriformis-SMR",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Plank",
+      "name": "Plank",
+      "category": "strength",
+      "reason": "movement_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Plate_Pinch",
+      "name": "Plate Pinch",
+      "category": "strength",
+      "reason": "movement_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Posterior_Tibialis_Stretch",
+      "name": "Posterior Tibialis Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Prowler_Sprint",
+      "name": "Prowler Sprint",
+      "category": "cardio",
+      "reason": "cardio_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Pyramid",
+      "name": "Pyramid",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Quad_Stretch",
+      "name": "Quad Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Quadriceps-SMR",
+      "name": "Quadriceps-SMR",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Rear_Leg_Raises",
+      "name": "Rear Leg Raises",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Recumbent_Bike",
+      "name": "Recumbent Bike",
+      "category": "cardio",
+      "reason": "cardio_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Rhomboids-SMR",
+      "name": "Rhomboids-SMR",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Rickshaw_Carry",
+      "name": "Rickshaw Carry",
+      "category": "strongman",
+      "reason": "strongman_movement_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Rope_Jumping",
+      "name": "Rope Jumping",
+      "category": "cardio",
+      "reason": "cardio_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Round_The_World_Shoulder_Stretch",
+      "name": "Round The World Shoulder Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Rowing_Stationary",
+      "name": "Rowing, Stationary",
+      "category": "cardio",
+      "reason": "cardio_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Runners_Stretch",
+      "name": "Runner's Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Running_Treadmill",
+      "name": "Running, Treadmill",
+      "category": "cardio",
+      "reason": "cardio_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Sandbag_Load",
+      "name": "Sandbag Load",
+      "category": "strongman",
+      "reason": "strongman_movement_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Scissor_Kick",
+      "name": "Scissor Kick",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Seated_Biceps",
+      "name": "Seated Biceps",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Seated_Calf_Stretch",
+      "name": "Seated Calf Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Seated_Floor_Hamstring_Stretch",
+      "name": "Seated Floor Hamstring Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Seated_Front_Deltoid",
+      "name": "Seated Front Deltoid",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Seated_Glute",
+      "name": "Seated Glute",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Seated_Hamstring",
+      "name": "Seated Hamstring",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Seated_Hamstring_and_Calf_Stretch",
+      "name": "Seated Hamstring and Calf Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Seated_Overhead_Stretch",
+      "name": "Seated Overhead Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Shoulder_Circles",
+      "name": "Shoulder Circles",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Shoulder_Raise",
+      "name": "Shoulder Raise",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Shoulder_Stretch",
+      "name": "Shoulder Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Side-Lying_Floor_Stretch",
+      "name": "Side-Lying Floor Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Side_Hop-Sprint",
+      "name": "Side Hop-Sprint",
+      "category": "plyometrics",
+      "reason": "movement_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Side_Leg_Raises",
+      "name": "Side Leg Raises",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Side_Lying_Groin_Stretch",
+      "name": "Side Lying Groin Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Side_Neck_Stretch",
+      "name": "Side Neck Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Side_Wrist_Pull",
+      "name": "Side Wrist Pull",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Single-Cone_Sprint_Drill",
+      "name": "Single-Cone Sprint Drill",
+      "category": "plyometrics",
+      "reason": "movement_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Sit_Squats",
+      "name": "Sit Squats",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Skating",
+      "name": "Skating",
+      "category": "cardio",
+      "reason": "cardio_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Sled_Drag_-_Harness",
+      "name": "Sled Drag - Harness",
+      "category": "strongman",
+      "reason": "strongman_movement_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Sled_Overhead_Backward_Walk",
+      "name": "Sled Overhead Backward Walk",
+      "category": "strength",
+      "reason": "movement_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Sled_Push",
+      "name": "Sled Push",
+      "category": "strongman",
+      "reason": "strongman_movement_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Spider_Crawl",
+      "name": "Spider Crawl",
+      "category": "strength",
+      "reason": "movement_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Spinal_Stretch",
+      "name": "Spinal Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Split_Squats",
+      "name": "Split Squats",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Stairmaster",
+      "name": "Stairmaster",
+      "category": "cardio",
+      "reason": "cardio_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Standing_Biceps_Stretch",
+      "name": "Standing Biceps Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Standing_Elevated_Quad_Stretch",
+      "name": "Standing Elevated Quad Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Standing_Gastrocnemius_Calf_Stretch",
+      "name": "Standing Gastrocnemius Calf Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Standing_Hamstring_and_Calf_Stretch",
+      "name": "Standing Hamstring and Calf Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Standing_Hip_Circles",
+      "name": "Standing Hip Circles",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Standing_Hip_Flexors",
+      "name": "Standing Hip Flexors",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Standing_Lateral_Stretch",
+      "name": "Standing Lateral Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Standing_Pelvic_Tilt",
+      "name": "Standing Pelvic Tilt",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Standing_Soleus_And_Achilles_Stretch",
+      "name": "Standing Soleus And Achilles Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Standing_Toe_Touches",
+      "name": "Standing Toe Touches",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Step_Mill",
+      "name": "Step Mill",
+      "category": "cardio",
+      "reason": "cardio_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Stomach_Vacuum",
+      "name": "Stomach Vacuum",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Superman",
+      "name": "Superman",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "The_Straddle",
+      "name": "The Straddle",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Toe_Touchers",
+      "name": "Toe Touchers",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Torso_Rotation",
+      "name": "Torso Rotation",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Trail_Running_Walking",
+      "name": "Trail Running/Walking",
+      "category": "cardio",
+      "reason": "cardio_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Tricep_Side_Stretch",
+      "name": "Tricep Side Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Triceps_Stretch",
+      "name": "Triceps Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Upper_Back-Leg_Grab",
+      "name": "Upper Back-Leg Grab",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Upper_Back_Stretch",
+      "name": "Upper Back Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Upward_Stretch",
+      "name": "Upward Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Walking_Treadmill",
+      "name": "Walking, Treadmill",
+      "category": "cardio",
+      "reason": "cardio_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Wind_Sprints",
+      "name": "Wind Sprints",
+      "category": "strength",
+      "reason": "movement_requires_duration_or_distance_model"
+    },
+    {
+      "sourceId": "Windmills",
+      "name": "Windmills",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Worlds_Greatest_Stretch",
+      "name": "World's Greatest Stretch",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Wrist_Circles",
+      "name": "Wrist Circles",
+      "category": "stretching",
+      "reason": "stretching_requires_duration_model"
+    },
+    {
+      "sourceId": "Yoke_Walk",
+      "name": "Yoke Walk",
+      "category": "strongman",
+      "reason": "strongman_movement_requires_duration_or_distance_model"
+    }
+  ]
+}
