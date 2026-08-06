@@ -12,6 +12,8 @@ import { SetComposer } from "./set-composer";
 import type { SetDraft } from "./set-draft-storage";
 import { SessionEditorDock, SessionTimerDock } from "./session-editor-dock";
 import { SessionSetEditor, SessionSetRow } from "./session-set-list";
+import { formatDateTime, formatKgValue } from "../../shared/format";
+import { useOnboarding } from "../onboarding/use-onboarding";
 
 interface ActiveExercisePanelProps {
   canEdit: boolean;
@@ -34,6 +36,7 @@ interface ActiveExercisePanelProps {
 
 export function ActiveExercisePanel(props: ActiveExercisePanelProps): ReactNode {
   const [confirmRemove, setConfirmRemove] = useState(false);
+  const { mark } = useOnboarding();
 
   function removeExercise(): void {
     props.onError(null);
@@ -53,7 +56,7 @@ export function ActiveExercisePanel(props: ActiveExercisePanelProps): ReactNode 
     <section className="glass rounded-xl p-4" role="tabpanel">
       <header className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="truncate font-display text-xl font-bold tracking-tight text-fg">
+          <h2 className="break-words font-display text-xl font-bold tracking-tight text-fg">
             {props.exercise.exercise.name}
           </h2>
           <p className="mt-0.5 text-xs text-fg-muted">
@@ -72,6 +75,8 @@ export function ActiveExercisePanel(props: ActiveExercisePanelProps): ReactNode 
         ) : null}
       </header>
 
+      <PreviousPerformance exercise={props.exercise} />
+
       <div className="mt-4 space-y-1.5">
         {props.exercise.sets.length === 0 && !props.isNewSetOpen ? (
           <p className="rounded-lg border border-dashed border-outline-dim p-4 text-center text-sm text-fg-muted">
@@ -86,6 +91,7 @@ export function ActiveExercisePanel(props: ActiveExercisePanelProps): ReactNode 
                 mutations={props.mutations}
                 onClose={() => props.onEditSet(null)}
                 onError={props.onError}
+                onSaved={() => void mark("logEditSet")}
                 set={set}
               />
             </SessionEditorDock>
@@ -150,6 +156,29 @@ export function ActiveExercisePanel(props: ActiveExercisePanelProps): ReactNode 
         onConfirm={removeExercise}
         title={`Remove ${props.exercise.exercise.name}?`}
       />
+    </section>
+  );
+}
+
+function PreviousPerformance({ exercise }: { exercise: SessionExercise }): ReactNode {
+  const previous = exercise.previousPerformance;
+  return (
+    <section className="mt-3 rounded-lg border border-outline-dim/60 bg-surface-low/30 p-3" aria-label="Previous performance">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="label-caps text-outline">Previous best set</p>
+          <p className="mt-0.5 text-[10px] text-fg-muted">
+            {previous
+              ? `${previous.workoutTitle ?? "Previous workout"} · ${formatDateTime(previous.workoutStartedAt)}`
+              : "No earlier completed working set"}
+          </p>
+        </div>
+        {previous ? (
+          <span className="rounded-sm border border-lavender/50 bg-lavender/5 px-2 py-1 font-mono text-xs text-lavender">
+            {formatKgValue(previous.bestSet.weightKg)} kg × {previous.bestSet.reps}
+          </span>
+        ) : null}
+      </div>
     </section>
   );
 }

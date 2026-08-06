@@ -147,18 +147,18 @@ export function createWorkoutRepository(db: Kysely<AppDatabase>): WorkoutReposit
       return findWorkoutDetail(db, userId, workoutId);
     },
     async endWorkout(userId, workoutId, endedAt, updatedAt) {
-      const updated = await db
-        .updateTable("workout_sessions")
-        .set({
-          ended_at: endedAt,
+      const updated = await db.transaction().execute(async (trx) => {
+        const row = await trx.updateTable("workout_sessions").set({
+          ended_at: endedAt, updated_at: updatedAt
+        }).where("id", "=", workoutId).where("user_id", "=", userId)
+          .where("deleted_at", "is", null).where("ended_at", "is", null)
+          .returning(workoutSessionSelection).executeTakeFirst();
+        if (row) await trx.updateTable("users").set((eb) => ({
+          completed_workout_count: eb("completed_workout_count", "+", 1),
           updated_at: updatedAt
-        })
-        .where("id", "=", workoutId)
-        .where("user_id", "=", userId)
-        .where("deleted_at", "is", null)
-        .where("ended_at", "is", null)
-        .returning(workoutSessionSelection)
-        .executeTakeFirst();
+        })).where("id", "=", userId).execute();
+        return row;
+      });
 
       if (!updated) {
         return null;

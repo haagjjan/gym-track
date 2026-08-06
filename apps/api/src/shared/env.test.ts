@@ -3,6 +3,8 @@ import { describe, it } from "node:test";
 import { readEnv } from "./env.js";
 
 const databaseUrl = "postgresql://user:password@localhost:5432/app";
+const bffSecret = "a-production-bff-client-secret-123456789";
+const supportEmail = "support@example.test";
 
 describe("readEnv", () => {
   it("uses defaults for optional API settings", () => {
@@ -50,14 +52,17 @@ describe("readEnv", () => {
   it("defaults secure auth cookies on in production", () => {
     const env = readEnv({
       APP_BASE_URL: "https://app.gymtrack.ch",
+      BFF_CLIENT_IP_SECRET: bffSecret,
       DATABASE_URL: databaseUrl,
-      NODE_ENV: "production"
+      NODE_ENV: "production",
+      SUPPORT_EMAIL: supportEmail
     });
 
     assert.equal(env.AUTH_COOKIE_SECURE, true);
     assert.equal(env.APP_ENV, "production");
     assert.equal(env.API_TRUST_PROXY, false);
     assert.equal(env.REGISTRATION_MODE, "DISABLED");
+    assert.equal(env.BFF_CLIENT_IP_SECRET, bffSecret);
   });
 
   it("parses an explicit registration mode", () => {
@@ -67,13 +72,14 @@ describe("readEnv", () => {
     });
 
     assert.equal(env.REGISTRATION_MODE, "DISABLED");
+    assert.equal(readEnv({ DATABASE_URL: databaseUrl, REGISTRATION_MODE: "INVITE_ONLY" }).REGISTRATION_MODE, "INVITE_ONLY");
   });
 
   it("rejects an unknown registration mode", () => {
     assert.throws(() =>
       readEnv({
         DATABASE_URL: databaseUrl,
-        REGISTRATION_MODE: "INVITE_ONLY"
+        REGISTRATION_MODE: "OPEN"
       })
     );
   });
@@ -88,10 +94,20 @@ describe("readEnv", () => {
     assert.throws(() =>
       readEnv({
         APP_BASE_URL: "http://app.gymtrack.ch",
+        BFF_CLIENT_IP_SECRET: bffSecret,
         DATABASE_URL: databaseUrl,
-        NODE_ENV: "production"
+        NODE_ENV: "production",
+        SUPPORT_EMAIL: supportEmail
       })
     );
+  });
+
+  it("requires the private BFF attribution secret in production", () => {
+    assert.throws(() => readEnv({
+      APP_BASE_URL: "https://app.gymtrack.ch",
+      DATABASE_URL: databaseUrl,
+      NODE_ENV: "production"
+    }), /BFF_CLIENT_IP_SECRET/);
   });
 
   it("rejects base URLs with paths, queries, or fragments", () => {
@@ -109,8 +125,10 @@ describe("readEnv", () => {
       readEnv({
         APP_BASE_URL: "https://app.gymtrack.ch",
         AUTH_COOKIE_SECURE: "false",
+        BFF_CLIENT_IP_SECRET: bffSecret,
         DATABASE_URL: databaseUrl,
-        NODE_ENV: "production"
+        NODE_ENV: "production",
+        SUPPORT_EMAIL: supportEmail
       })
     );
   });
@@ -128,6 +146,40 @@ describe("readEnv", () => {
     assert.equal(env.APP_ENV, "local");
     assert.equal(env.AUTH_COOKIE_SECURE, false);
     assert.equal(env.REGISTRATION_MODE, "ENABLED");
+  });
+
+  it("allows the explicit private-LAN HTTP deployment exception", () => {
+    const env = readEnv({
+      APP_BASE_URL: "http://192.168.1.57",
+      APP_ENV: "private-lan",
+      AUTH_COOKIE_SECURE: "false",
+      DATABASE_URL: databaseUrl,
+      NODE_ENV: "production",
+      REGISTRATION_MODE: "DISABLED"
+    });
+
+    assert.equal(env.APP_ENV, "private-lan");
+    assert.equal(env.AUTH_COOKIE_SECURE, false);
+    assert.equal(env.REGISTRATION_MODE, "DISABLED");
+  });
+
+  it("treats empty optional provider settings as unset for local Compose", () => {
+    const env = readEnv({
+      APP_ENV: "local",
+      BFF_CLIENT_IP_SECRET: "",
+      DATABASE_URL: databaseUrl,
+      NODE_ENV: "production",
+      RESEND_API_KEY: "",
+      SUPPORT_EMAIL: "",
+      TELEGRAM_BETA_BOT_TOKEN: "",
+      TELEGRAM_BETA_CHAT_ID: ""
+    });
+
+    assert.equal(env.BFF_CLIENT_IP_SECRET, undefined);
+    assert.equal(env.RESEND_API_KEY, undefined);
+    assert.equal(env.SUPPORT_EMAIL, undefined);
+    assert.equal(env.TELEGRAM_BETA_BOT_TOKEN, undefined);
+    assert.equal(env.TELEGRAM_BETA_CHAT_ID, undefined);
   });
 
   it("parses metrics and release settings", () => {

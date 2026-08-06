@@ -104,6 +104,14 @@ docker exec "${container_name}" pg_restore \
   --dbname=gym_tracker \
   /tmp/gym-tracker-restore.dump >/dev/null
 
+mapfile -t erasure_ledgers < <(find "${restore_root}" -type f -path '*/state/erasure-ledger/current.csv')
+[[ "${#erasure_ledgers[@]}" -eq 1 ]] || {
+  printf 'ERROR: expected exactly one protected erasure ledger in the restored snapshot\n' >&2
+  exit 1
+}
+erasure_ledger_checksum="$(sha256sum "${erasure_ledgers[0]}" | awk '{print $1}')"
+"${SCRIPT_DIR}/replay-erasure-ledger.sh" "${container_name}" "${erasure_ledgers[0]}" >/dev/null
+
 count_query=$(cat <<'SQL'
 SELECT format('SELECT %L || E''\t'' || count(*)::text FROM %I.%I;', schemaname || '.' || tablename, schemaname, tablename)
 FROM pg_tables
@@ -143,6 +151,7 @@ umask 027
   printf 'SNAPSHOT=%s\n' "${snapshot_id}"
   printf 'POSTGRES_IMAGE=%s\n' "${postgres_image}"
   printf 'DUMP_SHA256=%s\n' "${dump_checksum}"
+  printf 'ERASURE_LEDGER_SHA256=%s\n' "${erasure_ledger_checksum}"
   printf 'LIVE_COUNTS_SHA256=%s\n' "${live_counts_hash}"
   printf 'RESTORED_COUNTS_SHA256=%s\n' "${restored_counts_hash}"
   printf 'PUBLIC_TABLE_COUNT=%s\n' "${public_table_count}"

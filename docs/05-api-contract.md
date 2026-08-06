@@ -106,6 +106,9 @@ This endpoint is an operations boundary, not a browser API:
   "email": "jan@example.com",
   "username": "jan",
   "emailVerified": false,
+  "role": "USER",
+  "accountStatus": "ACTIVE",
+  "betaCohort": "FOUNDING_BETA_2026",
   "createdAt": "2026-05-15T10:00:00Z"
 }
 ```
@@ -189,9 +192,24 @@ This endpoint is an operations boundary, not a browser API:
       "name": "Chest"
     }
   },
-  "sets": []
+  "sets": [],
+  "previousPerformance": {
+    "workoutId": "uuid",
+    "workoutTitle": "Upper A",
+    "workoutStartedAt": "2026-05-08T10:00:00Z",
+    "bestSet": {
+      "setId": "uuid",
+      "setOrder": 2,
+      "weightKg": "82.50",
+      "reps": 8,
+      "rir": 1,
+      "setType": "working"
+    }
+  }
 }
 ```
+
+`previousPerformance` is nullable. It selects only the authenticated user's non-deleted completed workouts strictly before the current workout. The latest workout containing an active working set for the exercise qualifies; its best set is highest weight, then higher reps, then lower set order.
 
 ### `WorkoutSummary`
 
@@ -1019,7 +1037,7 @@ Query parameters:
 Behavior:
 
 - Requires authentication and applies the authenticated user ID to ownership filtering.
-- Search covers exercise name, primary/secondary muscle names, and equipment.
+- Search relevance is exact name, approved repo-owned alias, name prefix/substring, `pg_trgm` typo similarity, then primary/secondary muscle or equipment. Results remain deterministic by similarity/name within a relevance tier, and unrelated short/noise searches are bounded to avoid broad false positives.
 - Muscle, equipment, type, and ownership filters compose before pagination; response items remain unique and pagination `total` reflects the filtered result.
 - `ownership=editable` matches `created_by_user_id = authenticated user`. `ownership=readOnly` matches system exercises (`created_by_user_id IS NULL`) and exercises created by another user.
 - The response shape is unchanged; `createdByUserId` continues to let the web explain why an exercise is read-only.
@@ -1460,11 +1478,11 @@ Accepts `search`, repeated or comma-separated `muscleGroupIds`, `equipment`, `ex
 
 ### `GET /api/v1/exercises/options`
 
-Returns authoritative `equipment` and `exerciseTypes` arrays from ADR 0007.
+Returns authoritative `equipment` and `exerciseTypes` arrays. Equipment includes `barbell`, `dumbbell`, `kettlebell`, `cable`, `machine`, `plate-loaded machine`, `Smith machine`, `resistance band`, `bodyweight`, `EZ bar`, `medicine ball`, `stability ball`, and `other`.
 
 ### `GET /api/v1/exercises/name-suggestions?name=...`
 
-Returns at most five selectable existing exercises for creation-time reuse.
+Returns at most five selectable existing exercises for creation-time reuse using the same fuzzy/alias relevance ordering as the exercise list. The client labels these as “Did you mean?” choices; the response never merges, renames, or overwrites a custom exercise.
 
 ### `GET|PATCH /api/v1/users/me/preferences`
 
@@ -1478,3 +1496,15 @@ Merge responses additionally include `reassignedTemplateExercises` and `affected
 
 - Decide whether API docs should later be generated from Zod or OpenAPI.
 - The cookie name and secure flag remain environment-configured; document deployment values in the operations runbook rather than hard-coding them here.
+
+## Founding Beta Interfaces
+
+- `POST /api/v1/beta/waitlist` is public, accepts `{ email, adultAttested: true, privacyVersion }`, and always returns the same accepted envelope for new, duplicate, account-linked, blocked, or paused intake.
+- `POST /api/v1/auth/signup` requires `inviteToken`, the published Terms/Privacy versions and `adultAttested: true` when registration is `INVITE_ONLY`. A valid invitation is single use, expires after seven days, reserves a seat, fixes the invited email, and creates an already email-verified account.
+- `POST /api/v1/users/me/export` requires `{ password }` and downloads machine-readable JSON. It excludes credential/token hashes and unrelated security/audit records.
+- `POST /api/v1/users/me/deletion` requires `{ password }`, revokes sessions and returns `deletionDueAt`. `POST /api/v1/users/me/deletion/cancel` accepts the single-use raw token. Account erasure is the documented hard-delete exception to soft-delete defaults.
+- `GET|PATCH /api/v1/users/me/privacy-preferences` manages functional storage, account-linked analytics and feedback prompts. `GET|PATCH /api/v1/users/me/onboarding` manages versioned boolean steps.
+- `GET /api/v1/messages` returns eligible undismissed messages; only the first is marked shown. `POST /messages/:campaignId/dismiss` is final; `POST /respond` accepts the exact configured acknowledgement/rating/choice/free-text shape.
+- Owner-only beta routes list requests/users/settings and execute audited request/settings actions. Owner-only campaign routes create drafts, list campaigns and publish/pause/resume/end. `POST /admin/users/:userId/deletion/cancel` is the audited urgent-support cancellation path.
+
+All public/auth/export/deletion/feedback/admin mutation groups have endpoint-specific limits. Production client attribution accepts only a valid BFF HMAC; browser-supplied forwarding headers are not trusted by the API.

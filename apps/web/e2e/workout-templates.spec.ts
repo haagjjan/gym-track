@@ -83,9 +83,10 @@ test("creates, filters, edits, and launches a workout template", async ({ page }
   await page.getByRole("button", { name: /New exercise/i }).click();
   const createExercise = page.getByRole("dialog", { name: "Create exercise" });
   await createExercise.getByLabel("Name").fill(ownedExerciseName);
-  const primaryMuscles = createExercise.locator("details").filter({ hasText: "Primary muscles" });
-  await primaryMuscles.locator("summary").click();
-  await primaryMuscles.getByLabel("Chest").check();
+  const primaryMuscles = createExercise.getByRole("button", { name: /Primary muscles/ });
+  await expect(primaryMuscles).toHaveAttribute("aria-expanded", "false");
+  await primaryMuscles.click();
+  await createExercise.getByLabel("Chest").check();
   await createExercise.getByLabel("Equipment").selectOption("barbell");
   await createExercise.getByLabel("Type").selectOption("compound");
   await createExercise.getByRole("button", { name: "Create exercise" }).click();
@@ -100,8 +101,8 @@ test("creates, filters, edits, and launches a workout template", async ({ page }
   await expect(page.getByRole("heading", { name: ownedExerciseName })).toBeVisible();
   await page.getByRole("button", { name: "Edit" }).click();
   const editExercise = page.getByRole("dialog", { name: "Edit exercise" });
-  await expect(editExercise.locator("details").filter({ hasText: "Primary muscles" })).not.toHaveAttribute("open", "");
-  await expect(editExercise.locator("details").filter({ hasText: "Secondary muscles" })).not.toHaveAttribute("open", "");
+  await expect(editExercise.getByRole("button", { name: /Primary muscles/ })).toHaveAttribute("aria-expanded", "false");
+  await expect(editExercise.getByRole("button", { name: /Secondary muscles/ })).toHaveAttribute("aria-expanded", "false");
   await editExercise.getByRole("button", { name: "Cancel" }).click();
 
   await page.getByRole("button", { name: /^Filters/ }).click();

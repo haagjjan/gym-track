@@ -1,10 +1,10 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { proxyAuthRequest } from "../../../../features/auth/auth-api-proxy";
-import { isRegistrationEnabled } from "../../../../features/auth/registration-mode";
+import { readRegistrationMode } from "../../../../features/auth/registration-mode";
 
 export async function POST(request: NextRequest): Promise<Response> {
-  if (!isRegistrationEnabled()) {
+  if (readRegistrationMode() === "DISABLED") {
     return NextResponse.json(
       {
         error: {

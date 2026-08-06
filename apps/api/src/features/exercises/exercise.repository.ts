@@ -41,6 +41,7 @@ export interface ExistingExerciseRecord {
 
 export interface ExerciseListFilters {
   search: string | undefined;
+  searchAliases: string[];
   muscleGroupIds: string[];
   primaryMuscleGroupId: string | undefined;
   equipment: string | "unspecified" | undefined;

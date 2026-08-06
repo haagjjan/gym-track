@@ -21,8 +21,7 @@ export function RegistrationDisabledScreen(): ReactNode {
           REGISTRATION_UNAVAILABLE
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-fg-muted">
-          New account creation is disabled. Existing operators can continue through the
-          login screen.
+          Founding Beta registration is currently paused. Existing members can continue through the login screen.
         </p>
         <Link
           className="mt-6 inline-flex min-h-11 items-center justify-center rounded-lg border border-cyan/50 px-5 font-display text-sm font-bold tracking-[0.08em] text-cyan transition-colors hover:border-cyan hover:text-cyan-bright"
@@ -30,6 +29,7 @@ export function RegistrationDisabledScreen(): ReactNode {
         >
           RETURN_TO_LOGIN
         </Link>
+        <Link className="ml-3 mt-6 inline-flex min-h-11 items-center text-sm text-outline hover:text-cyan" href="/beta">BETA_INFO</Link>
       </section>
     </main>
   );

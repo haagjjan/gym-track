@@ -6,7 +6,8 @@ test.use({
   viewport: { height: 900, width: 390 }
 });
 
-test("lets a mobile swipe scroll from the 3D Volume figure while sideways drag still orbits", async ({ page }) => {
+test("lets a mobile swipe scroll from the 3D Volume figure while sideways drag still orbits", async ({ browserName, page }) => {
+  test.skip(browserName !== "chromium", "Raw gesture injection uses the Chromium DevTools Protocol.");
   const tag = `${Date.now()}${process.pid}`;
   const username = `volume_${tag}`;
 

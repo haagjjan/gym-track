@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { HudButton } from "../../shared/ui/ui";
 import { ApiError, apiFetch } from "../../shared/api/client";
+import { PUBLIC_PRIVACY_VERSION, PUBLIC_TERMS_VERSION } from "../../shared/public-policy";
 
 type AuthMode = "login" | "signup";
 
@@ -33,10 +34,14 @@ type FieldErrors = Partial<Record<"email" | "username" | "password", string>>;
 
 export function AuthScreen({
   mode,
-  registrationEnabled = true
+  registrationEnabled = true,
+  email,
+  inviteToken
 }: {
   mode: AuthMode;
   registrationEnabled?: boolean;
+  email?: string | undefined;
+  inviteToken?: string | undefined;
 }): ReactNode {
   const router = useRouter();
   const details = copy[mode];
@@ -57,13 +62,19 @@ export function AuthScreen({
     setFieldErrors({});
 
     const formData = new FormData(event.currentTarget);
-    const body: Record<string, string> = {
+    const body: Record<string, string | boolean> = {
       username: String(formData.get("username") ?? "").trim(),
       password: String(formData.get("password") ?? "")
     };
 
     if (mode === "signup") {
       body.email = String(formData.get("email") ?? "").trim();
+      if (inviteToken) {
+        body.inviteToken = inviteToken;
+        body.termsVersion = PUBLIC_TERMS_VERSION;
+        body.privacyVersion = PUBLIC_PRIVACY_VERSION;
+        body.adultAttested = true;
+      }
     }
 
     setIsPending(true);
@@ -116,7 +127,9 @@ export function AuthScreen({
                 error={fieldErrors.email}
                 label="EMAIL_ADDRESS"
                 name="email"
+                readOnly={Boolean(email)}
                 type="email"
+                value={email}
               />
             ) : null}
             <AuthField
@@ -126,6 +139,13 @@ export function AuthScreen({
               name="username"
               type="text"
             />
+
+            {mode === "signup" && inviteToken ? (
+              <div className="space-y-3 rounded border border-outline-dim/60 bg-surface-low/40 p-3 text-xs text-fg-muted">
+                <label className="flex gap-3"><input className="mt-0.5 size-4" name="adult" required type="checkbox" /> <span>I confirm that I am at least 18 years old.</span></label>
+                <label className="flex gap-3"><input className="mt-0.5 size-4" name="policies" required type="checkbox" /> <span>I accept the <Link className="text-cyan" href="/terms" target="_blank">Terms</Link> and have read the <Link className="text-cyan" href="/privacy" target="_blank">Privacy Notice</Link>.</span></label>
+              </div>
+            ) : null}
             <AuthField
               autoComplete={mode === "signup" ? "new-password" : "current-password"}
               error={fieldErrors.password}
@@ -179,13 +199,17 @@ function AuthField({
   error,
   label,
   name,
-  type
+  type,
+  readOnly = false,
+  value
 }: {
   autoComplete: string;
   error?: string | undefined;
   label: string;
   name: string;
   type: string;
+  readOnly?: boolean;
+  value?: string | undefined;
 }): ReactNode {
   return (
     <label className="block">
@@ -194,7 +218,9 @@ function AuthField({
         autoComplete={autoComplete}
         className="mt-1.5 block min-h-11 w-full rounded-sm border-b border-outline-dim bg-surface-low/60 px-3 font-mono text-sm text-fg transition-colors focus:border-cyan focus:bg-surface-low focus:shadow-glow-cyan focus:outline-none"
         name={name}
+        readOnly={readOnly}
         type={type}
+        defaultValue={value}
       />
       {error ? <span className="mt-1 block text-[11px] text-red">{error}</span> : null}
     </label>

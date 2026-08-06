@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { scopedStorageKey, useDevicePrivacy } from "../privacy/device-privacy";
 
 /**
  * Biometrics are a flagged API gap (docs/11 Phase 0): no backend endpoint exists.
@@ -28,32 +29,36 @@ export function useBiometrics(): {
   save: (next: Biometrics) => void;
   isLoaded: boolean;
 } {
+  const { functionalStorageEnabled, userId } = useDevicePrivacy();
+  const storageKey = scopedStorageKey(STORAGE_KEY, userId);
   const [biometrics, setBiometrics] = useState<Biometrics>(emptyBiometrics);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
+      const raw = functionalStorageEnabled ? window.localStorage.getItem(storageKey) : null;
 
       if (raw) {
         setBiometrics({ ...emptyBiometrics, ...(JSON.parse(raw) as Partial<Biometrics>) });
+      } else if (!functionalStorageEnabled) {
+        setBiometrics(emptyBiometrics);
       }
     } catch {
       // Corrupt storage falls back to empty values.
     }
 
     setIsLoaded(true);
-  }, []);
+  }, [functionalStorageEnabled, storageKey]);
 
   const save = useCallback((next: Biometrics): void => {
     setBiometrics(next);
 
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      if (functionalStorageEnabled) window.localStorage.setItem(storageKey, JSON.stringify(next));
     } catch {
       // Private-mode quota errors are non-fatal; values stay for the session.
     }
-  }, []);
+  }, [functionalStorageEnabled, storageKey]);
 
   return { biometrics, save, isLoaded };
 }

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { EmptyState, ErrorState, Skeleton } from "../../shared/ui/ui";
-import { useExercises } from "../../shared/api/hooks";
+import { useExercisesInfinite } from "../../shared/api/hooks";
 import type { Exercise } from "../../shared/api/types";
 import { errorMessage } from "../../shared/api/client";
 import { IconCheck, IconClose, IconPlus } from "../shell/icons";
@@ -45,8 +45,8 @@ export function ExercisePicker({
   const [debounced, setDebounced] = useState("");
   const [filters, setFilters] = useState<FacetFilterValue>(emptyFacetFilters);
   const [sort, setSort] = useState<"name" | "muscle" | "equipment" | "type">("name");
-  const inputRef = useRef<HTMLInputElement>(null);
-  const exercises = useExercises({ search: debounced, ...filters, sort });
+  const exercises = useExercisesInfinite({ search: debounced, ...filters, sort });
+  const exerciseItems = exercises.data?.pages.flatMap((page) => page.items) ?? [];
 
   useEffect(() => {
     const timeout = window.setTimeout(() => setDebounced(query), 180);
@@ -55,7 +55,6 @@ export function ExercisePicker({
 
   useEffect(() => {
     if (!isOpen) return;
-    inputRef.current?.focus();
     const previousOverflow = document.body.style.overflow;
     const closeOnEscape = (event: KeyboardEvent): void => {
       if (event.key === "Escape" && !document.querySelector('[role="alertdialog"]')) onClose();
@@ -72,8 +71,8 @@ export function ExercisePicker({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-void/70 backdrop-blur-sm lg:items-center" role="presentation">
-      <section aria-labelledby="exercise-picker-title" aria-modal="true" className="glass-cyan flex max-h-[92dvh] w-full flex-col rounded-t-xl p-4 lg:max-h-[84dvh] lg:max-w-2xl lg:rounded-xl" role="dialog">
-        <header className="mb-3 flex items-center justify-between gap-2">
+      <section aria-labelledby="exercise-picker-title" aria-modal="true" className="glass-cyan flex h-[92dvh] max-h-[92dvh] w-full flex-col rounded-t-xl p-4 lg:h-auto lg:max-h-[84dvh] lg:max-w-2xl lg:rounded-xl" role="dialog">
+        <header className="mb-3 flex shrink-0 items-center justify-between gap-2">
           <div>
             <p className="label-caps text-outline">EXERCISE_CATALOG</p>
             <h2 className="font-display text-lg font-bold text-fg" id="exercise-picker-title">{title}</h2>
@@ -81,11 +80,11 @@ export function ExercisePicker({
           <button aria-label="Close exercise picker" className="flex size-11 items-center justify-center rounded border border-outline-dim text-fg-muted hover:border-cyan hover:text-cyan" onClick={onClose} type="button"><IconClose /></button>
         </header>
 
-        <div>
-          <input aria-label="Search exercises" className="min-h-12 w-full rounded border border-outline-dim bg-surface-low/60 px-3 font-mono text-base text-fg placeholder:text-outline focus:border-cyan focus:outline-none" onChange={(event) => setQuery(event.currentTarget.value)} placeholder="Scan catalog… Search exercise or muscle" ref={inputRef} type="search" value={query} />
+        <div className="shrink-0">
+          <input aria-label="Search exercises" className="min-h-12 w-full rounded border border-outline-dim bg-surface-low/60 px-3 font-mono text-base text-fg placeholder:text-outline focus:border-cyan focus:outline-none" onChange={(event) => setQuery(event.currentTarget.value)} placeholder="Scan catalog… Search exercise or muscle" type="search" value={query} />
         </div>
 
-        <div className="my-2">
+        <div className="my-2 shrink-0">
           <FacetFilters
             filters={filters}
             onChange={setFilters}
@@ -102,12 +101,16 @@ export function ExercisePicker({
         <div className="min-h-0 flex-1 overflow-y-auto pb-2">
           {exercises.isLoading ? <div className="space-y-2"><Skeleton className="h-16" /><Skeleton className="h-16" /><Skeleton className="h-16" /></div>
             : exercises.isError ? <ErrorState message={errorMessage(exercises.error, "Exercises could not be loaded.")} retry={() => void exercises.refetch()} />
-            : (exercises.data ?? []).length === 0 ? <EmptyState title="NO_MATCH" message="No exercise matches the current search and filters." />
-            : sort === "muscle" && debounced.length === 0 ? <GroupedResults exercises={exercises.data ?? []} isSubmitting={isSubmitting} onSelect={onSelect} selectedIds={selectedIds} selectionMode={selectionMode} />
-            : <div className="space-y-1.5">{(exercises.data ?? []).map((exercise) => <ExerciseResult exercise={exercise} isSubmitting={isSubmitting} key={exercise.id} onSelect={onSelect} selected={selectedIds.includes(exercise.id)} selectionMode={selectionMode} />)}</div>}
+            : exerciseItems.length === 0 ? <EmptyState title="NO_MATCH" message="No exercise matches the current search and filters." />
+            : <>
+                {sort === "muscle" && debounced.length === 0
+                  ? <GroupedResults exercises={exerciseItems} isSubmitting={isSubmitting} onSelect={onSelect} selectedIds={selectedIds} selectionMode={selectionMode} />
+                  : <div className="space-y-1.5">{exerciseItems.map((exercise) => <ExerciseResult exercise={exercise} isSubmitting={isSubmitting} key={exercise.id} onSelect={onSelect} selected={selectedIds.includes(exercise.id)} selectionMode={selectionMode} />)}</div>}
+                {exercises.hasNextPage ? <button className="mt-3 min-h-11 w-full rounded border border-cyan/50 px-3 text-xs font-semibold text-cyan hover:bg-cyan/10 disabled:opacity-50" disabled={exercises.isFetchingNextPage} onClick={() => void exercises.fetchNextPage()} type="button">{exercises.isFetchingNextPage ? "LOADING…" : "LOAD MORE EXERCISES"}</button> : null}
+              </>}
         </div>
 
-        {footer ? <footer className="max-h-[60dvh] shrink-0 overflow-y-auto border-t border-outline-dim/60 pt-3">{footer}</footer> : null}
+        {footer ? <footer className="shrink-0 border-t border-outline-dim/60 pt-3">{footer}</footer> : null}
       </section>
     </div>
   );
@@ -123,7 +126,7 @@ function GroupedResults({ exercises, isSubmitting, onSelect, selectedIds, select
 }
 
 function ExerciseResult({ exercise, isSubmitting, onSelect, selected, selectionMode }: { exercise: Exercise; isSubmitting: boolean; onSelect: ExercisePickerProps["onSelect"]; selected: boolean; selectionMode: "multiple" | "single" }): ReactNode {
-  return <button aria-pressed={selectionMode === "multiple" ? selected : undefined} className={`flex min-h-16 w-full items-center justify-between gap-3 rounded border px-3 text-left disabled:opacity-50 ${selected ? "border-cyan bg-cyan/10" : "border-outline-dim/60 bg-surface-low/40 hover:border-cyan/60"}`} disabled={isSubmitting} onClick={() => void onSelect(exercise)} type="button"><span className="min-w-0"><span className="block truncate text-sm text-fg">{exercise.name}</span><ExerciseMuscleBadges exercise={exercise} /></span>{selected ? <IconCheck className="shrink-0 text-cyan" /> : <IconPlus className="shrink-0 text-cyan-dim" />}</button>;
+  return <button aria-pressed={selectionMode === "multiple" ? selected : undefined} className={`flex min-h-16 w-full items-center justify-between gap-3 rounded border px-3 text-left disabled:opacity-50 ${selected ? "border-cyan bg-cyan/10" : "border-outline-dim/60 bg-surface-low/40 hover:border-cyan/60"}`} disabled={isSubmitting} onClick={() => void onSelect(exercise)} type="button"><span className="min-w-0"><span className="block break-words text-sm text-fg">{exercise.name}</span><ExerciseMuscleBadges exercise={exercise} /></span>{selected ? <IconCheck className="shrink-0 text-cyan" /> : <IconPlus className="shrink-0 text-cyan-dim" />}</button>;
 }
 
 function primaryMuscle(exercise: Exercise): string {

@@ -44,12 +44,7 @@ export function SessionEditorDock({
       window.visualViewport?.addEventListener("resize", updateViewport);
       window.visualViewport?.addEventListener("scroll", updateViewport);
     }
-    const frame = window.requestAnimationFrame(() => {
-      dialogRef.current?.querySelector<HTMLInputElement>("input")?.focus();
-    });
-
     return () => {
-      window.cancelAnimationFrame(frame);
       window.removeEventListener("keydown", closeOnEscape);
       window.visualViewport?.removeEventListener("resize", updateViewport);
       window.visualViewport?.removeEventListener("scroll", updateViewport);

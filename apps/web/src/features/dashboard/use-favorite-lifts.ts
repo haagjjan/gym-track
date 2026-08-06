@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { scopedStorageKey, useDevicePrivacy } from "../privacy/device-privacy";
 
 /**
  * User-pinned favorite lifts for the dashboard PERFORMANCE_PB panel (chosen in
@@ -21,12 +22,14 @@ export function useFavoriteLifts(): {
   save: (next: FavoriteLift[]) => void;
   isLoaded: boolean;
 } {
+  const { functionalStorageEnabled, userId } = useDevicePrivacy();
+  const storageKey = scopedStorageKey(STORAGE_KEY, userId);
   const [favorites, setFavorites] = useState<FavoriteLift[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
+      const raw = functionalStorageEnabled ? window.localStorage.getItem(storageKey) : null;
 
       if (raw) {
         const parsed = JSON.parse(raw) as unknown;
@@ -44,13 +47,15 @@ export function useFavoriteLifts(): {
               .slice(0, MAX_FAVORITE_LIFTS)
           );
         }
+      } else if (!functionalStorageEnabled) {
+        setFavorites([]);
       }
     } catch {
       // Corrupt storage falls back to the derived top lifts.
     }
 
     setIsLoaded(true);
-  }, []);
+  }, [functionalStorageEnabled, storageKey]);
 
   const save = useCallback((next: FavoriteLift[]): void => {
     const clamped = next.slice(0, MAX_FAVORITE_LIFTS);
@@ -58,11 +63,11 @@ export function useFavoriteLifts(): {
     setFavorites(clamped);
 
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(clamped));
+      if (functionalStorageEnabled) window.localStorage.setItem(storageKey, JSON.stringify(clamped));
     } catch {
       // Private-mode quota errors are non-fatal; selection lasts the session.
     }
-  }, []);
+  }, [functionalStorageEnabled, storageKey]);
 
   return { favorites, save, isLoaded };
 }

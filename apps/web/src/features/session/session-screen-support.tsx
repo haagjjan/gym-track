@@ -9,12 +9,19 @@ import { formatNumber } from "../../shared/format";
 
 export interface SessionTotals { sets: number; workingSets: number; volume: number }
 
+export function resolveActiveExercise(
+  exercises: SessionExercise[],
+  requestedId: string | null
+): SessionExercise | null {
+  return exercises.find((exercise) => exercise.id === requestedId) ?? exercises[0] ?? null;
+}
+
 export function calculateSessionTotals(exercises: SessionExercise[]): SessionTotals {
   return exercises.reduce<SessionTotals>((total, exercise) => exercise.sets.reduce<SessionTotals>((next, set) => ({ sets: next.sets + 1, workingSets: next.workingSets + (set.setType === "working" ? 1 : 0), volume: next.volume + Number(set.weightKg) * set.reps }), total), { sets: 0, workingSets: 0, volume: 0 });
 }
 
 export function SessionStats({ exercises, totals }: { exercises: number; totals: SessionTotals }): ReactNode {
-  return <aside className="hidden lg:block"><div className="glass sticky top-20 rounded-xl p-4"><div className="grid grid-cols-2 gap-3"><Metric label="EXERCISES" value={exercises} /><Metric label="SETS" value={totals.sets} /><Metric label="WORKING" tone="cyan" value={totals.workingSets} /><Metric detail="kg total" label="TONNAGE" value={formatNumber(totals.volume)} /></div></div></aside>;
+  return <aside className="hidden lg:block"><div className="glass sticky top-20 rounded-xl p-4"><div className="grid grid-cols-2 gap-3"><Metric label="EXERCISES" value={exercises} /><Metric label="SETS" value={totals.sets} /><Metric label="WORKING" tone="lavender" value={totals.workingSets} /><Metric detail="kg total" label="TONNAGE" value={formatNumber(totals.volume)} /></div></div></aside>;
 }
 
 export function SessionSkeleton(): ReactNode {

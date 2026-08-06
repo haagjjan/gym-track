@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { HudButton } from "../../shared/ui/ui";
+import { InfoPopover } from "../../shared/ui/info-popover";
 import { Stepper } from "./stepper";
 import type { SetDraft } from "./set-draft-storage";
 
@@ -18,7 +19,7 @@ export function SetComposer(props: SetComposerProps): ReactNode {
   const [showNote, setShowNote] = useState(props.draft.note.length > 0);
 
   return (
-    <section className="mt-2 rounded-xl border border-cyan/40 bg-surface-low/60 p-3" aria-label="New set">
+    <section className="mt-2 rounded-xl border border-cyan/40 bg-surface-low/60 p-3" aria-label="New set" data-set-inputs>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div className="flex gap-1.5" role="radiogroup" aria-label="Set type">
           {(["working", "warmup"] as const).map((type) => (
@@ -27,8 +28,8 @@ export function SetComposer(props: SetComposerProps): ReactNode {
               className={`min-h-10 rounded border px-3 font-display text-[11px] font-bold capitalize ${
                 props.draft.setType === type
                   ? type === "working"
-                    ? "border-cyan bg-cyan/15 text-cyan"
-                    : "border-lavender bg-lavender/15 text-lavender"
+                    ? "border-lavender bg-lavender/15 text-lavender"
+                    : "border-warmup bg-warmup/10 text-warmup"
                   : "border-outline-dim text-outline"
               }`}
               key={type}
@@ -80,7 +81,7 @@ export function SetComposer(props: SetComposerProps): ReactNode {
       </div>
 
       <div className="mt-3">
-        <p className="label-caps mb-1.5 text-outline">RIR</p>
+        <p className="label-caps mb-1.5 text-outline">RIR <InfoPopover label="reps in reserve">How many clean repetitions you estimate remained. 0 means none; 2 means roughly two.</InfoPopover></p>
         <RirChips onChange={(rir) => props.onChange({ rir })} value={props.draft.rir} />
       </div>
 

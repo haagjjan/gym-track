@@ -1,17 +1,26 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getApiBaseUrl } from "../../shared/api-base-url";
+import {
+  createBffRequestContext,
+  finalizeBffResponse,
+  forwardBffRequestId,
+  logBffFailure
+} from "../../shared/server-logging";
+import { addBffClientAttribution } from "../../shared/bff-client-attribution";
 
 export async function proxyWorkoutApiRequest(
   request: NextRequest,
   targetPath: string
 ): Promise<NextResponse> {
+  const logContext = createBffRequestContext(request, targetPath);
   try {
     const init: RequestInit = {
       method: request.method,
       headers: buildForwardHeaders(request),
       cache: "no-store"
     };
+    forwardBffRequestId(init.headers as Headers, logContext);
     const body = await getRequestBody(request);
 
     if (body !== undefined) {
@@ -20,9 +29,10 @@ export async function proxyWorkoutApiRequest(
 
     const upstream = await fetch(buildApiUrl(request, targetPath), init);
 
-    return await toProxyResponse(upstream);
-  } catch {
-    return NextResponse.json(
+    return finalizeBffResponse(logContext, await toProxyResponse(upstream));
+  } catch (error) {
+    logBffFailure(logContext, { statusCode: 502, errorCode: "API_UNAVAILABLE", error });
+    return finalizeUnavailableResponse(logContext.requestId, NextResponse.json(
       {
         error: {
           code: "API_UNAVAILABLE",
@@ -30,8 +40,13 @@ export async function proxyWorkoutApiRequest(
         }
       },
       { status: 502 }
-    );
+    ));
   }
+}
+
+function finalizeUnavailableResponse(requestId: string, response: NextResponse): NextResponse {
+  response.headers.set("x-request-id", requestId);
+  return response;
 }
 
 function buildApiUrl(request: NextRequest, targetPath: string): string {
@@ -55,6 +70,8 @@ function buildForwardHeaders(request: NextRequest): Headers {
   if (cookie) {
     headers.set("cookie", cookie);
   }
+
+  addBffClientAttribution(request, headers);
 
   return headers;
 }
@@ -83,8 +100,12 @@ async function toProxyResponse(upstream: Response): Promise<NextResponse> {
     responseHeaders.set("content-disposition", contentDisposition);
   }
 
-  return new NextResponse(body, {
+  return new NextResponse(isBodylessStatus(upstream.status) ? null : body, {
     status: upstream.status,
     headers: responseHeaders
   });
+}
+
+function isBodylessStatus(status: number): boolean {
+  return status === 204 || status === 205 || status === 304;
 }

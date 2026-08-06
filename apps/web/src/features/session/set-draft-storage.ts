@@ -21,7 +21,12 @@ export function suggestedDraft(exercise: SessionExercise | null): SetDraft {
   const previous = exercise?.sets.at(-1);
 
   if (!previous) {
-    return { ...fallbackDraft };
+    return {
+      ...fallbackDraft,
+      weightKg: exercise?.previousPerformance?.bestSet.weightKg
+        ? formatKgValue(exercise.previousPerformance.bestSet.weightKg)
+        : fallbackDraft.weightKg
+    };
   }
 
   return {

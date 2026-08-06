@@ -16,12 +16,14 @@ describe("registration mode", () => {
   it("honors an explicit supported mode", () => {
     assert.equal(readRegistrationMode({ REGISTRATION_MODE: "DISABLED" }), "DISABLED");
     assert.equal(readRegistrationMode({ REGISTRATION_MODE: "ENABLED" }), "ENABLED");
+    assert.equal(readRegistrationMode({ REGISTRATION_MODE: "INVITE_ONLY" }), "INVITE_ONLY");
+    assert.equal(isRegistrationEnabled({ REGISTRATION_MODE: "INVITE_ONLY" }), true);
   });
 
   it("rejects unknown modes instead of opening registration", () => {
     assert.throws(
-      () => readRegistrationMode({ REGISTRATION_MODE: "INVITE_ONLY" }),
-      /must be ENABLED or DISABLED/
+      () => readRegistrationMode({ REGISTRATION_MODE: "OPEN" }),
+      /must be ENABLED, INVITE_ONLY, or DISABLED/
     );
   });
 });

@@ -133,6 +133,7 @@ describe("exercise service", () => {
 
     assert.deepEqual(repository.listFilters, {
       search: "bench",
+      searchAliases: ["Barbell Bench Press", "Flat Bench Press"],
       muscleGroupIds: [],
       primaryMuscleGroupId: chest.id,
       equipment: undefined,

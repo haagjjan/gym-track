@@ -19,7 +19,7 @@ export function SessionModeNavigation(props: SessionModeNavigationProps): ReactN
         <IconChevronRight className="rotate-180" /> Exercises
       </button>
       <div className="min-w-0 flex-1 text-center">
-        <p className="truncate text-xs font-semibold text-fg">{props.exerciseName}</p>
+        <p className="break-words text-xs font-semibold leading-4 text-fg">{props.exerciseName}</p>
         <p className="label-caps text-outline">SET MODE · {props.position + 1}/{props.total}</p>
       </div>
       <button aria-label="Previous exercise" className="flex size-11 items-center justify-center rounded border border-outline-dim text-cyan disabled:opacity-30" disabled={props.position <= 0} onClick={props.onPrevious} type="button">

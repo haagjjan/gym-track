@@ -1,6 +1,8 @@
 import { z } from "zod";
 
 const logLevelSchema = z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]);
+const optionalEnvironmentValue = <Schema extends z.ZodTypeAny>(schema: Schema) =>
+  z.preprocess((value) => value === "" ? undefined : value, schema.optional());
 
 const rawEnvSchema = z.object({
   API_HOST: z.string().min(1).default("0.0.0.0"),
@@ -12,13 +14,17 @@ const rawEnvSchema = z.object({
   AUTH_COOKIE_NAME: z.string().min(1).default("gym_progress_session"),
   AUTH_COOKIE_SECURE: z.enum(["true", "false"]).optional(),
   AUTH_SESSION_TTL_DAYS: z.coerce.number().int().positive().default(30),
+  BFF_CLIENT_IP_SECRET: optionalEnvironmentValue(z.string().min(32)),
   DATABASE_URL: z.string().url(),
   EMAIL_FROM: z.string().min(3).default("Gym Progress Tracker <onboarding@resend.dev>"),
   LOG_LEVEL: logLevelSchema.default("info"),
   METRICS_ENABLED: z.enum(["true", "false"]).optional(),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-  REGISTRATION_MODE: z.enum(["ENABLED", "DISABLED"]).optional(),
-  RESEND_API_KEY: z.string().min(1).optional()
+  REGISTRATION_MODE: z.enum(["ENABLED", "INVITE_ONLY", "DISABLED"]).optional(),
+  RESEND_API_KEY: optionalEnvironmentValue(z.string().min(1)),
+  SUPPORT_EMAIL: optionalEnvironmentValue(z.string().email()),
+  TELEGRAM_BETA_BOT_TOKEN: optionalEnvironmentValue(z.string().min(1)),
+  TELEGRAM_BETA_CHAT_ID: optionalEnvironmentValue(z.string().min(1))
 });
 
 const envSchema = rawEnvSchema
@@ -35,8 +41,10 @@ const envSchema = rawEnvSchema
       }
     }
 
-    const isProductionDeployment =
-      env.NODE_ENV === "production" && (env.APP_ENV ?? env.NODE_ENV) !== "local";
+    const deploymentEnvironment = env.APP_ENV ?? env.NODE_ENV;
+    const isProductionDeployment = env.NODE_ENV === "production"
+      && deploymentEnvironment !== "local"
+      && deploymentEnvironment !== "private-lan";
 
     if (!isProductionDeployment) {
       return;
@@ -61,6 +69,20 @@ const envSchema = rawEnvSchema
         code: z.ZodIssueCode.custom,
         message: "AUTH_COOKIE_SECURE cannot be false in production.",
         path: ["AUTH_COOKIE_SECURE"]
+      });
+    }
+    if (!env.BFF_CLIENT_IP_SECRET) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "BFF_CLIENT_IP_SECRET is required in production.",
+        path: ["BFF_CLIENT_IP_SECRET"]
+      });
+    }
+    if (!env.SUPPORT_EMAIL) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "SUPPORT_EMAIL is required in production.",
+        path: ["SUPPORT_EMAIL"]
       });
     }
   })

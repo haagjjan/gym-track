@@ -7,16 +7,16 @@ import { ErrorState } from "../../shared/ui/ui";
 import { errorMessage } from "../../shared/api/client";
 import { useSessionMutations, useWorkout, useWorkoutMutations } from "../../shared/api/hooks";
 import type { SessionExercise } from "../../shared/api/types";
-import { CompletionTemplateActions } from "../templates/completion-template-actions";
 import { ActiveExercisePanel } from "./active-exercise-panel";
 import { ExerciseSheet } from "./exercise-sheet";
 import { clearWorkoutSetDrafts } from "./set-draft-storage";
 import { SessionExerciseList } from "./session-exercise-list";
 import { SessionHeader } from "./session-header";
 import { SessionModeNavigation } from "./session-mode-navigation";
-import { calculateSessionTotals, SessionError, SessionSkeleton, SessionStats } from "./session-screen-support";
-import { SessionTimePanel } from "./session-time-panel";
+import { SessionCompletionSummary } from "./session-completion-summary";
+import { calculateSessionTotals, resolveActiveExercise, SessionError, SessionSkeleton, SessionStats } from "./session-screen-support";
 import { useSessionSetLogging } from "./use-session-set-logging";
+import { useOnboarding } from "../onboarding/use-onboarding";
 
 export function SessionScreen({
   focusName = false,
@@ -28,6 +28,7 @@ export function SessionScreen({
   workoutId: string;
 }): ReactNode {
   const router = useRouter();
+  const { mark } = useOnboarding();
   const workoutQuery = useWorkout(workoutId);
   const mutations = useSessionMutations({ workoutId });
   const workoutMutations = useWorkoutMutations();
@@ -39,14 +40,18 @@ export function SessionScreen({
   const [status, setStatus] = useState("");
   const workout = workoutQuery.data ?? null;
   const exercises = useMemo(() => workout?.exercises ?? [], [workout]);
-  const activeExercise = exercises.find((item) => item.id === activeExerciseId) ?? exercises.at(-1) ?? null;
+  const activeExercise = resolveActiveExercise(exercises, activeExerciseId);
   const totals = useMemo(() => calculateSessionTotals(exercises), [exercises]);
   const logging = useSessionSetLogging({ activeExercise, mutations, onError: setActionError, onStatus: setStatus, userId, workoutId });
   const { closeEditors } = logging;
 
   useEffect(() => {
+    if (workout?.isOpen) void mark("startWorkout");
+  }, [mark, workout?.isOpen]);
+
+  useEffect(() => {
     if (!exercises.some((item) => item.id === activeExerciseId)) {
-      setActiveExerciseId(exercises.at(-1)?.id ?? null);
+      setActiveExerciseId(exercises[0]?.id ?? null);
       closeEditors();
       if (exercises.length === 0) setSessionMode("exercises");
     }
@@ -117,6 +122,15 @@ export function SessionScreen({
           {actionError ? <ErrorState message={actionError} title="ACTION_FAILED" /> : null}
           <p aria-live="polite" className="sr-only">{status}</p>
 
+          {!isOpen && workout.endedAt ? (
+            <SessionCompletionSummary
+              isSavingTime={workoutMutations.updateWorkout.isPending}
+              onSaveTime={(startedAt, endedAt) => workoutMutations.updateWorkout.mutateAsync({ workoutId, input: { startedAt, endedAt } })}
+              totals={totals}
+              workout={{ ...workout, endedAt: workout.endedAt }}
+            />
+          ) : null}
+
           <div className={sessionMode === "exercises" || !activeExercise ? "session-mode-back" : "session-mode-forward"} key={sessionMode}>
             {sessionMode === "exercises" || !activeExercise ? (
               <SessionExerciseList
@@ -155,7 +169,7 @@ export function SessionScreen({
                 onNewSetOpen={(open) => open ? logging.openNewSet() : logging.setNewSetOpen(false)}
                 onRestAdjust={(seconds) => logging.setRestTimer((current) => current ? { ...current, seconds: current.seconds + seconds } : null)}
                 onRestDismiss={() => logging.setRestTimer(null)}
-                onSaveSet={() => void logging.saveSet()}
+                onSaveSet={() => { void logging.saveSet().then((saved) => { if (saved) void mark("logEditSet"); }); }}
                 restTimer={logging.restTimer}
                 savedFlash={null}
                 workoutEndedAt={workout.endedAt}
@@ -164,17 +178,6 @@ export function SessionScreen({
             )}
           </div>
 
-          {!isOpen && workout.endedAt ? (
-            <>
-              <CompletionTemplateActions workout={workout} />
-              <SessionTimePanel
-                endedAt={workout.endedAt}
-                isSaving={workoutMutations.updateWorkout.isPending}
-                onSave={(startedAt, endedAt) => workoutMutations.updateWorkout.mutateAsync({ workoutId, input: { startedAt, endedAt } })}
-                startedAt={workout.startedAt}
-              />
-            </>
-          ) : null}
         </div>
 
         <SessionStats exercises={exercises.length} totals={totals} />

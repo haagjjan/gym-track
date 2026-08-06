@@ -73,35 +73,38 @@ export function ExerciseForm({
 
   return (
     <div className="space-y-3">
-      <label className="block">
-        <span className="label-caps text-outline">Name</span>
-        <input
-          autoComplete="off"
-          className="mt-1 min-h-11 w-full rounded border border-outline-dim bg-surface-low px-3 text-base text-fg focus:border-cyan focus:outline-none"
-          maxLength={120}
-          onChange={(event) => { setName(event.currentTarget.value); setReview(null); }}
-          value={name}
-        />
-      </label>
+      <div className="relative z-40">
+        <label className="block">
+          <span className="label-caps text-outline">Name</span>
+          <input
+            autoComplete="off"
+            className="mt-1 min-h-11 w-full rounded border border-outline-dim bg-surface-low px-3 text-base text-fg focus:border-cyan focus:outline-none"
+            maxLength={120}
+            onChange={(event) => { setName(event.currentTarget.value); setReview(null); }}
+            value={name}
+          />
+        </label>
 
-      {!initial && debouncedName.length >= 2 && (suggestions.data?.length ?? 0) > 0 ? (
-        <section aria-label="Existing exercise suggestions" className="rounded-lg border border-cyan/30 bg-cyan/5 p-2">
-          <p className="label-caps px-1 text-cyan">Use an existing exercise</p>
-          <div className="mt-1 space-y-1">
-            {suggestions.data?.slice(0, 5).map((exercise) => (
-              <button
-                className="flex min-h-11 w-full items-center justify-between rounded px-2 text-left hover:bg-cyan/10"
-                key={exercise.id}
-                onClick={() => void onSelectExisting?.(exercise)}
-                type="button"
-              >
-                <span className="text-sm text-fg">{exercise.name}</span>
-                <span className="text-xs text-outline">{exercise.equipment ?? "Unspecified"}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-      ) : null}
+        {!initial && debouncedName.length >= 2 && (suggestions.data?.length ?? 0) > 0 ? (
+          <section aria-label="Existing exercise suggestions" className="absolute left-0 right-0 top-[calc(100%+0.25rem)] max-h-56 overflow-y-auto rounded-lg border border-cyan/30 bg-surface p-2 shadow-xl">
+            <p className="label-caps px-1 text-cyan">Did you mean?</p>
+            <p className="px-1 text-xs text-fg-muted">Choose an existing match, or keep your custom name and create it below.</p>
+            <div className="mt-1 space-y-1">
+              {suggestions.data?.slice(0, 5).map((exercise) => (
+                <button
+                  className="flex min-h-11 w-full items-center justify-between rounded px-2 text-left hover:bg-cyan/10"
+                  key={exercise.id}
+                  onClick={() => void onSelectExisting?.(exercise)}
+                  type="button"
+                >
+                  <span className="text-sm text-fg">{exercise.name}</span>
+                  <span className="text-xs text-outline">{exercise.equipment ?? "Unspecified"}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : null}
+      </div>
 
       <div className="grid gap-2 sm:grid-cols-2">
         <ClassificationSelect label="Equipment" onChange={setEquipment} options={options.data?.equipment ?? []} value={equipment} />
@@ -111,7 +114,6 @@ export function ExerciseForm({
       {groups.isError ? <p className="text-xs text-red">Muscle groups could not be loaded.</p> : (
         <div className="space-y-2">
           <MuscleChoices
-            defaultOpen={false}
             groups={groups.data ?? []}
             label="Primary muscles"
             onChange={(id) => { setPrimaryIds(toggle(primaryIds, id)); setSecondaryIds(secondaryIds.filter((item) => item !== id)); }}
@@ -120,7 +122,6 @@ export function ExerciseForm({
             tone="cyan"
           />
           <MuscleChoices
-            defaultOpen={false}
             groups={groups.data ?? []}
             label="Secondary muscles"
             onChange={(id) => { setSecondaryIds(toggle(secondaryIds, id)); setPrimaryIds(primaryIds.filter((item) => item !== id)); }}
@@ -154,22 +155,19 @@ function ClassificationSelect({ label, onChange, options, value }: { label: stri
   return <label className="block"><span className="label-caps text-outline">{label}</span><select className="mt-1 min-h-11 w-full rounded border border-outline-dim bg-surface-low px-3 text-sm text-fg focus:border-cyan focus:outline-none" onChange={(event) => onChange(event.currentTarget.value)} value={value}><option value="">Unspecified</option>{options.map((option) => <option key={option} value={option}>{displayLabel(option)}</option>)}</select></label>;
 }
 
-function MuscleChoices({ defaultOpen, groups, label, onChange, required = false, selected, tone }: { defaultOpen: boolean; groups: MuscleGroup[]; label: string; onChange: (id: string) => void; required?: boolean; selected: string[]; tone: "cyan" | "lavender" }): ReactNode {
-  const [open, setOpen] = useState(defaultOpen);
+function MuscleChoices({ groups, label, onChange, required = false, selected, tone }: { groups: MuscleGroup[]; label: string; onChange: (id: string) => void; required?: boolean; selected: string[]; tone: "cyan" | "lavender" }): ReactNode {
+  const [open, setOpen] = useState(false);
+  const pickerId = `muscle-picker-${label.toLowerCase().replace(/\s+/g, "-")}`;
 
   return (
-    <details
-      className="rounded border border-outline-dim/60"
-      onToggle={(event) => setOpen(event.currentTarget.open)}
-      open={open}
-    >
-      <summary className={`flex min-h-11 cursor-pointer list-none items-center justify-between px-3 text-xs font-semibold ${tone === "cyan" ? "text-cyan" : "text-lavender"}`}>
+    <div className="relative rounded border border-outline-dim/60">
+      <button aria-controls={pickerId} aria-expanded={open} className={`flex min-h-11 w-full items-center justify-between px-3 text-xs font-semibold ${tone === "cyan" ? "text-cyan" : "text-lavender"}`} onClick={() => setOpen((value) => !value)} type="button">
         <span>{label}{required ? " *" : ""}</span><span>{selected.length} selected · ⌄</span>
-      </summary>
-      <div className="grid grid-cols-2 gap-1 border-t border-outline-dim/50 p-2">
+      </button>
+      {open ? <div className="absolute bottom-[calc(100%+0.25rem)] left-0 right-0 z-30 grid max-h-52 grid-cols-2 gap-1 overflow-y-auto rounded border border-outline-dim bg-surface p-2 shadow-xl" id={pickerId} role="group">
         {groups.map((group) => <label className="flex min-h-11 items-center gap-2 text-xs text-fg-muted" key={group.id}><input checked={selected.includes(group.id)} className="size-4 accent-cyan" onChange={() => onChange(group.id)} type="checkbox" />{group.name}</label>)}
-      </div>
-    </details>
+      </div> : null}
+    </div>
   );
 }
 

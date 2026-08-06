@@ -31,6 +31,10 @@
   --color-lavender-dim: #cba4fb;
   --color-lavender-deep: #583584;
 
+  /* Set semantics — muted green is warmup context, never success feedback. */
+  --color-warmup: #9fcbb0;
+  --color-warmup-deep: #315b42;
+
   /* Tertiary — neon green (peak performance, success) */
   --color-green: #51fb37;
   --color-green-bright: #78ff5d;

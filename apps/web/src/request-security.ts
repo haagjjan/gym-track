@@ -28,7 +28,9 @@ const STATE_CHANGING_METHODS = new Set(["DELETE", "PATCH", "POST", "PUT"]);
 export function readWebSecurityConfig(
   source: EnvironmentSource = process.env
 ): WebSecurityConfig {
-  const production = source.NODE_ENV === "production" && source.APP_ENV !== "local";
+  const production = source.NODE_ENV === "production"
+    && source.APP_ENV !== "local"
+    && source.APP_ENV !== "private-lan";
   const canonicalOrigin = parseOrigin(
     "APP_BASE_URL",
     source.APP_BASE_URL ?? (production ? undefined : "http://localhost:3000")

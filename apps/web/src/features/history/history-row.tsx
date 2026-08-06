@@ -79,7 +79,7 @@ function ExpandedExercise({ exercise, workoutEndedAt }: { exercise: SessionExerc
 function SetPill({ set, workoutEndedAt }: { set: WorkoutSet; workoutEndedAt: string | null }): ReactNode {
   const edited = isRetroactivelyEdited(set, workoutEndedAt);
   return (
-    <span className={`rounded-sm border px-1.5 py-0.5 font-mono text-[10px] ${set.setType === "warmup" ? "border-lavender/40 text-lavender" : "border-outline-dim/60 text-fg-muted"}`} title={edited ? "Modified after completion" : undefined}>
+    <span className={`rounded-sm border px-1.5 py-0.5 font-mono text-[10px] ${set.setType === "warmup" ? "border-warmup/40 bg-warmup/5 text-warmup" : "border-lavender/40 bg-lavender/5 text-lavender"}`} title={edited ? "Modified after completion" : undefined}>
       {`${set.setOrder} · ${formatKgValue(set.weightKg)} kg × ${set.reps}`}{edited ? <span className="ml-1 text-cyan">✎</span> : null}
     </span>
   );

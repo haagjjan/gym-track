@@ -2,6 +2,10 @@ import type { Kysely } from "kysely";
 import type { AppDatabase } from "../../db/database.js";
 import type { WorkoutSessionRecord } from "./workout.repository.js";
 import { toWorkoutSessionRecord, workoutSessionSelection } from "./workout-records.js";
+import {
+  findPreviousPerformances,
+  type PreviousPerformanceRecord
+} from "./workout-previous-performance.repository.js";
 
 interface WorkoutSetRecord {
   id: string;
@@ -28,7 +32,7 @@ interface WorkoutMuscleRow extends WorkoutMuscleGroupRecord {
   role: "PRIMARY" | "SECONDARY";
 }
 
-interface WorkoutSessionExerciseRecord {
+export interface WorkoutSessionExerciseRecord {
   id: string;
   position: number;
   exercise: {
@@ -40,6 +44,7 @@ interface WorkoutSessionExerciseRecord {
     muscleGroups: Array<WorkoutMuscleGroupRecord & { role: "PRIMARY" | "SECONDARY" }>;
   };
   sets: WorkoutSetRecord[];
+  previousPerformance: PreviousPerformanceRecord | null;
 }
 
 export interface WorkoutDetailRecord extends WorkoutSessionRecord {
@@ -63,11 +68,18 @@ export async function findWorkoutDetail(
   const exercises = await findSessionExercises(db, workout.id);
   const sets = await findSets(db, exercises.map((exercise) => exercise.id));
   const setsByExerciseId = groupSetsBySessionExerciseId(sets);
+  const previousPerformances = await findPreviousPerformances(db, {
+    userId,
+    currentWorkoutId: workout.id,
+    currentWorkoutStartedAt: workout.startedAt,
+    exerciseIds: exercises.map((exercise) => exercise.exercise.id)
+  });
   return {
     ...toWorkoutSessionRecord(workout),
     exercises: exercises.map((exercise) => ({
       ...exercise,
-      sets: setsByExerciseId.get(exercise.id) ?? []
+      sets: setsByExerciseId.get(exercise.id) ?? [],
+      previousPerformance: previousPerformances.get(exercise.exercise.id) ?? null
     }))
   };
 }
@@ -75,7 +87,7 @@ export async function findWorkoutDetail(
 async function findSessionExercises(
   db: Kysely<AppDatabase>,
   workoutId: string
-): Promise<Omit<WorkoutSessionExerciseRecord, "sets">[]> {
+): Promise<Omit<WorkoutSessionExerciseRecord, "sets" | "previousPerformance">[]> {
   const rows = await db
     .selectFrom("session_exercises")
     .innerJoin("exercises", "exercises.id", "session_exercises.exercise_id")

@@ -57,6 +57,18 @@ describe("web request security", () => {
     assert.equal(config.canonicalOrigin, "http://localhost:3000");
   });
 
+  it("allows the explicit private-LAN HTTP deployment exception", () => {
+    const config = readWebSecurityConfig({
+      APP_BASE_URL: "http://192.168.1.57",
+      APP_ENV: "private-lan",
+      NODE_ENV: "production"
+    });
+
+    assert.equal(config.canonicalOrigin, "http://192.168.1.57");
+    assert.equal(config.allowedHosts.has("192.168.1.57"), true);
+    assert.equal(config.allowedHosts.has("localhost"), true);
+  });
+
   it("rejects untrusted hosts without redirecting", () => {
     const rejection = evaluateRequestSecurity(
       request({ host: "attacker.example", pathname: "/login" }),

@@ -45,24 +45,22 @@ export async function listExerciseRows(
       )`)
     )
     .$if(filters.search !== undefined, (builder) =>
-      builder.where(sql<boolean>`(
-        lower(exercises.name) like ${`%${filters.search?.toLowerCase()}%`}
-        or lower(coalesce(exercises.equipment, '')) like ${`%${filters.search?.toLowerCase()}%`}
-        or exists (
-          select 1
-          from exercise_muscle_groups emg
-          join muscle_groups mg on mg.id = emg.muscle_group_id
-          where emg.exercise_id = exercises.id
-            and lower(mg.name) like ${`%${filters.search?.toLowerCase()}%`}
-        )
-      )`)
+      builder.where(exerciseSearchPredicate(filters))
     )
     .$if(filters.search !== undefined, (builder) =>
       builder.orderBy(sql<number>`case
-        when lower(exercises.name) = ${filters.search?.toLowerCase()} then 1
+        when lower(exercises.name) = ${filters.search?.toLowerCase()} then 0
+        when ${aliasNamePredicate(filters.searchAliases)} then 1
         when lower(exercises.name) like ${`${filters.search?.toLowerCase()}%`} then 2
         when lower(exercises.name) like ${`%${filters.search?.toLowerCase()}%`} then 3
-        else 4 end`)
+        when similarity(lower(exercises.name), ${filters.search?.toLowerCase()}) >= ${searchSimilarityThreshold(filters.search ?? "")} then 4
+        else 5 end`)
+    )
+    .$if(filters.search !== undefined, (builder) =>
+      builder.orderBy(
+        sql<number>`similarity(lower(exercises.name), ${filters.search?.toLowerCase()})`,
+        "desc"
+      )
     );
 
   for (const muscleGroupId of filters.muscleGroupIds) {
@@ -126,17 +124,7 @@ export async function countExerciseRows(
       )`)
     )
     .$if(filters.search !== undefined, (builder) =>
-      builder.where(sql<boolean>`(
-        lower(exercises.name) like ${`%${filters.search?.toLowerCase()}%`}
-        or lower(coalesce(exercises.equipment, '')) like ${`%${filters.search?.toLowerCase()}%`}
-        or exists (
-          select 1
-          from exercise_muscle_groups emg
-          join muscle_groups mg on mg.id = emg.muscle_group_id
-          where emg.exercise_id = exercises.id
-            and lower(mg.name) like ${`%${filters.search?.toLowerCase()}%`}
-        )
-      )`)
+      builder.where(exerciseSearchPredicate(filters))
     );
 
   for (const muscleGroupId of filters.muscleGroupIds) {
@@ -170,6 +158,36 @@ export async function countExerciseRows(
 
   const row = await query.executeTakeFirstOrThrow();
   return Number(row.total);
+}
+
+function exerciseSearchPredicate(filters: ExerciseListFilters) {
+  const search = filters.search?.toLowerCase() ?? "";
+  return sql<boolean>`(
+    lower(exercises.name) like ${`%${search}%`}
+    or ${aliasNamePredicate(filters.searchAliases)}
+    or similarity(lower(exercises.name), ${search}) >= ${searchSimilarityThreshold(search)}
+    or lower(coalesce(exercises.equipment, '')) like ${`%${search}%`}
+    or exists (
+      select 1
+      from exercise_muscle_groups emg
+      join muscle_groups mg on mg.id = emg.muscle_group_id
+      where emg.exercise_id = exercises.id
+        and lower(mg.name) like ${`%${search}%`}
+    )
+  )`;
+}
+
+function aliasNamePredicate(aliases: string[]) {
+  if (aliases.length === 0) return sql<boolean>`false`;
+  return sql<boolean>`lower(exercises.name) in (${sql.join(
+    aliases.map((alias) => sql`${alias.toLowerCase()}`)
+  )})`;
+}
+
+function searchSimilarityThreshold(search: string): number {
+  if (search.length <= 3) return 0.62;
+  if (search.length <= 5) return 0.45;
+  return 0.32;
 }
 
 export async function findExerciseByIdOrThrow(

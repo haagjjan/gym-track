@@ -56,6 +56,7 @@ manifest_file="$(awk -F= '$1 == "POSTGRES_MANIFEST" {print $2}' <<< "${dump_resu
   printf 'ERROR: PostgreSQL backup did not return validated paths\n' >&2
   exit 1
 }
+"${SCRIPT_DIR}/export-erasure-ledger.sh" >/dev/null
 
 staging_directory="$(mktemp -d "${BACKUP_ROOT}/staging/gym-tracker-XXXXXXXX")"
 rmdir "${staging_directory}"
@@ -84,9 +85,9 @@ dump_size="$(stat -c '%s' "${dump_file}")"
 record_backup_success "${finish_epoch}" "${duration}" "${dump_size}"
 
 find "${BACKUP_ROOT}/postgres/current" -maxdepth 1 -type f \
-  -name 'gym_tracker-????????T??????Z.dump' -mtime +7 -delete
+  -name 'gym_tracker-????????T??????Z.dump' -mmin +10080 -delete
 find "${BACKUP_ROOT}/postgres/manifests" -maxdepth 1 -type f \
-  -name 'gym_tracker-????????T??????Z.manifest' -mtime +7 -delete
+  -name 'gym_tracker-????????T??????Z.manifest' -mmin +10080 -delete
 
 remove_controlled_staging_tree "${staging_directory}"
 staging_directory=""

@@ -7,6 +7,7 @@ import {
   forwardBffRequestId,
   logBffFailure
 } from "../../shared/server-logging";
+import { addBffClientAttribution } from "../../shared/bff-client-attribution";
 
 export async function proxyAnalyticsApiRequest(
   request: NextRequest,
@@ -57,6 +58,8 @@ function buildForwardHeaders(request: NextRequest): Headers {
   if (cookie) {
     headers.set("cookie", cookie);
   }
+
+  addBffClientAttribution(request, headers);
 
   return headers;
 }

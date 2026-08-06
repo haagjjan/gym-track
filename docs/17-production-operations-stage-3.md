@@ -1,11 +1,13 @@
 # Production Operations & Launch Readiness — Stage 3
 
 **For:** Codex or Claude Code  
-**Stage:** Open public release  
-**Status:** Ready for implementation only after Stage 2 completion  
+**Stage:** Future broad public release
+**Status:** Superseded for the first public beta by `18-public-beta-handoff.md`
 **Follows:** `16-production-operations-stage-2.md`  
 **Related:** `12-saas-hardening.md`, `13-operator-guide.md`, `14-ui-polish-and-ops-round-2.md`, `15-production-operations-stage-1.md`  
 **Assumes:** Stage 2 is complete, the controlled private beta has produced real usage evidence, and no unresolved issue threatens authentication, workout-data integrity, privacy, supportability, or recovery.
+
+> The next release is open-but-capped, not unrestricted. Use `18-public-beta-handoff.md` for its go/no-go scope and operational blockers. This document remains a longer-term reference and must not be read as evidence that unimplemented services or controls exist.
 
 ---
 
@@ -109,19 +111,19 @@ These choices remain fixed unless Stage 3 evidence requires a documented change.
 |---|---|
 | Framework | Next.js 15 App Router + React 19 |
 | API | Existing Fastify backend |
-| Database | PostgreSQL through Prisma |
+| Database | PostgreSQL through Kysely and SQL migrations |
 | BFF | Existing Next.js proxy layer |
 | Data fetching | TanStack Query |
 | Validation | Zod |
 | Styling | Tailwind CSS v4 using `DESIGN.md` tokens |
 | Charts | Recharts |
 | 3D | Three.js through `react-three-fiber` and `@react-three/drei` |
-| Logging | Structured Pino logs centralized in Loki |
+| Logging | Structured Pino logs; production centralization remains an operational decision |
 | Metrics | Prometheus-compatible metrics |
 | Dashboards | Grafana |
-| Error tracking | Sentry |
-| Tracing | Stage 2 tracing implementation |
-| Email | Resend |
+| Error tracking | Not yet selected or implemented |
+| Tracing | Not yet implemented end to end |
+| Email | Provider not yet selected; development delivery foundation only |
 | Backups | Logical backups plus Stage 2 near-point-in-time recovery |
 | Product analytics | Existing governed `app_events` system |
 | Deployment | Docker-based production topology unless Batch B selects another validated target |

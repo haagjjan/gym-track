@@ -23,6 +23,9 @@ Draft rules for the first schema pass. These notes capture business rules and da
 - Deleted exercises should no longer be selectable for new sessions, but historical workout data must remain readable.
 - Equipment and exercise type use the canonical nullable values accepted in ADR 0007; free-form classification values are not accepted.
 - System exercises are read-only. A shared user-created exercise is editable only by its creator.
+- The deterministic system catalog is the reviewed union of the legacy 152 names and logging-compatible records from Free Exercise DB revision `b0eed061e1c832b3ed815fbaa4b45b3cdc14df49`. Only names/classifications are seeded; cardio, stretching, duration/distance-only movements, instructions, and media are excluded.
+- Catalog conflicts never rename, promote, or overwrite a user-owned exercise. The migration preserves the user row and reports the name for manual review.
+- Equipment additionally supports `EZ bar`, `medicine ball`, and `stability ball`. Detailed source muscles map into the existing 12-group taxonomy.
 
 ### Ordering
 
@@ -87,6 +90,8 @@ Draft rules for the first schema pass. These notes capture business rules and da
 - Workout all-time summaries are computed over all non-deleted workouts and are independent of result pagination and active filters.
 - Exercise merges change only the requesting user's workout and template references. A personal source exercise is retired only when no active workout or template references remain for any user.
 - Unfinished new-set drafts are device-local values keyed by user, workout, and exercise. They are cleared after save, completion, discard, or explicit cancellation and never enter analytics.
+- New-set defaults use the latest current-session set when present, otherwise the previous performance weight from the latest qualifying earlier workout, otherwise 20 kg.
+- Previous performance is computed on read from owned, non-deleted, completed workouts strictly before the current workout. The latest workout containing an active working set qualifies; its best set is highest weight, then higher reps, then lower set order.
 - Exercise progress selects one strongest working set per user-local calendar day across all sessions on that day. Load/Reps uses weight, reps, then lower RIR; EST 1RM uses Epley output with deterministic ties.
 
 ### Cardio

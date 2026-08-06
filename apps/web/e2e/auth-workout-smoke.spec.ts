@@ -123,8 +123,14 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   await expect(newSetDialog).toBeVisible();
   await expect.poll(() => newSetDialog.evaluate((element) => getComputedStyle(element).position)).toBe("fixed");
   const weightInput = page.locator('input[inputmode="decimal"]').first();
-  await expect(weightInput).toBeFocused();
+  await expect(weightInput).not.toBeFocused();
 
+  await weightInput.fill("60");
+  await newSetDialog.getByRole("button", { name: "Increase WEIGHT" }).click();
+  await expect(weightInput).not.toBeFocused();
+  await expect(weightInput).toHaveValue("60");
+  await newSetDialog.getByRole("button", { name: "Increase WEIGHT" }).click();
+  await expect(weightInput).toHaveValue("62.5");
   await weightInput.fill("60");
   await page.reload();
   await page.getByRole("button", { name: /Bench Press \d+ sets$/ }).click();
@@ -141,11 +147,19 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   const editSetDialog = page.getByRole("dialog", { name: "Edit set 1" });
   await expect(editSetDialog).toBeVisible();
   await expect(page.getByText("REST_PROTOCOL")).toHaveCount(0);
-  await expect(editSetDialog.locator('input[inputmode="decimal"]')).toBeFocused();
-  await page.waitForTimeout(1_100);
-  await page.keyboard.press("Escape");
+  await expect(editSetDialog.locator('input[inputmode="decimal"]')).not.toBeFocused();
+  await editSetDialog.getByRole("radio", { name: "warmup" }).click();
+  await editSetDialog.getByLabel("Note").fill("Smoke edit");
+  await editSetDialog.getByRole("button", { name: "SAVE", exact: true }).click();
   await expect(editSetDialog).toHaveCount(0);
+  await expect(page.getByText("Warmup", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: /60 kg × 8/ }).click();
+  const restoreWorkingDialog = page.getByRole("dialog", { name: "Edit set 1" });
+  await restoreWorkingDialog.getByRole("radio", { name: "working" }).click();
+  await restoreWorkingDialog.getByRole("button", { name: "SAVE", exact: true }).click();
+  await expect(page.getByText("Working", { exact: true })).toBeVisible();
   await expect(timerDock).toBeVisible();
+  await page.waitForTimeout(1_100);
   const timerAfterEdit = await timerDock.locator("p.font-mono").textContent();
   expect(timerSeconds(timerAfterEdit)).toBeLessThan(timerSeconds(timerBeforeEdit));
   await expectNoHorizontalScroll(page);
@@ -153,7 +167,29 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   // ---- Complete (two-tap confirm) ----
   await page.getByRole("button", { name: "FINISH", exact: true }).click();
   await page.getByRole("button", { name: "CONFIRM FINISH", exact: true }).click();
-  await expect(page.getByText("Completed workout")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Session saved successfully" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "View History" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Dashboard" })).toBeVisible();
+
+  // The next workout shows and prefills the latest earlier best working set.
+  await page.goto("/workout");
+  await page.getByRole("button", { name: "START", exact: true }).click();
+  await page.getByRole("button", { name: "Choose exercises" }).click();
+  const secondPicker = page.getByRole("dialog", { name: "Choose exercises" });
+  await expect(secondPicker.getByRole("searchbox")).not.toBeFocused();
+  await secondPicker.getByRole("searchbox").fill("Bench Press");
+  await secondPicker.getByRole("button", { name: /^Bench Press\b/ }).first().click();
+  await secondPicker.getByRole("button", { name: "Add selected exercises (1)" }).click();
+  await expect(page.getByText("Gym Smoke", { exact: true })).toBeVisible();
+  await expect(page.getByText(/60 kg × 8/)).toBeVisible();
+  await page.getByRole("button", { name: "Add Set" }).click();
+  await expect(page.locator('input[inputmode="decimal"]').first()).toHaveValue("60");
+  await expect(page.locator('input[inputmode="decimal"]').first()).not.toBeFocused();
+  await page.getByRole("button", { name: "Cancel" }).click();
+  await page.getByRole("button", { name: "Workout actions" }).click();
+  await page.getByRole("menuitem", { name: "Discard workout" }).click();
+  await page.getByRole("alertdialog", { name: "Discard this workout?" }).getByRole("button", { name: "DISCARD WORKOUT" }).click();
+  await page.goto(`/workouts/${workoutId}`);
 
   // Move the completed session outside 3M so range-aware Progress widgets can
   // be checked against the all-time performance cards.

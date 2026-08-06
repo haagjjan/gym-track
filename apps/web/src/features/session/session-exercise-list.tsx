@@ -74,7 +74,7 @@ export function SessionExerciseList(props: SessionExerciseListProps): ReactNode 
                         <span className="w-5 shrink-0 font-mono text-[10px] text-outline">
                           {String(exercise.position).padStart(2, "0")}
                         </span>
-                        <span className="min-w-0 flex-1 truncate font-display text-sm font-bold">
+                        <span className="min-w-0 flex-1 break-words py-2 font-display text-sm font-bold leading-5">
                           {exercise.exercise.name}
                         </span>
                         <span className="shrink-0 font-mono text-xs text-outline">

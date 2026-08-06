@@ -34,6 +34,19 @@ interface SessionExerciseShape {
     muscleGroups: Array<MuscleGroupShape & { role: "PRIMARY" | "SECONDARY" }>;
   };
   sets: WorkoutSetShape[];
+  previousPerformance: {
+    workoutId: string;
+    workoutTitle: string | null;
+    workoutStartedAt: string;
+    bestSet: {
+      setId: string;
+      setOrder: number;
+      weightKg: string;
+      reps: number;
+      rir: number;
+      setType: "working";
+    };
+  } | null;
 }
 
 export interface WorkoutDetail {
@@ -115,7 +128,13 @@ export function toWorkoutDetail(record: WorkoutDetailRecord): WorkoutDetail {
       id: item.id,
       position: item.position,
       exercise: item.exercise,
-      sets: item.sets.map(toWorkoutSet)
+      sets: item.sets.map(toWorkoutSet),
+      previousPerformance: item.previousPerformance ? {
+        workoutId: item.previousPerformance.workoutId,
+        workoutTitle: item.previousPerformance.workoutTitle,
+        workoutStartedAt: item.previousPerformance.workoutStartedAt.toISOString(),
+        bestSet: item.previousPerformance.bestSet
+      } : null
     }))
   };
 }

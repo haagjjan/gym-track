@@ -43,6 +43,9 @@ The database schema, constraints, and indexes will be designed to support these 
     - RIR
     - rest_time_seconds
     - difference to last set
+  - for each exercise, nullable previous performance from the latest earlier owned, non-deleted, completed workout containing a working set:
+    - workout id/title/start time
+    - highest-weight working set, then higher reps, then lower set order
 
 ---
 
@@ -84,9 +87,10 @@ The database schema, constraints, and indexes will be designed to support these 
 ### Q17. Search and filter selectable exercises
 - Input: current user, optional search, multiple muscle IDs, equipment, type, ownership (`editable` or `readOnly`), entity-specific sort, limit, and offset.
 - Output: unique selectable exercises with structured primary and secondary assignments and matching pagination totals.
-- Search: exercise name, primary/secondary muscle names, and equipment.
+- Search: exact exercise name, approved local aliases, prefix/substring, PostgreSQL trigram typo similarity, then primary/secondary muscle names and equipment. Short unrelated input must not create broad false positives.
 - Filter: every selected muscle must match the same exercise in either role; equipment/type compose with those AND conditions.
 - Ownership: `editable` requires `created_by_user_id = current user`; `readOnly` includes system exercises and exercises created by another user. Omitted ownership returns all selectable exercises.
+- Pagination is required for the full system catalog; clients must not assume the first 100 rows are complete.
 
 ### Q18. Manage workout templates
 - Input: current user, template name, ordered exercise IDs
@@ -159,6 +163,17 @@ The database schema, constraints, and indexes will be designed to support these 
 ## 6) Cardio (deferred / vNext)
 
 Status: Deferred from the MVP and not part of the first schema/API pass.
+
+## 7) Founding Beta and Account Lifecycle
+
+- Q23 generically create/deduplicate a waitlist request without disclosing its prior state.
+- Q24 lock settings/request rows, count consuming accounts and unexpired invites, enforce cap/rolling approval limit, and issue one hashed invitation atomically.
+- Q25 consume one valid invitation with a matching email while creating the verified account and session transactionally.
+- Q26 export every user-owned profile/workout/template/exercise/preference/onboarding/event/message record without secrets or other-user security data.
+- Q27 lock an account for deletion, revoke all sessions, cancel by token/admin, select due accounts and hard-delete the complete ownership graph idempotently.
+- Q28 get/update privacy and onboarding state; increment reliable login/workout counters independently of optional analytics.
+- Q29 materialize campaign recipients and select the next eligible message from immutable trigger/audience state; save only a validated configured response.
+- Q30 list applicant/user/campaign state for an explicit administrator and append every privileged mutation to the audit log.
 
 ### C1. Log cardio entry in a session OR standalone
 - Input: distance, duration, optional notes

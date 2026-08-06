@@ -1,6 +1,7 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { getApiBaseUrl } from "../../shared/api-base-url";
 import { isAuthUser, type AuthUser } from "./auth-types";
+import { addBffClientAttribution } from "../../shared/bff-client-attribution";
 
 interface CurrentUserPayload {
   data?: {
@@ -16,11 +17,10 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   }
 
   try {
+    const upstreamHeaders = new Headers({ accept: "application/json", cookie: cookieHeader });
+    addBffClientAttribution({ headers: await headers() }, upstreamHeaders);
     const response = await fetch(`${getApiBaseUrl()}/auth/me`, {
-      headers: {
-        accept: "application/json",
-        cookie: cookieHeader
-      },
+      headers: upstreamHeaders,
       cache: "no-store"
     });
 

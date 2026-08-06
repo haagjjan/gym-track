@@ -37,6 +37,19 @@ interface WorkoutPayload {
         reps: number;
         weightKg: string;
       }[];
+      previousPerformance: {
+        workoutId: string;
+        workoutTitle: string | null;
+        workoutStartedAt: string;
+        bestSet: {
+          setId: string;
+          setOrder: number;
+          weightKg: string;
+          reps: number;
+          rir: number;
+          setType: "working";
+        };
+      } | null;
     }[];
   };
 }
@@ -273,6 +286,55 @@ describe("workout API database flow", { skip: databaseUrl ? false : "INTEGRATION
         cookies: authCookies(owner.cookie)
       })).statusCode, 200);
       assert.ok(await createWorkout(server, owner.cookie));
+    } finally {
+      await server.close();
+    }
+  });
+
+  it("returns the latest owned previous workout's heaviest working set", async () => {
+    const server = await buildIntegrationServer(db);
+
+    try {
+      const tag = `${Date.now().toString(36)}${process.pid}previous`;
+      const owner = await signup(server, `${tag}o`);
+      const other = await signup(server, `${tag}x`);
+      const exerciseId = await createExercise(server, owner.cookie, `${tag} Lift`);
+      const previousWorkoutId = await createWorkout(server, owner.cookie);
+      const previousExerciseId = await addExerciseToWorkout(
+        server,
+        owner.cookie,
+        previousWorkoutId,
+        exerciseId
+      );
+      await addSet(server, owner.cookie, previousWorkoutId, previousExerciseId, { weightKg: "90.00", reps: 10 });
+      await addSet(server, owner.cookie, previousWorkoutId, previousExerciseId, { weightKg: "100.00", reps: 5 });
+      await addSet(server, owner.cookie, previousWorkoutId, previousExerciseId, { weightKg: "100.00", reps: 6, rir: 1 });
+      await endWorkout(server, owner.cookie, previousWorkoutId);
+      await db.updateTable("workout_sessions").set({ started_at: new Date("2026-08-01T10:00:00.000Z"), ended_at: new Date("2026-08-01T11:00:00.000Z") }).where("id", "=", previousWorkoutId).execute();
+
+      const deletedWorkoutId = await createWorkout(server, owner.cookie);
+      const deletedExerciseId = await addExerciseToWorkout(server, owner.cookie, deletedWorkoutId, exerciseId);
+      await addSet(server, owner.cookie, deletedWorkoutId, deletedExerciseId, { weightKg: "130.00", reps: 2 });
+      await endWorkout(server, owner.cookie, deletedWorkoutId);
+      await db.updateTable("workout_sessions").set({ started_at: new Date("2026-08-02T10:00:00.000Z"), ended_at: new Date("2026-08-02T11:00:00.000Z"), deleted_at: new Date("2026-08-03T00:00:00.000Z") }).where("id", "=", deletedWorkoutId).execute();
+
+      const otherWorkoutId = await createWorkout(server, other.cookie);
+      const otherExerciseId = await addExerciseToWorkout(server, other.cookie, otherWorkoutId, exerciseId);
+      await addSet(server, other.cookie, otherWorkoutId, otherExerciseId, { weightKg: "140.00", reps: 1 });
+      await endWorkout(server, other.cookie, otherWorkoutId);
+      await db.updateTable("workout_sessions").set({ started_at: new Date("2026-08-03T10:00:00.000Z"), ended_at: new Date("2026-08-03T11:00:00.000Z") }).where("id", "=", otherWorkoutId).execute();
+
+      const currentWorkoutId = await createWorkout(server, owner.cookie);
+      await db.updateTable("workout_sessions").set({ started_at: new Date("2026-08-04T10:00:00.000Z") }).where("id", "=", currentWorkoutId).execute();
+      await addExerciseToWorkout(server, owner.cookie, currentWorkoutId, exerciseId);
+      const current = await getWorkout(server, owner.cookie, currentWorkoutId);
+      const previous = current.exercises[0]?.previousPerformance;
+
+      assert.equal(previous?.workoutId, previousWorkoutId);
+      assert.equal(previous?.bestSet.weightKg, "100.00");
+      assert.equal(previous?.bestSet.reps, 6);
+      assert.equal(previous?.bestSet.setOrder, 3);
+      assert.equal(previous?.bestSet.setType, "working");
     } finally {
       await server.close();
     }
@@ -544,13 +606,15 @@ describe("workout API database flow", { skip: databaseUrl ? false : "INTEGRATION
       const exercise = readData<{ exercise: { id: string; muscleGroups: Array<{ id: string; role: string }> } }>(created).exercise;
       assert.deepEqual(exercise.muscleGroups.map((muscle) => muscle.role), ["PRIMARY", "PRIMARY", "SECONDARY"]);
 
-      const search = await server.inject({ method: "GET", url: "/api/v1/exercises?search=triceps", cookies: authCookies(owner.cookie) });
-      assert.ok(readData<{ items: Array<{ id: string }> }>(search).items.some((item) => item.id === exercise.id));
-      const filter = await server.inject({ method: "GET", url: `/api/v1/exercises?muscleGroupId=${shouldersId}`, cookies: authCookies(owner.cookie) });
+      const search = await server.inject({ method: "GET", url: "/api/v1/exercises?search=triceps&limit=100", cookies: authCookies(owner.cookie) });
+      const muscleSearch = readData<{ items: Array<{ id: string }>; pagination: { total: number } }>(search);
+      assert.ok(muscleSearch.items.length > 0);
+      assert.ok(muscleSearch.pagination.total >= muscleSearch.items.length);
+      const filter = await server.inject({ method: "GET", url: `/api/v1/exercises?muscleGroupId=${shouldersId}&ownership=editable`, cookies: authCookies(owner.cookie) });
       assert.ok(readData<{ items: Array<{ id: string }> }>(filter).items.some((item) => item.id === exercise.id));
       const andFilter = await server.inject({
         method: "GET",
-        url: `/api/v1/exercises?muscleGroupIds=${chestId},${tricepsId}&equipment=machine&exerciseType=compound`,
+        url: `/api/v1/exercises?muscleGroupIds=${chestId},${tricepsId}&equipment=machine&exerciseType=compound&ownership=editable`,
         cookies: authCookies(owner.cookie)
       });
       assert.deepEqual(
@@ -606,6 +670,56 @@ describe("workout API database flow", { skip: databaseUrl ? false : "INTEGRATION
         })),
         [{ id: tricepsId, role: "PRIMARY" }, { id: chestId, role: "SECONDARY" }]
       );
+    } finally {
+      await server.close();
+    }
+  });
+
+  it("ranks aliases and typos while preserving facets and pagination", async () => {
+    const server = await buildIntegrationServer(db);
+
+    try {
+      const user = await signup(server, `${Date.now().toString(36)}${process.pid}catalog`);
+      const firstPageResponse = await server.inject({
+        method: "GET",
+        url: "/api/v1/exercises?limit=25&offset=0",
+        cookies: authCookies(user.cookie)
+      });
+      const secondPageResponse = await server.inject({
+        method: "GET",
+        url: "/api/v1/exercises?limit=25&offset=25",
+        cookies: authCookies(user.cookie)
+      });
+      const firstPage = readData<{ items: Array<{ id: string; name: string }>; pagination: { total: number } }>(firstPageResponse);
+      const secondPage = readData<{ items: Array<{ id: string; name: string }>; pagination: { total: number } }>(secondPageResponse);
+
+      assert.ok(firstPage.pagination.total >= 820);
+      assert.equal(firstPage.items.length, 25);
+      assert.equal(secondPage.items.length, 25);
+      assert.equal(firstPage.items.some((item) => secondPage.items.some((other) => other.id === item.id)), false);
+
+      const aliasResponse = await server.inject({
+        method: "GET",
+        url: "/api/v1/exercises?search=rdl&limit=10&offset=0",
+        cookies: authCookies(user.cookie)
+      });
+      const aliasNames = readData<{ items: Array<{ name: string }> }>(aliasResponse).items.map((item) => item.name);
+      assert.ok(aliasNames.includes("Romanian Deadlift"));
+
+      const typoResponse = await server.inject({
+        method: "GET",
+        url: `/api/v1/exercises?search=${encodeURIComponent("inclne dumbell pres")}&equipment=dumbbell&limit=10&offset=0`,
+        cookies: authCookies(user.cookie)
+      });
+      const typoNames = readData<{ items: Array<{ name: string }> }>(typoResponse).items.map((item) => item.name);
+      assert.ok(typoNames.includes("Incline Dumbbell Press"));
+
+      const noMatchResponse = await server.inject({
+        method: "GET",
+        url: "/api/v1/exercises?search=xyqzpl&limit=10&offset=0",
+        cookies: authCookies(user.cookie)
+      });
+      assert.equal(readData<{ items: unknown[] }>(noMatchResponse).items.length, 0);
     } finally {
       await server.close();
     }
@@ -843,7 +957,14 @@ async function addSet(
   server: FastifyInstance,
   cookie: string,
   workoutId: string,
-  sessionExerciseId: string
+  sessionExerciseId: string,
+  overrides: Partial<{
+    setType: "working" | "warmup";
+    weightKg: string;
+    reps: number;
+    rir: number;
+    restTimeSeconds: number | null;
+  }> = {}
 ): Promise<string> {
   const response = await server.inject({
     method: "POST",
@@ -854,7 +975,8 @@ async function addSet(
       weightKg: "90.00",
       reps: 5,
       rir: 2,
-      restTimeSeconds: 120
+      restTimeSeconds: 120,
+      ...overrides
     }
   });
 

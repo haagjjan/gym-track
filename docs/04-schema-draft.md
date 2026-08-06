@@ -139,14 +139,15 @@ Constraints and indexes:
 
 - Unique index on `lower(name)`.
 - Index on `primary_muscle_group_id`.
-- Index on `lower(name)` for exercise search.
+- B-tree pattern index and partial `pg_trgm` GIN index on `lower(name)` for prefix and typo-tolerant exercise search.
 - Selectable exercises are rows where `deleted_at IS NULL`.
-- `equipment` is null or one of the ten canonical equipment values.
+- `equipment` is null or one of the thirteen canonical values, including `EZ bar`, `medicine ball`, and `stability ball`.
 - `exercise_type` is null or one of the four canonical type values.
 
 Rules:
 
-- The system seed includes a read-only `Bench Press` exercise classified as `barbell`, `compound`, and primary `chest`, so a fresh database has a selectable exercise.
+- The system seed includes 820 deterministic read-only exercise rows from the reviewed catalog manifest. The earlier `Bench Press` seed remains independently valid.
+- System catalog IDs use the reserved `10000000-...` namespace. Case-insensitive user-owned conflicts are preserved and reported for manual review.
 - Soft-deleted exercise names should be restored/reused, not recreated as separate records.
 - Historical workout data must remain readable even if an exercise is soft-deleted.
 
@@ -294,7 +295,7 @@ Rules:
 | Q3 Recent sessions | `workout_sessions` index on `(user_id, started_at DESC)` |
 | Q4 Workout/history contingency | `workout_sessions`, `session_exercises`, `sets`, date-range and working-set filters |
 | Q5 Sessions by date range | `workout_sessions` index on `(user_id, started_at, ended_at)` |
-| Q6 Session detail | `workout_sessions`, `session_exercises`, `sets`, ordered position/set indexes |
+| Q6 Session detail | `workout_sessions`, `session_exercises`, `sets`, ordered position/set indexes, previous owned completed-workout lookup |
 | Q7 Create session | `workout_sessions`, one-open-session partial unique index |
 | Q8 Add exercise to session | `session_exercises`, active position uniqueness |
 | Q9 Add set | `sets`, active set-order uniqueness and value checks |
@@ -305,7 +306,7 @@ Rules:
 | Q14 Exercise progress | Join `workout_sessions` -> `session_exercises` -> `sets` by user, exercise, date range |
 | Q15 Exercise summary | Same raw tables as Q14, computed aggregates on read |
 | Q16 Weekly sets per muscle | `sets` where `set_type = 'working'`, joined to exercise primary muscle |
-| Q17 Exercise muscle search/filter | `exercise_muscle_groups`, `muscle_groups`, lower-name search |
+| Q17 Exercise muscle search/filter | `exercise_muscle_groups`, `muscle_groups`, lower-name B-tree and `pg_trgm` search indexes |
 | Q18 Template management | `workout_templates`, `workout_template_exercises` |
 | Q19 Template/session copying | template rows copied to `workout_sessions`, `session_exercises` transactionally |
 
@@ -314,3 +315,11 @@ Cardio C1-C2 are deferred and intentionally unsupported by the first schema pass
 ## Follow-Up Decisions
 
 - Decide whether `workout_type` should become a constrained lookup once workout splits are implemented.
+
+## Founding Beta Schema Extension
+
+Migration `20260805120000000_add_public_beta_foundation.sql` extends `users` with explicit role/account state/cohort, reliable activity counters, privacy choices, policy evidence, deletion deadline and versioned onboarding. `exercises.created_by_user_id` becomes `ON DELETE SET NULL` so a shared referenced definition can outlive its creator without retaining identity.
+
+`beta_settings` is the locked singleton for immediate waitlist/invitation/campaign controls, account cap and rolling approval limit. `beta_access_requests` stores policy/age evidence, state, hashed invitation and joined account. `admin_audit_events` records privileged actions. `account_deletion_tokens` and `erasure_tombstones` support reversible grace and restore-safe hard erasure.
+
+`campaigns`, `campaign_targets` and `message_deliveries` store immutable published content/audience, bounded trigger/response design and exactly-once per-user state. All ownership FKs cascade on user erasure unless a retained shared definition explicitly nulls creator identity. The processing and retention rules are in `docs/public-beta/data-processing-inventory.md`.

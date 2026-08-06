@@ -34,10 +34,11 @@ Migration: `20260703120000000_add_auth_hardening_and_events.sql` (users columns:
 `app_events`).
 
 Configuration now also includes `REGISTRATION_MODE`, `APP_ALLOWED_HOSTS`, and
-`APP_ALLOWED_ORIGINS`. Production registration defaults closed, production `APP_BASE_URL`
-must be HTTPS, and production cookies cannot be configured insecurely. `RESEND_API_KEY`
-remains optional; without it, production auth mail is not delivered and message contents
-are not logged.
+`APP_ALLOWED_ORIGINS`. Production registration defaults closed. Public production requires
+an HTTPS `APP_BASE_URL` and secure cookies. The explicit `private-lan` environment preserves
+the reviewed HTTP-only home-server exception while it remains LAN-bound and registration is
+disabled. `RESEND_API_KEY` remains optional; without it, production auth mail is not delivered
+and message contents are not logged.
 
 Web: `/forgot-password`, `/reset-password`, `/verify-email` screens; forgot link on login;
 min-10 hint on signup; dashboard `EMAIL_UNVERIFIED` banner with resend.

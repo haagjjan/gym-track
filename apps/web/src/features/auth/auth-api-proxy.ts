@@ -7,6 +7,7 @@ import {
   forwardBffRequestId,
   logBffFailure
 } from "../../shared/server-logging";
+import { addBffClientAttribution } from "../../shared/bff-client-attribution";
 
 type AuthProxyTarget =
   | "signup"
@@ -71,6 +72,8 @@ function buildForwardHeaders(request: NextRequest): Headers {
   if (cookie) {
     headers.set("cookie", cookie);
   }
+
+  addBffClientAttribution(request, headers);
 
   return headers;
 }

@@ -37,9 +37,10 @@ The live PostgreSQL data directory, Docker images, container layers, Prometheus 
 
 - Backup attempts: 03:20, 09:20, 15:20, and 21:20 server local time, each with up to 20 minutes of randomized delay.
 - Repository maintenance: Sunday 04:40 with up to 30 minutes of randomized delay.
-- Restic retention: 14 daily, 8 weekly, and 12 monthly snapshots.
+- Restic retention: snapshots older than 30 days relative to maintenance time are explicitly forgotten, followed by prune. This avoids retaining stale snapshots merely because no newer snapshot exists.
 - Local unencrypted logical dumps: 7 days.
 - Repository check: metadata after each backup and a 10% data subset during weekly maintenance.
+- Erasure tombstones are exported before every snapshot to the protected state tree outside the database dump. Every database restore must replay the newest valid ledger before the application network reopens.
 
 ## Operator commands
 
@@ -50,6 +51,7 @@ sudo journalctl -u gym-tracker-backup.service -n 200 --no-pager
 sudo /srv/gym-tracker/scripts/backup-status.sh
 sudo /srv/gym-tracker/scripts/restore-test-postgres.sh
 sudo /srv/gym-tracker/scripts/restore-test-config.sh
+sudo /srv/gym-tracker/scripts/replay-erasure-ledger.sh RESTORE_CONTAINER /path/to/newest/current.csv
 ```
 
 Do not run Restic repair, unlock, forget, or prune commands ad hoc. Preserve existing snapshots and follow the recovery runbooks if a check fails.

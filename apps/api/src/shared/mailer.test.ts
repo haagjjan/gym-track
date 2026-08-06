@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createLogMailer, createMailerFromEnv, type AppLoggerLike } from "./mailer.js";
+import { createLogMailer, createMailerFromEnv, createResendMailer, type AppLoggerLike } from "./mailer.js";
 
 describe("mailer logging", () => {
   it("keeps local-development message retrieval available", async () => {
@@ -28,6 +28,28 @@ describe("mailer logging", () => {
 
     assert.match(captured.output(), /no provider is configured|not delivered/);
     assert.doesNotMatch(captured.output(), /private@example\.test|private-action-token/);
+  });
+
+  it("submits both plain text and escaped branded HTML to Resend", async () => {
+    const originalFetch = globalThis.fetch;
+    let submitted: Record<string, unknown> | null = null;
+    globalThis.fetch = async (_input, init) => {
+      submitted = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      return new Response(null, { status: 202 });
+    };
+    try {
+      await createResendMailer("secret", "Gym Tracker <hello@example.test>", createCaptureLogger().logger, "support@example.test").send({
+        to: "person@example.test", subject: "Welcome <member>", text: "Open https://example.test\n\nNever share <tokens>."
+      });
+      const delivered = submitted as Record<string, unknown> | null;
+      assert.ok(delivered);
+      assert.match(String(delivered.text), /Never share <tokens>/);
+      assert.match(String(delivered.html), /GYM PROGRESS TRACKER/);
+      assert.doesNotMatch(String(delivered.html), /<member>|<tokens>/);
+      assert.equal(delivered.reply_to, "support@example.test");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 });
 

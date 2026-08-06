@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted. The retention duration and restore ordering were superseded by ADR 0013 on 2026-08-05; topology and access controls remain accepted.
 
 ## Context
 
@@ -20,7 +20,7 @@ Use Restic with its SFTP backend for the first private-production backup system:
 - use a dedicated hidden macOS account, an Ed25519 key, internal-SFTP-only forced command, disabled forwarding, and an OpenSSH chroot;
 - keep a separate protected recovery copy of the Restic password outside the SFTP chroot;
 - attempt backups four times daily so a sleeping laptop has multiple availability windows;
-- keep 14 daily, 8 weekly, and 12 monthly Restic snapshots and only 7 days of local logical dumps;
+- originally keep 14 daily, 8 weekly, and 12 monthly Restic snapshots; ADR 0013 replaces this with a strict 30-day maximum while retaining only 7 days of local logical dumps;
 - export authoritative backup and restore-test metrics through Node Exporter's textfile collector;
 - prove both PostgreSQL and configuration restoration in isolated resources before considering Stage 11 complete.
 

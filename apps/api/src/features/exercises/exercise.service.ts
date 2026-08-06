@@ -25,6 +25,7 @@ import type {
   UpdateExerciseRequest
 } from "./exercise.schemas.js";
 import { EXERCISE_EQUIPMENT, EXERCISE_TYPES } from "./exercise-classifications.js";
+import { resolveExerciseNameAlias } from "./exercise-name-aliases.js";
 
 export interface ExerciseService {
   listExercises(userId: string, input: ListExercisesQuery): Promise<ExerciseList>;
@@ -59,6 +60,7 @@ export function createExerciseService(options: ExerciseServiceOptions): Exercise
     async listExercises(userId, input) {
       const filters: ExerciseListFilters = {
         search: input.search,
+        searchAliases: input.search ? [...resolveExerciseNameAlias(input.search)] : [],
         muscleGroupIds: uniqueIds([
           ...(input.muscleGroupIds ?? []),
           ...(input.muscleGroupId ? [input.muscleGroupId] : [])
@@ -96,6 +98,7 @@ export function createExerciseService(options: ExerciseServiceOptions): Exercise
     async findNameSuggestions(name) {
       const result = await options.repository.listExercises({
         search: name,
+        searchAliases: [...resolveExerciseNameAlias(name)],
         muscleGroupIds: [],
         primaryMuscleGroupId: undefined,
         equipment: undefined,

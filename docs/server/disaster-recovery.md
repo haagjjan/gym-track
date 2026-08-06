@@ -30,7 +30,8 @@ Backups exclude Docker images, container writable layers, the live PostgreSQL da
 
 - The server attempts an encrypted backup four times daily to accommodate MacBook sleep periods.
 - A warning fires after 30 hours without a successful snapshot and a critical alert after 48 hours.
-- Restic keeps 14 daily, 8 weekly, and 12 monthly snapshots.
+- Public-beta policy strictly removes snapshots older than 30 wall-clock days and prunes the repository; ADR 0013 supersedes the earlier tiered retention.
+- Before a restored database is reopened, replay the newest protected erasure ledger so an older snapshot cannot resurrect deleted accounts.
 - Weekly maintenance applies retention and checks 10% of repository data.
 - Local unencrypted dumps are retained for 7 days but are not treated as independent backups.
 

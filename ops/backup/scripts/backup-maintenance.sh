@@ -8,7 +8,9 @@ readonly SCRIPT_DIR
 source "${SCRIPT_DIR}/backup-common.sh"
 
 require_root
+require_command date
 require_command flock
+require_command jq
 require_command restic
 
 exec 9>"${BACKUP_LOCK_FILE}"
@@ -27,13 +29,24 @@ finish() {
 trap finish EXIT
 
 load_restic_environment
-run_restic forget \
-  --host gym-prod \
-  --tag gym-tracker \
-  --keep-daily 14 \
-  --keep-weekly 8 \
-  --keep-monthly 12 \
-  --prune
+cutoff_epoch="$(( $(date -u +%s) - 30 * 24 * 60 * 60 ))"
+snapshot_rows_tsv="$(run_restic snapshots --host gym-prod --tag gym-tracker --json \
+  | jq -er 'if length == 0 then error("no Gym Tracker snapshots found") else .[] | [.id, .time] | @tsv end')"
+mapfile -t snapshot_rows <<< "${snapshot_rows_tsv}"
+expired_snapshots=()
+for snapshot_row in "${snapshot_rows[@]}"; do
+  snapshot_id="${snapshot_row%%$'\t'*}"
+  snapshot_time="${snapshot_row#*$'\t'}"
+  snapshot_epoch="$(date -u --date="${snapshot_time}" +%s)"
+  if (( snapshot_epoch < cutoff_epoch )); then
+    expired_snapshots+=("${snapshot_id}")
+  fi
+done
+if [[ "${#expired_snapshots[@]}" -gt 0 ]]; then
+  run_restic forget "${expired_snapshots[@]}" --prune
+else
+  run_restic prune
+fi
 run_restic check --read-data-subset=10%
 
 completed=1
