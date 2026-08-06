@@ -11,6 +11,9 @@ export interface PublicUser {
   email: string;
   username: string;
   emailVerified: boolean;
+  role?: "USER" | "ADMIN";
+  accountStatus?: "ACTIVE" | "DELETION_PENDING" | "SUSPENDED";
+  betaCohort?: string | null;
   createdAt: string;
 }
 
@@ -25,7 +28,9 @@ export type AuthFailureReason =
   | "invalid_credentials"
   | "unauthorized"
   | "locked"
-  | "invalid_token";
+  | "invalid_token"
+  | "invalid_invitation"
+  | "account_unavailable";
 
 type AuthResult<T> = { ok: true; value: T } | { ok: false; reason: AuthFailureReason };
 
@@ -73,21 +78,33 @@ export function createAuthService(options: AuthServiceOptions): AuthService {
       const passwordHash = await options.passwordHasher.hash(input.password);
       const userId = randomUUID();
       const session = createSession(userId, options.sessionTtlDays, now(), options.sessionTokens);
-      const result = await options.repository.createUserWithSession(
-        {
-          id: userId,
-          email: input.email,
-          username: input.username,
-          passwordHash
-        },
-        session
-      );
+      const user = {
+        id: userId,
+        email: input.email,
+        username: input.username,
+        passwordHash,
+        ...(input.termsVersion ? { termsVersion: input.termsVersion } : {}),
+        ...(input.privacyVersion ? { privacyVersion: input.privacyVersion } : {}),
+        ...(input.adultAttested ? { adultAttestedAt: now() } : {})
+      };
+      const result = input.inviteToken && options.repository.createInvitedUserWithSession
+        ? await options.repository.createInvitedUserWithSession(
+            user,
+            session,
+            options.sessionTokens.hash(input.inviteToken),
+            now()
+          )
+        : await options.repository.createUserWithSession(user, session);
+
+      if (result.status === "invalid_invitation") {
+        return { ok: false, reason: "invalid_invitation" };
+      }
 
       if (result.status === "conflict") {
         return { ok: false, reason: "conflict" };
       }
 
-      await actions.sendSignupVerification(result.user);
+      if (!result.user.emailVerifiedAt) await actions.sendSignupVerification(result.user);
 
       return authenticatedUser(result.user, session);
     },
@@ -100,6 +117,10 @@ export function createAuthService(options: AuthServiceOptions): AuthService {
 
       if (user.lockedUntil && user.lockedUntil > now()) {
         return { ok: false, reason: "locked" };
+      }
+
+      if (user.accountStatus && user.accountStatus !== "ACTIVE") {
+        return { ok: false, reason: "account_unavailable" };
       }
 
       const passwordMatches = await options.passwordHasher.verify(
@@ -127,6 +148,7 @@ export function createAuthService(options: AuthServiceOptions): AuthService {
       const session = createSession(user.id, options.sessionTtlDays, now(), options.sessionTokens);
 
       await options.repository.createSession(session);
+      await options.repository.incrementLoginCount?.(user.id, now());
 
       return authenticatedUser(user, session);
     },
@@ -149,6 +171,10 @@ export function createAuthService(options: AuthServiceOptions): AuthService {
 
       if (!user) {
         return { ok: false, reason: "unauthorized" };
+      }
+
+      if (user.accountStatus && user.accountStatus !== "ACTIVE") {
+        return { ok: false, reason: "account_unavailable" };
       }
 
       return {
@@ -202,6 +228,9 @@ function toPublicUser(user: AuthUserRecord): PublicUser {
     email: user.email,
     username: user.username,
     emailVerified: user.emailVerifiedAt !== null,
+    role: user.role ?? "USER",
+    accountStatus: user.accountStatus ?? "ACTIVE",
+    betaCohort: user.betaCohort ?? null,
     createdAt: user.createdAt.toISOString()
   };
 }

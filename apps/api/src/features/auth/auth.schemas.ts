@@ -10,11 +10,16 @@ const newPasswordSchema = z
   .max(200);
 const loginPasswordSchema = z.string().min(1).max(200);
 const actionTokenSchema = z.string().trim().min(20).max(200);
+const policyVersionSchema = z.string().trim().min(1).max(50);
 
 export const signupRequestSchema = z.object({
   email: emailSchema,
   username: usernameSchema,
-  password: newPasswordSchema
+  password: newPasswordSchema,
+  inviteToken: actionTokenSchema.optional(),
+  termsVersion: policyVersionSchema.optional(),
+  privacyVersion: policyVersionSchema.optional(),
+  adultAttested: z.literal(true).optional()
 });
 
 export const loginRequestSchema = z.object({
