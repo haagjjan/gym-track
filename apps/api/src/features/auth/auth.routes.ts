@@ -4,6 +4,7 @@ import { sendValidationError } from "../../shared/http-validation.js";
 import { registerAuthActionRoutes } from "./auth-action.routes.js";
 import {
   authRateLimit,
+  registrationMode,
   type AuthCookieOptions,
   type AuthRouteOptions
 } from "./auth-route-config.js";
@@ -15,13 +16,14 @@ export async function registerAuthRoutes(
   options: AuthRouteOptions
 ): Promise<void> {
   const events = options.events ?? noopEventTracker;
+  const mode = registrationMode(options);
 
   server.post(
     "/api/v1/auth/signup",
     {
       config: authRateLimit,
       onRequest: (_request, reply, done) => {
-        if (options.registrationEnabled) {
+        if (mode !== "DISABLED") {
           done();
           return;
         }
@@ -36,9 +38,26 @@ export async function registerAuthRoutes(
         return sendValidationError(reply, parsed.error);
       }
 
+      if (mode === "INVITE_ONLY" && (
+        !parsed.data.inviteToken || !parsed.data.termsVersion ||
+        !parsed.data.privacyVersion || parsed.data.adultAttested !== true
+      )) {
+        return reply.status(403).send({
+          error: {
+            code: "INVITATION_REQUIRED",
+            message: "A valid Founding Beta invitation is required."
+          }
+        });
+      }
+
       const result = await options.service.signup(parsed.data);
 
       if (!result.ok) {
+        if (result.reason === "invalid_invitation") {
+          return reply.status(403).send({
+            error: { code: "INVALID_INVITATION", message: "This invitation is invalid or expired." }
+          });
+        }
         return reply.status(409).send({
           error: {
             code: "AUTH_CONFLICT",
@@ -68,6 +87,11 @@ export async function registerAuthRoutes(
     const result = await options.service.login(parsed.data);
 
     if (!result.ok) {
+      if (result.reason === "account_unavailable") {
+        return reply.status(403).send({
+          error: { code: "ACCOUNT_UNAVAILABLE", message: "This account is not currently available." }
+        });
+      }
       if (result.reason === "locked") {
         return reply.status(423).send({
           error: {
