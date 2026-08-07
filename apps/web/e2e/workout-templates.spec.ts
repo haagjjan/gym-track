@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { expectModalFocusTrap } from "./accessibility-assertions";
 
 test.setTimeout(180_000);
 
@@ -15,6 +16,13 @@ test("creates, filters, edits, and launches a workout template", async ({ page }
   await page.getByLabel(/ACCESS_CODE/).fill("template-passphrase-1");
   await page.getByRole("button", { name: "REGISTER" }).click();
   await expect(page.getByRole("heading", { name: new RegExp(username, "i") })).toBeVisible();
+  const onboarding = page.getByRole("dialog", { name: "Welcome, Founding Member" });
+  await expect(onboarding).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(onboarding).toHaveCount(0);
+  const storageChoice = page.getByRole("dialog", { name: "Device storage choice" });
+  await storageChoice.getByRole("button", { name: "ALLOW FUNCTIONAL" }).click();
+  await expect(storageChoice).toHaveCount(0);
 
   await page.goto("/workouts/templates");
   const tabs = page.getByRole("navigation", { name: "Workout sections" });
@@ -26,6 +34,13 @@ test("creates, filters, edits, and launches a workout template", async ({ page }
   await page.getByLabel("TEMPLATE_NAME").fill(templateName);
   await page.getByRole("button", { name: "Choose exercises" }).click();
   const picker = page.getByRole("dialog", { name: "Choose template exercises" });
+  await picker.getByRole("button", { name: /^Filters/ }).click();
+  const nestedFilters = page.getByRole("dialog", { name: "Filter results" });
+  await expect(nestedFilters.getByRole("button", { name: "Close filters" })).toBeFocused();
+  await expectModalFocusTrap(page, nestedFilters);
+  await page.keyboard.press("Escape");
+  await expect(nestedFilters).toHaveCount(0);
+  await expect(picker).toBeVisible();
   await picker.getByRole("searchbox").fill("Bench Press");
   await picker.getByRole("button", { name: /^Bench Press\b/ }).first().click();
   await picker.getByRole("button", { name: "Add selected exercises (1)" }).click();
@@ -43,8 +58,15 @@ test("creates, filters, edits, and launches a workout template", async ({ page }
   await page.getByRole("searchbox", { name: "Search workout templates" }).fill(templateName);
   await expect(page.getByRole("heading", { name: templateName })).toBeVisible();
 
-  await page.getByRole("button", { name: /^Filters/ }).click();
+  const templateFilterTrigger = page.getByRole("button", { name: /^Filters/ });
+  await templateFilterTrigger.click();
   const filters = page.getByRole("dialog", { name: "Filter results" });
+  await expect(filters.getByRole("button", { name: "Close filters" })).toBeFocused();
+  await expectModalFocusTrap(page, filters);
+  await page.keyboard.press("Escape");
+  await expect(filters).toHaveCount(0);
+  await expect(templateFilterTrigger).toBeFocused();
+  await templateFilterTrigger.click();
   await filters.getByText(/^Muscles/).click();
   await filters.getByLabel("Chest").check();
   await filters.getByLabel("Equipment").selectOption("barbell");
@@ -82,25 +104,37 @@ test("creates, filters, edits, and launches a workout template", async ({ page }
   await page.goto("/workouts/exercises");
   await page.getByRole("button", { name: /New exercise/i }).click();
   const createExercise = page.getByRole("dialog", { name: "Create exercise" });
-  await createExercise.getByLabel("Name").fill(ownedExerciseName);
+  await expect(createExercise.getByRole("button", { name: "Close exercise editor" })).toBeFocused();
+  await expectModalFocusTrap(page, createExercise);
   const primaryMuscles = createExercise.getByRole("button", { name: /Primary muscles/ });
   await expect(primaryMuscles).toHaveAttribute("aria-expanded", "false");
   await primaryMuscles.click();
   await createExercise.getByLabel("Chest").check();
+  await createExercise.getByLabel("Name").fill(ownedExerciseName);
   await createExercise.getByLabel("Equipment").selectOption("barbell");
   await createExercise.getByLabel("Type").selectOption("compound");
   await createExercise.getByRole("button", { name: "Create exercise" }).click();
   const nameReview = page.getByRole("alertdialog", { name: "Save this exercise name?" });
   await expect(nameReview).toBeVisible();
+  await expect(nameReview.getByRole("button", { name: "CANCEL" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(nameReview).toHaveCount(0);
+  await expect(createExercise).toBeVisible();
+  await createExercise.getByRole("button", { name: "Create exercise" }).click();
   await nameReview.getByRole("button", { name: "SAVE EXERCISE" }).click();
-  await expect(page.getByRole("heading", { name: ownedExerciseName })).toBeVisible();
   await page.getByRole("button", { name: /^Filters/ }).click();
   const exerciseFilters = page.getByRole("dialog", { name: "Filter results" });
   await exerciseFilters.getByLabel("Editability").selectOption("editable");
   await exerciseFilters.getByRole("button", { name: "Show results" }).click();
   await expect(page.getByRole("heading", { name: ownedExerciseName })).toBeVisible();
-  await page.getByRole("button", { name: "Edit" }).click();
+  const editExerciseTrigger = page.getByRole("button", { name: "Edit" });
+  await editExerciseTrigger.click();
   const editExercise = page.getByRole("dialog", { name: "Edit exercise" });
+  await expect(editExercise.getByRole("button", { name: "Close exercise editor" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(editExercise).toHaveCount(0);
+  await expect(editExerciseTrigger).toBeFocused();
+  await editExerciseTrigger.click();
   await expect(editExercise.getByRole("button", { name: /Primary muscles/ })).toHaveAttribute("aria-expanded", "false");
   await expect(editExercise.getByRole("button", { name: /Secondary muscles/ })).toHaveAttribute("aria-expanded", "false");
   await editExercise.getByRole("button", { name: "Cancel" }).click();
