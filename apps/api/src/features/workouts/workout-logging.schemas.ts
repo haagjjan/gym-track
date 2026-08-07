@@ -35,6 +35,7 @@ export const setParamsSchema = z.object({
 });
 
 export const addSessionExerciseRequestSchema = z.object({
+  clientMutationId: uuidSchema,
   exerciseId: uuidSchema,
   position: z.number().int().positive().optional()
 });
@@ -48,7 +49,7 @@ export const reorderSessionExercisesRequestSchema = z.object({
   )
 });
 
-export const addSetRequestSchema = z.object({
+const setValuesSchema = z.object({
   setType: z.enum(["warmup", "working"]),
   weightKg: decimalStringSchema,
   reps: z.number().int().positive(),
@@ -57,7 +58,11 @@ export const addSetRequestSchema = z.object({
   note: optionalNoteSchema
 });
 
-export const updateSetRequestSchema = addSetRequestSchema.partial().refine(
+export const addSetRequestSchema = setValuesSchema.extend({
+  clientMutationId: uuidSchema
+});
+
+export const updateSetRequestSchema = setValuesSchema.partial().refine(
   (value) => Object.keys(value).length > 0,
   {
     message: "At least one field is required.",

@@ -55,7 +55,9 @@ export async function registerWorkoutLoggingRoutes(
       return sendLoggingError(reply, result.reason);
     }
 
-    return reply.status(201).send({ data: { sessionExercise: result.value } });
+    return reply
+      .status(result.replayed ? 200 : 201)
+      .send({ data: { sessionExercise: result.value, replayed: result.replayed } });
   });
 
   server.patch("/api/v1/workouts/:workoutId/exercises/reorder", async (request, reply) => {
@@ -149,9 +151,13 @@ export async function registerWorkoutLoggingRoutes(
         return sendLoggingError(reply, result.reason);
       }
 
-      events.track("set_logged", user.id, { setType: body.data.setType });
+      if (!result.replayed) {
+        events.track("set_logged", user.id, { setType: body.data.setType });
+      }
 
-      return reply.status(201).send({ data: { set: result.value } });
+      return reply
+        .status(result.replayed ? 200 : 201)
+        .send({ data: { set: result.value, replayed: result.replayed } });
     }
   );
 
@@ -205,7 +211,19 @@ export async function registerWorkoutLoggingRoutes(
   });
 }
 
-function sendLoggingError(reply: FastifyReply, reason: "invalid_order" | "not_found") {
+function sendLoggingError(
+  reply: FastifyReply,
+  reason: "idempotency_conflict" | "invalid_order" | "not_found"
+) {
+  if (reason === "idempotency_conflict") {
+    return reply.status(409).send({
+      error: {
+        code: "IDEMPOTENCY_CONFLICT",
+        message: "This mutation ID was already used for different workout data."
+      }
+    });
+  }
+
   if (reason === "invalid_order") {
     return reply.status(409).send({
       error: {

@@ -1,398 +1,226 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type {
-  SelectableExerciseRecord,
+  MutationWriteResult,
   SessionExerciseRecord,
   SetRecord,
   WorkoutLoggingRepository
 } from "./workout-logging.repository.js";
-import type { AddSetRequest, UpdateSetRequest } from "./workout-logging.schemas.js";
+import type {
+  AddSessionExerciseRequest,
+  AddSetRequest,
+  ReorderSessionExercisesRequest,
+  UpdateSetRequest
+} from "./workout-logging.schemas.js";
 import { createWorkoutLoggingService } from "./workout-logging.service.js";
 
 const now = new Date("2026-05-20T12:00:00.000Z");
-const createdAt = new Date("2026-05-20T10:00:00.000Z");
 const workoutId = "workout-1";
 const sessionExerciseId = "session-exercise-1";
-const exerciseId = "exercise-1";
 const setId = "set-1";
-
-type AddedSessionExercise = { id: string; workoutId: string; exerciseId: string; position: number };
-type ReorderedExercises = {
-  workoutId: string;
-  items: { sessionExerciseId: string; position: number }[];
-  updatedAt: Date;
-};
-type DeletedSessionExercise = { workoutId: string; sessionExerciseId: string; deletedAt: Date };
-type SessionExerciseExistsCall = { userId: string; workoutId: string; sessionExerciseId: string };
-type AddedSet = { id: string; sessionExerciseId: string; setOrder: number; values: AddSetRequest };
-type UpdatedSet = { setId: string; input: UpdateSetRequest; updatedAt: Date };
+const clientMutationId = "66666666-6666-4666-8666-666666666666";
 
 class FakeWorkoutLoggingRepository implements WorkoutLoggingRepository {
-  public workoutExistsCall: { userId: string; workoutId: string } | null = null;
-  public addedSessionExercise: AddedSessionExercise | null = null;
-  public reordered: ReorderedExercises | null = null;
-  public deletedSessionExercise: DeletedSessionExercise | null = null;
-  public sessionExerciseExistsCall: SessionExerciseExistsCall | null = null;
-  public addedSet: AddedSet | null = null;
-  public setExistsCall: { userId: string; setId: string } | null = null;
-  public updatedSet: UpdatedSet | null = null;
-  public deletedSet: { setId: string; deletedAt: Date } | null = null;
+  public addExerciseCall: Parameters<WorkoutLoggingRepository["addSessionExercise"]>[0] | null = null;
+  public reorderCall: unknown[] | null = null;
+  public deleteExerciseCall: unknown[] | null = null;
+  public addSetCall: Parameters<WorkoutLoggingRepository["addSet"]>[0] | null = null;
+  public updateSetCall: unknown[] | null = null;
+  public deleteSetCall: unknown[] | null = null;
 
-  public constructor(
-    public workoutVisible = true,
-    public selectableExercise: SelectableExerciseRecord | null = exerciseRecord(),
-    public sessionExerciseCount = 2,
-    public sessionExerciseIds = ["session-exercise-1", "session-exercise-2"],
-    public sessionExerciseVisible = true,
-    public setCount = 1,
-    public visibleSet: SetRecord | null = setRecord(),
-    public deleteSessionExerciseResult = true,
-    public deleteSetResult = true
-  ) {}
+  public addExerciseResult: MutationWriteResult<SessionExerciseRecord> = success(
+    sessionExerciseRecord()
+  );
+  public reorderResult: MutationWriteResult<
+    { sessionExerciseId: string; position: number }[]
+  > = success([{ sessionExerciseId, position: 1 }]);
+  public deleteExerciseResult: MutationWriteResult<{ deleted: true }> = success({
+    deleted: true
+  });
+  public addSetResult: MutationWriteResult<SetRecord> = success(setRecord());
+  public updateSetResult: SetRecord | null = setRecord();
+  public deleteSetResult: MutationWriteResult<{ deleted: true }> = success({ deleted: true });
 
-  public async workoutExists(userId: string, currentWorkoutId: string): Promise<boolean> {
-    this.workoutExistsCall = { userId, workoutId: currentWorkoutId };
-
-    return this.workoutVisible;
-  }
-
-  public async findSelectableExercise(): Promise<SelectableExerciseRecord | null> {
-    return this.selectableExercise;
-  }
-
-  public async countSessionExercises(): Promise<number> {
-    return this.sessionExerciseCount;
-  }
-
-  public async addSessionExercise(input: {
-    id: string;
-    workoutId: string;
-    exerciseId: string;
-    position: number;
-  }): Promise<SessionExerciseRecord> {
-    this.addedSessionExercise = input;
-
-    return sessionExerciseRecord({
-      id: input.id,
-      position: input.position
-    });
-  }
-
-  public async listSessionExerciseIds(): Promise<string[]> {
-    return this.sessionExerciseIds;
+  public async addSessionExercise(
+    input: Parameters<WorkoutLoggingRepository["addSessionExercise"]>[0]
+  ): Promise<MutationWriteResult<SessionExerciseRecord>> {
+    this.addExerciseCall = input;
+    return this.addExerciseResult;
   }
 
   public async reorderSessionExercises(
+    userId: string,
     currentWorkoutId: string,
-    items: { sessionExerciseId: string; position: number }[],
+    input: ReorderSessionExercisesRequest,
     updatedAt: Date
-  ): Promise<void> {
-    this.reordered = {
-      workoutId: currentWorkoutId,
-      items,
-      updatedAt
-    };
+  ): Promise<MutationWriteResult<{ sessionExerciseId: string; position: number }[]>> {
+    this.reorderCall = [userId, currentWorkoutId, input, updatedAt];
+    return this.reorderResult;
   }
 
   public async deleteSessionExercise(
+    userId: string,
     currentWorkoutId: string,
     currentSessionExerciseId: string,
     deletedAt: Date
-  ): Promise<boolean> {
-    this.deletedSessionExercise = {
-      workoutId: currentWorkoutId,
-      sessionExerciseId: currentSessionExerciseId,
-      deletedAt
-    };
-
-    return this.deleteSessionExerciseResult;
+  ): Promise<MutationWriteResult<{ deleted: true }>> {
+    this.deleteExerciseCall = [userId, currentWorkoutId, currentSessionExerciseId, deletedAt];
+    return this.deleteExerciseResult;
   }
 
-  public async sessionExerciseExists(
-    userId: string,
-    currentWorkoutId: string,
-    currentSessionExerciseId: string
-  ): Promise<boolean> {
-    this.sessionExerciseExistsCall = {
-      userId,
-      workoutId: currentWorkoutId,
-      sessionExerciseId: currentSessionExerciseId
-    };
-
-    return this.sessionExerciseVisible;
-  }
-
-  public async countSets(): Promise<number> {
-    return this.setCount;
-  }
-
-  public async addSet(input: {
-    id: string;
-    sessionExerciseId: string;
-    setOrder: number;
-    values: AddSetRequest;
-  }): Promise<SetRecord> {
-    this.addedSet = input;
-
-    return setRecord({
-      id: input.id,
-      sessionExerciseId: input.sessionExerciseId,
-      setOrder: input.setOrder,
-      setType: input.values.setType,
-      weightKg: input.values.weightKg,
-      reps: input.values.reps,
-      rir: input.values.rir,
-      restTimeSeconds: input.values.restTimeSeconds ?? null,
-      note: input.values.note ?? null
-    });
-  }
-
-  public async setExists(userId: string, currentSetId: string): Promise<SetRecord | null> {
-    this.setExistsCall = { userId, setId: currentSetId };
-
-    return this.visibleSet;
+  public async addSet(
+    input: Parameters<WorkoutLoggingRepository["addSet"]>[0]
+  ): Promise<MutationWriteResult<SetRecord>> {
+    this.addSetCall = input;
+    return this.addSetResult;
   }
 
   public async updateSet(
+    userId: string,
     currentSetId: string,
     input: UpdateSetRequest,
     updatedAt: Date
-  ): Promise<SetRecord> {
-    this.updatedSet = {
-      setId: currentSetId,
-      input,
-      updatedAt
-    };
-
-    return setRecord({
-      id: currentSetId,
-      setOrder: this.visibleSet?.setOrder ?? 1,
-      setType: input.setType ?? this.visibleSet?.setType ?? "working",
-      weightKg: input.weightKg ?? this.visibleSet?.weightKg ?? "80.00",
-      reps: input.reps ?? this.visibleSet?.reps ?? 8,
-      rir: input.rir ?? this.visibleSet?.rir ?? 2,
-      restTimeSeconds: input.restTimeSeconds ?? this.visibleSet?.restTimeSeconds ?? null,
-      note: input.note ?? this.visibleSet?.note ?? null,
-      updatedAt
-    });
+  ): Promise<SetRecord | null> {
+    this.updateSetCall = [userId, currentSetId, input, updatedAt];
+    return this.updateSetResult;
   }
 
-  public async deleteSet(currentSetId: string, deletedAt: Date): Promise<boolean> {
-    this.deletedSet = { setId: currentSetId, deletedAt };
-
+  public async deleteSet(
+    userId: string,
+    currentSetId: string,
+    deletedAt: Date
+  ): Promise<MutationWriteResult<{ deleted: true }>> {
+    this.deleteSetCall = [userId, currentSetId, deletedAt];
     return this.deleteSetResult;
   }
 }
 
 describe("workout logging service", () => {
-  it("adds an exercise at the appended position by default", async () => {
+  it("passes an idempotent exercise create to the atomic repository", async () => {
     const repository = new FakeWorkoutLoggingRepository();
+    repository.addExerciseResult = success(sessionExerciseRecord(), true);
     const service = createWorkoutLoggingService({ repository, now: () => now });
-    const result = await service.addSessionExercise("user-1", workoutId, { exerciseId });
+    const input: AddSessionExerciseRequest = {
+      clientMutationId,
+      exerciseId: "exercise-1",
+      position: 1
+    };
+    const result = await service.addSessionExercise("user-1", workoutId, input);
 
-    assert.equal(result.ok, true);
-    assert.deepEqual(repository.workoutExistsCall, { userId: "user-1", workoutId });
-    assert.equal(repository.addedSessionExercise?.workoutId, workoutId);
-    assert.equal(repository.addedSessionExercise?.exerciseId, exerciseId);
-    assert.equal(repository.addedSessionExercise?.position, 3);
-
-    if (result.ok) {
-      assert.equal(result.value.position, 3);
-      assert.deepEqual(result.value.sets, []);
-    }
+    assert.equal(result.ok && result.replayed, true);
+    assert.equal(repository.addExerciseCall?.userId, "user-1");
+    assert.equal(repository.addExerciseCall?.workoutId, workoutId);
+    assert.deepEqual(repository.addExerciseCall?.values, input);
+    assert.match(repository.addExerciseCall?.id ?? "", /^[0-9a-f-]{36}$/);
   });
 
-  it("rejects exercise positions outside the compact range", async () => {
+  it("propagates stable repository failures", async () => {
     const repository = new FakeWorkoutLoggingRepository();
-    const service = createWorkoutLoggingService({ repository, now: () => now });
+    repository.addExerciseResult = { ok: false, reason: "idempotency_conflict" };
+    const service = createWorkoutLoggingService({ repository });
     const result = await service.addSessionExercise("user-1", workoutId, {
-      exerciseId,
-      position: 4
+      clientMutationId,
+      exerciseId: "exercise-1"
     });
 
-    assert.deepEqual(result, { ok: false, reason: "invalid_order" });
-    assert.equal(repository.addedSessionExercise, null);
+    assert.deepEqual(result, { ok: false, reason: "idempotency_conflict" });
   });
 
-  it("returns not found for invisible workouts or unavailable exercises", async () => {
-    const repository = new FakeWorkoutLoggingRepository(false, null);
-    const service = createWorkoutLoggingService({ repository, now: () => now });
-    const result = await service.addSessionExercise("user-1", workoutId, { exerciseId });
-
-    assert.deepEqual(result, { ok: false, reason: "not_found" });
-    assert.equal(repository.addedSessionExercise, null);
-  });
-
-  it("reorders a complete compact exercise list", async () => {
+  it("delegates reorder and exercise delete with ownership and time", async () => {
     const repository = new FakeWorkoutLoggingRepository();
     const service = createWorkoutLoggingService({ repository, now: () => now });
-    const result = await service.reorderSessionExercises("user-1", workoutId, {
-      items: [
-        { sessionExerciseId: "session-exercise-2", position: 1 },
-        { sessionExerciseId: "session-exercise-1", position: 2 }
-      ]
-    });
+    const reorder = { items: [{ sessionExerciseId, position: 1 }] };
 
-    assert.equal(result.ok, true);
-    assert.deepEqual(repository.reordered, {
-      workoutId,
-      items: [
-        { sessionExerciseId: "session-exercise-2", position: 1 },
-        { sessionExerciseId: "session-exercise-1", position: 2 }
-      ],
-      updatedAt: now
-    });
-  });
+    await service.reorderSessionExercises("user-1", workoutId, reorder);
+    await service.deleteSessionExercise("user-1", workoutId, sessionExerciseId);
 
-  it("rejects incomplete or duplicate reorder requests", async () => {
-    const repository = new FakeWorkoutLoggingRepository();
-    const service = createWorkoutLoggingService({ repository, now: () => now });
-    const result = await service.reorderSessionExercises("user-1", workoutId, {
-      items: [
-        { sessionExerciseId: "session-exercise-1", position: 1 },
-        { sessionExerciseId: "session-exercise-1", position: 2 }
-      ]
-    });
-
-    assert.deepEqual(result, { ok: false, reason: "invalid_order" });
-    assert.equal(repository.reordered, null);
-  });
-
-  it("soft-deletes a session exercise after an ownership check", async () => {
-    const repository = new FakeWorkoutLoggingRepository();
-    const service = createWorkoutLoggingService({ repository, now: () => now });
-    const result = await service.deleteSessionExercise("user-1", workoutId, sessionExerciseId);
-
-    assert.deepEqual(result, { ok: true, value: { deleted: true } });
-    assert.deepEqual(repository.sessionExerciseExistsCall, {
-      userId: "user-1",
-      workoutId,
-      sessionExerciseId
-    });
-    assert.deepEqual(repository.deletedSessionExercise, {
+    assert.deepEqual(repository.reorderCall, ["user-1", workoutId, reorder, now]);
+    assert.deepEqual(repository.deleteExerciseCall, [
+      "user-1",
       workoutId,
       sessionExerciseId,
-      deletedAt: now
-    });
+      now
+    ]);
   });
 
-  it("maps failed session exercise deletion to not found", async () => {
+  it("passes an idempotent set create to the atomic repository", async () => {
     const repository = new FakeWorkoutLoggingRepository();
-    repository.deleteSessionExerciseResult = false;
     const service = createWorkoutLoggingService({ repository, now: () => now });
-    const result = await service.deleteSessionExercise("user-1", workoutId, sessionExerciseId);
-
-    assert.deepEqual(result, { ok: false, reason: "not_found" });
-  });
-
-  it("adds a set at the next set order", async () => {
-    const repository = new FakeWorkoutLoggingRepository();
-    repository.setCount = 2;
-    const service = createWorkoutLoggingService({ repository, now: () => now });
-    const result = await service.addSet("user-1", workoutId, sessionExerciseId, setInput());
-
-    assert.equal(result.ok, true);
-    assert.deepEqual(repository.sessionExerciseExistsCall, {
-      userId: "user-1",
+    const input = setInput();
+    const result = await service.addSet(
+      "user-1",
       workoutId,
-      sessionExerciseId
-    });
-    assert.equal(repository.addedSet?.setOrder, 3);
+      sessionExerciseId,
+      input
+    );
 
-    if (result.ok) {
-      assert.equal(result.value.setOrder, 3);
-      assert.equal(result.value.weightKg, "80.50");
-    }
+    assert.equal(result.ok && result.value.setOrder, 1);
+    assert.equal(repository.addSetCall?.userId, "user-1");
+    assert.equal(repository.addSetCall?.workoutId, workoutId);
+    assert.equal(repository.addSetCall?.sessionExerciseId, sessionExerciseId);
+    assert.deepEqual(repository.addSetCall?.values, input);
   });
 
-  it("updates a set partially while preserving set order", async () => {
+  it("maps a lost update race to not found", async () => {
     const repository = new FakeWorkoutLoggingRepository();
-    repository.visibleSet = setRecord({ setOrder: 2 });
-    const service = createWorkoutLoggingService({ repository, now: () => now });
-    const result = await service.updateSet("user-1", setId, { reps: 9 });
-
-    assert.equal(result.ok, true);
-    assert.deepEqual(repository.setExistsCall, { userId: "user-1", setId });
-    assert.deepEqual(repository.updatedSet, {
-      setId,
-      input: { reps: 9 },
-      updatedAt: now
-    });
-
-    if (result.ok) {
-      assert.equal(result.value.setOrder, 2);
-      assert.equal(result.value.reps, 9);
-    }
-  });
-
-  it("returns not found for invisible sets", async () => {
-    const repository = new FakeWorkoutLoggingRepository();
-    repository.visibleSet = null;
+    repository.updateSetResult = null;
     const service = createWorkoutLoggingService({ repository, now: () => now });
     const result = await service.updateSet("user-1", setId, { reps: 9 });
 
     assert.deepEqual(result, { ok: false, reason: "not_found" });
-    assert.equal(repository.updatedSet, null);
+    assert.deepEqual(repository.updateSetCall, ["user-1", setId, { reps: 9 }, now]);
   });
 
-  it("soft-deletes sets and maps delete races to not found", async () => {
+  it("delegates serialized set deletion", async () => {
     const repository = new FakeWorkoutLoggingRepository();
-    repository.deleteSetResult = false;
     const service = createWorkoutLoggingService({ repository, now: () => now });
     const result = await service.deleteSet("user-1", setId);
 
-    assert.deepEqual(result, { ok: false, reason: "not_found" });
-    assert.deepEqual(repository.deletedSet, { setId, deletedAt: now });
+    assert.equal(result.ok, true);
+    assert.deepEqual(repository.deleteSetCall, ["user-1", setId, now]);
   });
 });
 
-function exerciseRecord(): SelectableExerciseRecord {
-  return {
-    id: exerciseId,
-    name: "Bench Press",
-    primaryMuscleGroup: {
-      id: "muscle-1",
-      slug: "chest",
-      name: "Chest"
-    }
-  };
+function success<T>(value: T, replayed = false): MutationWriteResult<T> {
+  return { ok: true, replayed, value };
 }
 
-function sessionExerciseRecord(
-  overrides: Partial<SessionExerciseRecord> = {}
-): SessionExerciseRecord {
+function sessionExerciseRecord(): SessionExerciseRecord {
   return {
     id: sessionExerciseId,
     position: 1,
-    exercise: exerciseRecord(),
-    ...overrides
-  };
-}
-
-function setRecord(overrides: Partial<SetRecord> = {}): SetRecord {
-  return {
-    id: setId,
-    sessionExerciseId,
-    setOrder: 1,
-    setType: "working",
-    weightKg: "80.00",
-    reps: 8,
-    rir: 2,
-    restTimeSeconds: 120,
-    note: null,
-    createdAt,
-    updatedAt: createdAt,
-    ...overrides
+    exercise: {
+      id: "exercise-1",
+      name: "Bench Press",
+      primaryMuscleGroup: { id: "muscle-1", slug: "chest", name: "Chest" }
+    }
   };
 }
 
 function setInput(): AddSetRequest {
   return {
+    clientMutationId,
     setType: "working",
     weightKg: "80.50",
     reps: 8,
     rir: 2,
     restTimeSeconds: 120,
     note: null
+  };
+}
+
+function setRecord(): SetRecord {
+  return {
+    id: setId,
+    sessionExerciseId,
+    setOrder: 1,
+    setType: "working",
+    weightKg: "80.50",
+    reps: 8,
+    rir: 2,
+    restTimeSeconds: 120,
+    note: null,
+    createdAt: now,
+    updatedAt: now
   };
 }

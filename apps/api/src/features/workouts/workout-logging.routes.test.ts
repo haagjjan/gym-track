@@ -21,6 +21,7 @@ const workoutId = "11111111-1111-4111-8111-111111111111";
 const exerciseId = "22222222-2222-4222-8222-222222222222";
 const sessionExerciseId = "33333333-3333-4333-8333-333333333333";
 const setId = "44444444-4444-4444-8444-444444444444";
+const mutationId = "66666666-6666-4666-8666-666666666666";
 const user: PublicUser = {
   id: "user-1",
   email: "jan@example.com",
@@ -62,11 +63,27 @@ type DeleteSessionExerciseCall = { userId: string; workoutId: string; sessionExe
 type AddSetCall = { userId: string; workoutId: string; sessionExerciseId: string; input: AddSetRequest };
 type UpdateSetCall = { userId: string; setId: string; input: UpdateSetRequest };
 
-const okSessionExercise: LoggingResult<SessionExerciseShape> = { ok: true, value: sessionExercise };
-const okReorder: LoggingResult<ReorderItem[]> = { ok: true, value: [{ sessionExerciseId, position: 1 }] };
-const okDeleted: LoggingResult<{ deleted: true }> = { ok: true, value: { deleted: true } };
-const okSet: LoggingResult<SetShape> = { ok: true, value: set };
-const okUpdatedSet: LoggingResult<SetShape> = { ok: true, value: { ...set, reps: 9 } };
+const okSessionExercise: LoggingResult<SessionExerciseShape> = {
+  ok: true,
+  replayed: false,
+  value: sessionExercise
+};
+const okReorder: LoggingResult<ReorderItem[]> = {
+  ok: true,
+  replayed: false,
+  value: [{ sessionExerciseId, position: 1 }]
+};
+const okDeleted: LoggingResult<{ deleted: true }> = {
+  ok: true,
+  replayed: false,
+  value: { deleted: true }
+};
+const okSet: LoggingResult<SetShape> = { ok: true, replayed: false, value: set };
+const okUpdatedSet: LoggingResult<SetShape> = {
+  ok: true,
+  replayed: false,
+  value: { ...set, reps: 9 }
+};
 
 class FakeWorkoutLoggingService implements WorkoutLoggingService {
   public addSessionExerciseCall: AddSessionExerciseCall | null = null;
@@ -178,7 +195,7 @@ function authService(authenticated = true): AuthService {
       return authenticated ? { ok: true, value: user } : { ok: false, reason: "unauthorized" };
     },
     async requestEmailVerification() {
-      return { sent: true };
+      return { status: "SENT" as const };
     },
     async verifyEmail() {
       return { ok: true, value: { verified: true } };
@@ -227,15 +244,15 @@ describe("workout logging routes", () => {
     const response = await server.inject({
       method: "POST",
       url: `/api/v1/workouts/${workoutId}/exercises`,
-      payload: { exerciseId, position: 1 }
+      payload: { clientMutationId: mutationId, exerciseId, position: 1 }
     });
 
     assert.equal(response.statusCode, 201);
-    assert.deepEqual(response.json(), { data: { sessionExercise } });
+    assert.deepEqual(response.json(), { data: { replayed: false, sessionExercise } });
     assert.deepEqual(service.addSessionExerciseCall, {
       userId: "user-1",
       workoutId,
-      input: { exerciseId, position: 1 }
+      input: { clientMutationId: mutationId, exerciseId, position: 1 }
     });
   });
 
@@ -245,7 +262,7 @@ describe("workout logging routes", () => {
     const response = await server.inject({
       method: "POST",
       url: `/api/v1/workouts/${workoutId}/exercises`,
-      payload: { exerciseId: "not-a-uuid" }
+      payload: { clientMutationId: mutationId, exerciseId: "not-a-uuid" }
     });
 
     assert.equal(response.statusCode, 422);
@@ -259,11 +276,44 @@ describe("workout logging routes", () => {
     const response = await server.inject({
       method: "POST",
       url: `/api/v1/workouts/${workoutId}/exercises`,
-      payload: { exerciseId }
+      payload: { clientMutationId: mutationId, exerciseId }
     });
 
     assert.equal(response.statusCode, 404);
     assert.equal(response.json().error.code, "WORKOUT_LOGGING_RESOURCE_NOT_FOUND");
+  });
+
+  it("returns an idempotent exercise replay with 200", async () => {
+    const service = new FakeWorkoutLoggingService({
+      ok: true,
+      replayed: true,
+      value: sessionExercise
+    });
+    const server = await buildWorkoutLoggingServer(service);
+    const response = await server.inject({
+      method: "POST",
+      url: `/api/v1/workouts/${workoutId}/exercises`,
+      payload: { clientMutationId: mutationId, exerciseId }
+    });
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.json().data.replayed, true);
+  });
+
+  it("maps conflicting mutation IDs to a stable conflict", async () => {
+    const service = new FakeWorkoutLoggingService({
+      ok: false,
+      reason: "idempotency_conflict"
+    });
+    const server = await buildWorkoutLoggingServer(service);
+    const response = await server.inject({
+      method: "POST",
+      url: `/api/v1/workouts/${workoutId}/exercises`,
+      payload: { clientMutationId: mutationId, exerciseId }
+    });
+
+    assert.equal(response.statusCode, 409);
+    assert.equal(response.json().error.code, "IDEMPOTENCY_CONFLICT");
   });
 
   it("reorders exercise blocks", async () => {
@@ -328,6 +378,7 @@ describe("workout logging routes", () => {
       method: "POST",
       url: `/api/v1/workouts/${workoutId}/exercises/${sessionExerciseId}/sets`,
       payload: {
+        clientMutationId: mutationId,
         setType: "working",
         weightKg: 80.5,
         reps: 8,
@@ -338,7 +389,7 @@ describe("workout logging routes", () => {
     });
 
     assert.equal(response.statusCode, 201);
-    assert.deepEqual(response.json(), { data: { set } });
+    assert.deepEqual(response.json(), { data: { replayed: false, set } });
     assert.equal(service.addSetCall?.userId, "user-1");
     assert.equal(service.addSetCall?.input.weightKg, "80.5");
   });
@@ -350,6 +401,7 @@ describe("workout logging routes", () => {
       method: "POST",
       url: `/api/v1/workouts/${workoutId}/exercises/${sessionExerciseId}/sets`,
       payload: {
+        clientMutationId: mutationId,
         setType: "working",
         weightKg: "80.00",
         reps: 0,

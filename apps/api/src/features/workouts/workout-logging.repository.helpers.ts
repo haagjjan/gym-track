@@ -66,6 +66,23 @@ export async function findSelectableExercise(
     : null;
 }
 
+export async function lockOwnedWorkout(
+  db: Kysely<AppDatabase>,
+  userId: string,
+  workoutId: string
+): Promise<boolean> {
+  const row = await db
+    .selectFrom("workout_sessions")
+    .select("id")
+    .where("id", "=", workoutId)
+    .where("user_id", "=", userId)
+    .where("deleted_at", "is", null)
+    .forUpdate()
+    .executeTakeFirst();
+
+  return row !== undefined;
+}
+
 export async function findSessionExerciseByIdOrThrow(
   db: Kysely<AppDatabase>,
   sessionExerciseId: string
@@ -209,6 +226,7 @@ export function toSetInsert(input: {
   return {
     id: input.id,
     session_exercise_id: input.sessionExerciseId,
+    client_mutation_id: input.values.clientMutationId,
     set_order: input.setOrder,
     set_type: input.values.setType,
     weight_kg: input.values.weightKg,
