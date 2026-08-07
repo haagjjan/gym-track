@@ -130,7 +130,7 @@ ops/
 
 Root tooling, local infrastructure overlays, and documentation live at the repository root. Encrypted backup, restore-test, systemd, recovery, and restricted destination setup assets live under `ops/backup`; versioned log-review scripts live under `ops/logging`; Prometheus, Alertmanager, Grafana, exporter, and PostgreSQL monitoring-role assets live under `ops/monitoring`. The current repo map is documented in `docs/repository-structure.md`.
 
-Within each app, organize by feature/domain first, then by technical role. Current API features are `auth`, `health`, `workouts`, `exercises`, and `analytics`. Expected future domains include `users`.
+Within each app, organize by feature/domain first, then by technical role. Current API features include `admin`, `analytics`, `auth`, `beta`, `exercises`, `health`, `lifecycle`, `messages`, `templates`, `users`, and `workouts`.
 
 Avoid broad folders such as `misc`, oversized `utils`, unrelated `services`, or global feature-specific `components`. Shared code should move to `packages/shared` only after at least two real consumers exist.
 
@@ -149,11 +149,17 @@ apps/web/src/
 apps/api/src/
   db/
   features/
-    auth/
-    health/
-    workouts/
-    exercises/
+    admin/
     analytics/
+    auth/
+    beta/
+    exercises/
+    health/
+    lifecycle/
+    messages/
+    templates/
+    users/
+    workouts/
   shared/
 ```
 
