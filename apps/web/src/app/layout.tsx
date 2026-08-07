@@ -26,10 +26,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: "#0a0a0a",
   width: "device-width",
-  initialScale: 1,
-  // Prevent accidental pinch-zoom while logging sets with sweaty thumbs.
-  maximumScale: 1,
-  userScalable: false
+  initialScale: 1
 };
 
 interface RootLayoutProps {
