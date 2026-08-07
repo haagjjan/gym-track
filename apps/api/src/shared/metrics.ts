@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { collectDefaultMetrics, Counter, Gauge, Histogram, Registry } from "prom-client";
+import type { MailDeliveryObserver, MailKind } from "./mailer.js";
 
 const METRIC_PREFIX = "gym_progress_tracker_";
 const METRICS_ROUTE = "/api/v1/metrics";
@@ -20,14 +21,30 @@ export interface ApiMetricsOptions {
   release: string;
 }
 
+export type LifecyclePhase = "auth" | "beta" | "deletion" | "notification" | "retention";
+
+export interface OperationalMetrics extends MailDeliveryObserver {
+  lifecycleFinished(durationSeconds: number, deletionBacklog: number, finalizedDeletions: number, succeeded: boolean): void;
+  lifecyclePhaseFailed(phase: LifecyclePhase): void;
+  lifecycleStarted(startedAt: Date): void;
+}
+
+export const noopOperationalMetrics: OperationalMetrics = {
+  lifecycleFinished() {},
+  lifecyclePhaseFailed() {},
+  lifecycleStarted() {},
+  record() {}
+};
+
 export function registerApiMetrics(
   server: FastifyInstance,
   options?: ApiMetricsOptions
-): void {
-  if (!options) return;
+): OperationalMetrics {
+  if (!options) return noopOperationalMetrics;
 
   const registry = createRegistry(options);
   const metrics = createHttpMetrics(registry);
+  const operationalMetrics = createOperationalMetrics(registry);
   const activeRequests = new WeakMap<FastifyRequest, RequestLabels>();
 
   server.addHook("onRequest", (request, _reply, done) => {
@@ -59,6 +76,8 @@ export function registerApiMetrics(
   server.get(METRICS_ROUTE, async (_request, reply) => {
     return reply.type(registry.contentType).send(await registry.metrics());
   });
+
+  return operationalMetrics;
 }
 
 function createRegistry(options: ApiMetricsOptions): Registry {
@@ -109,6 +128,72 @@ function createHttpMetrics(registry: Registry) {
 
   for (const method of TRACKED_METHODS) inFlight.labels(method).set(0);
   return { requests, responses, duration, inFlight };
+}
+
+function createOperationalMetrics(registry: Registry): OperationalMetrics {
+  const emailDeliveries = new Counter<"kind" | "outcome">({
+    name: `${METRIC_PREFIX}email_deliveries_total`,
+    help: "Transactional email delivery attempts by bounded message kind and outcome.",
+    labelNames: ["kind", "outcome"],
+    registers: [registry]
+  });
+  const emailDuration = new Histogram<"kind" | "outcome">({
+    name: `${METRIC_PREFIX}email_delivery_duration_seconds`,
+    help: "Transactional email provider request duration by bounded message kind and outcome.",
+    labelNames: ["kind", "outcome"],
+    buckets: [0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
+    registers: [registry]
+  });
+  const lifecycleLastStart = new Gauge({
+    name: `${METRIC_PREFIX}lifecycle_cleanup_last_start_timestamp_seconds`,
+    help: "Unix timestamp of the latest lifecycle cleanup start.",
+    registers: [registry]
+  });
+  const lifecycleLastSuccess = new Gauge({
+    name: `${METRIC_PREFIX}lifecycle_cleanup_last_success_timestamp_seconds`,
+    help: "Unix timestamp of the latest fully successful lifecycle cleanup.",
+    registers: [registry]
+  });
+  const lifecycleDuration = new Gauge({
+    name: `${METRIC_PREFIX}lifecycle_cleanup_last_duration_seconds`,
+    help: "Duration of the latest lifecycle cleanup run.",
+    registers: [registry]
+  });
+  const lifecycleFailures = new Counter<"phase">({
+    name: `${METRIC_PREFIX}lifecycle_cleanup_phase_failures_total`,
+    help: "Lifecycle cleanup failures by bounded phase.",
+    labelNames: ["phase"],
+    registers: [registry]
+  });
+  const deletionBacklog = new Gauge({
+    name: `${METRIC_PREFIX}lifecycle_due_deletions`,
+    help: "Deletion-pending accounts still due after the latest lifecycle run.",
+    registers: [registry]
+  });
+  const finalizedDeletions = new Counter({
+    name: `${METRIC_PREFIX}lifecycle_finalized_deletions_total`,
+    help: "Accounts permanently finalized by lifecycle cleanup.",
+    registers: [registry]
+  });
+
+  return {
+    lifecycleStarted(startedAt) {
+      lifecycleLastStart.set(startedAt.getTime() / 1_000);
+    },
+    lifecyclePhaseFailed(phase) {
+      lifecycleFailures.inc({ phase });
+    },
+    lifecycleFinished(durationSeconds, backlogCount, finalizedCount, succeeded) {
+      lifecycleDuration.set(durationSeconds);
+      deletionBacklog.set(backlogCount);
+      finalizedDeletions.inc(finalizedCount);
+      if (succeeded) lifecycleLastSuccess.set(Date.now() / 1_000);
+    },
+    record(kind: MailKind, outcome, durationSeconds) {
+      emailDeliveries.inc({ kind, outcome });
+      emailDuration.observe({ kind, outcome }, durationSeconds);
+    }
+  };
 }
 
 function finishResponse(

@@ -6,10 +6,14 @@ import { registerApiMetrics } from "./metrics.js";
 describe("API metrics", () => {
   it("exports bounded HTTP, build, and default Node.js metrics", async () => {
     const server = fastify();
-    registerApiMetrics(server, {
+    const operationalMetrics = registerApiMetrics(server, {
       environment: "test",
       release: "test-release"
     });
+    operationalMetrics.record("PASSWORD_RESET", "FAILED", 0.25);
+    operationalMetrics.lifecycleStarted(new Date("2026-08-06T12:00:00.000Z"));
+    operationalMetrics.lifecyclePhaseFailed("notification");
+    operationalMetrics.lifecycleFinished(1.5, 3, 2, true);
     registerStatusRoutes(server);
 
     try {
@@ -38,9 +42,25 @@ describe("API metrics", () => {
       assertMetricSample(body, "gym_progress_tracker_http_requests_in_flight", {
         method: "GET"
       }, "0");
+      assertMetricSample(body, "gym_progress_tracker_email_deliveries_total", {
+        kind: "PASSWORD_RESET",
+        outcome: "FAILED"
+      }, "1");
+      assertMetricSample(body, "gym_progress_tracker_email_delivery_duration_seconds_count", {
+        kind: "PASSWORD_RESET",
+        outcome: "FAILED"
+      }, "1");
+      assertMetricSample(body, "gym_progress_tracker_lifecycle_cleanup_last_start_timestamp_seconds", {}, "1786017600");
+      assertMetricSample(body, "gym_progress_tracker_lifecycle_cleanup_last_duration_seconds", {}, "1.5");
+      assertMetricSample(body, "gym_progress_tracker_lifecycle_cleanup_phase_failures_total", {
+        phase: "notification"
+      }, "1");
+      assertMetricSample(body, "gym_progress_tracker_lifecycle_due_deletions", {}, "3");
+      assertMetricSample(body, "gym_progress_tracker_lifecycle_finalized_deletions_total", {}, "2");
 
       assert.doesNotMatch(body, /route="\/api\/v1\/metrics"/);
       assert.doesNotMatch(body, /raw-item-123|raw-user-456|raw-request-789/);
+      assert.doesNotMatch(body, /recipient|action.?link|token/i);
     } finally {
       await server.close();
     }
