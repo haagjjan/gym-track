@@ -14,10 +14,18 @@ import type {
 } from "./types";
 
 interface SessionMutations {
-  addExercise: UseMutationResult<SessionExercise, Error, { exerciseId: string }>;
+  addExercise: UseMutationResult<
+    SessionExercise,
+    Error,
+    { clientMutationId: string; exerciseId: string }
+  >;
   removeExercise: UseMutationResult<unknown, Error, { sessionExerciseId: string }>;
   reorderExercises: UseMutationResult<unknown, Error, { items: { sessionExerciseId: string; position: number }[] }>;
-  addSet: UseMutationResult<WorkoutSet, Error, { sessionExerciseId: string; input: SetInput }>;
+  addSet: UseMutationResult<
+    WorkoutSet,
+    Error,
+    { clientMutationId: string; sessionExerciseId: string; input: SetInput }
+  >;
   updateSet: UseMutationResult<WorkoutSet, Error, { setId: string; input: Partial<SetInput> }>;
   deleteSet: UseMutationResult<unknown, Error, { setId: string }>;
   createExercise: UseMutationResult<Exercise, Error, CreateExerciseInput>;
@@ -31,8 +39,8 @@ export function useSessionMutations({ workoutId }: { workoutId: string }): Sessi
     void queryClient.invalidateQueries({ queryKey: ["workouts"] });
   };
   const addExercise = useMutation({
-    mutationFn: async ({ exerciseId }: { exerciseId: string }) => {
-      const payload = await apiFetch<{ sessionExercise: SessionExercise }>(`/api/workouts/${workoutId}/exercises`, { method: "POST", body: { exerciseId } });
+    mutationFn: async ({ clientMutationId, exerciseId }: { clientMutationId: string; exerciseId: string }) => {
+      const payload = await apiFetch<{ replayed: boolean; sessionExercise: SessionExercise }>(`/api/workouts/${workoutId}/exercises`, { method: "POST", body: { clientMutationId, exerciseId } });
       return normalizeAddedSessionExercise(payload.sessionExercise);
     },
     onSuccess: (sessionExercise) => {
@@ -43,12 +51,12 @@ export function useSessionMutations({ workoutId }: { workoutId: string }): Sessi
           exercises: [...current.exercises, sessionExercise].sort((left, right) => left.position - right.position)
         };
       });
-      refresh();
-    }
+    },
+    onSettled: refresh
   });
   const removeExercise = useMutation({
     mutationFn: ({ sessionExerciseId }: { sessionExerciseId: string }) => apiFetch(`/api/workouts/${workoutId}/exercises/${sessionExerciseId}`, { method: "DELETE" }),
-    onSuccess: refresh
+    onSettled: refresh
   });
   const reorderExercises = useMutation({
     mutationFn: ({ items }: { items: { sessionExerciseId: string; position: number }[] }) => apiFetch(`/api/workouts/${workoutId}/exercises/reorder`, { method: "PATCH", body: { items } }),
@@ -72,22 +80,22 @@ export function useSessionMutations({ workoutId }: { workoutId: string }): Sessi
     onSettled: refresh
   });
   const addSet = useMutation({
-    mutationFn: async ({ sessionExerciseId, input }: { sessionExerciseId: string; input: SetInput }) => {
-      const payload = await apiFetch<{ set: WorkoutSet }>(`/api/workouts/${workoutId}/exercises/${sessionExerciseId}/sets`, { method: "POST", body: input });
+    mutationFn: async ({ clientMutationId, sessionExerciseId, input }: { clientMutationId: string; sessionExerciseId: string; input: SetInput }) => {
+      const payload = await apiFetch<{ replayed: boolean; set: WorkoutSet }>(`/api/workouts/${workoutId}/exercises/${sessionExerciseId}/sets`, { method: "POST", body: { ...input, clientMutationId } });
       return payload.set;
     },
-    onSuccess: refresh
+    onSettled: refresh
   });
   const updateSet = useMutation({
     mutationFn: async ({ setId, input }: { setId: string; input: Partial<SetInput> }) => {
       const payload = await apiFetch<{ set: WorkoutSet }>(`/api/sets/${setId}`, { method: "PATCH", body: input });
       return payload.set;
     },
-    onSuccess: refresh
+    onSettled: refresh
   });
   const deleteSet = useMutation({
     mutationFn: ({ setId }: { setId: string }) => apiFetch(`/api/sets/${setId}`, { method: "DELETE" }),
-    onSuccess: refresh
+    onSettled: refresh
   });
   return { addExercise, removeExercise, reorderExercises, addSet, updateSet, deleteSet, createExercise: exerciseMutations.create };
 }

@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { apiFetch } from "../../shared/api/client";
+import { clearUserSetDrafts, purgeExpiredSetDrafts } from "../session/set-draft-storage";
 
 interface PrivacyPreferences {
   functionalStorageEnabled: boolean;
@@ -23,6 +24,10 @@ const DevicePrivacyContext = createContext<DevicePrivacyContextValue | null>(nul
 export function DevicePrivacyProvider({ children, userId }: { children: ReactNode; userId: string }): ReactNode {
   const [preferences, setPreferences] = useState<PrivacyPreferences | null>(null);
   const [legacyKeys, setLegacyKeys] = useState<string[]>([]);
+
+  useEffect(() => {
+    purgeExpiredSetDrafts();
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -117,6 +122,7 @@ export function scopedStorageKey(base: string, userId: string): string {
 }
 
 export function clearUserDeviceData(userId: string): void {
+  clearUserSetDrafts(userId);
   const encoded = encodeURIComponent(userId);
   for (const storage of [window.localStorage, window.sessionStorage]) {
     const keys = Array.from({ length: storage.length }, (_, index) => storage.key(index));

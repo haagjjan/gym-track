@@ -4,7 +4,14 @@ import { useCallback, useRef, useState } from "react";
 import { errorMessage } from "../../shared/api/client";
 import { useSessionMutations } from "../../shared/api/hooks";
 import type { SessionExercise } from "../../shared/api/types";
-import { clearSetDraft, readSetDraft, suggestedDraft, writeSetDraft, type SetDraft } from "./set-draft-storage";
+import {
+  clearSetDraft,
+  readSetDraft,
+  suggestedDraft,
+  writeSetDraft,
+  type ActiveSetDraft,
+  type SetDraft
+} from "./set-draft-storage";
 
 const DEFAULT_REST_SECONDS = 120;
 
@@ -18,7 +25,7 @@ interface SessionSetLoggingOptions {
 }
 
 export function useSessionSetLogging(options: SessionSetLoggingOptions) {
-  const [drafts, setDrafts] = useState<Record<string, SetDraft>>({});
+  const [drafts, setDrafts] = useState<Record<string, ActiveSetDraft>>({});
   const [editingSetId, setEditingSetId] = useState<string | null>(null);
   const [newSetOpen, setNewSetOpen] = useState(false);
   const [restTimer, setRestTimer] = useState<{ seconds: number; startedAt: number } | null>(null);
@@ -31,13 +38,14 @@ export function useSessionSetLogging(options: SessionSetLoggingOptions) {
 
   function currentDraft(): SetDraft {
     const exercise = options.activeExercise;
-    return exercise ? drafts[exercise.id] ?? suggestedDraft(exercise) : suggestedDraft(null);
+    return exercise ? drafts[exercise.id]?.draft ?? suggestedDraft(exercise) : suggestedDraft(null);
   }
 
   function openNewSet(): void {
     const exercise = options.activeExercise;
     if (!exercise) return;
     const restored = readSetDraft(options.userId, options.workoutId, exercise);
+    writeSetDraft(options.userId, options.workoutId, exercise.id, restored);
     setDrafts((current) => ({ ...current, [exercise.id]: restored }));
     setEditingSetId(null);
     setNewSetOpen(true);
@@ -46,15 +54,38 @@ export function useSessionSetLogging(options: SessionSetLoggingOptions) {
   function updateDraft(patch: Partial<SetDraft>): void {
     const exercise = options.activeExercise;
     if (!exercise) return;
-    const next = { ...currentDraft(), ...patch };
-    setDrafts((current) => ({ ...current, [exercise.id]: next }));
+    const current = drafts[exercise.id] ?? readSetDraft(
+      options.userId,
+      options.workoutId,
+      exercise
+    );
+    const next = {
+      ...current,
+      draft: { ...current.draft, ...patch },
+      savedAt: Date.now()
+    };
+    setDrafts((allDrafts) => ({ ...allDrafts, [exercise.id]: next }));
     writeSetDraft(options.userId, options.workoutId, exercise.id, next);
+  }
+
+  function cancelNewSet(): void {
+    const exercise = options.activeExercise;
+    if (exercise) {
+      clearSetDraft(options.userId, options.workoutId, exercise.id);
+      setDrafts((current) => omitKey(current, exercise.id));
+    }
+    setNewSetOpen(false);
   }
 
   async function saveSet(): Promise<boolean> {
     const exercise = options.activeExercise;
     if (!exercise) return false;
-    const draft = currentDraft();
+    const activeDraft = drafts[exercise.id] ?? readSetDraft(
+      options.userId,
+      options.workoutId,
+      exercise
+    );
+    const draft = activeDraft.draft;
     const weight = Number(draft.weightKg);
     const reps = Number(draft.reps);
     const rir = Number(draft.rir);
@@ -63,10 +94,12 @@ export function useSessionSetLogging(options: SessionSetLoggingOptions) {
       return false;
     }
 
+    writeSetDraft(options.userId, options.workoutId, exercise.id, activeDraft);
     const now = Date.now();
     const elapsed = lastSaveAt.current === null ? null : (now - lastSaveAt.current) / 1000;
     try {
       const saved = await options.mutations.addSet.mutateAsync({
+        clientMutationId: activeDraft.clientMutationId,
         sessionExerciseId: exercise.id,
         input: {
           setType: draft.setType,
@@ -91,7 +124,7 @@ export function useSessionSetLogging(options: SessionSetLoggingOptions) {
     }
   }
 
-  return { closeEditors, currentDraft, editingSetId, newSetOpen, openNewSet, restTimer, saveSet, setEditingSetId, setNewSetOpen, setRestTimer, updateDraft };
+  return { cancelNewSet, closeEditors, currentDraft, editingSetId, newSetOpen, openNewSet, restTimer, saveSet, setEditingSetId, setRestTimer, updateDraft };
 }
 
 function omitKey<T>(record: Record<string, T>, key: string): Record<string, T> {

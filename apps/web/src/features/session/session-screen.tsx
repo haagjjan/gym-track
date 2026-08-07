@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ConfirmDialog } from "../../shared/ui/confirm-dialog";
 import { ErrorState } from "../../shared/ui/ui";
 import { errorMessage } from "../../shared/api/client";
@@ -38,6 +38,7 @@ export function SessionScreen({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [status, setStatus] = useState("");
+  const exerciseMutationIds = useRef(new Map<string, string>());
   const workout = workoutQuery.data ?? null;
   const exercises = useMemo(() => workout?.exercises ?? [], [workout]);
   const activeExercise = resolveActiveExercise(exercises, activeExerciseId);
@@ -61,7 +62,10 @@ export function SessionScreen({
     const added: SessionExercise[] = [];
     try {
       for (const exerciseId of exerciseIds) {
-        added.push(await mutations.addExercise.mutateAsync({ exerciseId }));
+        const clientMutationId = exerciseMutationIds.current.get(exerciseId)
+          ?? globalThis.crypto.randomUUID();
+        exerciseMutationIds.current.set(exerciseId, clientMutationId);
+        added.push(await mutations.addExercise.mutateAsync({ clientMutationId, exerciseId }));
       }
       const lastAdded = added.at(-1);
       if (lastAdded) setActiveExerciseId(lastAdded.id);
@@ -69,11 +73,17 @@ export function SessionScreen({
       setSheetOpen(false);
       setSessionMode("sets");
       setStatus(`${added.length} ${added.length === 1 ? "exercise" : "exercises"} added.`);
+      exerciseMutationIds.current.clear();
       return true;
     } catch (caught) {
       setActionError(errorMessage(caught, "The exercise could not be added."));
       return false;
     }
+  }
+
+  function closeExerciseSheet(): void {
+    exerciseMutationIds.current.clear();
+    setSheetOpen(false);
   }
 
   function reorderExercises(activeId: string, overId: string): void {
@@ -166,7 +176,7 @@ export function SessionScreen({
                 onDraftChange={logging.updateDraft}
                 onEditSet={logging.setEditingSetId}
                 onError={setActionError}
-                onNewSetOpen={(open) => open ? logging.openNewSet() : logging.setNewSetOpen(false)}
+                onNewSetOpen={(open) => open ? logging.openNewSet() : logging.cancelNewSet()}
                 onRestAdjust={(seconds) => logging.setRestTimer((current) => current ? { ...current, seconds: current.seconds + seconds } : null)}
                 onRestDismiss={() => logging.setRestTimer(null)}
                 onSaveSet={() => { void logging.saveSet().then((saved) => { if (saved) void mark("logEditSet"); }); }}
@@ -187,7 +197,7 @@ export function SessionScreen({
         isOpen={sheetOpen && isOpen}
         isSubmitting={mutations.addExercise.isPending || mutations.createExercise.isPending}
         onAddSelected={addExercises}
-        onClose={() => setSheetOpen(false)}
+        onClose={closeExerciseSheet}
         onCreate={async (input) => {
           const exercise = await mutations.createExercise.mutateAsync(input);
           await addExercises([exercise.id]);

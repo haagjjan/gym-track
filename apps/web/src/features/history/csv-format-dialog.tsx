@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { useModalBehavior } from "../../shared/ui/use-modal-behavior";
 import { HudButton } from "../../shared/ui/ui";
 
 const columns = [
@@ -33,38 +34,24 @@ const exerciseTypes = "compound, isolation, isometric, other";
 const muscleSlugs = "chest, back, shoulders, biceps, triceps, forearms, quads, hamstrings, glutes, calves, abs, traps";
 
 export function CsvFormatDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }): ReactNode {
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const previousOverflow = document.body.style.overflow;
-    const closeOnEscape = (event: KeyboardEvent): void => {
-      if (event.key === "Escape") onClose();
-    };
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", closeOnEscape);
-    closeButtonRef.current?.focus();
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", closeOnEscape);
-    };
-  }, [isOpen, onClose]);
+  const dialogRef = useModalBehavior<HTMLElement>({ isOpen, onClose });
 
   if (!isOpen) return null;
 
   return createPortal(
     <div className="fixed inset-0 z-[70] flex items-end justify-center bg-void/75 backdrop-blur-sm sm:items-center sm:p-4">
-      <section aria-labelledby="csv-format-title" aria-modal="true" className="glass max-h-[92dvh] w-full overflow-y-auto rounded-t-xl border border-lavender/30 p-4 pb-[max(env(safe-area-inset-bottom),1rem)] sm:max-w-3xl sm:rounded-xl" role="dialog">
+      <section aria-labelledby="csv-format-title" aria-modal="true" className="glass max-h-[92dvh] w-full overflow-y-auto rounded-t-xl border border-lavender/30 p-4 pb-[max(env(safe-area-inset-bottom),1rem)] sm:max-w-3xl sm:rounded-xl" ref={dialogRef} role="dialog" tabIndex={-1}>
         <header className="flex items-start justify-between gap-3">
           <div>
             <p className="label-caps text-lavender">IMPORT FORMAT</p>
             <h2 className="font-display text-xl font-bold text-fg" id="csv-format-title">Workout CSV guide</h2>
           </div>
-          <button aria-label="Close CSV format guide" className="flex size-11 shrink-0 items-center justify-center rounded border border-outline-dim text-xl text-fg-muted hover:border-cyan hover:text-cyan" onClick={onClose} ref={closeButtonRef} type="button">×</button>
+          <button aria-label="Close CSV format guide" className="flex size-11 shrink-0 items-center justify-center rounded border border-outline-dim text-xl text-fg-muted hover:border-cyan hover:text-cyan" data-modal-initial-focus onClick={onClose} type="button">×</button>
         </header>
 
         <div className="mt-4 space-y-4 text-xs leading-5 text-fg-muted">
           <p>Use one row per set. Repeat workout and exercise fields on every row, keep exercise positions and set orders compact, and save the file as UTF-8 CSV.</p>
+          <p>Exports escape spreadsheet-formula prefixes so user-authored text opens as literal text, not an executable formula, in common spreadsheet software.</p>
           <GuideValues label="Muscle slugs" value={muscleSlugs} />
           <GuideValues label="Equipment" value={equipment} />
           <GuideValues label="Exercise types" value={exerciseTypes} />

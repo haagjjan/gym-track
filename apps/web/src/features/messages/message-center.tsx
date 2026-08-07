@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { apiFetch, errorMessage } from "../../shared/api/client";
+import { useModalBehavior } from "../../shared/ui/use-modal-behavior";
 
 interface UserMessage {
   id: string;
@@ -56,15 +57,20 @@ export function MessageCenter({ inline = false }: { inline?: boolean }): ReactNo
     } finally { setBusy(false); }
   }
 
+  const dialogRef = useModalBehavior<HTMLDivElement>({
+    isOpen: Boolean(message && !inline),
+    onClose: () => { void dismiss(); }
+  });
+
   if (!message) {
     return inline ? <p className="rounded border border-outline-dim/50 p-5 text-sm text-outline">You have no new messages.</p> : null;
   }
 
   const content = (
-    <article autoFocus className="w-full max-w-lg rounded border border-cyan/40 bg-surface p-5 shadow-2xl" onKeyDown={(event) => { if (event.key === "Escape") void dismiss(); }} tabIndex={-1}>
+    <article className="w-full max-w-lg rounded border border-cyan/40 bg-surface p-5 shadow-2xl">
       <div className="flex items-start justify-between gap-4">
         <div><p className="label-caps text-cyan">{message.essential ? "SERVICE_NOTICE" : "FOUNDING_BETA_MESSAGE"}</p><h2 className="mt-2 font-display text-xl font-bold text-fg">{message.title}</h2></div>
-        <button aria-label="Dismiss message" className="min-h-11 px-3 text-outline hover:text-fg" disabled={busy} onClick={() => void dismiss()} type="button">Close</button>
+        <button aria-label="Dismiss message" className="min-h-11 px-3 text-outline hover:text-fg" data-modal-initial-focus disabled={busy} onClick={() => void dismiss()} type="button">Close</button>
       </div>
       <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-fg-muted">{message.body}</p>
       {message.actionUrl ? <a className="mt-3 inline-flex min-h-11 items-center text-cyan underline" href={message.actionUrl} rel="noreferrer" target="_blank">Open related link ↗</a> : null}
@@ -77,7 +83,7 @@ export function MessageCenter({ inline = false }: { inline?: boolean }): ReactNo
     </article>
   );
 
-  return inline ? content : <div aria-label="Beta message" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-void/80 p-4" role="dialog">{content}</div>;
+  return inline ? content : <div aria-label="Beta message" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-void/80 p-4" ref={dialogRef} role="dialog" tabIndex={-1}>{content}</div>;
 }
 
 function ResponseInput(props: { message: UserMessage; choice: string; rating: number; text: string; setChoice(value: string): void; setRating(value: number): void; setText(value: string): void }): ReactNode {

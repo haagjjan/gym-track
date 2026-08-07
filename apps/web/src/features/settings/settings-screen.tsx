@@ -62,15 +62,15 @@ function AccountPanel({ user }: { user: AuthUser }): ReactNode {
 }
 
 function EmailVerificationNotice(): ReactNode {
-  const [state, setState] = useState<"idle" | "sending" | "sent" | "failed">("idle");
+  const [state, setState] = useState<"idle" | "sending" | "sent" | "not_required" | "failed">("idle");
   async function resend(): Promise<void> {
     setState("sending");
     try {
-      const result = await apiFetch<{ sent: boolean }>("/api/auth/resend-verification", { method: "POST", body: {} });
-      setState(result.sent ? "sent" : "failed");
+      const result = await apiFetch<{ status: "FAILED" | "NOT_REQUIRED" | "SENT" }>("/api/auth/resend-verification", { method: "POST", body: {} });
+      setState(result.status === "FAILED" ? "failed" : result.status === "NOT_REQUIRED" ? "not_required" : "sent");
     } catch { setState("failed"); }
   }
-  return <div className="mt-3 flex flex-col gap-2 rounded-lg border border-lavender/40 bg-lavender/5 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between"><p className="text-xs text-lavender"><span className="label-caps mr-2">EMAIL_UNVERIFIED</span>Confirm your email to secure account recovery.</p><button className="label-caps min-h-11 rounded border border-lavender/50 px-3 text-lavender" disabled={state === "sending" || state === "sent"} onClick={() => void resend()} type="button">{state === "sent" ? "LINK_SENT ✓" : state === "sending" ? "SENDING…" : state === "failed" ? "RETRY_SEND" : "RESEND_LINK"}</button></div>;
+  return <div className="mt-3 flex flex-col gap-2 rounded-lg border border-lavender/40 bg-lavender/5 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between"><p className="text-xs text-lavender"><span className="label-caps mr-2">EMAIL_UNVERIFIED</span>Confirm your email to secure account recovery.</p><button className="label-caps min-h-11 rounded border border-lavender/50 px-3 text-lavender" disabled={state === "sending" || state === "sent" || state === "not_required"} onClick={() => void resend()} type="button">{state === "sent" ? "LINK_SENT ✓" : state === "not_required" ? "ALREADY_VERIFIED ✓" : state === "sending" ? "SENDING…" : state === "failed" ? "RETRY_SEND" : "RESEND_LINK"}</button></div>;
 }
 
 function BodyProfilePanel({ form, onChange, onSave, saved }: { form: Biometrics; onChange: (value: Biometrics) => void; onSave: () => void; saved: boolean }): ReactNode {

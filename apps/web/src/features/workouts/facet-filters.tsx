@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { useModalBehavior } from "../../shared/ui/use-modal-behavior";
 import { HudButton } from "../../shared/ui/ui";
 import { useExerciseOptions, useMuscleGroups } from "../../shared/api/hooks";
 import { emptyStoredFacetFilters, type StoredFacetFilters } from "./filter-persistence";
@@ -19,6 +20,10 @@ interface FacetFiltersProps {
 
 export function FacetFilters(props: FacetFiltersProps): ReactNode {
   const [sheetOpen, setSheetOpen] = useState(false);
+  const sheetRef = useModalBehavior<HTMLElement>({
+    isOpen: sheetOpen,
+    onClose: () => setSheetOpen(false)
+  });
   const muscles = useMuscleGroups();
   const options = useExerciseOptions();
   const activeCount = props.filters.muscleGroupIds.length
@@ -56,10 +61,10 @@ export function FacetFilters(props: FacetFiltersProps): ReactNode {
 
       {sheetOpen ? (
         <div className="fixed inset-0 z-[65] flex items-end bg-void/75 backdrop-blur-sm md:hidden">
-          <section aria-labelledby="filter-sheet-title" aria-modal="true" className="max-h-[88dvh] w-full overflow-y-auto rounded-t-2xl border border-outline-dim bg-surface p-4 pb-[max(env(safe-area-inset-bottom),1rem)]" role="dialog">
+          <section aria-labelledby="filter-sheet-title" aria-modal="true" className="max-h-[88dvh] w-full overflow-y-auto rounded-t-2xl border border-outline-dim bg-surface p-4 pb-[max(env(safe-area-inset-bottom),1rem)]" ref={sheetRef} role="dialog" tabIndex={-1}>
             <div className="mb-4 flex items-center justify-between gap-3">
               <h2 className="font-display text-lg font-bold text-fg" id="filter-sheet-title">Filter results</h2>
-              <button aria-label="Close filters" className="flex size-11 items-center justify-center rounded border border-outline-dim text-xl text-fg-muted" onClick={() => setSheetOpen(false)} type="button">×</button>
+              <button aria-label="Close filters" className="flex size-11 items-center justify-center rounded border border-outline-dim text-xl text-fg-muted" data-modal-initial-focus onClick={() => setSheetOpen(false)} type="button">×</button>
             </div>
             <div className="space-y-4">{fields}</div>
             <div className="mt-5 grid grid-cols-2 gap-2">

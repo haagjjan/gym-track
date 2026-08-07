@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { useModalBehavior } from "../../shared/ui/use-modal-behavior";
 
 export function SessionEditorDock({
   children,
@@ -12,21 +13,16 @@ export function SessionEditorDock({
   label: string;
   onClose: () => void;
 }): ReactNode {
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const onCloseRef = useRef(onClose);
   const isMobile = useMobileViewport();
   const [viewport, setViewport] = useState({ bottom: 0, maxHeight: 0 });
+  const dialogRef = useModalBehavior<HTMLDivElement>({
+    initialFocus: "dialog",
+    isOpen: isMobile === true,
+    onClose
+  });
 
   useEffect(() => {
-    onCloseRef.current = onClose;
-  }, [onClose]);
-
-  useEffect(() => {
-    if (isMobile === null) return;
-    const previousOverflow = document.body.style.overflow;
-    const closeOnEscape = (event: KeyboardEvent): void => {
-      if (event.key === "Escape") onCloseRef.current();
-    };
+    if (!isMobile) return;
     const updateViewport = (): void => {
       const visual = window.visualViewport;
       const height = visual?.height ?? window.innerHeight;
@@ -37,18 +33,12 @@ export function SessionEditorDock({
       });
     };
 
-    window.addEventListener("keydown", closeOnEscape);
-    if (isMobile) {
-      document.body.style.overflow = "hidden";
-      updateViewport();
-      window.visualViewport?.addEventListener("resize", updateViewport);
-      window.visualViewport?.addEventListener("scroll", updateViewport);
-    }
+    updateViewport();
+    window.visualViewport?.addEventListener("resize", updateViewport);
+    window.visualViewport?.addEventListener("scroll", updateViewport);
     return () => {
-      window.removeEventListener("keydown", closeOnEscape);
       window.visualViewport?.removeEventListener("resize", updateViewport);
       window.visualViewport?.removeEventListener("scroll", updateViewport);
-      if (isMobile) document.body.style.overflow = previousOverflow;
     };
   }, [isMobile]);
 
@@ -60,9 +50,11 @@ export function SessionEditorDock({
       className={isMobile
         ? "fixed inset-x-0 z-50 overflow-y-auto rounded-t-2xl border border-cyan/30 bg-surface p-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] shadow-2xl"
         : "static overflow-visible bg-transparent p-0"}
+      aria-modal={isMobile || undefined}
       ref={dialogRef}
       role="dialog"
       style={isMobile ? { bottom: viewport.bottom, maxHeight: viewport.maxHeight || "82dvh" } : undefined}
+      tabIndex={isMobile ? -1 : undefined}
     >
       <div className="mx-auto max-w-2xl">{children}</div>
     </div>
@@ -70,7 +62,11 @@ export function SessionEditorDock({
 
   if (!isMobile) return editor;
 
-  return createPortal(<><button aria-label={`Close ${label}`} className="fixed inset-0 z-40 bg-void/70 backdrop-blur-sm" onClick={onClose} type="button" />{editor}</>, document.body);
+  function closeFromBackdrop(event: MouseEvent<HTMLDivElement>): void {
+    if (event.target === event.currentTarget) onClose();
+  }
+
+  return createPortal(<div className="fixed inset-0 z-40 bg-void/70 backdrop-blur-sm" onMouseDown={closeFromBackdrop}>{editor}</div>, document.body);
 }
 
 export function SessionTimerDock({ children }: { children: ReactNode }): ReactNode {
