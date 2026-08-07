@@ -208,6 +208,7 @@ Ordered exercise blocks inside a workout session.
 | `id` | `uuid` | Primary key |
 | `workout_session_id` | `uuid` | Required FK to `workout_sessions.id` |
 | `exercise_id` | `uuid` | Required FK to `exercises.id` |
+| `client_mutation_id` | `uuid` | Nullable for historical rows; required by the API for new creates |
 | `position` | `integer` | Required, positive |
 | `created_at` | `timestamptz` | Required, default now |
 | `updated_at` | `timestamptz` | Required, default now |
@@ -216,13 +217,16 @@ Ordered exercise blocks inside a workout session.
 Constraints and indexes:
 
 - Check `position > 0`.
+- Partial unique index on `(workout_session_id, client_mutation_id)` where `client_mutation_id IS NOT NULL`.
 - Partial unique index on `(workout_session_id, position)` where `deleted_at IS NULL`.
 - Index on `(workout_session_id, position)` for ordered session detail.
 - Index on `exercise_id` for exercise history joins.
 
 Rules:
 
-- Position values should be compacted after reorder/delete.
+- The mutation-ID index includes soft-deleted rows so a logical create cannot be replayed into a second row after deletion.
+- Adds, reorders, deletes, position shifts, and compaction serialize on the owned workout row and complete transactionally.
+- Position values are compacted after reorder/delete.
 
 ### `workout_templates`
 
@@ -258,6 +262,7 @@ Ordered sets inside a session exercise.
 | --- | --- | --- |
 | `id` | `uuid` | Primary key |
 | `session_exercise_id` | `uuid` | Required FK to `session_exercises.id` |
+| `client_mutation_id` | `uuid` | Nullable for historical rows; required by the API for new creates |
 | `set_order` | `integer` | Required, positive |
 | `set_type` | `text` | Required: `warmup` or `working` |
 | `weight_kg` | `numeric(6,2)` | Required, positive |
@@ -277,12 +282,15 @@ Constraints and indexes:
 - Check `reps > 0`.
 - Check `rir >= 0 AND rir <= 10`.
 - Check `rest_time_seconds IS NULL OR rest_time_seconds >= 0`.
+- Partial unique index on `(session_exercise_id, client_mutation_id)` where `client_mutation_id IS NOT NULL`.
 - Partial unique index on `(session_exercise_id, set_order)` where `deleted_at IS NULL`.
 - Index on `(session_exercise_id, set_order)` for ordered session detail.
 - Index on `(set_type, deleted_at)` as a helper for working-set analytics.
 
 Rules:
 
+- The mutation-ID index includes soft-deleted rows so a logical create cannot be replayed into a second row after deletion.
+- Adds, deletes, and set-order compaction serialize on the owned workout and session-exercise rows and complete transactionally.
 - Set order drives display numbering.
 - Difference to last set, estimated one-rep max, weekly volume, and summaries are computed on read.
 
@@ -297,10 +305,10 @@ Rules:
 | Q5 Sessions by date range | `workout_sessions` index on `(user_id, started_at, ended_at)` |
 | Q6 Session detail | `workout_sessions`, `session_exercises`, `sets`, ordered position/set indexes, previous owned completed-workout lookup |
 | Q7 Create session | `workout_sessions`, one-open-session partial unique index |
-| Q8 Add exercise to session | `session_exercises`, active position uniqueness |
-| Q9 Add set | `sets`, active set-order uniqueness and value checks |
-| Q10 Edit/delete set | `sets`, soft delete via `deleted_at` |
-| Q11 Reorder exercises | `session_exercises.position`, compacted positions |
+| Q8 Add exercise to session | `session_exercises`, parent-scoped mutation-ID uniqueness, active position uniqueness, workout-row serialization |
+| Q9 Add set | `sets`, parent-scoped mutation-ID uniqueness, active set-order uniqueness, value checks, parent-row serialization |
+| Q10 Edit/delete set | `sets`, soft delete via `deleted_at`, parent-locked compaction |
+| Q11 Reorder exercises | `session_exercises.position`, workout-row serialization, compacted positions |
 | Q12 List exercises | `exercises`, `muscle_groups`, `exercise_secondary_muscles`, lower-name search |
 | Q13 Add exercise | `exercises`, lower-name uniqueness, optional `created_by_user_id` audit |
 | Q14 Exercise progress | Join `workout_sessions` -> `session_exercises` -> `sets` by user, exercise, date range |
@@ -320,6 +328,8 @@ Cardio C1-C2 are deferred and intentionally unsupported by the first schema pass
 
 Migration `20260805120000000_add_public_beta_foundation.sql` extends `users` with explicit role/account state/cohort, reliable activity counters, privacy choices, policy evidence, deletion deadline and versioned onboarding. `exercises.created_by_user_id` becomes `ON DELETE SET NULL` so a shared referenced definition can outlive its creator without retaining identity.
 
+Migration `20260806120000000_add_workout_mutation_safety.sql` adds nullable parent-scoped client mutation IDs to `session_exercises` and `sets`. Existing rows remain unchanged with `NULL`; new API creates require UUIDs and use the partial unique indexes for replay safety.
+
 `beta_settings` is the locked singleton for immediate waitlist/invitation/campaign controls, account cap and rolling approval limit. `beta_access_requests` stores policy/age evidence, state, hashed invitation and joined account. `admin_audit_events` records privileged actions. `account_deletion_tokens` and `erasure_tombstones` support reversible grace and restore-safe hard erasure.
 
-`campaigns`, `campaign_targets` and `message_deliveries` store immutable published content/audience, bounded trigger/response design and exactly-once per-user state. All ownership FKs cascade on user erasure unless a retained shared definition explicitly nulls creator identity. The processing and retention rules are in `docs/public-beta/data-processing-inventory.md`.
+`campaigns`, `campaign_targets` and `message_deliveries` store immutable published content/audience, bounded trigger/response design and exactly-once per-user state. All ownership FKs cascade on user erasure unless a retained shared definition explicitly nulls creator identity. The processing and retention rules are in `docs/beta-process/public-beta/data-processing-inventory.md`.

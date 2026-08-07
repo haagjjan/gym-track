@@ -43,9 +43,9 @@ pnpm check   # type-check + lint + test + build, everything
 
 ## 2. Users — creating, verifying, resetting
 
-There is no admin panel yet. Everything below is either through the running app's UI, or
-direct SQL against Postgres for the rare case the UI can't reach it (e.g. manually verifying
-someone during support).
+The administrator page now includes the Founding Beta queue/settings, ordinary-user
+containment, deletion support, campaigns, and recent audit events. Direct SQL remains an
+emergency support escape hatch, not the routine user-management interface.
 
 Stage 1 production is single-owner and uses an existing account. It must run with
 `REGISTRATION_MODE=DISABLED`; there is no public or administrator account-creation endpoint.
@@ -54,8 +54,9 @@ Local development and test stacks explicitly use `REGISTRATION_MODE=ENABLED`.
 ### Development signup flow
 
 1. `/signup` → account is created immediately (no email wait to start using the app).
-2. A verification email is sent in the background. **Locally, with no `RESEND_API_KEY` set,
-   this email is never actually sent** — instead it's printed to the API's terminal log:
+2. The signup request synchronously attempts verification-email delivery, but a delivery
+   failure does not roll back the new account. **Locally, with no `RESEND_API_KEY` set, this
+   email is never actually sent** — instead it is printed to the API's terminal log:
    ```
    auth email (log transport)
      to: "jan@example.com"
@@ -63,9 +64,15 @@ Local development and test stacks explicitly use `REGISTRATION_MODE=ENABLED`.
      body: "...http://localhost:3000/verify-email?token=XXXXX..."
    ```
    Copy that URL into your browser to complete verification during local testing.
+   Recipient, subject, body and action link appear only in this explicit local log transport;
+   public-production logs and metrics never contain them.
 3. Until verified, the dashboard shows an `EMAIL_UNVERIFIED` banner with a `RESEND_LINK`
    button — nothing else is blocked. This is intentional (see `docs/12`): don't lock users out
    over an unverified email at this stage.
+
+Each explicit verification resend invalidates unused earlier verification tokens. The UI
+distinguishes `SENT`, `NOT_REQUIRED`, and `FAILED`; after a failure, use the explicit resend
+action rather than retrying an old link.
 
 With registration disabled, `/signup` shows `REGISTRATION_UNAVAILABLE`, the login page does
 not link to account creation, and both `POST /api/auth/signup` and
@@ -85,20 +92,68 @@ session.
    account is marked email-verified (proving you clicked an emailed link is as good as
    clicking a verification link).
 
+Each new reset request invalidates unused earlier password-reset tokens. The public response
+remains identical for unknown accounts and provider failures; use bounded internal delivery
+telemetry for diagnosis rather than changing that response.
+
 ### Turning on real email delivery
 
-By default (no `RESEND_API_KEY`), nothing is emailed — links only appear in server logs. To
-actually send verification/reset emails:
+Development, test, and explicit local/private-LAN deployments may omit `RESEND_API_KEY`; links
+then appear only in server logs. Public production refuses to start without the provider key,
+a syntactically valid sender, and the existing support address used as reply-to. To send real
+invitation, verification, reset, deletion, and cancellation emails:
 
 1. Create a free account at resend.com, verify a sending domain (or use their `onboarding@resend.dev` test address for early testing).
 2. Set in `.env` (or your hosting provider's environment variables):
    ```
    RESEND_API_KEY=re_your_key_here
    EMAIL_FROM=Gym Progress Tracker <no-reply@yourdomain.com>
+   SUPPORT_EMAIL=support@yourdomain.com   # published support contact and reply-to
    APP_BASE_URL=https://app.gymtrack.ch   # so emailed links point at the canonical origin
    ```
-3. Restart the API. That's it — no code changes. Swapping to a different provider later means
-   implementing one function (`send()`) in `apps/api/src/shared/mailer.ts`.
+3. Restart the API. A successful provider-acceptance attempt records bounded mail kind,
+   outcome, status, optional provider message ID, and duration. Recipient, body, link, and raw
+   token must never be copied into production logs or metrics.
+
+Email is synchronous and has no durable outbox. If delivery is failed or ambiguous, the next
+explicit resend rotates the unused verification/reset/invitation token. Do not copy raw links
+into tickets, audit details, or retry payloads.
+
+### Administrator user containment
+
+Use `/admin` for routine containment:
+
+- **Suspend** changes an ordinary account to `SUSPENDED`, revokes every live session, and
+  writes the audit event in one transaction.
+- **Reactivate** changes a suspended ordinary account to `ACTIVE`; it creates no session and
+  does not change email verification.
+- **Revoke sessions** ends all current sessions without changing account status. Repeating it
+  safely returns zero revoked sessions.
+- **Administrator audit trail** lists recent privileged events in pages of 50; load older
+  pages with the provided cursor.
+
+Administrator accounts, the signed-in administrator, role promotion, and
+`DELETION_PENDING` status changes are intentionally unavailable from containment controls.
+Use the existing deletion-support cancellation action for a pending deletion. The API's
+canonical read route is `GET /api/v1/admin/users`; `/api/v1/admin/beta/users` is a temporary,
+deprecated read-only alias whose response points to the successor route through `Deprecation`
+and `Link` headers.
+
+Invitation approval/reissue also waits for provider acceptance. `FAILED` leaves the request
+in `INVITED`, records an audit event, and exposes `RESEND`; do not tell the operator to repeat
+the generic approval action.
+
+### Deletion email outcomes
+
+Deletion scheduling is complete only after the cancellation email is accepted. If delivery
+fails, the API returns `503 EMAIL_DELIVERY_FAILED`, compensates the account back to `ACTIVE`,
+and invalidates the pending cancellation token. Sessions were already revoked and are not
+recreated, so tell the user that deletion was not scheduled and that they may need to sign in
+again.
+
+A cancellation remains successful if its informational confirmation cannot be sent; the API
+and admin UI expose `notificationStatus: FAILED` and record the bounded failure. Final-deletion
+email is best effort because the erased address must not be retained for retry.
 
 ### Manually verifying or unlocking a user (support/SQL escape hatch)
 
@@ -224,6 +279,12 @@ curl -b cookies.txt -X POST --data-binary @my-workouts.csv \
 
 Limits: max 5,000 rows per import request (split larger files), max 1 MiB request body overall.
 
+Exports enable Papa Parse formula escaping. Cells beginning with a spreadsheet formula prefix
+are written as literal text, so user-authored titles/notes/names do not execute as formulas
+when opened in common spreadsheet software. The downloadable sample contains only fixed
+canonical content. Do not remove the leading escape character while handling an exported file
+in a spreadsheet.
+
 ---
 
 ## 5. Rate limits at a glance
@@ -251,17 +312,18 @@ template: `.env.example`.
 | Variable | Purpose | Default if unset |
 |---|---|---|
 | `DATABASE_URL` | Postgres connection string | — required |
-| `APP_ENV` | Deployment label and explicit local-Compose security exception | follows `NODE_ENV`; production must not use `local` |
+| `APP_ENV` | Deployment label and explicit local/private-LAN security exception | follows `NODE_ENV`; public production must not use an exception label |
 | `AUTH_COOKIE_SECURE` | HTTPS-only cookies | `true` in prod; explicit `false` is rejected in prod |
 | `AUTH_SESSION_TTL_DAYS` | How long a login lasts | 30 |
-| `REGISTRATION_MODE` | `ENABLED` or `DISABLED` account creation | `DISABLED` in prod, `ENABLED` otherwise |
+| `REGISTRATION_MODE` | `ENABLED`, `INVITE_ONLY`, or `DISABLED` account creation | `DISABLED` in prod, `ENABLED` otherwise |
 | `API_TRUST_PROXY` | Whether Fastify trusts forwarding headers | `false`; keep false for the BFF topology |
 | `APP_BASE_URL` | Canonical origin used for absolute action links | required HTTPS origin in prod |
 | `APP_ALLOWED_HOSTS` | Extra comma-separated hostnames accepted by Next.js | none beyond `APP_BASE_URL` host in prod |
 | `APP_ALLOWED_ORIGINS` | Extra comma-separated origins accepted for state-changing BFF requests | none beyond `APP_BASE_URL` origin in prod |
 | `HSTS_ENABLED` | Emit HSTS for the canonical HTTPS hostname | `false`; enable only after HTTPS stability is verified |
-| `EMAIL_FROM` | "From" address on outgoing mail | a Resend test address |
-| `RESEND_API_KEY` | Turns on real email sending | unset = local log transport; production delivery disabled |
+| `EMAIL_FROM` | Valid sender address, optionally with display name | a Resend test address; configure a verified sender before public production |
+| `SUPPORT_EMAIL` | Published support contact and transactional-mail reply-to | required in public production |
+| `RESEND_API_KEY` | Enables Resend transactional delivery | required in public production; unset uses log transport only in development/test/local/private-LAN |
 | `LOG_LEVEL` | API log verbosity | `info` |
 
 ### Stage 1 production application values
@@ -375,3 +437,42 @@ from this change.
 
 The cAdvisor restart panel is a best-effort signal. Confirm suspected restarts with
 `docker compose ps` and container logs before taking action.
+
+---
+
+## 9. Public-beta lifecycle cleanup and email alerts
+
+The API process owns one single-flight lifecycle runner for the accepted single-process,
+50-account beta topology. It runs once during API startup and then hourly. Do not add a second
+API replica without first replacing this assumption with coordinated scheduling.
+
+Each run isolates these phases so one error does not skip later work or the next run:
+
+1. expired authentication records;
+2. expired invitations;
+3. every account deletion due within the beta cap;
+4. deletion-completion notifications; and
+5. account/campaign retention cleanup.
+
+One completion-email failure does not stop later due deletions. The operational metrics are:
+
+- `gym_progress_tracker_lifecycle_cleanup_last_start_timestamp_seconds`;
+- `gym_progress_tracker_lifecycle_cleanup_last_success_timestamp_seconds`;
+- `gym_progress_tracker_lifecycle_cleanup_last_duration_seconds`;
+- `gym_progress_tracker_lifecycle_cleanup_phase_failures_total{phase}`;
+- `gym_progress_tracker_lifecycle_due_deletions`;
+- `gym_progress_tracker_lifecycle_finalized_deletions_total`; and
+- `gym_progress_tracker_email_deliveries_total{kind,outcome}` plus its bounded duration
+  histogram.
+
+Checked-in Prometheus rules warn when no full cleanup succeeds for two hours, become critical
+at four hours, become critical when a due-deletion backlog persists for four hours, and warn
+after at least three transactional-email failures in 30 minutes. The repository rules are not
+proof that Prometheus loaded or fired them in a deployment.
+
+For a lifecycle alert, inspect the bounded `phase` and API logs, database health, provider
+health, and the current due-backlog metric. Fix the failed dependency; a controlled API
+restart performs one startup catch-up run, but do not restart repeatedly as a substitute for
+diagnosis. For email alerts, use only kind/outcome/provider status/message ID telemetry and
+the provider dashboard—never paste recipient addresses, message bodies, links, or tokens into
+logs or incident notes.

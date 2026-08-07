@@ -56,20 +56,26 @@ The database schema, constraints, and indexes will be designed to support these 
 - Output: session_id, exercise windows
 
 ### Q8. Add exercise to session (ordered)
-- Input: session_id, exercise_id, and position/order for each staged selection.
-- Output: session_exercise_id for each appended exercise; the web commits selections in click order.
+- Input: session_id, exercise_id, required client_mutation_id UUID, and optional position/order for each staged selection.
+- Output: session_exercise_id and whether the result replayed an earlier equivalent request; the web commits selections in click order.
+- Lock the owned workout row before counting, shifting, compacting, or inserting positions. A client mutation ID is unique only within its parent workout.
+- Replaying the same ID with the same exercise identity returns the existing row at its authoritative current position. The original requested position is mutable ordering metadata and is not reapplied; reusing the ID for a different exercise is an idempotency conflict.
 
 ### Q9. Add set to a session exercise (ordered)
-- Input: session_exercise_id (auto), set_order (auto), set_type, weight, reps, RIR, rest_time_seconds (auto)
-- Output: set_id, input set fields
+- Input: session_exercise_id, required client_mutation_id UUID, set_order (auto), set_type, weight, reps, RIR, and optional rest_time_seconds/note.
+- Output: set_id, input set fields, and whether the result replayed an earlier equivalent request.
+- Lock the owned session-exercise row before calculating or compacting set order. A client mutation ID is unique only within its parent session exercise.
+- Replaying the same ID and equivalent set values returns the existing row. Reusing it for different content is an idempotency conflict.
 
 ### Q10. Edit or delete a set
 - Input: set_id, changed fields OR delete flag
 - Output: updated set
+- Updates are last-write-wins for the beta. Deletion and set-order compaction run under the parent session-exercise lock; the client refetches the authoritative workout after success or failure.
 
 ### Q11. Reorder exercises within a session
 - Input: session_id, new ordering
 - Output: updated ordering
+- Reorders are last-write-wins for the beta and serialize on the owned workout row. Every active occurrence must appear once with compact positions; the client refetches the authoritative workout after success or failure.
 
 ---
 
@@ -109,6 +115,7 @@ The database schema, constraints, and indexes will be designed to support these 
 - Facets require one contained exercise to satisfy every active exercise-level condition.
 - Output rows include tonnage and an exercise preview. `allTimeSummary` is unfiltered and includes total/completed sessions, total tonnage, average completed duration, and completion rate.
 - The History portability UI exposes the canonical row-per-set CSV headers, validation rules, accepted classifications, one complete row, and a downloadable sample without adding another database query.
+- CSV export escapes spreadsheet-formula prefixes so user-authored cells are safe to open in spreadsheet software; the escaped text remains valid CSV data.
 
 ### Q21. Search and rank workout templates
 
@@ -123,6 +130,7 @@ The database schema, constraints, and indexes will be designed to support these 
 - Read and update the current user's 5–50 volume heat ceiling.
 - Merge user-scoped workout and template references and report both affected record types.
 - History, Template, and Exercise List filter/sort state is browser-tab-local and user-scoped; it does not add a database query. Search text is intentionally excluded from persistence.
+- Active new-set drafts are user/workout/exercise-scoped browser-local values, not database rows. Their versioned envelope holds `savedAt`, `clientMutationId`, and the draft for at most 24 hours after the last edit.
 
 ---
 
@@ -167,13 +175,16 @@ Status: Deferred from the MVP and not part of the first schema/API pass.
 ## 7) Founding Beta and Account Lifecycle
 
 - Q23 generically create/deduplicate a waitlist request without disclosing its prior state.
-- Q24 lock settings/request rows, count consuming accounts and unexpired invites, enforce cap/rolling approval limit, and issue one hashed invitation atomically.
+- Q24 lock settings/request rows, count consuming accounts and unexpired invites, enforce cap/rolling approval limit, and issue one hashed invitation atomically. Invitation delivery is synchronous after the transaction; record a bounded `SENT` or `FAILED` result without rolling back the durable invitation.
 - Q25 consume one valid invitation with a matching email while creating the verified account and session transactionally.
 - Q26 export every user-owned profile/workout/template/exercise/preference/onboarding/event/message record without secrets or other-user security data.
-- Q27 lock an account for deletion, revoke all sessions, cancel by token/admin, select due accounts and hard-delete the complete ownership graph idempotently.
+- Q27 lock an account for deletion, revoke all sessions, cancel by token/admin, select due accounts and hard-delete the complete ownership graph idempotently. Scheduling is committed only after provider acceptance of its cancellation link; on delivery failure reactivate the account and invalidate the pending token. Finalization continues across individual deletion or notification failures.
 - Q28 get/update privacy and onboarding state; increment reliable login/workout counters independently of optional analytics.
 - Q29 materialize campaign recipients and select the next eligible message from immutable trigger/audience state; save only a validated configured response.
-- Q30 list applicant/user/campaign state for an explicit administrator and append every privileged mutation to the audit log.
+- Q30 list applicant/user/campaign state for an explicit administrator; list ordinary users with active-session counts; lock, suspend/reactivate, and revoke sessions transactionally; and append every privileged mutation to the audit log.
+- Q31 read recent administrator audit events in descending `(created_at, id)` order with an opaque cursor and a maximum page size of 100. Expose only bounded allowlisted detail fields.
+
+Goal 1 workout mutation rows keep nullable mutation IDs so historical data remains valid. The API requires IDs only for new exercise/set creates; there is no generic idempotency table or revision field.
 
 ### C1. Log cardio entry in a session OR standalone
 - Input: distance, duration, optional notes

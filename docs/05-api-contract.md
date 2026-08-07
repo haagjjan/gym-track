@@ -51,7 +51,17 @@ Common status codes:
 - `409 Conflict` - uniqueness or state conflict
 - `423 Locked` - temporary account lockout after repeated failed logins
 - `422 Unprocessable Entity` - validation error
+- `503 Service Unavailable` - a required external acceptance or service dependency failed
 - `500 Internal Server Error` - unexpected server error
+
+Goal 1 adds these stable error codes:
+
+| Code | Status | Meaning |
+| --- | --- | --- |
+| `IDEMPOTENCY_CONFLICT` | `409` | A parent-scoped client mutation ID was reused with different content. |
+| `EMAIL_DELIVERY_FAILED` | `503` | Required deletion-scheduling email acceptance failed and scheduling was compensated. |
+| `INVALID_ACCOUNT_TRANSITION` | `409` | The requested ordinary-user status change is unavailable from its current state. |
+| `ADMIN_TARGET_FORBIDDEN` | `403` | An administrator/self target cannot be changed through ordinary-user containment controls. |
 
 ## System Endpoints
 
@@ -91,7 +101,8 @@ This endpoint is an operations boundary, not a browser API:
 
 - It is disabled by default and is not proxied through the Next.js BFF.
 - The Stage 1 monitoring overlay enables it only on the private Docker network.
-- It exposes default Node.js process metrics, normalized-route HTTP request/response/latency/in-flight metrics, and bounded service/environment/release identity.
+- It exposes default Node.js process metrics, normalized-route HTTP request/response/latency/in-flight metrics, bounded service/environment/release identity, transactional-email outcomes by bounded mail kind, and lifecycle cleanup state.
+- Lifecycle series record last start, last fully successful run, last duration, bounded phase-failure counts, due-deletion backlog, and finalized-deletion count. Email series contain only bounded kind/outcome and duration.
 - Route labels use Fastify route templates such as `/api/v1/workouts/:workoutId`, never raw request paths.
 - User IDs, request IDs, emails, session/workout/exercise IDs, and credentials are never metric labels.
 - Deployments that publish the API directly must leave it disabled unless an independently reviewed protection layer is present.
@@ -279,7 +290,7 @@ Behavior:
 - When `REGISTRATION_MODE=DISABLED`, returns `403` with
   `REGISTRATION_DISABLED` before request validation or any account/session side effect.
 - Sets the auth session cookie.
-- Issues a 24-hour single-use verification token and attempts to send the verification email without making email delivery a signup failure.
+- Issues a 24-hour single-use verification token and awaits one provider-acceptance attempt. Signup still succeeds if that verification delivery fails; the bounded internal outcome is recorded and an explicit resend remains available.
 - Returns `409` if email or username already exists.
 - Passwords are hashed with Argon2.
 
@@ -399,12 +410,12 @@ Response `200`:
 ```json
 {
   "data": {
-    "sent": true
+    "status": "SENT"
   }
 }
 ```
 
-`sent` is `false` when the account is already verified or delivery fails. Returns `401` without a valid auth session.
+`status` is `SENT`, `NOT_REQUIRED`, or `FAILED`. A new request supersedes every unused verification token for that account. Returns `401` without a valid auth session.
 
 ### `POST /api/v1/auth/forgot-password`
 
@@ -428,7 +439,7 @@ Response `200`:
 }
 ```
 
-The response is identical whether the email exists or email delivery succeeds, preventing account enumeration. Existing accounts receive a token that expires after 60 minutes.
+The response is identical whether the email exists or email delivery succeeds, preventing account enumeration. For an existing account, a new request supersedes every unused reset token and attempts delivery of a replacement token that expires after 60 minutes. The delivery outcome is internal only.
 
 ### `POST /api/v1/auth/reset-password`
 
@@ -454,6 +465,14 @@ Response `200`:
 ```
 
 Successful reset marks the email verified, revokes all existing sessions, and clears login failure state. Returns `400` with `INVALID_TOKEN` when the token is invalid, expired, already used, or has the wrong purpose.
+
+### Transactional-email behavior
+
+- Public production startup requires `RESEND_API_KEY`, a valid `EMAIL_FROM`, and the published `SUPPORT_EMAIL` used as reply-to. Log delivery is allowed only in development, test, and explicit local/private-LAN deployments.
+- Supported mail kinds are invitation, verification, password reset, deletion scheduled, deletion cancelled, deletion cancelled by support, and deletion completed.
+- Delivery is synchronous and either returns provider acceptance (with an optional provider message ID) or raises a typed delivery error. There is no mail outbox.
+- Logs and metrics may include only mail kind, outcome, provider status, provider message ID, and duration. They never include recipient, body, action link, or raw token.
+- Raw action tokens are never persisted outside their existing hashed domain-token records. A later explicit resend supersedes a failed or ambiguous attempt.
 
 ## Workout Endpoints
 
@@ -691,6 +710,7 @@ The Workout History `View CSV format` dialog/sheet presents this exact contract 
 - `exercise_position` values are compact positive integers starting at `1` within each workout. `set_order` values are compact positive integers starting at `1` within each exercise occurrence.
 - `set_type` is `working` or `warmup`. Equipment is blank or one of `barbell`, `dumbbell`, `kettlebell`, `cable`, `machine`, `plate-loaded machine`, `Smith machine`, `resistance band`, `bodyweight`, or `other`. Exercise type is blank or one of `compound`, `isolation`, `isometric`, or `other`.
 - Seeded primary muscle slugs are `chest`, `back`, `shoulders`, `biceps`, `triceps`, `forearms`, `quads`, `hamstrings`, `glutes`, `calves`, `abs`, and `traps`.
+- Exports enable Papa Parse formula escaping. Any exported cell beginning with a spreadsheet formula prefix is emitted as literal text rather than an executable formula when opened in common spreadsheet software; the downloadable sample contains only fixed canonical content.
 
 Complete example row:
 
@@ -815,6 +835,7 @@ Request:
 
 ```json
 {
+  "clientMutationId": "b1633708-8425-4b61-9413-642edf9c0722",
   "exerciseId": "uuid",
   "position": 1
 }
@@ -838,16 +859,21 @@ Response `201`:
         }
       },
       "sets": []
-    }
+    },
+    "replayed": false
   }
 }
 ```
 
 Behavior:
 
+- `clientMutationId` is required and generated once per logical add action. It is reused until success or explicit abandonment.
 - Appends to the end if `position` is omitted.
 - Provided `position` must be in the active compact range `1..activeCount+1`.
-- Existing active exercise positions are shifted to keep positions compact.
+- Ownership validation, the workout-row lock, active count, shifts/compaction, and insertion complete inside one transaction.
+- Existing active exercise positions are shifted to keep positions compact. Distinct concurrent adds serialize and both succeed.
+- Initial creation returns `201` with `replayed: false`. A replay under the same workout and same `exerciseId` returns the existing resource at its authoritative current position with `200` and `replayed: true`, without another write or reapplying the originally requested position.
+- Reusing the ID under the same workout for a different `exerciseId` returns `409 IDEMPOTENCY_CONFLICT`. Position is mutable ordering metadata. IDs are scoped to the parent workout and therefore do not conflict across users' workouts.
 - Returns `404` if the workout or exercise is not available.
 
 ### `PATCH /api/v1/workouts/:workoutId/exercises/reorder`
@@ -886,7 +912,8 @@ Behavior:
 
 - Request items must include every active session exercise for the workout exactly once.
 - Positions must be unique and compact in the range `1..N`.
-- Invalid ordering returns `409`.
+- The operation locks the owned workout row and is last-write-wins for this beta. The web invalidates and refetches the authoritative workout after success or failure.
+- Invalid ordering or a resolved structural race returns a stable `409`, never a raw database error.
 - Unknown or foreign session exercise IDs return `404`.
 
 ### `DELETE /api/v1/workouts/:workoutId/exercises/:sessionExerciseId`
@@ -906,7 +933,8 @@ Response `200`:
 Behavior:
 
 - Related sets are hidden from active views and analytics.
-- Remaining exercise positions should be compacted.
+- Deletion and position compaction run in one transaction under the owned workout-row lock.
+- Remaining exercise positions are compacted. Races resolve to `404` or `409`, not an unhandled database error.
 
 ## Set Endpoints
 
@@ -918,6 +946,7 @@ Request:
 
 ```json
 {
+  "clientMutationId": "71d688ee-21aa-4686-ab34-c2271e80e4f9",
   "setType": "working",
   "weightKg": "80.00",
   "reps": 8,
@@ -943,14 +972,19 @@ Response `201`:
       "note": "Good speed",
       "createdAt": "2026-05-15T10:05:00Z",
       "updatedAt": "2026-05-15T10:05:00Z"
-    }
+    },
+    "replayed": false
   }
 }
 ```
 
 Behavior:
 
-- Appends to the end of the set list.
+- `clientMutationId` is required and generated once per logical set-save action. The active draft retains it across failed attempts until success or explicit abandonment.
+- Ownership validation, the session-exercise row lock, active count/order calculation, compaction, and insertion complete inside one transaction.
+- Appends to the end of the set list. Distinct concurrent adds serialize and both succeed with compact deterministic order.
+- Initial creation returns `201` with `replayed: false`. A replay matching the set's current normalized values under the same session exercise returns the existing resource with `200` and `replayed: true`, without another write.
+- Reusing the ID under the same session exercise for different current set content, or replaying after that set was deleted, returns `409 IDEMPOTENCY_CONFLICT`; a later set edit may therefore make an old create payload conflict. IDs are scoped to the parent and do not conflict across users' session exercises.
 - `weightKg` accepts a decimal string or JSON number, but responses use a decimal string.
 - `restTimeSeconds` may be omitted or null.
 
@@ -996,6 +1030,7 @@ Behavior:
 
 - Accepts one or more editable set fields.
 - Preserves `setOrder`.
+- Updates are last-write-wins for this beta. The web invalidates and refetches the authoritative workout after success or failure.
 
 ### `DELETE /api/v1/sets/:setId`
 
@@ -1013,7 +1048,8 @@ Response `200`:
 
 Behavior:
 
-- Remaining set order should be compacted.
+- Deletion and order compaction run in one transaction under the owned parent session-exercise lock.
+- Remaining set order is compacted. Races resolve to `404` or `409`, not an unhandled database error.
 
 ## Exercise Library Endpoints
 
@@ -1422,13 +1458,14 @@ Cardio is deferred from the MVP. Do not implement these endpoints in the first A
 
 ## Validation Rules
 
-- `REGISTRATION_MODE` accepts only `ENABLED` or `DISABLED`; production defaults to
+- `REGISTRATION_MODE` accepts only `ENABLED`, `INVITE_ONLY`, or `DISABLED`; production defaults to
   `DISABLED` when the variable is absent.
 - Required fields must be present and non-empty unless nullable.
 - `email` must be a valid email string.
 - `username` must be globally unique case-insensitively.
 - Signup and reset `password` values must be 10-200 characters.
 - Login accepts 1-200 password characters so accounts created under the earlier minimum can still authenticate.
+- `clientMutationId` must be a UUID and is required for new session-exercise and set creates.
 - `setType` must be `warmup` or `working`.
 - `weightKg` must be positive and fit `numeric(6,2)`.
 - `reps` must be a positive integer.
@@ -1502,9 +1539,176 @@ Merge responses additionally include `reassignedTemplateExercises` and `affected
 - `POST /api/v1/beta/waitlist` is public, accepts `{ email, adultAttested: true, privacyVersion }`, and always returns the same accepted envelope for new, duplicate, account-linked, blocked, or paused intake.
 - `POST /api/v1/auth/signup` requires `inviteToken`, the published Terms/Privacy versions and `adultAttested: true` when registration is `INVITE_ONLY`. A valid invitation is single use, expires after seven days, reserves a seat, fixes the invited email, and creates an already email-verified account.
 - `POST /api/v1/users/me/export` requires `{ password }` and downloads machine-readable JSON. It excludes credential/token hashes and unrelated security/audit records.
-- `POST /api/v1/users/me/deletion` requires `{ password }`, revokes sessions and returns `deletionDueAt`. `POST /api/v1/users/me/deletion/cancel` accepts the single-use raw token. Account erasure is the documented hard-delete exception to soft-delete defaults.
+- `POST /api/v1/users/me/deletion` requires `{ password }`, revokes sessions and returns `deletionDueAt` only after the cancellation email is accepted. `POST /api/v1/users/me/deletion/cancel` accepts the single-use raw token. Account erasure is the documented hard-delete exception to soft-delete defaults.
 - `GET|PATCH /api/v1/users/me/privacy-preferences` manages functional storage, account-linked analytics and feedback prompts. `GET|PATCH /api/v1/users/me/onboarding` manages versioned boolean steps.
 - `GET /api/v1/messages` returns eligible undismissed messages; only the first is marked shown. `POST /messages/:campaignId/dismiss` is final; `POST /respond` accepts the exact configured acknowledgement/rating/choice/free-text shape.
-- Owner-only beta routes list requests/users/settings and execute audited request/settings actions. Owner-only campaign routes create drafts, list campaigns and publish/pause/resume/end. `POST /admin/users/:userId/deletion/cancel` is the audited urgent-support cancellation path.
+- Owner-only beta routes list requests/settings and execute audited request/settings actions. Owner-only campaign routes create drafts, list campaigns and publish/pause/resume/end. `POST /admin/users/:userId/deletion/cancel` is the audited urgent-support cancellation path.
+
+### Invitation approval and reissue
+
+`POST /api/v1/admin/beta/requests/:requestId` accepts an administrator action. `APPROVE` and `RESEND` synchronously attempt provider acceptance after the invitation transaction.
+
+Request:
+
+```json
+{
+  "action": "APPROVE"
+}
+```
+
+Successful response `200`:
+
+```json
+{
+  "data": {
+    "updated": true,
+    "status": "approved",
+    "expiresAt": "2026-08-13T10:00:00.000Z",
+    "deliveryStatus": "SENT"
+  }
+}
+```
+
+`deliveryStatus` is `SENT` or `FAILED`. A delivery failure does not roll back the invitation: the request remains `INVITED`, an audit event is recorded, and the administrator UI presents the explicit `RESEND` action. Reissue rotates the unused invitation token; callers must not encourage a generic retry of the earlier action.
+
+### Account deletion delivery results
+
+Deletion scheduling response `200`:
+
+```json
+{
+  "data": {
+    "deletionDueAt": "2026-08-13T10:00:00.000Z"
+  }
+}
+```
+
+If required email acceptance fails, the service compensates the account back to `ACTIVE`, invalidates the pending cancellation token, and returns:
+
+```json
+{
+  "error": {
+    "code": "EMAIL_DELIVERY_FAILED",
+    "message": "Deletion was not scheduled because the required email could not be delivered. Sign in again before retrying or contact support."
+  }
+}
+```
+
+The status is `503`. The already-revoked sessions are not recreated, so the user may need to sign in again.
+
+Both token and administrator cancellation return `200` after the account transition even when the informational email fails:
+
+```json
+{
+  "data": {
+    "cancelled": true,
+    "notificationStatus": "SENT"
+  }
+}
+```
+
+`notificationStatus` is `SENT` or `FAILED`. A final-deletion notification is best effort; the erased email address is not retained for retry.
+
+### `GET /api/v1/admin/users`
+
+Lists up to the bounded beta population for an authenticated administrator.
+
+Response `200`:
+
+```json
+{
+  "data": {
+    "items": [
+      {
+        "id": "uuid",
+        "email": "member@example.com",
+        "username": "member",
+        "role": "USER",
+        "status": "ACTIVE",
+        "cohort": "FOUNDING_BETA_2026",
+        "createdAt": "2026-08-01T10:00:00.000Z",
+        "activeSessionCount": 2
+      }
+    ]
+  }
+}
+```
+
+`GET /api/v1/admin/beta/users` remains temporarily as a deprecated read-only alias. It sends `Deprecation: true` and `Link: </api/v1/admin/users>; rel="successor-version"`. New clients use the canonical endpoint; the alias gains no containment mutations.
+
+### `PATCH /api/v1/admin/users/:userId/status`
+
+Accepts only:
+
+```json
+{
+  "status": "SUSPENDED"
+}
+```
+
+`status` is `ACTIVE` or `SUSPENDED`. Success returns the final account status and the number of sessions revoked:
+
+```json
+{
+  "data": {
+    "status": "updated",
+    "accountStatus": "SUSPENDED",
+    "revokedSessions": 2
+  }
+}
+```
+
+The account-row lock, status change, session revocation, and audit insert are one transaction. Suspension revokes every live session. Reactivation creates no session and does not alter email verification. Administrator targets, self-targets, role changes, and `DELETION_PENDING` transitions are unavailable; use the existing deletion-cancellation endpoint for the latter. Returns `403 ADMIN_TARGET_FORBIDDEN`, `409 INVALID_ACCOUNT_TRANSITION`, or `404 USER_NOT_FOUND` as applicable.
+
+### `POST /api/v1/admin/users/:userId/sessions/revoke`
+
+Revokes all current sessions for an ordinary user and writes the audit record in the same transaction.
+
+Response `200`:
+
+```json
+{
+  "data": {
+    "status": "updated",
+    "revokedSessions": 3
+  }
+}
+```
+
+Replaying the action is safe and returns `revokedSessions: 0`. Administrator/self targets return `403 ADMIN_TARGET_FORBIDDEN`; an unknown target returns `404 USER_NOT_FOUND`.
+
+### `GET /api/v1/admin/audit-events`
+
+Returns recent administrator audit events in descending creation order. `limit` defaults to 50 and is capped at 100; `cursor` is the opaque `nextCursor` from the previous page.
+
+```json
+{
+  "data": {
+    "items": [
+      {
+        "id": "123",
+        "adminUserId": "uuid",
+        "adminUsername": "owner",
+        "action": "USER_SUSPENDED",
+        "targetType": "USER",
+        "targetId": "uuid",
+        "details": {
+          "previousStatus": "ACTIVE",
+          "newStatus": "SUSPENDED",
+          "revokedSessions": 2
+        },
+        "createdAt": "2026-08-06T12:00:00.000Z"
+      }
+    ],
+    "nextCursor": null
+  }
+}
+```
+
+Only the allowlisted bounded detail fields `previousStatus`, `newStatus`, and `revokedSessions` are exposed. A malformed cursor or limit above 100 returns `422 VALIDATION_ERROR`.
+
+### API-process lifecycle behavior
+
+The single API process owns a single-flight lifecycle runner. It runs once during startup and hourly thereafter. Auth-token cleanup, invitation expiry, due deletions, retention cleanup, and completion notifications are isolated phases: one failure does not stop later phases, later due accounts, or the next scheduled run. The runner processes the entire due-deletion list under the 50-account beta cap and reports bounded metrics described under `GET /api/v1/metrics`.
 
 All public/auth/export/deletion/feedback/admin mutation groups have endpoint-specific limits. Production client attribution accepts only a valid BFF HMAC; browser-supplied forwarding headers are not trusted by the API.

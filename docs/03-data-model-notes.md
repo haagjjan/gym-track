@@ -33,6 +33,11 @@ Draft rules for the first schema pass. These notes capture business rules and da
 - Sets use explicit integer order within a session exercise.
 - Position values should be compacted after reorder/delete so display order stays simple.
 - Display set numbers should come from set order, not from a separate stored "set number" field.
+- `session_exercises.client_mutation_id` and `sets.client_mutation_id` are nullable UUIDs so historical rows remain valid. Partial unique indexes scope a non-null ID to its workout or session-exercise parent, respectively.
+- New exercise and set creates require a client mutation ID. An equivalent replay returns the existing resource; reuse for different content is a conflict.
+- Add, reorder, delete, shift, and compaction operations lock the owned parent row and complete inside one transaction. Concurrent distinct adds both succeed with compact order; ownership loss and state races resolve to stable not-found or conflict outcomes.
+- Set updates and exercise reorders are last-write-wins for the beta. The browser discards speculative ordering and refetches the authoritative workout after either success or failure.
+- There is no generic idempotency table, entity revision field, or optimistic-concurrency protocol in this release.
 
 ### Units
 
@@ -89,10 +94,29 @@ Draft rules for the first schema pass. These notes capture business rules and da
 - Workout/template facet filters use one correlated exercise match: a single contained exercise must satisfy all selected muscles, equipment, and type.
 - Workout all-time summaries are computed over all non-deleted workouts and are independent of result pagination and active filters.
 - Exercise merges change only the requesting user's workout and template references. A personal source exercise is retired only when no active workout or template references remain for any user.
-- Unfinished new-set drafts are device-local values keyed by user, workout, and exercise. They are cleared after save, completion, discard, or explicit cancellation and never enter analytics.
+- Unfinished new-set drafts use browser `localStorage` and are keyed by user, workout, and exercise. A versioned envelope holds `savedAt`, the logical action's `clientMutationId`, and the draft; each edit starts a new maximum 24-hour retention window.
+- Malformed, expired, future-dated, and legacy unversioned envelopes are deleted. The mutation ID survives failed save attempts and is replaced only after success or explicit abandonment.
+- Drafts are cleared after set save, explicit discard/cancellation, workout completion/deletion, account deletion, explicit device-data clearing, or expiry. They never enter analytics or account export.
 - New-set defaults use the latest current-session set when present, otherwise the previous performance weight from the latest qualifying earlier workout, otherwise 20 kg.
 - Previous performance is computed on read from owned, non-deleted, completed workouts strictly before the current workout. The latest workout containing an active working set qualifies; its best set is highest weight, then higher reps, then lower set order.
 - Exercise progress selects one strongest working set per user-local calendar day across all sessions on that day. Load/Reps uses weight, reps, then lower RIR; EST 1RM uses Epley output with deterministic ties.
+
+### Public-beta email and account lifecycle
+
+- Public production requires a configured transactional-email provider, valid sender, and the published support address as reply-to. Log transport is limited to development, test, and explicit local/private-LAN deployments.
+- Email delivery is synchronous and reports only a bounded mail kind, outcome, provider status, optional provider message ID, and duration. Recipients, message bodies, action links, and tokens are not log or metric fields.
+- Raw verification, reset, invitation, and deletion-cancellation tokens are sent only in action links; PostgreSQL stores their hashes. Issuing a new verification, reset, or invitation link supersedes unused older tokens of the same purpose.
+- No mail outbox or retry payload is stored. Invitation issuance remains durable if delivery fails and exposes an explicit resend state. Deletion scheduling instead depends on provider acceptance and compensates back to `ACTIVE` with the cancellation token invalidated when delivery fails.
+- Deletion cancellation remains committed if its informational email fails. Completion email is best effort after erasure because the recipient address cannot be retained solely for retry.
+- One API-process scheduler runs lifecycle cleanup during startup and hourly thereafter. Runs are single-flight; auth, invitation, deletion, retention, and notification failures are isolated so later phases and future runs continue.
+- The scheduler is sufficient only for the accepted single-process, 50-account beta. Multi-process coordination or a durable work queue requires a later decision.
+
+### Administrator containment
+
+- Only explicit `ADMIN` accounts may list users, change ordinary-user status, revoke ordinary-user sessions, and read recent audit events.
+- Suspension, session revocation, and their audit insert are transactional. Suspension revokes all live sessions; reactivation creates no session and leaves email-verification state unchanged.
+- Administrator targets, self-suspension, role promotion, and status changes from `DELETION_PENDING` are unavailable through the web status interface. The deletion-cancellation workflow remains authoritative.
+- Audit pagination uses descending `(created_at, id)` keyset order. API output allowlists bounded details rather than returning arbitrary stored audit JSON.
 
 ### Cardio
 

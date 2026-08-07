@@ -19,6 +19,14 @@ canonical HTTPS origin validation, secure-cookie enforcement, and Next.js host/O
 request guards recorded by ADR 0011. Server, Cloudflare, DNS, deployment, and external
 black-box work remain unexecuted.
 
+Goal 0 is captured by clean baseline `ee537d9`. Goal 1 public-beta hardening is implemented in
+the current unstaged worktree: accessible modal/zoom behavior, 24-hour user-scoped active-set
+drafts, spreadsheet-safe CSV export, idempotent serialized workout creates, synchronous
+observable email outcomes, startup-and-hourly lifecycle cleanup, and administrator containment
+and audit UI. Treat it as repository implementation pending the full automated acceptance run;
+it does not establish staging or public-launch readiness. See
+`docs/beta-process/public-beta/goal-1-remediation-report.md`.
+
 ## Source of truth for V1 UI behavior
 
 Use these sources in order:
@@ -42,7 +50,7 @@ The older redesign files remain useful for styling and atmosphere, but no longer
 
 - One responsive Dashboard workout action and navigation-only shell workout controls.
 - Two-choice launch with optional blur/Enter-saved names.
-- Vertical four-row live exercise list, staged multi-exercise adding, separate exercise/set modes with previous/next navigation, desktop-inline/mobile-bottom-sheet set editing, device-local drafts, normal page scrolling, and header overflow discard.
+- Vertical four-row live exercise list, staged multi-exercise adding, separate exercise/set modes with previous/next navigation, desktop-inline/mobile-bottom-sheet set editing, versioned user/workout/exercise-scoped drafts with a 24-hour maximum, normal page scrolling, and header overflow discard.
 - Server-backed workout/template/exercise search, AND facets, entity-specific sorting, all-time history summaries, and optimistic deletion feedback.
 - Canonical equipment/type options, exercise suggestions, ownership explanations, exact template multiset last use, and template-aware merging.
 - One best Progress set per local calendar day, plotted-day selector counts, and persistent in-screen chart preferences.
@@ -59,13 +67,13 @@ The older redesign files remain useful for styling and atmosphere, but no longer
 
 ## Recommended next slice
 
-Verify and operationalize the implemented Curated Founding Beta foundation:
+Close Goal 1's repository acceptance run, then plan Goal 2 staging and external verification:
 
-1. Work through `docs/public-beta/launch-gates.md`; do not add another feature slice while a launch blocker lacks evidence.
-2. Supply the real controller/contact/provider facts, complete the full DPIA, and obtain qualified legal sign-off on the rendered production pages.
-3. Configure and black-box test Resend, Telegram, the shared BFF attribution secret, the external status host and the explicit first administrator.
-4. Prove the 30-day prune and old-backup/latest-erasure-ledger restore in isolation; complete security/capacity/rollback/incident rehearsals.
-5. Complete 390 px, 430 px, 1440 px, Samsung S22 Plus, Firefox/mobile-data and accessibility QA; run the complete automated suite.
+1. Apply migrations to fresh PostgreSQL 17 and a representative pre-Goal-1 schema; exercise down/up and confirm historical mutation IDs remain `NULL`.
+2. Run `pnpm check`, performance, API database integration, Chromium/Firefox Playwright, migration up/down, and `git diff --check`; record results in the Goal 1 remediation report.
+3. Freeze the user-created batch commit only after the worktree contains intended files and the checks are green. Codex must not stage or commit it.
+4. Work through `docs/beta-process/public-beta/launch-gates.md`; do not infer a checked gate from repository tests.
+5. In a separate staging/external goal, supply real legal/provider facts; configure and black-box Resend, Telegram, BFF attribution, status hosting and the first administrator; then perform restore, security, capacity, rollback, incident, real-device and accessibility verification.
 
 Keep the audit-v4 “Features up for rework” list post-beta. The catalog and local smart matching are included; broad import/export redesign and complete workout-history reset remain outside this gate.
 
@@ -130,17 +138,20 @@ First read:
 - docs/07-implementation-pattern.md
 - docs/08-next-implementation-plan.md
 - docs/18-public-beta-handoff.md
-- docs/public-beta/launch-gates.md
+- docs/beta-process/public-beta/goal-1-remediation-report.md
+- docs/beta-process/public-beta/launch-gates.md
 
 Important:
 - Audit v4 supersedes audit v3/v2 where they conflict; v3 then v2 define only behavior not superseded by newer audits.
 - Preserve all existing uncommitted work.
-- Verify the implemented remediation and Curated Founding Beta foundation; do not restart the redesign.
+- Verify the implemented Goal 1 remediation and Curated Founding Beta foundation; do not restart the redesign.
 - Do not claim launch readiness without external legal, provider, restore, security, capacity and device evidence.
 - Keep broad import/export redesign, intelligent naming, and full-history reset in the post-beta backlog.
 
 Acceptance criteria:
 - migrations apply to fresh and representative legacy data
+- concurrent add/replay/conflict/order and administrator containment database tests pass
+- lifecycle/email failure-isolation, redaction, compensation, and alert syntax checks pass
 - unit, integration, browser smoke, type, lint, and build checks pass
 - 390px, 430px, and 1440px have no horizontal overflow or covered controls
 - 44px targets, keyboard-open bottom sheets, editor/timer priority, 3D touch scrolling/orbit, focus, dialogs, tooltips, and reduced motion pass manual QA
