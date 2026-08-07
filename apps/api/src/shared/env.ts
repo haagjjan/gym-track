@@ -1,6 +1,10 @@
 import { z } from "zod";
 
 const logLevelSchema = z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]);
+const senderSchema = z.string().trim().min(3).refine((value) => {
+  const bracketedAddress = value.match(/<([^<>]+)>\s*$/)?.[1];
+  return z.string().email().safeParse(bracketedAddress ?? value).success;
+}, "Expected an email address or a display name followed by an email address.");
 const optionalEnvironmentValue = <Schema extends z.ZodTypeAny>(schema: Schema) =>
   z.preprocess((value) => value === "" ? undefined : value, schema.optional());
 
@@ -16,7 +20,7 @@ const rawEnvSchema = z.object({
   AUTH_SESSION_TTL_DAYS: z.coerce.number().int().positive().default(30),
   BFF_CLIENT_IP_SECRET: optionalEnvironmentValue(z.string().min(32)),
   DATABASE_URL: z.string().url(),
-  EMAIL_FROM: z.string().min(3).default("Gym Progress Tracker <onboarding@resend.dev>"),
+  EMAIL_FROM: optionalEnvironmentValue(senderSchema),
   LOG_LEVEL: logLevelSchema.default("info"),
   METRICS_ENABLED: z.enum(["true", "false"]).optional(),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -85,6 +89,20 @@ const envSchema = rawEnvSchema
         path: ["SUPPORT_EMAIL"]
       });
     }
+    if (!env.EMAIL_FROM) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "EMAIL_FROM is required in production.",
+        path: ["EMAIL_FROM"]
+      });
+    }
+    if (!env.RESEND_API_KEY) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "RESEND_API_KEY is required in production.",
+        path: ["RESEND_API_KEY"]
+      });
+    }
   })
   .transform((env) => ({
     ...env,
@@ -95,6 +113,7 @@ const envSchema = rawEnvSchema
       env.AUTH_COOKIE_SECURE === undefined
         ? env.NODE_ENV === "production"
         : env.AUTH_COOKIE_SECURE === "true",
+    EMAIL_FROM: env.EMAIL_FROM ?? "Gym Progress Tracker <onboarding@resend.dev>",
     METRICS_ENABLED: env.METRICS_ENABLED === "true",
     REGISTRATION_MODE:
       env.REGISTRATION_MODE ?? (env.NODE_ENV === "production" ? "DISABLED" : "ENABLED")

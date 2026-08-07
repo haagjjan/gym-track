@@ -4,7 +4,9 @@ import { readEnv } from "./env.js";
 
 const databaseUrl = "postgresql://user:password@localhost:5432/app";
 const bffSecret = "a-production-bff-client-secret-123456789";
+const resendApiKey = "re_test_public_beta";
 const supportEmail = "support@example.test";
+const sender = "Gym Progress Tracker <mail@example.test>";
 
 describe("readEnv", () => {
   it("uses defaults for optional API settings", () => {
@@ -54,7 +56,9 @@ describe("readEnv", () => {
       APP_BASE_URL: "https://app.gymtrack.ch",
       BFF_CLIENT_IP_SECRET: bffSecret,
       DATABASE_URL: databaseUrl,
+      EMAIL_FROM: sender,
       NODE_ENV: "production",
+      RESEND_API_KEY: resendApiKey,
       SUPPORT_EMAIL: supportEmail
     });
 
@@ -108,6 +112,31 @@ describe("readEnv", () => {
       DATABASE_URL: databaseUrl,
       NODE_ENV: "production"
     }), /BFF_CLIENT_IP_SECRET/);
+  });
+
+  it("requires a configured email provider in public production", () => {
+    assert.throws(() => readEnv({
+      APP_BASE_URL: "https://app.gymtrack.ch",
+      BFF_CLIENT_IP_SECRET: bffSecret,
+      DATABASE_URL: databaseUrl,
+      NODE_ENV: "production",
+      SUPPORT_EMAIL: supportEmail
+    }), /RESEND_API_KEY/);
+  });
+
+  it("requires an explicit sender in public production", () => {
+    assert.throws(() => readEnv({
+      APP_BASE_URL: "https://app.gymtrack.ch",
+      BFF_CLIENT_IP_SECRET: bffSecret,
+      DATABASE_URL: databaseUrl,
+      NODE_ENV: "production",
+      RESEND_API_KEY: resendApiKey,
+      SUPPORT_EMAIL: supportEmail
+    }), /EMAIL_FROM/);
+  });
+
+  it("rejects malformed sender addresses", () => {
+    assert.throws(() => readEnv({ DATABASE_URL: databaseUrl, EMAIL_FROM: "not-an-address" }));
   });
 
   it("rejects base URLs with paths, queries, or fragments", () => {
