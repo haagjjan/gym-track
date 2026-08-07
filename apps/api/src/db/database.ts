@@ -228,6 +228,7 @@ interface SessionExercisesTable {
   id: string;
   workout_session_id: string;
   exercise_id: string;
+  client_mutation_id: ColumnType<string | null, string | null | undefined, string | null>;
   position: number;
   created_at: TimestampColumn;
   updated_at: TimestampColumn;
@@ -237,6 +238,7 @@ interface SessionExercisesTable {
 interface SetsTable {
   id: string;
   session_exercise_id: string;
+  client_mutation_id: ColumnType<string | null, string | null | undefined, string | null>;
   set_order: number;
   set_type: string;
   weight_kg: NumericColumn;

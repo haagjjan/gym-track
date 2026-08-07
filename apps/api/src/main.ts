@@ -35,6 +35,7 @@ const server = await buildServer(
         }
       : {}),
     mailerEnv: {
+      APP_ENV: env.APP_ENV,
       RESEND_API_KEY: env.RESEND_API_KEY,
       EMAIL_FROM: env.EMAIL_FROM,
       EMAIL_REPLY_TO: env.SUPPORT_EMAIL,
