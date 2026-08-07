@@ -137,10 +137,13 @@ export function parseWorkoutCsv(input: string): WorkoutCsvParseResult {
 }
 
 export function unparseWorkoutCsv(rows: RawCsvRow[]): string {
-  return Papa.unparse({
-    fields: [...workoutCsvColumns],
-    data: rows
-  });
+  return Papa.unparse(
+    {
+      fields: [...workoutCsvColumns],
+      data: rows
+    },
+    { escapeFormulae: true }
+  );
 }
 
 function headerErrors(fields: string[]): WorkoutCsvError[] {

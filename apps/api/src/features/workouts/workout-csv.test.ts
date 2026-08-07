@@ -160,6 +160,22 @@ describe("workout CSV parsing", () => {
       [1, 2]
     );
   });
+
+  it("escapes spreadsheet formula prefixes in exported text fields", () => {
+    const csv = unparseWorkoutCsv([
+      csvRow({
+        workout_title: "=SUM(A1:A2)",
+        workout_notes: "+cmd",
+        exercise_name: "-unsafe",
+        set_note: "@mention"
+      })
+    ]);
+
+    assert.match(csv, /'=SUM\(A1:A2\)/);
+    assert.match(csv, /'\+cmd/);
+    assert.match(csv, /'-unsafe/);
+    assert.match(csv, /'@mention/);
+  });
 });
 
 type WorkoutCsvInputRow = Parameters<typeof unparseWorkoutCsv>[0][number];
