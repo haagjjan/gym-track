@@ -224,6 +224,50 @@ groups:
           description: Prometheus observed a changed API process start time in the last 15 minutes.
           first_action: Confirm the restart with Docker state and inspect API logs around the transition.
 
+      - alert: GymTrackerLifecycleCleanupStale
+        expr: absent(gym_progress_tracker_lifecycle_cleanup_last_success_timestamp_seconds{service="api"}) or time() - max(gym_progress_tracker_lifecycle_cleanup_last_success_timestamp_seconds{service="api"}) > 7200
+        for: 15m
+        labels:
+          severity: warning
+          component: lifecycle
+        annotations:
+          summary: No fully successful lifecycle cleanup completed in two hours
+          description: The startup-and-hourly lifecycle runner has not reported a fully successful run within its two-hour warning window.
+          first_action: Inspect bounded API logs for the failed lifecycle phase and verify the API process and database are healthy.
+
+      - alert: GymTrackerLifecycleCleanupCritical
+        expr: absent(gym_progress_tracker_lifecycle_cleanup_last_success_timestamp_seconds{service="api"}) or time() - max(gym_progress_tracker_lifecycle_cleanup_last_success_timestamp_seconds{service="api"}) > 14400
+        for: 15m
+        labels:
+          severity: critical
+          component: lifecycle
+        annotations:
+          summary: No fully successful lifecycle cleanup completed in four hours
+          description: Lifecycle processing has remained unsuccessful beyond the four-hour critical threshold.
+          first_action: Inspect lifecycle phase failures immediately and restore cleanup processing before more deletion deadlines become overdue.
+
+      - alert: GymTrackerDeletionBacklogCritical
+        expr: max(gym_progress_tracker_lifecycle_due_deletions{service="api"}) > 0
+        for: 4h
+        labels:
+          severity: critical
+          component: lifecycle
+        annotations:
+          summary: Due account deletions remain backlogged for four hours
+          description: At least one due account deletion has remained reported across the four-hour critical backlog window.
+          first_action: Inspect deletion phase failures and process due erasures without copying or exposing account data.
+
+      - alert: GymTrackerRepeatedEmailDeliveryFailures
+        expr: sum(increase(gym_progress_tracker_email_deliveries_total{service="api",outcome="FAILED"}[30m])) >= 3
+        for: 5m
+        labels:
+          severity: warning
+          component: email
+        annotations:
+          summary: Transactional email delivery is failing repeatedly
+          description: At least three synchronous provider-acceptance attempts failed in the last 30 minutes.
+          first_action: Check bounded mail-kind and provider-status telemetry, provider health, and sender configuration without inspecting message content or tokens.
+
   - name: postgresql
     rules:
       - alert: GymTrackerPostgresConnectionsHigh
