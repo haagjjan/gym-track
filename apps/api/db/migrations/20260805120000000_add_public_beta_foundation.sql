@@ -29,10 +29,16 @@ ALTER TABLE users
     OR (account_status <> 'DELETION_PENDING' AND deletion_due_at IS NULL)
   );
 
+-- A fresh all-migrations transaction carries deferred exercise trigger events
+-- from the system-catalog migration. Flush them before replacing this FK.
+SET CONSTRAINTS ALL IMMEDIATE;
+
 ALTER TABLE exercises DROP CONSTRAINT exercises_created_by_user_id_fkey;
 ALTER TABLE exercises
   ADD CONSTRAINT exercises_created_by_user_id_fkey
   FOREIGN KEY (created_by_user_id) REFERENCES users (id) ON DELETE SET NULL;
+
+SET CONSTRAINTS ALL DEFERRED;
 
 CREATE TABLE beta_settings (
   singleton boolean PRIMARY KEY DEFAULT true,
