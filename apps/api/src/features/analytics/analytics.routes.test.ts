@@ -93,7 +93,7 @@ function authService(authenticated = true): AuthService {
       return authenticated ? { ok: true, value: user } : { ok: false, reason: "unauthorized" };
     },
     async requestEmailVerification() {
-      return { sent: true };
+      return { status: "SENT" as const };
     },
     async verifyEmail() {
       return { ok: true, value: { verified: true } };
