@@ -5,6 +5,7 @@ import { EmptyState, ErrorState, Skeleton } from "../../shared/ui/ui";
 import { useExercisesInfinite } from "../../shared/api/hooks";
 import type { Exercise } from "../../shared/api/types";
 import { errorMessage } from "../../shared/api/client";
+import { useModalBehavior } from "../../shared/ui/use-modal-behavior";
 import { IconCheck, IconClose, IconPlus } from "../shell/icons";
 import {
   FacetFilters,
@@ -47,37 +48,24 @@ export function ExercisePicker({
   const [sort, setSort] = useState<"name" | "muscle" | "equipment" | "type">("name");
   const exercises = useExercisesInfinite({ search: debounced, ...filters, sort });
   const exerciseItems = exercises.data?.pages.flatMap((page) => page.items) ?? [];
+  const dialogRef = useModalBehavior<HTMLElement>({ isOpen, onClose });
 
   useEffect(() => {
     const timeout = window.setTimeout(() => setDebounced(query), 180);
     return () => window.clearTimeout(timeout);
   }, [query]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const previousOverflow = document.body.style.overflow;
-    const closeOnEscape = (event: KeyboardEvent): void => {
-      if (event.key === "Escape" && !document.querySelector('[role="alertdialog"]')) onClose();
-    };
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", closeOnEscape);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", closeOnEscape);
-    };
-  }, [isOpen, onClose]);
-
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-void/70 backdrop-blur-sm lg:items-center" role="presentation">
-      <section aria-labelledby="exercise-picker-title" aria-modal="true" className="glass-cyan flex h-[92dvh] max-h-[92dvh] w-full flex-col rounded-t-xl p-4 lg:h-auto lg:max-h-[84dvh] lg:max-w-2xl lg:rounded-xl" role="dialog">
+      <section aria-labelledby="exercise-picker-title" aria-modal="true" className="glass-cyan flex h-[92dvh] max-h-[92dvh] w-full flex-col rounded-t-xl p-4 lg:h-auto lg:max-h-[84dvh] lg:max-w-2xl lg:rounded-xl" ref={dialogRef} role="dialog" tabIndex={-1}>
         <header className="mb-3 flex shrink-0 items-center justify-between gap-2">
           <div>
             <p className="label-caps text-outline">EXERCISE_CATALOG</p>
             <h2 className="font-display text-lg font-bold text-fg" id="exercise-picker-title">{title}</h2>
           </div>
-          <button aria-label="Close exercise picker" className="flex size-11 items-center justify-center rounded border border-outline-dim text-fg-muted hover:border-cyan hover:text-cyan" onClick={onClose} type="button"><IconClose /></button>
+          <button aria-label="Close exercise picker" className="flex size-11 items-center justify-center rounded border border-outline-dim text-fg-muted hover:border-cyan hover:text-cyan" data-modal-initial-focus onClick={onClose} type="button"><IconClose /></button>
         </header>
 
         <div className="shrink-0">

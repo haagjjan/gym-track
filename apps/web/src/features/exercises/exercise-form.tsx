@@ -164,7 +164,7 @@ function MuscleChoices({ groups, label, onChange, required = false, selected, to
       <button aria-controls={pickerId} aria-expanded={open} className={`flex min-h-11 w-full items-center justify-between px-3 text-xs font-semibold ${tone === "cyan" ? "text-cyan" : "text-lavender"}`} onClick={() => setOpen((value) => !value)} type="button">
         <span>{label}{required ? " *" : ""}</span><span>{selected.length} selected · ⌄</span>
       </button>
-      {open ? <div className="absolute bottom-[calc(100%+0.25rem)] left-0 right-0 z-30 grid max-h-52 grid-cols-2 gap-1 overflow-y-auto rounded border border-outline-dim bg-surface p-2 shadow-xl" id={pickerId} role="group">
+      {open ? <div className="absolute bottom-[calc(100%+0.25rem)] left-0 right-0 z-50 grid max-h-52 grid-cols-2 gap-1 overflow-y-auto rounded border border-outline-dim bg-surface p-2 shadow-xl" id={pickerId} role="group">
         {groups.map((group) => <label className="flex min-h-11 items-center gap-2 text-xs text-fg-muted" key={group.id}><input checked={selected.includes(group.id)} className="size-4 accent-cyan" onChange={() => onChange(group.id)} type="checkbox" />{group.name}</label>)}
       </div> : null}
     </div>
