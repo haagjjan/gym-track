@@ -36,7 +36,7 @@ function authService(): AuthService {
     async login() { throw new Error("not used"); },
     async logout() { return { loggedOut: true }; },
     async currentUser() { return { ok: true, value: user }; },
-    async requestEmailVerification() { return { sent: true }; },
+    async requestEmailVerification() { return { status: "SENT" as const }; },
     async verifyEmail() { return { ok: true, value: { verified: true } }; },
     async requestPasswordReset() { return { requested: true }; },
     async resetPassword() { return { ok: true, value: { reset: true } }; },
