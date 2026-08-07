@@ -1,4 +1,9 @@
 import { expect, type Page, test } from "@playwright/test";
+import {
+  expectModalContract,
+  expectNoSeriousAccessibilityViolations,
+  expectZoomEnabled
+} from "./accessibility-assertions";
 
 /**
  * Mobile-first smoke over the rebuilt cockpit UI: signup → dashboard →
@@ -22,18 +27,64 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   // ---- Signup ----
   await page.goto("/signup");
   await page.locator('form[data-hydrated="true"]').waitFor();
+  await expectZoomEnabled(page);
+  await expectNoSeriousAccessibilityViolations(page);
   await page.getByLabel(/EMAIL_ADDRESS/).fill(`${username}@example.com`);
   await page.getByLabel(/OPERATOR_ID/).fill(username);
   await page.getByLabel(/ACCESS_CODE/).fill(password);
   await page.getByRole("button", { name: "REGISTER" }).click();
   await expect(page.getByRole("heading", { name: new RegExp(username, "i") })).toBeVisible();
+
+  const onboarding = page.getByRole("dialog", { name: "Welcome, Founding Member" });
+  await expect(onboarding).toBeFocused();
+  await expectModalContract(page, onboarding);
+  await page.keyboard.press("Escape");
+  await expect(onboarding).toHaveCount(0);
+  const storageChoice = page.getByRole("dialog", { name: "Device storage choice" });
+  await storageChoice.getByRole("button", { name: "ALLOW FUNCTIONAL" }).click();
+  await expect(storageChoice).toHaveCount(0);
   await expectNoHorizontalScroll(page);
+
+  let messageDismissed = false;
+  await page.route("**/api/messages**", async (route) => {
+    const request = route.request();
+    const pathname = new URL(request.url()).pathname;
+    if (pathname === "/api/messages" && request.method() === "GET") {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ data: { items: messageDismissed ? [] : [{
+            actionUrl: null,
+            body: "Keyboard-accessible beta message.",
+            essential: false,
+            id: "00000000-0000-4000-8000-000000000001",
+            responseOptions: [],
+            responseType: "ACKNOWLEDGEMENT",
+            title: "Accessibility check"
+          }] } })
+      });
+      return;
+    }
+    if (pathname.endsWith("/dismiss") && request.method() === "POST") {
+      messageDismissed = true;
+      await route.fulfill({ contentType: "application/json", body: JSON.stringify({ data: {} }) });
+      return;
+    }
+    await route.continue();
+  });
+  await page.reload();
+  const messageDialog = page.getByRole("dialog", { name: "Beta message" });
+  await expect(messageDialog.getByRole("button", { name: "Dismiss message" })).toBeFocused();
+  await expectModalContract(page, messageDialog);
+  await page.keyboard.press("Escape");
+  await expect(messageDialog).toHaveCount(0);
+  await page.unroute("**/api/messages**");
 
   // Fresh accounts are unverified → pending badge on the settings icon, and a
   // resend affordance inside Settings (not a persistent top-of-app banner).
   await expect(page.getByLabel("Settings")).toBeVisible();
   await page.goto("/settings");
   await expect(page.getByText("EMAIL_UNVERIFIED")).toBeVisible();
+  await expectNoSeriousAccessibilityViolations(page);
 
   // Volume defaults to 3D; the lightweight 2D map is a device-local Settings
   // preference rather than an always-visible control on the Volume screen.
@@ -103,7 +154,15 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
 
   // ---- Add an exercise via the sheet ----
   await expect(page.getByRole("list", { name: "Workout exercises" })).toHaveCount(0);
-  await page.getByRole("button", { name: "Choose exercises" }).click();
+  const chooseExercises = page.getByRole("button", { name: "Choose exercises" });
+  await chooseExercises.click();
+  const initialPicker = page.getByRole("dialog", { name: "Choose exercises" });
+  await expect(initialPicker.getByRole("button", { name: "Close exercise picker" })).toBeFocused();
+  await expectModalContract(page, initialPicker);
+  await page.keyboard.press("Escape");
+  await expect(initialPicker).toHaveCount(0);
+  await expect(chooseExercises).toBeFocused();
+  await chooseExercises.click();
   await page.getByPlaceholder(/Scan catalog/).fill("Bench Press");
   await page
     .getByRole("button", { name: /^Bench Press\b/ })
@@ -121,6 +180,8 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   await page.getByRole("button", { name: "Add Set" }).click();
   const newSetDialog = page.getByRole("dialog", { name: "New set" });
   await expect(newSetDialog).toBeVisible();
+  await expect(newSetDialog).toBeFocused();
+  await expectModalContract(page, newSetDialog);
   await expect.poll(() => newSetDialog.evaluate((element) => getComputedStyle(element).position)).toBe("fixed");
   const weightInput = page.locator('input[inputmode="decimal"]').first();
   await expect(weightInput).not.toBeFocused();
@@ -180,7 +241,7 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   await secondPicker.getByRole("searchbox").fill("Bench Press");
   await secondPicker.getByRole("button", { name: /^Bench Press\b/ }).first().click();
   await secondPicker.getByRole("button", { name: "Add selected exercises (1)" }).click();
-  await expect(page.getByText("Gym Smoke", { exact: true })).toBeVisible();
+  await expect(page.getByText(/^Gym Smoke ·/)).toBeVisible();
   await expect(page.getByText(/60 kg × 8/)).toBeVisible();
   await page.getByRole("button", { name: "Add Set" }).click();
   await expect(page.locator('input[inputmode="decimal"]').first()).toHaveValue("60");
@@ -204,8 +265,15 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   // ---- History shows the session with its set detail ----
   await page.goto("/workouts");
   await expect(page.getByRole("heading", { name: "Workout history" })).toBeVisible();
-  await page.getByRole("button", { name: "View CSV format" }).click();
+  const csvTrigger = page.getByRole("button", { name: "View CSV format" });
+  await csvTrigger.click();
   const csvGuide = page.getByRole("dialog", { name: "Workout CSV guide" });
+  await expect(csvGuide.getByRole("button", { name: "Close CSV format guide" })).toBeFocused();
+  await expectModalContract(page, csvGuide);
+  await page.keyboard.press("Escape");
+  await expect(csvGuide).toHaveCount(0);
+  await expect(csvTrigger).toBeFocused();
+  await csvTrigger.click();
   await expect(csvGuide.getByText("workout_started_at", { exact: true })).toBeVisible();
   await expect(csvGuide.getByRole("link", { name: "Download sample CSV" })).toBeVisible();
   await csvGuide.getByRole("button", { name: "Close", exact: true }).click();
@@ -235,9 +303,16 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   // ---- Completed logs can be removed everywhere ----
   await page.goto("/workouts");
   await page.getByRole("button", { name: /GYM_SMOKE/ }).first().click();
-  await page.getByRole("button", { name: "Delete" }).click();
+  const deleteTrigger = page.getByRole("button", { name: "Delete" });
+  await deleteTrigger.click();
   const deleteDialog = page.getByRole("alertdialog", { name: "Delete this workout log?" });
   await expect(deleteDialog).toBeVisible();
+  await expect(deleteDialog.getByRole("button", { name: "CANCEL" })).toBeFocused();
+  await expectModalContract(page, deleteDialog);
+  await page.keyboard.press("Escape");
+  await expect(deleteDialog).toHaveCount(0);
+  await expect(deleteTrigger).toBeFocused();
+  await deleteTrigger.click();
   await deleteDialog.getByRole("button", { name: "DELETE LOG" }).click();
   await expect(deleteDialog).toHaveCount(0);
   await expect(page.getByRole("button", { name: /GYM_SMOKE/ })).toHaveCount(0);
@@ -252,6 +327,19 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   await expect(page).toHaveURL(/\/workouts$/);
   await page.goto("/workout");
   await expect(page.getByRole("button", { name: "START", exact: true })).toBeEnabled();
+
+  // Informational popovers remain non-modal and return focus to their trigger.
+  await page.goto("/help");
+  const infoTrigger = page.getByRole("button", { name: "Information about set types" });
+  await infoTrigger.click();
+  const infoPopover = page.getByRole("dialog", { name: "Information about set types" });
+  await expect(infoPopover).toHaveAttribute("aria-modal", "false");
+  await page.keyboard.press("Tab");
+  await expect(infoPopover.getByRole("button", { name: "Close" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(infoPopover).toHaveCount(0);
+  await expect(infoTrigger).toBeFocused();
+  await expectNoSeriousAccessibilityViolations(page);
 
   await page.setViewportSize({ width: 320, height: 568 });
   await expectNoHorizontalScroll(page);
