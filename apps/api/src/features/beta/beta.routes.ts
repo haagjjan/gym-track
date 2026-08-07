@@ -29,7 +29,10 @@ export async function registerBetaRoutes(server: FastifyInstance, options: {
   });
   server.get("/api/v1/admin/beta/users", async (request, reply) => {
     if (!await requireAdmin(request, reply, options)) return;
-    return reply.send({ data: { items: await options.betaService.listUsers() } });
+    return reply
+      .header("deprecation", "true")
+      .header("link", "</api/v1/admin/users>; rel=\"successor-version\"")
+      .send({ data: { items: await options.betaService.listUsers() } });
   });
 
   server.patch("/api/v1/admin/beta/settings", { config: { rateLimit: { max: 30, timeWindow: "1 hour" } } }, async (request, reply) => {

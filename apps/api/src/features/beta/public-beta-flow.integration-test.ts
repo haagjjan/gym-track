@@ -14,8 +14,15 @@ const prefix = `public_beta_integration_${process.pid}_`;
 describe("public beta database flow", { skip: databaseUrl ? false : "INTEGRATION_DATABASE_URL is not set" }, () => {
   const db = createDatabase(databaseUrl ?? "postgresql://unused");
   const messages: MailMessage[] = [];
+  const failedMailKinds = new Set<MailMessage["kind"]>();
   const alerts: Array<{ reference: string; at: Date }> = [];
-  const mailer: Mailer = { async send(message) { messages.push(message); } };
+  const mailer: Mailer = {
+    async send(message) {
+      if (failedMailKinds.has(message.kind)) throw new Error("provider unavailable");
+      messages.push(message);
+      return { provider: "log" };
+    }
+  };
   const notifier: OperatorNotifier = { async notifyBetaRequest(reference, at) { alerts.push({ reference, at }); } };
   const createdUserIds = new Set<string>();
   let adminId = "";
@@ -53,7 +60,16 @@ describe("public beta database flow", { skip: databaseUrl ? false : "INTEGRATION
       await api.inject({ method: "PATCH", url: "/api/v1/admin/beta/settings", cookies: cookie(admin.cookie), payload: { accountCap: 10_000, dailyApprovalLimit: 1_000 } });
       const approved = await api.inject({ method: "POST", url: `/api/v1/admin/beta/requests/${requestId}`, cookies: cookie(admin.cookie), payload: { action: "APPROVE" } });
       assert.equal(approved.statusCode, 200);
+      assert.equal(approved.json().data.deliveryStatus, "SENT");
+      const originalInvite = tokenFromLatestMessage("invite");
+      const resent = await api.inject({ method: "POST", url: `/api/v1/admin/beta/requests/${requestId}`, cookies: cookie(admin.cookie), payload: { action: "RESEND" } });
+      assert.equal(resent.statusCode, 200);
+      assert.equal(resent.json().data.deliveryStatus, "SENT");
       const invite = tokenFromLatestMessage("invite");
+      assert.notEqual(invite, originalInvite);
+
+      const superseded = await signupResponse(api, memberEmail, `${prefix}superseded`, { inviteToken: originalInvite });
+      assert.equal(superseded.statusCode, 403);
 
       const wrongEmail = await signupResponse(api, `${prefix}wrong@example.test`, `${prefix}wrong`, { inviteToken: invite });
       assert.equal(wrongEmail.statusCode, 403);
@@ -101,6 +117,48 @@ describe("public beta database flow", { skip: databaseUrl ? false : "INTEGRATION
     } finally { await api.close(); }
   });
 
+  it("compensates required deletion mail and preserves cancellation on notification failure", async () => {
+    const api = await server("ENABLED");
+    const email = `${prefix}mail-failure@example.test`;
+    const user = await signup(api, email, `${prefix}mail-failure`, {});
+    createdUserIds.add(user.id);
+    try {
+      failedMailKinds.add("DELETION_SCHEDULED");
+      const failedSchedule = await requestDeletion(api, user.cookie);
+      assert.equal(failedSchedule.statusCode, 503);
+      assert.equal(failedSchedule.json().error.code, "EMAIL_DELIVERY_FAILED");
+      const compensated = await db.selectFrom("users")
+        .select(["account_status", "deletion_due_at"])
+        .where("id", "=", user.id)
+        .executeTakeFirstOrThrow();
+      assert.equal(compensated.account_status, "ACTIVE");
+      assert.equal(compensated.deletion_due_at, null);
+
+      failedMailKinds.delete("DELETION_SCHEDULED");
+      const signedInAgain = await login(api, `${prefix}mail-failure`);
+      assert.equal(signedInAgain.statusCode, 200);
+      const scheduled = await requestDeletion(api, signedInAgain.headers["set-cookie"] as string);
+      assert.equal(scheduled.statusCode, 200);
+      const cancellationToken = tokenFromLatestMessage("deletion");
+
+      failedMailKinds.add("DELETION_CANCELLED");
+      const cancelled = await api.inject({
+        method: "POST",
+        url: "/api/v1/users/me/deletion/cancel",
+        payload: { token: cancellationToken }
+      });
+      assert.equal(cancelled.statusCode, 200);
+      assert.equal(cancelled.json().data.notificationStatus, "FAILED");
+      assert.equal(
+        (await db.selectFrom("users").select("account_status").where("id", "=", user.id).executeTakeFirstOrThrow()).account_status,
+        "ACTIVE"
+      );
+    } finally {
+      failedMailKinds.clear();
+      await api.close();
+    }
+  });
+
   async function server(registrationMode: "ENABLED" | "INVITE_ONLY"): Promise<FastifyInstance> {
     return buildServer(db, { cookieName: "gym_progress_session", cookieSecure: false, registrationMode, sessionTtlDays: 30 }, false, { events: "off", mailer, operatorNotifier: notifier, appBaseUrl: "https://app.example.test" });
   }
@@ -121,9 +179,10 @@ describe("public beta database flow", { skip: databaseUrl ? false : "INTEGRATION
     await db.updateTable("beta_settings").set({ account_cap: 50, daily_approval_limit: 10 }).where("singleton", "=", true).execute();
     createdUserIds.clear();
   }
-  function tokenFromLatestMessage(kind: "invite"): string {
-    const text = [...messages].reverse().find((message) => message.subject.includes("invitation"))?.text ?? "";
-    const match = text.match(kind === "invite" ? /[?&]invite=([^&\s]+)/ : /$^/);
+  function tokenFromLatestMessage(kind: "deletion" | "invite"): string {
+    const mailKind = kind === "invite" ? "INVITATION" : "DELETION_SCHEDULED";
+    const text = [...messages].reverse().find((message) => message.kind === mailKind)?.text ?? "";
+    const match = text.match(kind === "invite" ? /[?&]invite=([^&\s]+)/ : /[?&]token=([^&\s]+)/);
     assert.ok(match?.[1]); return decodeURIComponent(match[1]);
   }
 });

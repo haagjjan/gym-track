@@ -24,12 +24,22 @@ export function createBetaService(options: {
     );
     if (result.status !== "approved") return result;
 
-    await options.mailer?.send({
-      to: result.email,
-      subject: "Your Founding Beta invitation",
-      text: `You have been selected for the Gym Progress Tracker Founding Beta. Create your account before ${expiresAt.toISOString()}: ${options.appBaseUrl}/signup?invite=${encodeURIComponent(token.rawToken)}&email=${encodeURIComponent(result.email)}\n\nThis invitation is single-use and intended only for you.`
-    });
-    return { status: "approved" as const, expiresAt };
+    let deliveryStatus: "FAILED" | "SENT" = "FAILED";
+    try {
+      if (!options.mailer) throw new Error("Email delivery is unavailable.");
+      await options.mailer.send({
+        kind: "INVITATION",
+        to: result.email,
+        subject: "Your Founding Beta invitation",
+        text: `You have been selected for the Gym Progress Tracker Founding Beta. Create your account before ${expiresAt.toISOString()}: ${options.appBaseUrl}/signup?invite=${encodeURIComponent(token.rawToken)}&email=${encodeURIComponent(result.email)}\n\nThis invitation is single-use and intended only for you.`
+      });
+      deliveryStatus = "SENT";
+    } catch {
+      // Invitation issuance remains durable; the administrator receives an
+      // explicit failed state and can choose RESEND.
+    }
+    await options.repository.recordInvitationDelivery(requestId, adminUserId, deliveryStatus, now());
+    return { status: "approved" as const, expiresAt, deliveryStatus };
   }
 
   return {

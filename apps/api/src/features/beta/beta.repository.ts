@@ -35,6 +35,12 @@ export interface BetaRepository {
     now: Date,
     countAsApproval: boolean
   ): Promise<ApproveResult>;
+  recordInvitationDelivery(
+    requestId: string,
+    adminUserId: string,
+    outcome: "FAILED" | "SENT",
+    now: Date
+  ): Promise<void>;
   returnToWaitlist(requestId: string, adminUserId: string, now: Date): Promise<boolean>;
   block(requestId: string, adminUserId: string, now: Date): Promise<boolean>;
   updateSettings(adminUserId: string, update: BetaSettingsUpdate, now: Date): Promise<BetaSettings>;
@@ -129,6 +135,15 @@ export function createBetaRepository(db: Kysely<AppDatabase>): BetaRepository {
         await insertAudit(trx, adminUserId, countAsApproval ? "BETA_REQUEST_APPROVED" : "BETA_INVITE_REISSUED", requestId, now);
         return { status: "approved", email: request.email } as const;
       });
+    },
+    async recordInvitationDelivery(requestId, adminUserId, outcome, now) {
+      await insertAudit(
+        db,
+        adminUserId,
+        outcome === "SENT" ? "BETA_INVITE_DELIVERED" : "BETA_INVITE_DELIVERY_FAILED",
+        requestId,
+        now
+      );
     },
     async returnToWaitlist(requestId, adminUserId, now) {
       const result = await db.transaction().execute(async (trx) => {
