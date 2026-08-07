@@ -14,7 +14,7 @@ type InvalidTokenResult<T> =
 
 export interface AuthActionService {
   sendSignupVerification(user: AuthUserRecord): Promise<void>;
-  requestEmailVerification(userId: string): Promise<{ sent: boolean }>;
+  requestEmailVerification(userId: string): Promise<{ status: "FAILED" | "NOT_REQUIRED" | "SENT" }>;
   verifyEmail(token: string): Promise<InvalidTokenResult<{ verified: true }>>;
   requestPasswordReset(email: string): Promise<{ requested: true }>;
   resetPassword(token: string, password: string): Promise<InvalidTokenResult<{ reset: true }>>;
@@ -38,7 +38,7 @@ const noopLogger: AppLoggerLike = {
 };
 
 const noopMailer: Mailer = {
-  async send() {}
+  async send() { return { provider: "log" }; }
 };
 
 const VERIFICATION_TOKEN_TTL_HOURS = 24;
@@ -75,6 +75,7 @@ export function createAuthActionService(options: AuthActionServiceOptions): Auth
     );
 
     await mailer.send({
+      kind: "EMAIL_VERIFICATION",
       to: user.email,
       subject: "Verify your Gym Progress Tracker email",
       text: verificationEmailText(user, `${appBaseUrl}/verify-email?token=${token}`)
@@ -93,15 +94,15 @@ export function createAuthActionService(options: AuthActionServiceOptions): Auth
       const user = await options.repository.findUserById(userId);
 
       if (!user || user.emailVerifiedAt) {
-        return { sent: false };
+        return { status: "NOT_REQUIRED" };
       }
 
       try {
         await sendVerificationEmail(user);
-        return { sent: true };
+        return { status: "SENT" };
       } catch (error) {
         logger.error({ error }, "verification email failed");
-        return { sent: false };
+        return { status: "FAILED" };
       }
     },
     async verifyEmail(token) {
@@ -125,6 +126,7 @@ export function createAuthActionService(options: AuthActionServiceOptions): Auth
             RESET_TOKEN_TTL_MINUTES * 60 * 1000
           );
           await mailer.send({
+            kind: "PASSWORD_RESET",
             to: user.email,
             subject: "Reset your Gym Progress Tracker password",
             text: passwordResetEmailText(user, `${appBaseUrl}/reset-password?token=${token}`)

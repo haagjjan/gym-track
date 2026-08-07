@@ -254,6 +254,7 @@ describe("auth service", () => {
       mailer: {
         async send(message) {
           sentMail.push({ to: message.to, text: message.text });
+          return { provider: "log" };
         }
       },
       now: () => now
@@ -269,6 +270,27 @@ describe("auth service", () => {
     assert.equal(repository.createdActionTokens[0]?.purpose, "email_verification");
     assert.equal(sentMail[0]?.to, "jan@example.com");
     assert.ok(sentMail[0]?.text.includes("https://cockpit.example/verify-email?token="));
+  });
+
+  it("reports verification resend delivery and not-required states", async () => {
+    const unverified = createAuthService({
+      repository: new FakeAuthRepository(),
+      passwordHasher: passwordHasher(),
+      sessionTokens: sessionTokens(),
+      sessionTtlDays: 30,
+      mailer: { async send() { throw new Error("provider unavailable"); } },
+      now: () => now
+    });
+    const verified = createAuthService({
+      repository: new FakeAuthRepository(userRecord({ emailVerifiedAt: now })),
+      passwordHasher: passwordHasher(),
+      sessionTokens: sessionTokens(),
+      sessionTtlDays: 30,
+      now: () => now
+    });
+
+    assert.deepEqual(await unverified.requestEmailVerification("user-1"), { status: "FAILED" });
+    assert.deepEqual(await verified.requestEmailVerification("user-1"), { status: "NOT_REQUIRED" });
   });
 
   it("rejects login while the account is locked", async () => {
@@ -373,5 +395,29 @@ describe("auth service", () => {
     const result = await service.requestPasswordReset("ghost@example.com");
 
     assert.deepEqual(result, { requested: true });
+  });
+
+  it("keeps the public password-reset response generic when delivery fails", async () => {
+    const repository = new FakeAuthRepository();
+    let loggedFailures = 0;
+    const service = createAuthService({
+      repository,
+      passwordHasher: passwordHasher(),
+      sessionTokens: sessionTokens(),
+      sessionTtlDays: 30,
+      mailer: { async send() { throw new Error("provider unavailable"); } },
+      logger: {
+        info() {},
+        warn() {},
+        error() { loggedFailures += 1; }
+      },
+      now: () => now
+    });
+
+    const result = await service.requestPasswordReset("jan@example.com");
+
+    assert.deepEqual(result, { requested: true });
+    assert.equal(repository.createdActionTokens[0]?.purpose, "password_reset");
+    assert.equal(loggedFailures, 1);
   });
 });

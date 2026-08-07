@@ -331,16 +331,28 @@ export function createAuthRepository(db: Kysely<AppDatabase>): AuthRepository {
         .execute();
     },
     async createActionToken(token) {
-      await db
-        .insertInto("auth_action_tokens")
-        .values({
-          id: token.id,
-          user_id: token.userId,
-          purpose: token.purpose,
-          token_hash: token.tokenHash,
-          expires_at: token.expiresAt
-        })
-        .execute();
+      await db.transaction().execute(async (trx) => {
+        await trx.selectFrom("users")
+          .select("id")
+          .where("id", "=", token.userId)
+          .forUpdate()
+          .executeTakeFirstOrThrow();
+        await trx.deleteFrom("auth_action_tokens")
+          .where("user_id", "=", token.userId)
+          .where("purpose", "=", token.purpose)
+          .where("used_at", "is", null)
+          .execute();
+        await trx
+          .insertInto("auth_action_tokens")
+          .values({
+            id: token.id,
+            user_id: token.userId,
+            purpose: token.purpose,
+            token_hash: token.tokenHash,
+            expires_at: token.expiresAt
+          })
+          .execute();
+      });
     },
     async consumeActionToken(tokenHash, purpose, now) {
       const consumed = await db

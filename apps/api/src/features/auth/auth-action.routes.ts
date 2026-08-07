@@ -56,7 +56,7 @@ export function registerAuthActionRoutes(
       }
 
       const result = await options.service.requestEmailVerification(current.value.id);
-      return reply.send({ data: { sent: result.sent } });
+      return reply.send({ data: { status: result.status } });
     }
   );
 

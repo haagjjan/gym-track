@@ -34,7 +34,7 @@ function authService(overrides: Partial<AuthService> = {}): AuthService {
       return { ok: true, value: user };
     },
     async requestEmailVerification() {
-      return { sent: true };
+      return { status: "SENT" as const };
     },
     async verifyEmail() {
       return { ok: true, value: { verified: true } };

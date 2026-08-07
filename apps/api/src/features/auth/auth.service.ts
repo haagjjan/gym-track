@@ -39,7 +39,7 @@ export interface AuthService {
   login(input: LoginRequest): Promise<AuthResult<AuthenticatedUser>>;
   logout(sessionToken: string | undefined): Promise<{ loggedOut: true }>;
   currentUser(sessionToken: string | undefined): Promise<AuthResult<PublicUser>>;
-  requestEmailVerification(userId: string): Promise<{ sent: boolean }>;
+  requestEmailVerification(userId: string): Promise<{ status: "FAILED" | "NOT_REQUIRED" | "SENT" }>;
   verifyEmail(token: string): Promise<AuthResult<{ verified: true }>>;
   requestPasswordReset(email: string): Promise<{ requested: true }>;
   resetPassword(token: string, newPassword: string): Promise<AuthResult<{ reset: true }>>;
