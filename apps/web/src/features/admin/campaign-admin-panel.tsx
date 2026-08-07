@@ -4,13 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { apiFetch, errorMessage } from "../../shared/api/client";
 import { HudButton, Panel } from "../../shared/ui/ui";
+import type { AdminUser } from "./admin-types";
 
-interface User { id: string; email: string; username: string; status: string; }
 interface Campaign { id: string; title: string; status: "DRAFT" | "PUBLISHED" | "PAUSED" | "ENDED"; triggerType: string; responseType: string; createdAt: string; }
 
 export function CampaignAdminPanel(): ReactNode {
-  const [users, setUsers] = useState<User[]>([]); const [campaigns, setCampaigns] = useState<Campaign[]>([]); const [selected, setSelected] = useState<string[]>([]); const [state, setState] = useState<string | null>(null);
-  const load = useCallback(async () => { const [userResult, campaignResult] = await Promise.all([apiFetch<{ items: User[] }>("/api/admin/beta/users"), apiFetch<{ items: Campaign[] }>("/api/admin/campaigns")]); setUsers(userResult.items); setCampaigns(campaignResult.items); }, []);
+  const [users, setUsers] = useState<AdminUser[]>([]); const [campaigns, setCampaigns] = useState<Campaign[]>([]); const [selected, setSelected] = useState<string[]>([]); const [state, setState] = useState<string | null>(null);
+  const load = useCallback(async () => { const [userResult, campaignResult] = await Promise.all([apiFetch<{ items: AdminUser[] }>("/api/admin/users"), apiFetch<{ items: Campaign[] }>("/api/admin/campaigns")]); setUsers(userResult.items.filter((user) => user.role === "USER" && user.status === "ACTIVE")); setCampaigns(campaignResult.items); }, []);
   useEffect(() => { void load().catch((error) => setState(errorMessage(error, "Campaign data could not be loaded."))); }, [load]);
 
   async function create(event: FormEvent<HTMLFormElement>): Promise<void> {

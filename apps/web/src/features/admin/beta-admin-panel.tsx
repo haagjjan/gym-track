@@ -27,7 +27,16 @@ export function BetaAdminPanel(): ReactNode {
   }
   async function act(id: string, action: "APPROVE" | "RESEND" | "RETURN_TO_WAITLIST" | "BLOCK"): Promise<void> {
     setState(`${action.toLowerCase()} in progress…`);
-    try { await apiFetch(`/api/admin/beta/requests/${encodeURIComponent(id)}`, { method: "POST", body: { action } }); await load(); setState("Applicant state updated and audited."); }
+    try {
+      const result = await apiFetch<{ deliveryStatus?: "FAILED" | "SENT" }>(
+        `/api/admin/beta/requests/${encodeURIComponent(id)}`,
+        { method: "POST", body: { action } }
+      );
+      await load();
+      setState(result.deliveryStatus === "FAILED"
+        ? "The invitation remains active, but email delivery failed. Use RESEND when you are ready to issue a new link."
+        : "Applicant state updated and audited.");
+    }
     catch (error) { setState(errorMessage(error, "Applicant action failed.")); }
   }
 
