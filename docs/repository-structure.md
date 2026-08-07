@@ -100,11 +100,13 @@ apps/
 |   `-- src/
 |       |-- db/
 |       |-- features/
+|       |   |-- admin/
 |       |   |-- analytics/
 |       |   |-- auth/
 |       |   |-- beta/
 |       |   |-- exercises/
 |       |   |-- health/
+|       |   |-- lifecycle/
 |       |   |-- messages/
 |       |   |-- templates/
 |       |   |-- users/
@@ -141,7 +143,8 @@ apps/
 - `apps/api` owns the Fastify API, Kysely database access, migrations, API feature slices, and API tests.
 - `apps/api/catalog` owns the reviewed exercise source manifest, legacy-name input, pinned-source review/exclusion record, and generation metadata. `apps/api/scripts/build-system-exercise-catalog.mjs` reproducibly rebuilds the generated runtime manifest and SQL migration from the pinned upstream revision.
 - `apps/api/tsconfig.build.json` owns the compiled API runtime build used by Docker.
-- `apps/api/src/features/<feature>` owns each API vertical slice. Current features include `analytics`, `auth`, `beta`, `exercises`, `health`, `messages`, `templates`, `users`, and `workouts`.
+- `apps/api/src/features/<feature>` owns each API vertical slice. Current features include `admin`, `analytics`, `auth`, `beta`, `exercises`, `health`, `lifecycle`, `messages`, `templates`, `users`, and `workouts`.
+- `apps/api/src/features/admin` owns canonical administrator user containment and bounded audit-read interfaces; `apps/api/src/features/lifecycle` owns the single-process startup-and-hourly cleanup scheduler.
 - `apps/api/src/db` owns database connection and database health helpers.
 - `apps/api/src/shared` owns API-only shared boundaries such as environment validation, logger configuration, and common HTTP validation responses.
 - `apps/api/src/features/auth/authenticate-request.ts` owns shared Fastify session-cookie authentication for protected feature routes.
