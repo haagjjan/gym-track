@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { after, before, describe, it } from "node:test";
 import type { FastifyInstance } from "fastify";
 import { createDatabase, type AppDatabase } from "../../db/database.js";
@@ -63,6 +64,7 @@ interface ExercisePayload {
 interface SessionExercisePayload {
   sessionExercise: {
     id: string;
+    position: number;
   };
 }
 
@@ -203,6 +205,175 @@ describe("workout API database flow", { skip: databaseUrl ? false : "INTEGRATION
       });
 
       assert.equal(hidden.statusCode, 404);
+    } finally {
+      await server.close();
+    }
+  });
+
+  it("idempotently replays and serializes ordered workout writes", async () => {
+    const server = await buildIntegrationServer(db);
+
+    try {
+      const tag = `${Date.now().toString(36)}${process.pid}mut`;
+      const user = await signup(server, tag);
+      const workoutId = await createWorkout(server, user.cookie);
+      const firstExerciseId = await createExercise(server, user.cookie, `${tag} First`);
+      const secondExerciseId = await createExercise(server, user.cookie, `${tag} Second`);
+      const exerciseMutationId = randomUUID();
+      const replayedExercises = await Promise.all([
+        addExerciseRequest(server, user.cookie, workoutId, firstExerciseId, exerciseMutationId, 1),
+        addExerciseRequest(server, user.cookie, workoutId, firstExerciseId, exerciseMutationId, 1)
+      ]);
+
+      assert.deepEqual(
+        replayedExercises.map((response) => response.statusCode).sort(),
+        [200, 201]
+      );
+      assert.equal(
+        readData<SessionExercisePayload>(replayedExercises[0]!).sessionExercise.id,
+        readData<SessionExercisePayload>(replayedExercises[1]!).sessionExercise.id
+      );
+      assert.deepEqual(
+        replayedExercises.map((response) => readData<{ replayed: boolean }>(response).replayed).sort(),
+        [false, true]
+      );
+
+      const exerciseConflict = await addExerciseRequest(
+        server,
+        user.cookie,
+        workoutId,
+        secondExerciseId,
+        exerciseMutationId
+      );
+      assert.equal(exerciseConflict.statusCode, 409);
+      assert.equal(exerciseConflict.json().error.code, "IDEMPOTENCY_CONFLICT");
+
+      const distinctExercises = await Promise.all(
+        Array.from({ length: 4 }, () =>
+          addExerciseRequest(server, user.cookie, workoutId, firstExerciseId, randomUUID())
+        )
+      );
+      assert.ok(distinctExercises.every((response) => response.statusCode === 201));
+
+      const shiftedExercise = await addExerciseRequest(
+        server,
+        user.cookie,
+        workoutId,
+        secondExerciseId,
+        randomUUID(),
+        1
+      );
+      assert.equal(shiftedExercise.statusCode, 201);
+      const replayAfterShift = await addExerciseRequest(
+        server,
+        user.cookie,
+        workoutId,
+        firstExerciseId,
+        exerciseMutationId,
+        1
+      );
+      assert.equal(replayAfterShift.statusCode, 200);
+      assert.equal(readData<SessionExercisePayload>(replayAfterShift).sessionExercise.position, 2);
+      await assertCompactExercisePositions(db, workoutId);
+
+      const sessionExerciseId = readData<SessionExercisePayload>(
+        replayedExercises[0]!
+      ).sessionExercise.id;
+      const setMutationId = randomUUID();
+      const replayedSets = await Promise.all([
+        addSetRequest(server, user.cookie, workoutId, sessionExerciseId, setMutationId),
+        addSetRequest(server, user.cookie, workoutId, sessionExerciseId, setMutationId)
+      ]);
+      assert.deepEqual(
+        replayedSets.map((response) => response.statusCode).sort(),
+        [200, 201]
+      );
+      assert.equal(
+        readData<SetPayload>(replayedSets[0]!).set.id,
+        readData<SetPayload>(replayedSets[1]!).set.id
+      );
+
+      const setConflict = await addSetRequest(
+        server,
+        user.cookie,
+        workoutId,
+        sessionExerciseId,
+        setMutationId,
+        { reps: 9 }
+      );
+      assert.equal(setConflict.statusCode, 409);
+      assert.equal(setConflict.json().error.code, "IDEMPOTENCY_CONFLICT");
+
+      const distinctSets = await Promise.all(
+        Array.from({ length: 4 }, () =>
+          addSetRequest(
+            server,
+            user.cookie,
+            workoutId,
+            sessionExerciseId,
+            randomUUID()
+          )
+        )
+      );
+      assert.ok(distinctSets.every((response) => response.statusCode === 201));
+      await assertCompactSetOrder(db, sessionExerciseId);
+
+      const other = await signup(server, `${tag}x`);
+      const otherWorkoutId = await createWorkout(server, other.cookie);
+      const crossUser = await addExerciseRequest(
+        server,
+        other.cookie,
+        otherWorkoutId,
+        firstExerciseId,
+        exerciseMutationId
+      );
+      assert.equal(crossUser.statusCode, 201);
+
+      const exerciseRows = await db
+        .selectFrom("session_exercises")
+        .select(["id", "position"])
+        .where("workout_session_id", "=", workoutId)
+        .where("deleted_at", "is", null)
+        .orderBy("position", "asc")
+        .execute();
+      const mixedExerciseWrites = await Promise.all([
+        server.inject({
+          method: "PATCH",
+          url: `/api/v1/workouts/${workoutId}/exercises/reorder`,
+          cookies: authCookies(user.cookie),
+          payload: {
+            items: [...exerciseRows]
+              .reverse()
+              .map((row, index) => ({ sessionExerciseId: row.id, position: index + 1 }))
+          }
+        }),
+        server.inject({
+          method: "DELETE",
+          url: `/api/v1/workouts/${workoutId}/exercises/${exerciseRows.at(-1)?.id}`,
+          cookies: authCookies(user.cookie)
+        }),
+        addExerciseRequest(server, user.cookie, workoutId, secondExerciseId, randomUUID())
+      ]);
+      assert.ok(mixedExerciseWrites.every((response) => response.statusCode < 500));
+      await assertCompactExercisePositions(db, workoutId);
+
+      const setId = readData<SetPayload>(replayedSets[0]!).set.id;
+      const mixedSetWrites = await Promise.all([
+        server.inject({
+          method: "DELETE",
+          url: `/api/v1/sets/${setId}`,
+          cookies: authCookies(user.cookie)
+        }),
+        addSetRequest(
+          server,
+          user.cookie,
+          workoutId,
+          sessionExerciseId,
+          randomUUID()
+        )
+      ]);
+      assert.ok(mixedSetWrites.every((response) => response.statusCode < 500));
+      await assertCompactSetOrder(db, sessionExerciseId);
     } finally {
       await server.close();
     }
@@ -941,16 +1112,33 @@ async function addExerciseToWorkout(
   workoutId: string,
   exerciseId: string
 ): Promise<string> {
-  const response = await server.inject({
-    method: "POST",
-    url: `/api/v1/workouts/${workoutId}/exercises`,
-    cookies: authCookies(cookie),
-    payload: { exerciseId }
-  });
+  const response = await addExerciseRequest(
+    server,
+    cookie,
+    workoutId,
+    exerciseId,
+    randomUUID()
+  );
 
   assert.equal(response.statusCode, 201);
 
   return readData<SessionExercisePayload>(response).sessionExercise.id;
+}
+
+function addExerciseRequest(
+  server: FastifyInstance,
+  cookie: string,
+  workoutId: string,
+  exerciseId: string,
+  clientMutationId: string,
+  position?: number
+) {
+  return server.inject({
+    method: "POST",
+    url: `/api/v1/workouts/${workoutId}/exercises`,
+    cookies: authCookies(cookie),
+    payload: { clientMutationId, exerciseId, ...(position === undefined ? {} : { position }) }
+  });
 }
 
 async function addSet(
@@ -966,11 +1154,40 @@ async function addSet(
     restTimeSeconds: number | null;
   }> = {}
 ): Promise<string> {
-  const response = await server.inject({
+  const response = await addSetRequest(
+    server,
+    cookie,
+    workoutId,
+    sessionExerciseId,
+    randomUUID(),
+    overrides
+  );
+
+  assert.equal(response.statusCode, 201);
+
+  return readData<SetPayload>(response).set.id;
+}
+
+function addSetRequest(
+  server: FastifyInstance,
+  cookie: string,
+  workoutId: string,
+  sessionExerciseId: string,
+  clientMutationId: string,
+  overrides: Partial<{
+    setType: "working" | "warmup";
+    weightKg: string;
+    reps: number;
+    rir: number;
+    restTimeSeconds: number | null;
+  }> = {}
+) {
+  return server.inject({
     method: "POST",
     url: `/api/v1/workouts/${workoutId}/exercises/${sessionExerciseId}/sets`,
     cookies: authCookies(cookie),
     payload: {
+      clientMutationId,
       setType: "working",
       weightKg: "90.00",
       reps: 5,
@@ -979,10 +1196,42 @@ async function addSet(
       ...overrides
     }
   });
+}
 
-  assert.equal(response.statusCode, 201);
+async function assertCompactExercisePositions(
+  db: Kysely<AppDatabase>,
+  workoutId: string
+): Promise<void> {
+  const rows = await db
+    .selectFrom("session_exercises")
+    .select("position")
+    .where("workout_session_id", "=", workoutId)
+    .where("deleted_at", "is", null)
+    .orderBy("position", "asc")
+    .execute();
 
-  return readData<SetPayload>(response).set.id;
+  assert.deepEqual(
+    rows.map((row) => row.position),
+    rows.map((_, index) => index + 1)
+  );
+}
+
+async function assertCompactSetOrder(
+  db: Kysely<AppDatabase>,
+  sessionExerciseId: string
+): Promise<void> {
+  const rows = await db
+    .selectFrom("sets")
+    .select("set_order as setOrder")
+    .where("session_exercise_id", "=", sessionExerciseId)
+    .where("deleted_at", "is", null)
+    .orderBy("set_order", "asc")
+    .execute();
+
+  assert.deepEqual(
+    rows.map((row) => row.setOrder),
+    rows.map((_, index) => index + 1)
+  );
 }
 
 async function updateSet(server: FastifyInstance, cookie: string, setId: string): Promise<void> {
