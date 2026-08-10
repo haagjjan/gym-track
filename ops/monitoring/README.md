@@ -85,8 +85,12 @@ The production copies are installed under `/srv/gym-tracker/deploy/monitoring`. 
 Use an SSH tunnel from the administrator MacBook:
 
 ```sh
-ssh -N -L 3001:127.0.0.1:3001 gym-prod
+ssh -N -L 3001:127.0.0.1:3001 gym-prod-remote
 ```
+
+`gym-prod-remote` uses the owner-only Cloudflare Access SSH path documented by
+[ADR 0017](../../docs/decisions/0017-secure-remote-administration.md). When the MacBook is on
+the private home LAN, the existing `gym-prod` alias remains a direct recovery alternative.
 
 Then open `http://127.0.0.1:3001` and sign in as `operator`. The password remains only in the protected production secret files. Anonymous access, sign-up, plugin installation, plugin preinstallation, analytics reporting, and update checks are disabled.
 
@@ -123,4 +127,5 @@ All six scrape jobs (`prometheus`, `api`, `node`, `cadvisor`, `postgres`, and `a
 - Telegram is the only notification destination. Its bot token and private chat ID are file-backed Docker secrets and Alertmanager has no host-published port.
 - Loki and Sentry are not deployed. Logs stay local and bounded until centralized querying has a demonstrated need.
 - Backup status comes only from the atomically written Node Exporter textfile. The warning age is 30 hours and the critical age is 48 hours around the approved 24-hour RPO.
-- Public uptime monitoring and private remote-access provisioning remain later work.
+- Public uptime monitoring remains later work. Private remote owner access is provisioned
+  through the owner-only `gym-prod-remote` Cloudflare Access SSH path.
