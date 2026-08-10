@@ -13,9 +13,13 @@ export default async function SettingsPage(): Promise<ReactNode> {
     redirect("/login");
   }
 
+  // Read here rather than in the client tree, where it would be inlined at
+  // build time and could never be configured at runtime.
+  const supportUrl = process.env.SUPPORT_URL;
+
   return (
     <AppShell user={user}>
-      <SettingsScreen user={user} />
+      <SettingsScreen supportUrl={supportUrl} user={user} />
     </AppShell>
   );
 }
