@@ -3,6 +3,9 @@
 Decision: [ADR 0015](../../../decisions/0015-staging-environment.md). Goal 2 owns this
 specification; Goal 3 executes it. Nothing here has been deployed.
 
+Goal 3's reviewed repository definition now lives under `ops/staging/`. Repository readiness is
+not deployment evidence; the checkboxes below remain open until the Mac mini rehearsal is run.
+
 ## Placement
 
 Staging runs as a second Compose project on the existing `gym-prod` host, alongside production.
@@ -45,11 +48,13 @@ production must satisfy — and to refuse to boot otherwise.
 | `METRICS_ENABLED` | `true` | Metrics are produced but not scraped by production Prometheus |
 | `RESEND_API_KEY` | **required — see *Email*** | Staging cannot boot without it |
 | `EMAIL_FROM` | required | Same |
+| `EMAIL_RECIPIENT_ALLOWLIST` | two owner-controlled inboxes | Required in staging; all other recipients fail before Resend |
 | `TELEGRAM_BETA_*` | unset | Staging must never reach the operator alert channel |
 
-Host port bindings must not collide with production. Bind staging to loopback only, on a
-distinct range — for example `127.0.0.1:3100` for web and `127.0.0.1:4100` for the API — with
-Caddy as the only path in.
+Host port bindings must not collide with production. The staging project includes its own Caddy
+and publishes only that proxy at `127.0.0.1:3100`. Web, API and PostgreSQL have no host
+publication. This avoids attaching the production proxy to staging networks or restarting the
+production Compose project.
 
 ## Isolation requirements
 
@@ -69,10 +74,9 @@ each as a checkable condition, not a guideline.
 4. **Excluded from production alerting.** No staging target is added to the production
    Prometheus scrape config. A staging outage must never page the operator, and staging noise
    must not desensitise the alert channel that protects production.
-5. **Memory limits on every container.** Staging cannot be allowed to starve production.
-   Suggested starting ceilings against 30 GiB total: PostgreSQL 1 GiB, API 512 MiB, web
-   768 MiB. Tune from observed usage, and set them before first use rather than after an
-   incident.
+5. **Memory limits on every container.** Staging cannot be allowed to starve production. The
+   initial ceilings are PostgreSQL 1 GiB, migration 512 MiB, API 512 MiB, web 768 MiB and Caddy
+   128 MiB. Stop staging if available host memory falls below 6 GiB or production health changes.
 6. **Cloudflare Access restricted to the operator.** `staging.gymtrack.ch` is not public. This
    also keeps a half-finished release from being indexed or shared accidentally.
 7. **Distinct secrets throughout.** BFF secret, database password and cookie name are all
@@ -87,20 +91,17 @@ each as a checkable condition, not a guideline.
 > exactly what `APP_ENV=staging` makes it. **Staging will refuse to start without a Resend
 > key.** The fail-closed behaviour is correct; it simply means Resend now comes before staging.
 
-**A Resend account does not yet exist** (confirmed 2026-08-07), so this is a prerequisite for
-Goal 3, not a detail within it.
+**A Resend account now exists** (created 2026-08-07), but Goal 3 still needs a sending-only
+staging API key stored outside the repository. The chosen execution path brings verification of
+`send.gymtrack.ch` forward so the administrator and invited-user flow can use two distinct,
+owner-controlled inboxes. Staging sends as
+`Gym Progress Tracker Staging <staging@send.gymtrack.ch>`.
 
-The cheapest path that satisfies the boot contract without waiting on domain verification:
-
-1. Create a Resend account. The free tier is ample for a 50-account beta.
-2. Take an API key and use Resend's own `onboarding@resend.dev` sender for staging —
-   `EMAIL_FROM="Gym Progress Tracker <onboarding@resend.dev>"`, which is already the schema
-   default. No DNS work, and it can only deliver to the account's own registered address, which
-   makes it structurally impossible for staging to email a real tester.
-3. Verify `send.gymtrack.ch` separately for **production only**, per external action B2.
-
-That split gives staging a working boot and real delivery to yourself, while keeping the
-verified production sender identity clean and its reputation unexposed to staging mistakes.
+Domain verification removes Resend's one-recipient sandbox protection, so the application adds
+an equivalent stronger boundary: `APP_ENV=staging` refuses to boot without
+`EMAIL_RECIPIENT_ALLOWLIST`, and the mailer rejects every unlisted recipient before the provider
+call. The live allowlist is a secret file containing exactly the staging administrator and
+invited-user test inboxes. It is never committed or printed.
 
 The launch gate's black-box invitation, verification, reset, deletion and cancellation email
 tests should run against the production sender before launch, since that is the identity real
@@ -110,15 +111,15 @@ Whatever is chosen, staging must never send to a real tester's address.
 
 ## Caddy and tunnel
 
-Add a site block for `staging.gymtrack.ch` to `/srv/gym-tracker/deploy/config/caddy/Caddyfile`
-proxying to the staging web port, and a corresponding Cloudflare Tunnel hostname with an Access
-policy allowing only the operator identity.
+The staging Compose project runs a dedicated Caddy on loopback port 3100. Add a Cloudflare Tunnel
+hostname for `staging.gymtrack.ch` with origin `http://127.0.0.1:3100` and an Access policy that
+allows only the operator identity. Do not add a public API hostname or change the production
+Compose/Caddy configuration in Goal 3.
 
-While editing the Caddy configuration, resolve the audit's open question in the same pass: the
-edge must unconditionally overwrite `cf-connecting-ip`, `x-forwarded-for`, `x-real-ip` and any
-`x-gym-client-*` header arriving from a browser, on **both** hostnames. Staging is the correct
-place to prove that a forged `cf-connecting-ip` does not reach attribution, before the same
-change is trusted in production.
+The staging Caddy strips all inbound `x-gym-client-*` headers. Verify through the public origin
+that Cloudflare replaces browser-supplied client-IP headers and that rotating forged values
+cannot evade rate limiting. Equivalent production-origin evidence remains a later production
+gate; staging success must not be recorded as proof that the live production edge is hardened.
 
 ## Admin bootstrap rehearsal
 
@@ -142,18 +143,20 @@ rather than improvising.
 Staging is complete when all of the following hold:
 
 - [ ] The stack boots with `APP_ENV=staging` and serves `https://staging.gymtrack.ch`.
-- [ ] Removing any one of `APP_BASE_URL`, `AUTH_COOKIE_SECURE`, `BFF_CLIENT_IP_SECRET` or
-      `SUPPORT_EMAIL` makes the API refuse to start. That refusal is the control working.
+- [ ] Removing any one of `APP_BASE_URL`, `AUTH_COOKIE_SECURE`, `BFF_CLIENT_IP_SECRET`,
+      `SUPPORT_EMAIL`, `RESEND_API_KEY` or `EMAIL_RECIPIENT_ALLOWLIST` makes the API refuse to
+      start. That refusal is the control working.
 - [ ] `Set-Cookie` on login carries `Secure`, `HttpOnly` and `SameSite=Lax`.
-- [ ] A direct request to the staging API hostname, other than health or metrics, returns
-      `BFF_REQUIRED`.
+- [ ] A direct request from inside the staging network to the unpublished API, other than health
+      or metrics, returns `BFF_REQUIRED`. No public API hostname exists.
 - [ ] A browser-supplied `cf-connecting-ip` does not influence rate-limit attribution.
 - [ ] `/privacy`, `/terms`, `/cookies` and `/support` render real controller values with no
       `PUBLICATION_BLOCKED` banner. This is the check that catches the static-prerender defect.
 - [ ] The full admission flow works end to end: waitlist request, admin approval, invitation
       email link, signup, automatic verification, first workout.
-- [ ] All nine migrations apply fresh, then down, then up again, with no data loss on the
-      representative synthetic dataset.
+- [ ] All nine migrations apply fresh; migrations 8–9 preserve a representative migration-7
+      synthetic dataset; destructive down/up behavior is recorded only on a disposable copy;
+      and verified dump restoration plus candidate reapplication succeeds.
 - [ ] The admin bootstrap procedure above completes and is written up.
 - [ ] Production is provably unaffected: its containers stayed healthy and its memory headroom
       remained adequate throughout.

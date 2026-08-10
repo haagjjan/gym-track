@@ -15,6 +15,10 @@
   `https://app.gymtrack.ch` canonical origin, secure-cookie enforcement, and same-origin
   host/CSRF protection. DNS, Cloudflare Access/Tunnel, server configuration, deployment,
   and external verification remain operator work.
+- Goal 3 repository preparation now includes a separate hardened staging Compose/Caddy topology,
+  file-backed secret boundaries, strict staging recipient containment and an execution/rollback
+  runbook under `ops/staging/`. The environment has not yet been deployed, so no staging or
+  production launch gate is closed by this repository work alone.
 
 ## Phase 0 — Project Setup & Working Style
 
@@ -266,7 +270,7 @@ Run it online for a small set of testers.
 
 ### Goal
 
-Admit at most 50 worldwide-targeted, English-speaking adult founding members through an owner-curated invitation flow with transparent data handling and reversible grace-period deletion.
+Admit at most 50 Switzerland-resident, English-speaking adult founding members through an owner-curated invitation flow with transparent data handling and reversible grace-period deletion.
 
 ### Status
 

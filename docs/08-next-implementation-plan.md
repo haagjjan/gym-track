@@ -14,18 +14,24 @@ Keep:
 
 The V1 usability-audit-v2/v3 remediation, audit-v4 refinements, and Private Beta 1 remediation are implemented across the workout flow, exercise catalog/search, list surfaces, analytics, settings, API contracts, and schema foundation. The cleanup baseline also removes the obsolete avatar spike, restores shared web/API boundaries, and adds sequential pure-function performance gates. Existing uncommitted work remains authoritative and must be preserved.
 
-Stage 1 repository readiness now includes the fail-closed production registration mode,
-canonical HTTPS origin validation, secure-cookie enforcement, and Next.js host/Origin
-request guards recorded by ADR 0011. Server, Cloudflare, DNS, deployment, and external
-black-box work remain unexecuted.
+Stage 1 repository readiness includes the fail-closed production registration mode, canonical
+HTTPS origin validation, secure-cookie enforcement, and Next.js host/Origin request guards
+recorded by ADR 0011. The private production host and secure remote administration exist;
+staging and public-beta black-box evidence remain unexecuted.
 
-Goal 0 is captured by clean baseline `ee537d9`. Goal 1 public-beta hardening is implemented in
-the current unstaged worktree: accessible modal/zoom behavior, 24-hour user-scoped active-set
+Goal 0 is captured by clean baseline `ee537d9`. Goal 1 public-beta hardening and its repository
+acceptance run are complete: accessible modal/zoom behavior, 24-hour user-scoped active-set
 drafts, spreadsheet-safe CSV export, idempotent serialized workout creates, synchronous
 observable email outcomes, startup-and-hourly lifecycle cleanup, and administrator containment
-and audit UI. Treat it as repository implementation pending the full automated acceptance run;
-it does not establish staging or public-launch readiness. See
-`docs/beta-process/public-beta/goal-1-remediation-report.md`.
+and audit UI. This is repository evidence only; it does not establish staging or public-launch
+readiness. See
+`docs/beta-process/public-beta/goal-1/goal-1-remediation-report.md`.
+
+Goal 2 decisions are recorded. The DPIA and bounded legal-risk self-assessment were approved by
+the controller on 2026-08-10 without counsel review. Remaining Goal 2 execution is provider and
+asset evidence: staging Resend configuration, Cloudflare/Resend transfer and retention terms,
+account-recovery bookkeeping, and removing/replacing the FBX models or proving their
+redistribution rights before public delivery.
 
 ## Source of truth for V1 UI behavior
 
@@ -67,13 +73,16 @@ The older redesign files remain useful for styling and atmosphere, but no longer
 
 ## Recommended next slice
 
-Close Goal 1's repository acceptance run, then plan Goal 2 staging and external verification:
+Goal 3's repository deployment foundation is implemented under `ops/staging/`. Complete its
+operator prerequisites and execute it on the Mac mini:
 
-1. Apply migrations to fresh PostgreSQL 17 and a representative pre-Goal-1 schema; exercise down/up and confirm historical mutation IDs remain `NULL`.
-2. Run `pnpm check`, performance, API database integration, Chromium/Firefox Playwright, migration up/down, and `git diff --check`; record results in the Goal 1 remediation report.
-3. Freeze the user-created batch commit only after the worktree contains intended files and the checks are green. Codex must not stage or commit it.
-4. Work through `docs/beta-process/public-beta/launch-gates.md`; do not infer a checked gate from repository tests.
-5. In a separate staging/external goal, supply real legal/provider facts; configure and black-box Resend, Telegram, BFF attribution, status hosting and the first administrator; then perform restore, security, capacity, rollback, incident, real-device and accessibility verification.
+1. Verify `send.gymtrack.ch`, create and protect the staging Resend key, configure the two-address
+   staging allowlist, and record Cloudflare/Resend transfer and retention terms.
+2. Resolve the two FBX models before public delivery by proving their terms or removing/replacing them.
+3. Finish the provider recovery/billing record and commit the approved Switzerland-only policy version.
+4. Execute `ops/staging/README.md` and the staging specification on the Mac mini without using
+   production data or secrets; record results in the Goal 3 report.
+5. Work through `docs/beta-process/public-beta/goal-1/launch-gates.md`; only the two controller-approved document gates are currently complete. All deployed-system gates require Goals 3–6 evidence.
 
 Keep the audit-v4 “Features up for rework” list post-beta. The catalog and local smart matching are included; broad import/export redesign and complete workout-history reset remain outside this gate.
 
@@ -138,8 +147,8 @@ First read:
 - docs/07-implementation-pattern.md
 - docs/08-next-implementation-plan.md
 - docs/18-public-beta-handoff.md
-- docs/beta-process/public-beta/goal-1-remediation-report.md
-- docs/beta-process/public-beta/launch-gates.md
+- docs/beta-process/public-beta/goal-1/goal-1-remediation-report.md
+- docs/beta-process/public-beta/goal-1/launch-gates.md
 
 Important:
 - Audit v4 supersedes audit v3/v2 where they conflict; v3 then v2 define only behavior not superseded by newer audits.
