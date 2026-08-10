@@ -96,6 +96,19 @@ jobs:
       - name: Run performance regression tests
         run: pnpm test:performance
 
+      - name: Verify hardened container runtime is offline-ready
+        run: |
+          set -euo pipefail
+
+          docker build --target migrate -t gym-tracker-migrate-runtime-check .
+          docker run --rm \
+            --network none \
+            --user 10001:10001 \
+            --read-only \
+            --tmpfs /tmp:uid=10001,gid=10001,mode=0700 \
+            gym-tracker-migrate-runtime-check \
+            pnpm --version
+
   api-integration:
     name: API database integration
     runs-on: ubuntu-latest

@@ -87,10 +87,15 @@ Create this root-owned layout:
 ```
 
 Install the Compose definition as `root:gym-tracker` mode `0640`, the initialization script as
-`root:gym-tracker` mode `0750`, and the Caddyfile as `root:10001` mode `0440`. Keep
+`root:gym-tracker` mode `0750`, and the Caddyfile as numeric `root:10001` mode `0440`. Because
+the host deliberately has no named group for container GID `10001`, install the Caddyfile as
+`root:root` first and then apply `chown root:10001`; do not create a host group only for this
+mount. Keep
 `deploy/env/staging.env` owned by `admin-gym:gym-tracker` at `0640`, and keep `secrets/` owned
-by `admin-gym:gym-tracker` at `0700` with each secret file at `0600`. Numeric group `10001`
-lets the non-root Caddy container read only its non-secret configuration.
+by `admin-gym:gym-tracker` at `0700`. Each secret file must be numeric `10001:10001` at `0600`
+before a service starts. Numeric group `10001` lets the non-root Caddy container read only its
+non-secret configuration; numeric UID `10001` lets the hardened application containers read only
+their individually mounted secret files.
 
 Copy `staging.env.example` to the server environment file and replace every `REQUIRED` marker.
 The three image variables must contain the same full `APP_RELEASE` SHA used as their immutable
@@ -108,6 +113,19 @@ Create these one-line secret files directly on the server:
 
 Generate the three random local secrets with a password manager or `openssl rand -hex 32`.
 Enter the Resend key and recipient list interactively without placing them in shell history.
+Create the files as `admin-gym` while entering them, then transfer only the completed files to the
+container runtime identity without printing their contents:
+
+```bash
+chown 10001:10001 /srv/gym-tracker-staging/secrets/*
+chmod 0600 /srv/gym-tracker-staging/secrets/*
+```
+
+Compose implements these local file-backed secrets as bind mounts, so the container sees the
+source file ownership. Mode `0600` with runtime ownership is required for services running as
+`10001:10001`; leaving the files owned by `admin-gym` makes those services fail closed with
+`Permission denied`. The operator retains the recovery copies in the password manager and uses
+`sudo` for later server-side inspection or rotation.
 
 ## Build and validate the exact release
 

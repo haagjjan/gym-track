@@ -4,15 +4,18 @@ WORKDIR /app
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
+ENV COREPACK_HOME="/opt/corepack"
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates g++ make python3 \
   && rm -rf /var/lib/apt/lists/* \
   && corepack enable
 
-ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack prepare pnpm@10.11.0 --activate \
+  && chmod -R a+rX "${COREPACK_HOME}"
 
-RUN corepack prepare pnpm@10.11.0 --activate
+ENV COREPACK_ENABLE_NETWORK=0
 
 FROM base AS deps
 
