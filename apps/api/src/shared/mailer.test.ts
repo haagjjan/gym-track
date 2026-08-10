@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   createLogMailer,
   createMailerFromEnv,
+  createRecipientAllowlistMailer,
   createResendMailer,
   MailDeliveryError,
   type AppLoggerLike
@@ -41,6 +42,44 @@ describe("mailer logging", () => {
       NODE_ENV: "production"
     }, createCaptureLogger().logger);
     assert.equal((await mailer.send(testMessage)).provider, "log");
+  });
+
+  it("requires recipient containment for staging", () => {
+    assert.throws(() => createMailerFromEnv({
+      APP_ENV: "staging",
+      RESEND_API_KEY: "secret",
+      EMAIL_FROM: "Gym Tracker <staging@example.test>",
+      NODE_ENV: "production"
+    }, createCaptureLogger().logger), /EMAIL_RECIPIENT_ALLOWLIST/);
+  });
+
+  it("blocks unlisted recipients before provider delivery without logging the address", async () => {
+    let providerCalls = 0;
+    const captured = createCaptureLogger();
+    const observations: Array<{ kind: string; outcome: string }> = [];
+    const mailer = createRecipientAllowlistMailer(
+      { send: async () => { providerCalls += 1; return { provider: "resend" }; } },
+      ["allowed@example.test"],
+      captured.logger,
+      { record: (kind, outcome) => observations.push({ kind, outcome }) }
+    );
+
+    await assert.rejects(() => mailer.send(testMessage), /not allowed/);
+    assert.equal(providerCalls, 0);
+    assert.deepEqual(observations, [{ kind: "PASSWORD_RESET", outcome: "FAILED" }]);
+    assert.doesNotMatch(captured.output(), /private@example\.test/);
+  });
+
+  it("delivers to allowlisted recipients case-insensitively", async () => {
+    let providerCalls = 0;
+    const mailer = createRecipientAllowlistMailer(
+      { send: async () => { providerCalls += 1; return { provider: "resend" }; } },
+      ["PRIVATE@example.test"],
+      createCaptureLogger().logger
+    );
+
+    assert.equal((await mailer.send(testMessage)).provider, "resend");
+    assert.equal(providerCalls, 1);
   });
 
   it("submits both plain text and escaped branded HTML to Resend", async () => {

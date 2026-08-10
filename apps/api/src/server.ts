@@ -70,6 +70,7 @@ export interface ServerExtras {
     APP_ENV: string;
     RESEND_API_KEY: string | undefined;
     EMAIL_FROM: string;
+    EMAIL_RECIPIENT_ALLOWLIST?: readonly string[] | undefined;
     EMAIL_REPLY_TO?: string | undefined;
     NODE_ENV: "development" | "test" | "production";
   };

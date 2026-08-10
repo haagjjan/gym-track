@@ -5,6 +5,19 @@ const senderSchema = z.string().trim().min(3).refine((value) => {
   const bracketedAddress = value.match(/<([^<>]+)>\s*$/)?.[1];
   return z.string().email().safeParse(bracketedAddress ?? value).success;
 }, "Expected an email address or a display name followed by an email address.");
+const emailRecipientAllowlistSchema = z.string().transform((value, context) => {
+  const recipients = [...new Set(value.split(",").map((recipient) => recipient.trim().toLowerCase()).filter(Boolean))];
+  for (const recipient of recipients) {
+    if (!z.string().email().safeParse(recipient).success) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "EMAIL_RECIPIENT_ALLOWLIST must contain only comma-separated email addresses."
+      });
+      return z.NEVER;
+    }
+  }
+  return recipients;
+});
 const optionalEnvironmentValue = <Schema extends z.ZodTypeAny>(schema: Schema) =>
   z.preprocess((value) => value === "" ? undefined : value, schema.optional());
 
@@ -21,6 +34,7 @@ const rawEnvSchema = z.object({
   BFF_CLIENT_IP_SECRET: optionalEnvironmentValue(z.string().min(32)),
   DATABASE_URL: z.string().url(),
   EMAIL_FROM: optionalEnvironmentValue(senderSchema),
+  EMAIL_RECIPIENT_ALLOWLIST: optionalEnvironmentValue(emailRecipientAllowlistSchema),
   LOG_LEVEL: logLevelSchema.default("info"),
   METRICS_ENABLED: z.enum(["true", "false"]).optional(),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -49,6 +63,14 @@ const envSchema = rawEnvSchema
     const isProductionDeployment = env.NODE_ENV === "production"
       && deploymentEnvironment !== "local"
       && deploymentEnvironment !== "private-lan";
+
+    if (deploymentEnvironment === "staging" && !env.EMAIL_RECIPIENT_ALLOWLIST?.length) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "EMAIL_RECIPIENT_ALLOWLIST is required in staging.",
+        path: ["EMAIL_RECIPIENT_ALLOWLIST"]
+      });
+    }
 
     if (!isProductionDeployment) {
       return;

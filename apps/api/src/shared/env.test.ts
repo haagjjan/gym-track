@@ -135,6 +135,45 @@ describe("readEnv", () => {
     }), /EMAIL_FROM/);
   });
 
+  it("requires and normalizes a recipient allowlist in staging", () => {
+    const base = {
+      APP_BASE_URL: "https://staging.gymtrack.ch",
+      APP_ENV: "staging",
+      BFF_CLIENT_IP_SECRET: bffSecret,
+      DATABASE_URL: databaseUrl,
+      EMAIL_FROM: sender,
+      NODE_ENV: "production" as const,
+      RESEND_API_KEY: resendApiKey,
+      SUPPORT_EMAIL: supportEmail
+    };
+
+    assert.throws(() => readEnv(base), /EMAIL_RECIPIENT_ALLOWLIST/);
+    assert.throws(() => readEnv({
+      APP_ENV: "staging",
+      DATABASE_URL: databaseUrl,
+      NODE_ENV: "development"
+    }), /EMAIL_RECIPIENT_ALLOWLIST/);
+    const env = readEnv({
+      ...base,
+      EMAIL_RECIPIENT_ALLOWLIST: " Admin@Example.test, tester@example.test,admin@example.test "
+    });
+    assert.deepEqual(env.EMAIL_RECIPIENT_ALLOWLIST, ["admin@example.test", "tester@example.test"]);
+  });
+
+  it("rejects malformed staging recipient allowlists", () => {
+    assert.throws(() => readEnv({
+      APP_BASE_URL: "https://staging.gymtrack.ch",
+      APP_ENV: "staging",
+      BFF_CLIENT_IP_SECRET: bffSecret,
+      DATABASE_URL: databaseUrl,
+      EMAIL_FROM: sender,
+      EMAIL_RECIPIENT_ALLOWLIST: "owner@example.test,not-an-email",
+      NODE_ENV: "production",
+      RESEND_API_KEY: resendApiKey,
+      SUPPORT_EMAIL: supportEmail
+    }), /EMAIL_RECIPIENT_ALLOWLIST/);
+  });
+
   it("rejects malformed sender addresses", () => {
     assert.throws(() => readEnv({ DATABASE_URL: databaseUrl, EMAIL_FROM: "not-an-address" }));
   });

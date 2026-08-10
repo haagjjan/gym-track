@@ -49,6 +49,7 @@ interface MailerEnv {
   APP_ENV: string;
   RESEND_API_KEY: string | undefined;
   EMAIL_FROM: string;
+  EMAIL_RECIPIENT_ALLOWLIST?: readonly string[] | undefined;
   EMAIL_REPLY_TO?: string | undefined;
   NODE_ENV: "development" | "test" | "production";
 }
@@ -64,8 +65,21 @@ export function createMailerFromEnv(
   logger: AppLoggerLike,
   observer?: MailDeliveryObserver
 ): Mailer {
+  if (env.APP_ENV === "staging" && !env.EMAIL_RECIPIENT_ALLOWLIST?.length) {
+    throw new Error("EMAIL_RECIPIENT_ALLOWLIST is required in staging.");
+  }
+
   if (env.RESEND_API_KEY) {
-    return createResendMailer(env.RESEND_API_KEY, env.EMAIL_FROM, logger, env.EMAIL_REPLY_TO, observer);
+    const provider = createResendMailer(
+      env.RESEND_API_KEY,
+      env.EMAIL_FROM,
+      logger,
+      env.EMAIL_REPLY_TO,
+      observer
+    );
+    return env.EMAIL_RECIPIENT_ALLOWLIST?.length
+      ? createRecipientAllowlistMailer(provider, env.EMAIL_RECIPIENT_ALLOWLIST, logger, observer)
+      : provider;
   }
 
   if (env.NODE_ENV === "production" && !["local", "private-lan"].includes(env.APP_ENV)) {
@@ -73,6 +87,25 @@ export function createMailerFromEnv(
   }
 
   return createLogMailer(logger);
+}
+
+export function createRecipientAllowlistMailer(
+  mailer: Mailer,
+  recipients: readonly string[],
+  logger: AppLoggerLike,
+  observer?: MailDeliveryObserver
+): Mailer {
+  const allowedRecipients = new Set(recipients.map((recipient) => recipient.trim().toLowerCase()));
+  return {
+    async send(message) {
+      if (!allowedRecipients.has(message.to.trim().toLowerCase())) {
+        observer?.record(message.kind, "FAILED", 0);
+        logger.error({ kind: message.kind }, "email recipient blocked by environment allowlist");
+        throw new MailDeliveryError("Email recipient is not allowed in this environment.");
+      }
+      return mailer.send(message);
+    }
+  };
 }
 
 export function createLogMailer(logger: AppLoggerLike, includeContent = true): Mailer {
