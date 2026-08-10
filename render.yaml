@@ -84,17 +84,17 @@ services:
         value: INVITE_ONLY
       - key: BFF_CLIENT_IP_SECRET
         sync: false
-      - key: NEXT_PUBLIC_CONTROLLER_NAME
+      - key: CONTROLLER_NAME
         sync: false
-      - key: NEXT_PUBLIC_CONTROLLER_ADDRESS
+      - key: CONTROLLER_ADDRESS
         sync: false
-      - key: NEXT_PUBLIC_PRIVACY_EMAIL
+      - key: PRIVACY_EMAIL
         sync: false
-      - key: NEXT_PUBLIC_SUPPORT_EMAIL
+      - key: SUPPORT_EMAIL
         sync: false
-      - key: NEXT_PUBLIC_SECURITY_EMAIL
+      - key: SECURITY_EMAIL
         sync: false
-      - key: NEXT_PUBLIC_SUPPORT_URL
+      - key: SUPPORT_URL
         sync: false
       - key: API_INTERNAL_HOSTPORT
         fromService:
