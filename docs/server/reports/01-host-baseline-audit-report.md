@@ -109,7 +109,7 @@ MAC addresses were inspected but are intentionally omitted from this report.
 
 Both profiles use DHCP and autoconnect. Ethernet is marked as the current default IPv4 connection. Wi-Fi remains available as the fallback. `t2_ncm` is present but has no carrier and is not an intended production interface.
 
-Ethernet also has global IPv6 addresses within the redacted prefix `2a04:ee40:20c5:c700::/64` and a link-local address. Wi-Fi has ULA and link-local IPv6 addresses. Complete host addresses are omitted.
+Ethernet also has global IPv6 addresses within an ISP-assigned `/64` prefix and a link-local address. Wi-Fi has ULA and link-local IPv6 addresses. Complete host addresses and the global prefix are omitted; the prefix was removed on 2026-08-08 ahead of public release, per the redaction rule in [`../wave-a-host-fundation/01-host-baseline-audit.md`](../wave-a-host-fundation/01-host-baseline-audit.md).
 
 ## Routing and DNS
 
