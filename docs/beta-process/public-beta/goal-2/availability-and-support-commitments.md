@@ -154,9 +154,8 @@ until the static-prerender defect is fixed. That dependency is recorded against 
 Values still to be supplied by item 1:
 
 ```
-SUPPORT_EMAIL=                  # API; must equal the two below and the Resend reply-to
-NEXT_PUBLIC_SUPPORT_EMAIL=      # published on /support
-NEXT_PUBLIC_SECURITY_EMAIL=     # published on /support
+SUPPORT_EMAIL=support@gymtrack.ch    # both services; Resend reply-to derives from it
+SECURITY_EMAIL=security@gymtrack.ch  # web; falls back to SUPPORT_EMAIL if unset
 ```
 
 `launch-gates.md` requires the API `SUPPORT_EMAIL`, the published web support contact and the
