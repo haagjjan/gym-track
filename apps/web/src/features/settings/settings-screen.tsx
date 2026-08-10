@@ -15,7 +15,7 @@ import { PrivacyDataPanel } from "./privacy-data-panel";
 import { HelpSupportPanel } from "./help-support-panel";
 import { InfoPopover } from "../../shared/ui/info-popover";
 
-export function SettingsScreen({ user }: { user: AuthUser }): ReactNode {
+export function SettingsScreen({ supportUrl, user }: { supportUrl?: string | undefined; user: AuthUser }): ReactNode {
   const router = useRouter();
   const { biometrics, save, isLoaded } = useBiometrics();
   const [form, setForm] = useState<Biometrics>(emptyBiometrics);
@@ -39,7 +39,7 @@ export function SettingsScreen({ user }: { user: AuthUser }): ReactNode {
       <SettingsSection title="Body Profile"><BodyProfilePanel form={form} onChange={setForm} onSave={() => { save(form); setSaved(true); window.setTimeout(() => setSaved(false), 1600); }} saved={saved} /></SettingsSection>
       <SettingsSection title="Display"><DisplayPanel /></SettingsSection>
       <SettingsSection title="Privacy & Data"><PrivacyDataPanel /></SettingsSection>
-      <SettingsSection title="Help & Support"><HelpSupportPanel /></SettingsSection>
+      <SettingsSection title="Help & Support"><HelpSupportPanel supportUrl={supportUrl} /></SettingsSection>
       <SettingsSection title="Exercise Maintenance"><MergeExercisesPanel /></SettingsSection>
       <SettingsSection title="Sign Out"><Panel accent="red"><HudButton className="w-full" onClick={() => void logout()} variant="danger"><IconLogout /> SIGN OUT</HudButton></Panel></SettingsSection>
     </div>
