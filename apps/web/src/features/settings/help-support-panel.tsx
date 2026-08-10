@@ -2,8 +2,13 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Panel } from "../../shared/ui/ui";
 
-export function HelpSupportPanel(): ReactNode {
-  const supportUrl = process.env.NEXT_PUBLIC_SUPPORT_URL;
+/**
+ * `supportUrl` arrives as a prop rather than being read here. This component
+ * renders inside a client tree, so a `NEXT_PUBLIC_*` read would be inlined at
+ * build time and could never be configured at runtime. The server page reads
+ * `SUPPORT_URL` from the environment and passes it down.
+ */
+export function HelpSupportPanel({ supportUrl }: { supportUrl?: string | undefined }): ReactNode {
   return (
     <Panel accent="cyan" eyebrow="HELP_SUPPORT_AND_POLICIES">
       <nav className="grid gap-2 text-sm">
