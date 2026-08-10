@@ -192,11 +192,15 @@ itself has not been made — it belongs with the item 5 support-page rewrite.
 
 Not operator actions, recorded so they are not lost between goals.
 
+Secure remote administration from audit Area 34 was completed on 2026-08-08. The owner-only
+`ssh.gymtrack.ch` Cloudflare Access path passed an outside-network test without a public SSH
+port; see [ADR 0017](../../../decisions/0017-secure-remote-administration.md) and the
+[Stage 12 secure remote administration report](../../../server/reports/12-secure-remote-administration-report.md).
+
 | What | Owner | Why it matters |
 |---|---|---|
 | Decide how an external applicant reaches `/beta` while Cloudflare Access gates `app.gymtrack.ch` | Goal 5 | The waitlist form must be publicly reachable for anyone to request access, but Access currently protects the whole hostname. `launch-gates.md` keeps the private gate until direct API signup cannot bypass invite admission, so the two requirements have to be reconciled deliberately rather than discovered at launch |
 | Root `gymtrack.ch` and `www` do not resolve — only `app.` does | Goal 5 | Survivable for a beta, but anyone typing the bare domain gets nothing. Decide whether to redirect to `app.` or leave it |
-| Remote administrative access (audit Area 34) | Goal 5 | SSH is restricted to the two home LAN ranges, so the server is unreachable and unfixable from outside the house. Cloudflare Tunnel carrying SSH behind Access would reuse existing infrastructure and open no new ports |
 | Force dynamic rendering on the legal routes, and build args for client-side `NEXT_PUBLIC_*` | Goal 1 or Goal 5 | Without it, every value from A4 and A5 stays invisible and `PUBLICATION_BLOCKED` stays on the page |
 | Execute [staging-environment-spec.md](staging-environment-spec.md) | Goal 3 | — |
 | Edge must overwrite `cf-connecting-ip` and friends on both hostnames | Goal 3, verified in Goal 4 | Rate limiting is bypassable until it does |
