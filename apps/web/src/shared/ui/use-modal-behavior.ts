@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type RefObject } from "react";
+import { useLayoutEffect, useRef, type RefObject } from "react";
 
 type InitialFocus = "dialog" | "first";
 
@@ -33,7 +33,7 @@ export function useModalBehavior<T extends HTMLElement>({
   onCloseRef.current = onClose;
   closeOnEscapeRef.current = closeOnEscape;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const element = dialogRef.current;
     if (!isOpen || !element) return;
     return activateModal(
