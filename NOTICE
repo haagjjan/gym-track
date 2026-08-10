@@ -1,0 +1,52 @@
+# Third-Party Assets and Data
+
+The MIT licence in LICENSE covers the source code in this repository. The items
+below are not original source code and carry their own terms.
+
+## 3D avatar models
+
+```
+apps/web/public/models/avatar/avatar-base.fbx
+apps/web/public/models/avatar/base-v-2.fbx
+```
+
+Generated using an online AI 3D model generator (Meshy.ai or equivalent).
+
+> **Terms not yet confirmed.** AI 3D generation services differ substantially in
+> what they grant, and free tiers frequently differ from paid ones. Some place
+> free-tier output under CC BY 4.0, which would require attribution; some
+> restrict commercial use; others assign full ownership to the user. "Free to
+> generate" is not the same as "free to redistribute".
+>
+> Until the terms applying to these specific files are confirmed against the
+> generating account's plan, they are **not** covered by the MIT grant above.
+> Confirm and replace this note with the actual licence.
+
+## Exercise catalog
+
+The system exercise catalog derives from [Free Exercise DB](https://github.com/yuhonas/free-exercise-db).
+
+- Licence: Unlicense (public domain dedication)
+- Pinned revision: `b0eed061e1c832b3ed815fbaa4b45b3cdc14df49`
+- Source records reviewed: 873; included: 709; excluded: 164
+- Exclusions recorded individually in `apps/api/catalog/system-exercise-catalog-review.json`
+- Instructions and media from the upstream dataset are not imported
+
+Muscle mapping, equipment normalisation and classification adjustments applied
+on import are original work and fall under the MIT licence.
+
+## Muscle region artwork
+
+```
+apps/web/public/volume/muscle-regions-front.svg
+apps/web/public/volume/muscle-regions-back.svg
+apps/web/public/volume/muscle-regions-side.svg
+```
+
+See `apps/web/public/volume/README.md` for provenance.
+
+## Dependencies
+
+Runtime and build dependencies retain their own licences, declared in their
+respective package manifests. The direct dependency set is MIT and Apache-2.0
+throughout; the transitive tree has not been formally audited.
