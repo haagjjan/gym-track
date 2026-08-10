@@ -3,6 +3,10 @@ import { LegalPage, Section } from "../../features/legal/legal-page";
 
 export const metadata = { title: "Cookie & Device Storage Notice" };
 
+// No contacts are rendered here, but LegalPage evaluates the configuration
+// guard, so this route must not be statically prerendered either.
+export const dynamic = "force-dynamic";
+
 export default function CookiesPage(): ReactNode {
   return <LegalPage eyebrow="STORAGE_CONTROL" title="Cookie & Device Storage Notice">
     <Section title="Essential session cookie"><p><code>gym_progress_session</code> (name configurable) is a Secure, HttpOnly, SameSite=Lax login cookie. It contains a random opaque token; the database stores only its hash. Its maximum lifetime is 30 days, and logout, password reset, deletion, or security action can revoke it earlier.</p></Section>
