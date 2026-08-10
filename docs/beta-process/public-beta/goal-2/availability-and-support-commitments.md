@@ -7,6 +7,37 @@ here has been applied to the application yet — item 1 must supply the real con
 first, and the legal pages need the rendering fix noted in the decision record before any of
 it reaches a user.
 
+## Internal availability target — 99.85%
+
+Set 2026-08-08. **This is an internal engineering target, not a service commitment**, and the
+distinction is deliberate. Nothing below is published to users, and the published position
+remains the one in the next section: no uptime guarantee.
+
+The label matters because these documents are published. A reader who finds a number without
+that framing will reasonably treat it as a promise, which would contradict the user-facing
+wording.
+
+| Window | Downtime budget at 99.85% |
+|---|---|
+| Month | **65 minutes** |
+| Year | **13.1 hours** |
+
+**Achievability.** Planned work fits comfortably: a monthly reboot costs roughly three minutes
+and container updates about a minute each. The pressure comes entirely from unplanned events —
+a single power cut, ISP outage or failed deployment consumes most of a month's budget in one go.
+Swiss mains power is excellent; residential internet is the weaker link. Expect to meet this in
+most months and miss it two or three times a year, which makes it a more meaningful **annual**
+target than a monthly one.
+
+> **It cannot currently be measured.** There is no external uptime monitoring, and the existing
+> Prometheus stack runs on the machine it observes — so a total host outage produces no
+> measurement and no alert. Until an external probe exists, this target is unfalsifiable and
+> functions as an intention rather than a metric.
+>
+> This is the same gap recorded as high-criticality in area 15 of the operational audit. Adopting
+> a numeric target is a good reason to close it: one external check, alerting independently of
+> the Mac mini, converts the target into something real.
+
 ## The commitments, stated plainly
 
 **Availability.** No uptime target, no maintenance window, no notification undertaking. The
