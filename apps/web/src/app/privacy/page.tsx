@@ -3,6 +3,10 @@ import { LegalPage, Section, legalContacts } from "../../features/legal/legal-pa
 
 export const metadata = { title: "Privacy Notice" };
 
+// See legal-page.tsx: contact details are read from server environment per
+// request, so this route must not be statically prerendered.
+export const dynamic = "force-dynamic";
+
 export default function PrivacyPage(): ReactNode {
   const contact = legalContacts();
   return <LegalPage eyebrow="DATA_TRANSPARENCY" title="Privacy Notice">
