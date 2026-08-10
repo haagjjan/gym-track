@@ -2,7 +2,9 @@
 
 Date: 2026-08-05. Owner: controller to be supplied. Review state: **screening indicates a full DPIA and qualified legal review are required before public launch**.
 
-This is an engineering screening, not a completed legal assessment. Workout patterns, free-text notes, optional body-profile values, account behavior counters and behavior-triggered feedback can reveal health, routine or lifestyle information. The service is worldwide, involves systematic tracking over time, introduces personalized prompt eligibility, uses processors/transfers, and is operated by a small team. Those factors may combine into elevated risk even with a 50-member cap.
+This is an engineering screening, not a completed legal assessment. Workout patterns, free-text notes, optional body-profile values, account behavior counters and behavior-triggered feedback can reveal health, routine or lifestyle information. The service involves systematic tracking over time, introduces personalized prompt eligibility, uses processors/transfers, and is operated by one person. Those factors may combine into elevated risk even with a 50-account cap.
+
+Scope was narrowed to Switzerland-only on 2026-08-07, which removes the worldwide exposure this screening originally flagged. **The screening conclusion is unchanged**: geography was never what drove it. Longitudinal, health-adjacent data about identifiable people is, and that is untouched by narrowing the audience. The completed assessment is [goal-2/dpia.md](goal-2/dpia.md).
 
 ## Processing characteristics
 
@@ -11,7 +13,7 @@ This is an engineering screening, not a completed legal assessment. Workout patt
 - Data: identifiers, credentials, detailed training history and notes, optional browser-only body metrics, usage counters, optional event data and feedback.
 - Decisions: no automated eligibility, pricing, medical decision, or legal-significant profiling. Counters only decide when a configured in-app prompt becomes eligible.
 - Sharing: hosting/database, Resend/email infrastructure, Telegram alerting, off-machine encrypted backups, independent status host, and final support provider.
-- Geography: worldwide invitation requests; counsel may require excluded jurisdictions, representative appointments, or transfer safeguards.
+- Geography: **Switzerland only** per [ADR 0016](../../decisions/0016-founding-beta-jurisdiction-scope.md), narrowed from worldwide on 2026-08-07. Eligibility is self-attested and enforced by manual approval. Excluded-jurisdiction lists and representative appointment do not arise; processor transfers to the US still require a recorded basis.
 
 ## Principal risks and implemented mitigations
 

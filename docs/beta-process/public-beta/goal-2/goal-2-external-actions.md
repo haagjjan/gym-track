@@ -116,9 +116,7 @@ addresses into a single account.
       the domain. It needs its own MFA and its own recovery path, independent of this project.
 - [ ] MFA on Resend once the account exists (A7), not recovering through `@gymtrack.ch`.
 - [x] Expiry date recorded: **`gymtrack.ch` expires 2027-07-20**.
-- [ ] **Enable auto-renew — currently off.** A lapsed domain takes the application, all three
-      contact addresses and the tunnel simultaneously, and recovering a lapsed `.ch` name is
-      expensive and not guaranteed. Two clicks, free.
+- [x] **Auto-renew enabled at Infomaniak** (confirmed by the controller 2026-08-10).
 - [ ] Confirm the card on file does not expire before 2027-07-20 — auto-renew fails silently
       against a dead card.
 - [ ] Calendar reminder for ~2027-06-20 as a backstop independent of provider and card.

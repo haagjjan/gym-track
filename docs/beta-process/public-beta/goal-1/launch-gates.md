@@ -7,7 +7,7 @@ The beta may be promoted only after every blocker is checked with linked evidenc
 - [ ] Real controller legal name and postal address configured.
 - [ ] Dedicated support, privacy and security email addresses configured and tested; API `SUPPORT_EMAIL` matches the published web support contact and Resend reply-to.
 - [ ] Final support provider and every processor/region/transfer/retention recorded.
-- [ ] Qualified counsel approves worldwide target or records excluded jurisdictions, Swiss FADP/GDPR applicability, lawful bases, sensitive-data analysis, representatives, transfers, Terms/liability/no-medical-advice, shared contributions and voluntary support.
+- [ ] Swiss FADP applicability, justification per processing category, sensitive-data analysis, transfers, Terms/liability/no-medical-advice, shared contributions and voluntary support are all assessed and recorded. Scope is Switzerland-only per ADR 0016, so excluded-jurisdiction lists and EU representative appointment do not arise. Resolved by documented self-assessment ([legal-risk-acceptance.md](goal-2/legal-risk-acceptance.md)) rather than counsel; that acceptance is void on any of its recorded triggers.
 - [ ] Full DPIA completed, approved and assigned a review date.
 - [ ] Final rendered Privacy, Terms, Cookie/Storage, Support and beta-limitations pages match production behavior and are version archived.
 

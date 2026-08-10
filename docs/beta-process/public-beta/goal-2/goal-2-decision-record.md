@@ -24,7 +24,7 @@ deployed evidence, which belongs to Goals 4–6.
 | 3 | Allowed jurisdictions | **Decided** | wording changes not yet applied |
 | 1 | Controller identity | **Decided** | rendering fix owed by Goal 1/5 |
 | 4 | Provider and processor inventory | **Decided** | transfer basis deferred to item 2 |
-| 6 | Billing, ownership, MFA, recovery | **Decided** | residual risk accepted; renewal date + costs outstanding |
+| 6 | Billing, ownership, MFA, recovery | **Decided** | residual risk accepted; payment-method check + costs outstanding |
 | 10 | Public repository and licensing | **Decided** | 3D asset terms; pre-publication checklist |
 | 2 | Legal review and DPIA | **Deferred** | Pass D; needs 1, 3, 4, 5, 7, 8 |
 
@@ -268,8 +268,26 @@ same pass, or the rendered pages will contradict this record.
 [jurisdiction-scope-changes.md](jurisdiction-scope-changes.md) — nine files, with exact diffs,
 and four dated snapshots explicitly excluded.
 
-**Open:** the wording changes are specified but **not applied**. They must land together; a
-partial application leaves the rendered pages contradicting this record.
+**Applied 2026-08-10.** All nine changes landed together and were verified in the browser:
+
+- `/beta` — "Anyone can request access" → "open to adults resident in Switzerland"; heading
+  changed to "Limited to 50 accounts", making the published claim exact rather than approximate
+  now that two seats are operator accounts.
+- Waitlist attestation — "at least 18 years old **and resident in Switzerland**", still writing
+  to `adult_attested_at` with no schema change.
+- Terms eligibility — Swiss residence and Swiss governing law stated.
+- Privacy Notice — states it is written for the revFADP and offered only in Switzerland.
+- `docs/00-workflow.md`, `docs/18-public-beta-handoff.md`, `launch-gates.md` and
+  `dpia-screening.md` all updated; the counsel gate rewritten around the narrower scope.
+
+The DPIA screening's **conclusion is deliberately unchanged**. Geography was never what drove
+it — longitudinal health-adjacent data about identifiable people was, and narrowing the audience
+does not touch that.
+
+**Why this could not stay deferred.** The signed risk acceptance rests, under Q2, on eligibility
+being "limited to Swiss residents, stated in the Terms and attested at request time". Until these
+edits landed, neither was true — the assessment asserted a control that did not exist. A signed
+document describing controls you do not have is worse than no document.
 
 ---
 
@@ -492,22 +510,21 @@ Recorded here because accepted risk should be visible and revisitable, not becau
 revisiting now. Two conditions would justify reopening it: the beta acquiring users who would
 be materially harmed by permanent loss of the service, or the project becoming commercial.
 
-**Domain renewal — recorded 2026-08-07.**
+**Domain renewal — recorded 2026-08-07; auto-renew confirmed 2026-08-10.**
 
 ```
 gymtrack.ch expires 2027-07-20
-Auto-renew: NOT enabled
+Auto-renew: enabled at Infomaniak
 ```
 
-This sits outside the accepted-risk decision above, because it is not a low-probability
-simultaneous failure — it is a **scheduled certainty** with roughly eleven months' notice. If
-the domain lapses, the application, all three contact addresses and the Cloudflare tunnel stop
-at the same moment, and the name enters a redemption period that is expensive to reverse and
-sometimes not reversible at all.
+Auto-renew removes the known lapse caused by an omitted manual renewal. A failed charge can
+still let the domain lapse; the application, all three contact addresses and the Cloudflare
+tunnel would then stop at the same moment, and recovering the name could be expensive or
+impossible.
 
-The fix is two clicks and free. Recommended actions:
+Remaining renewal safeguards:
 
-- [ ] Enable auto-renew at Infomaniak.
+- [x] Enable auto-renew at Infomaniak (confirmed by the controller 2026-08-10).
 - [ ] Confirm the payment card on file does not expire before 2027-07-20. Auto-renew fails
       silently when the card has expired, which reintroduces the whole failure with none of the
       warning.
