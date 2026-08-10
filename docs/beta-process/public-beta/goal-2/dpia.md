@@ -1,12 +1,13 @@
 # Data Protection Impact Assessment — Founding Beta
 
-Version 1.0 (draft) · 2026-08-08 · Supersedes nothing; completes
-[dpia-screening.md](../dpia-screening.md)
+Version 1.1 · prepared 2026-08-08 · controller-approved 2026-08-10 · supersedes nothing; completes
+[dpia-screening.md](../goal-1/dpia-screening.md)
 
-**Status: not approved.** This is the controller's own assessment, prepared with engineering
-input. It is not legal advice and no part of it has been reviewed by a qualified adviser.
-Section 15 lists the questions where being wrong would be expensive, and those are the ones
-that warrant qualified input rather than judgement.
+**Status: approved by the controller, Jan Haag, on 2026-08-10.** This is the controller's own
+assessment, prepared with engineering input. Approval records the controller's decision and
+risk acceptance; it is not legal advice, a legal-compliance certification, or approval by a
+qualified adviser. Section 15 preserves the questions that would need independent review if a
+recorded trigger fires.
 
 ---
 
@@ -35,7 +36,7 @@ protection adviser; none is appointed. The controller performs the role personal
 
 **Register of processing activities.** Maintained as
 [processor-inventory-final.md](processor-inventory-final.md) and
-[data-processing-inventory.md](../data-processing-inventory.md). Small private controllers have
+[data-processing-inventory.md](../goal-1/data-processing-inventory.md). Small private controllers have
 a partial exemption, but the register exists regardless and costs nothing to keep.
 
 ## 2. Why a DPIA at all
@@ -97,7 +98,7 @@ The controller's position, subject to section 15:
 
 ## 5. Sensitive personal data
 
-**This is the most consequential open question in the assessment.**
+**This is the most consequential classification judgement in the assessment.**
 
 The revFADP defines sensitive personal data to include data on health. Whether this service
 processes it is genuinely arguable in both directions.
@@ -114,8 +115,10 @@ health and routine. The screening reached this conclusion independently.
 
 **Position taken.** The controller treats the data as **potentially sensitive** and applies
 sensitive-data handling throughout: no disclosure to third parties beyond the processors in
-section 6, opt-in analytics, encryption at rest via full-disk encryption, and hard erasure on
-request. This is the conservative option and costs little, since the controls were built anyway.
+section 6, opt-in analytics, restricted self-hosted storage, encrypted off-machine backups, and
+hard erasure on request. This is the conservative option and costs little, since the controls
+were built anyway. The production host's full-disk encryption state remains to be recorded and
+is not assumed here.
 
 Mitigating factor worth noting: the body profile — the most clearly physiological category —
 **never reaches the server**. It lives in browser storage only, is excluded from the account
@@ -229,11 +232,10 @@ persist indefinitely in snapshots.
 | Objection to optional processing | Analytics and feedback toggles in Settings | Built |
 | Withdraw device storage consent | Explicit choice plus per-account device clearing | Built |
 
-**A defect the assessment must record honestly.** The legal pages are statically prerendered at
-build time and read `process.env` in server components with no dynamic rendering opted in.
-Controller identity and contact details will therefore display as placeholders under a
-`PUBLICATION_BLOCKED` banner in production regardless of configuration. The information duty
-cannot be satisfied until this is fixed. It is a known blocker assigned to Goal 5.
+**Repository fix completed; deployed verification remains.** The legal routes now opt into
+dynamic rendering, so server-side controller/contact values are no longer frozen as build-time
+placeholders. Goal 4/5 must still verify the rendered staging and production HTML and confirm
+that no `PUBLICATION_BLOCKED` banner appears with the approved configuration.
 
 ## 12. Personal data breach workflow
 
@@ -271,7 +273,7 @@ claimed as consultation.
 | | |
 |---|---|
 | Prepared | 2026-08-08 |
-| Approved by | **Not approved** |
+| Approved by | **Jan Haag, controller, 2026-08-10** |
 | Review date | Within 12 months of launch, or on any trigger below |
 
 **Re-screen triggers**, unchanged from the screening: material change to data categories,
@@ -279,11 +281,14 @@ analytics or tracking, campaign logic, automation, minors policy, geographic sco
 payments, AI features, data sharing, or scale. Widening beyond Switzerland is a trigger. Any
 form of monetisation is a trigger.
 
-## 15. Questions requiring qualified input
+## 15. Questions covered by controller self-assessment
 
-These are the points where the controller's own reasoning is not a sufficient basis, ordered by
-what it costs to be wrong. A qualified adviser briefed with this document, the processor
-inventory and the rendered pages should be able to work through them efficiently.
+These are the points where independent advice could reduce uncertainty, ordered by what it
+costs to be wrong. The controller chose the documented positions in
+[legal-risk-acceptance.md](legal-risk-acceptance.md) and approved them on 2026-08-10 instead of
+engaging counsel for this bounded beta. They are not open approval conditions. A qualified
+adviser should revisit them if any recorded review trigger fires. The provider transfer basis
+in item 3 remains a factual documentation action, not a legal-approval question.
 
 1. **Is this sensitive personal data?** Does strength-training history — combined with optional
    browser-only body metrics and unconstrained free-text notes — constitute data on health under
@@ -323,6 +328,6 @@ inventory and the rendered pages should be able to work through them efficiently
 
 It does not establish compliance, and it should not be cited as though it does. It is a
 structured, honest account of what is processed, why, what could go wrong and what has been done
-about it — prepared by the controller with engineering input, and unreviewed.
+about it — approved by the controller with engineering input and not independently reviewed.
 
 Its most useful property may be that writing it surfaced four real defects that testing had not.

@@ -1,6 +1,9 @@
 # Public Beta Data Processing Inventory
 
-Status: implementation inventory for legal and operator review. It is not legal advice. The public launch is blocked until the controller and qualified reviewer confirm the purposes, legal bases, processors, transfers, and wording against the deployed system.
+Status: controller-reviewed implementation inventory. The DPIA and legal-risk self-assessment
+were approved by the controller on 2026-08-10; they are not legal advice or counsel review.
+Public launch remains blocked until unresolved provider transfer/retention facts are recorded
+and this inventory is verified against the deployed system.
 
 | Area | Fields or records | Purpose | Location / recipients | Default retention | User controls |
 | --- | --- | --- | --- | --- | --- |
@@ -19,7 +22,7 @@ Status: implementation inventory for legal and operator review. It is not legal 
 | Activity counters | successful login count; completed workout count | Reliable one-time campaign triggers independent of optional analytics | PostgreSQL | Account lifetime | JSON export; deletion |
 | Waitlist | reference, email, status, Privacy version, adult attestation, request/review/block/invite/use times, reviewer ID, joined-user reference; hashed invitation token | Admission, cap/seat control, abuse prevention | PostgreSQL; owner queue; Telegram receives only reference/time | Pending 180 days; expired/consumed invitation 30 days; blocked-address retention requires legal review | Generic public response; support/privacy request |
 | Product events | event name, bounded properties, optional account ID, timestamp | First-party product understanding | PostgreSQL; operator aggregate review | Identifiable opt-in events 90 days; anonymous aggregates may remain | Account-linked collection off by default; opt-in/out; JSON export; deletion |
-| Campaign | owner-authored plain text, trigger, audience, optional HTTPS link, response design, publication state | In-app service notices and optional beta feedback | PostgreSQL | Campaign definition retained for operational audit; review with counsel | Published audience/content immutable; pause/end |
+| Campaign | owner-authored plain text, trigger, audience, optional HTTPS link, response design, publication state | In-app service notices and optional beta feedback | PostgreSQL | Campaign definition retained for operational audit under the controller-approved retention model | Published audience/content immutable; pause/end |
 | Message delivery | user/campaign IDs, eligibility/show/dismiss/respond times, bounded response JSON | Exactly-once delivery and optional response | PostgreSQL; owner admin | Response 180 days after collection/closure target, then response body cleared; delivery metadata until account deletion/campaign retention review | Prompt opt-out except essential notices; dismiss; account export/deletion |
 | Admin audit | admin ID, action, target type/reference, bounded details, timestamp | Privileged-action accountability for invitations, status containment and session revocation | PostgreSQL; authenticated administrator UI exposes recent cursor-paginated events with allowlisted details | Retention must be finalized by legal/security review | Not in ordinary export because it may concern other users; privacy request review |
 | API/application logs | request ID, normalized route, method, status, duration, bounded error type; no raw tokens or user/email labels | Reliability and security | Local logging stack / configured log processor | 30 days | Access by authorized operator only |

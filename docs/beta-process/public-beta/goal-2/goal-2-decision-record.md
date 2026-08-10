@@ -1,6 +1,6 @@
 # Goal 2 Decision Record — Human and External Decisions
 
-Started: 2026-08-06. Controller: to be supplied (item 1).
+Started: 2026-08-06. Controller: Jan Haag.
 
 This is the master log for the ten Goal 2 items. Each carries a status, the decision, its
 rationale, and whatever remains open. It is updated as items resolve, not written once.
@@ -10,8 +10,9 @@ direction chosen, details or external actions outstanding. `Open` — not yet wo
 `Deferred` — deliberately postponed with a named trigger. `Blocked` — waiting on something
 outside this repository.
 
-No checkbox in [launch-gates.md](../launch-gates.md) is changed by this document. Those require
-deployed evidence, which belongs to Goals 4–6.
+No deployed-system checkbox in [launch-gates.md](../goal-1/launch-gates.md) is changed by this
+document. The two document-evidence gates for controller legal-risk acceptance and DPIA
+approval are checked against the signed records; operational gates still require Goals 4–6.
 
 ## Summary
 
@@ -20,17 +21,18 @@ deployed evidence, which belongs to Goals 4–6.
 | 9 | Staging host | **Decided** | — |
 | 8 | Owner workout data | **Decided** | admin bootstrap + email verification → Goal 5 |
 | 7 | Availability expectations | **Decided** | — |
-| 5 | Support expectations | **Decided** | page edits not yet applied |
-| 3 | Allowed jurisdictions | **Decided** | wording changes not yet applied |
-| 1 | Controller identity | **Decided** | rendering fix owed by Goal 1/5 |
-| 4 | Provider and processor inventory | **Decided** | transfer basis deferred to item 2 |
+| 5 | Support expectations | **Decided** | repository wording implemented; deployed verification → Goal 5 |
+| 3 | Allowed jurisdictions | **Decided** | Switzerland-only wording implemented in current worktree |
+| 1 | Controller identity | **Decided** | dynamic rendering implemented; deployed configuration verification → Goal 5 |
+| 4 | Provider and processor inventory | **Complete** | — |
 | 6 | Billing, ownership, MFA, recovery | **Decided** | residual risk accepted; payment-method check + costs outstanding |
-| 10 | Public repository and licensing | **Decided** | 3D asset terms; pre-publication checklist |
-| 2 | Legal review and DPIA | **Deferred** | Pass D; needs 1, 3, 4, 5, 7, 8 |
+| 10 | Public repository and licensing | **Decided** | 3D models excluded from MIT; remove/replace or prove redistribution rights before public delivery |
+| 2 | Legal review and DPIA | **Complete** | controller-approved self-assessment; no counsel review |
 
-All decisions taken so far are recorded below. Everything still outstanding is an external
-action in [goal-2-external-actions.md](goal-2-external-actions.md) — nothing is waiting on
-further discussion except the item 3 sub-decisions and the Pass C items not yet worked.
+All ten decisions are recorded below. Remaining work is execution or evidence in
+[goal-2-external-actions.md](goal-2-external-actions.md): provider transfer/retention records,
+staging/production email configuration, account-recovery bookkeeping, the FBX asset decision,
+and later deployed verification. The legal/DPIA decision itself is closed.
 
 ---
 
@@ -198,7 +200,7 @@ external probe that area 15 of the audit already recommended.
 
 ## Item 5 — Support expectations
 
-**Status: Provisional** · 2026-08-06
+**Status: Decided** · 2026-08-06; repository wording implemented
 
 **Decided:** a single support mailbox plus in-app announcements through the existing campaign
 system. **No published response time** — best effort only, consistent with the item 7 posture.
@@ -215,7 +217,7 @@ no window is given — that costs nothing and prevents silence reading as abando
 **Addresses, from item 1:** support is `support@gymtrack.ch`; security reports go to
 `security@gymtrack.ch`, an alias onto the same mailbox. `SUPPORT_EMAIL` on the API takes the
 same value, and `apps/api/src/main.ts` already derives the Resend reply-to from it, so the
-three-way match required by [launch-gates.md](../launch-gates.md) is satisfied by configuration
+three-way match required by [launch-gates.md](../goal-1/launch-gates.md) is satisfied by configuration
 rather than by discipline.
 
 **Status page — resolved 2026-08-06.** The "Service status" section is removed from
@@ -223,11 +225,9 @@ rather than by discipline.
 Reasoning in
 [availability-and-support-commitments.md](availability-and-support-commitments.md#contradictions-in-existing-copy-that-these-decisions-create).
 
-**Open:**
-
-- [ ] Confirmation that no helpdesk provider is used, so item 4 gains no processor here
-      (external action B1).
-- [ ] Mailbox activation, so the addresses actually receive (external action A5).
+**Completed:** no helpdesk provider is used for the first cohort. Infomaniak mail and the
+support/privacy/security addresses are active and tested under A5. Production configuration and
+rendered verification remain Goals 3–5 evidence, not an unresolved support decision.
 
 **Artifact.** [availability-and-support-commitments.md](availability-and-support-commitments.md)
 
@@ -418,38 +418,35 @@ EMAIL_FROM=Gym Progress Tracker <noreply@send.gymtrack.ch>
 lost by leaving it unset for the first cohort.
 
 These values go in the production and staging environment files only — never in
-`.env.example`, which is a template. They will not render until the static-prerender defect
-above is fixed.
+`.env.example`, which is a template. The repository now reads them dynamically on each legal
+route; staging and production must still verify the rendered HTML.
 
-**Open:** activation of the mail service and the DNS records (external action A5).
+**External contact action complete:** Infomaniak mail and the support/privacy/security addresses
+were configured and tested under A5. Production/staging environment configuration and rendered
+verification belong to Goals 3–5.
 
-**Configuration this will produce:** `NEXT_PUBLIC_CONTROLLER_NAME`,
-`NEXT_PUBLIC_CONTROLLER_ADDRESS`, `NEXT_PUBLIC_PRIVACY_EMAIL`, `NEXT_PUBLIC_SUPPORT_EMAIL`,
-`NEXT_PUBLIC_SECURITY_EMAIL`, optionally `NEXT_PUBLIC_SUPPORT_URL`, plus `SUPPORT_EMAIL` and
-the `EMAIL_FROM` reply-to on the API.
+**Configuration this produces:** server-only `CONTROLLER_NAME`, `CONTROLLER_ADDRESS`,
+`PRIVACY_EMAIL`, `SUPPORT_EMAIL`, and `SECURITY_EMAIL`; optional client-visible
+`NEXT_PUBLIC_SUPPORT_URL`; plus the API sender/reply-to configuration.
 
-> **Blocking dependency, not yet resolved.** These values will not reach users as the code
-> stands. `apps/web/src/features/legal/legal-page.tsx` reads `process.env.NEXT_PUBLIC_*` inside
-> server components that use no dynamic API; there is no `export const dynamic` anywhere under
-> `apps/web/src/app`; and the `Dockerfile` passes no build args. Next.js statically prerenders
-> `/privacy`, `/terms`, `/cookies` and `/support` at build time, freezing in the placeholders
-> and the `PUBLICATION_BLOCKED` banner. Two distinct fixes are needed: force dynamic rendering
-> for the server-rendered legal routes, and pass build args for the genuinely client-side use in
-> `apps/web/src/features/settings/help-support-panel.tsx`. Goal 2 records the values; the fix
-> belongs to Goal 1 or Goal 5; Goal 4 must verify the rendered production HTML.
+> **Repository fix complete; deployed evidence open.** `/privacy`, `/terms`, `/cookies` and
+> `/support` force dynamic rendering and use plain server environment variables, so controller
+> values are no longer frozen into the image. Goal 3/4 must prove the staging HTML and Goal 5
+> must prove production HTML contains the approved values with no `PUBLICATION_BLOCKED` banner.
 
 ---
 
 ## Item 4 — Final provider and processor inventory
 
-**Status: Provisional** · 2026-08-07
+**Status: Decided** · 2026-08-07; provider evidence remains
 
 Written as [processor-inventory-final.md](processor-inventory-final.md). Every provider is
 classified as processor, controller-operated, or no-personal-data, because treating them alike
 produced a misleading picture.
 
-**Four processors:** Infomaniak (CH — mail), Cloudflare (US — connection metadata, no payload),
-Resend (US — recipient address and full message body), Telegram (reference and timestamp only).
+**Three processors:** Infomaniak (CH — mail), Cloudflare (US — connection metadata, no payload),
+and Resend (US — recipient address and full message body). Telegram is limited to
+infrastructure alerts and does not receive personal data.
 
 **Findings worth carrying forward:**
 
@@ -471,12 +468,26 @@ personal data and is no longer a processor. That last one required no code chang
 Telegram streams are already independently configured, so it is achieved by leaving
 `TELEGRAM_BETA_BOT_TOKEN` and `TELEGRAM_BETA_CHAT_ID` unset on the API.
 
-**Open:** one substantive item — the transfer basis for Cloudflare and Resend, which is a
-question for item 2 rather than an engineering lookup. Plus `gym-prod` disk encryption, which
-pairs with the item 8 inspection, and a status-page host if that page is ever deployed.
+**Closed 2026-08-10.** Both US processors' transfer bases are recorded with version stamps:
 
-Exact provider retention windows and plan costs were deliberately not chased: free or near-free
-tiers on published standard terms, and neither changes a launch decision.
+| Provider | Basis | Document |
+|---|---|---|
+| Cloudflare | Swiss-U.S. Data Privacy Framework, EU SCCs (2021/914) + Swiss modifications as fallback | DPA v6.4, 2026-04-03 |
+| Resend | EU SCCs (2021/914) with Swiss modifications (§6.5) — no DPF | DPA of 2025-12-31 |
+
+Worth recording that the two do **not** rest on the same footing. Cloudflare's Framework
+participation follows an adequacy determination; Resend relies on contractual clauses alone —
+and Resend handles the most sensitive payload in the inventory, being recipient addresses and
+full message bodies including single-use action links. Both accepted under Q3 of the risk
+acceptance, with any DPA version change already a recorded re-screen trigger.
+
+**Deliberately not chased:** provider-side retention windows, `gym-prod` disk encryption (pairs
+with a future SSH session), and a status-page host if that page is ever deployed. None changes a
+launch decision.
+
+Exact provider retention windows still need to be recorded because the processing inventory and
+launch gate promise them. Plan costs are operational bookkeeping and do not change the launch
+decision.
 
 A draft public-facing processor summary for the Privacy Notice is included, publishable once
 the open cells close and item 2 approves the wording.
@@ -568,73 +579,42 @@ on a `localStorage` key name matched by entropy.
 are checked rather than before. Beforehand they are an itemised list of one's own unverified
 controls; afterwards the same documents read as evidence of a rigorous verification programme.
 
-**Open:** confirm the 3D model terms (NOTICE carves them out of the MIT grant pending that),
-and the pre-publication checklist in the plan.
+**3D model boundary:** the two FBX files are explicitly **not covered by MIT**. Their applicable
+generator/account terms and redistribution rights are not proven. Because the public web app
+serves these files to browsers, this is not only a future GitHub concern: before the first
+public beta they must either be removed/replaced with assets carrying known redistributable
+terms, or their actual terms must be documented in NOTICE. The remaining repository-publication
+work is the pre-publication checklist in the plan.
 
 ---
 
 ## Item 2 — Legal review and DPIA
 
-**Status: Provisional** · 2026-08-08 — DPIA drafted, approach decision outstanding
+**Status: Decided** · controller approval recorded 2026-08-10
 
-**Trigger fired.** Items 1, 3, 4, 5, 7 and 8 all closed, so the assessment had firm inputs.
+The full [DPIA](dpia.md) is complete and approved by Jan Haag as controller. The companion
+[legal-risk acceptance](legal-risk-acceptance.md) is signed on the same date. The chosen approach
+is documented self-assessment and written residual-risk acceptance rather than engaging counsel
+for this free, Switzerland-only, invitation-only beta capped at 50 accounts.
 
-**[dpia.md](dpia.md) written**, following the required-evidence list in the screening: governing
-law, controller role, processing activities, justification, sensitive-data analysis, necessity
-and proportionality, processors and transfers, risk assessment, security-control evidence
-status, retention, data-subject rights, breach workflow, consultation decision, and review
-triggers.
+This is deliberately precise: the documents are **controller-approved, not counsel-reviewed**,
+and they do not certify legal compliance. The acceptance becomes void and qualified review is
+required if any recorded trigger fires: scope beyond Switzerland, monetisation, material cap
+increase, new sensitive data or AI processing, a personal-data breach, or regulatory contact.
 
-**It is not approved and does not establish compliance.** It is the controller's own assessment
-with engineering input, unreviewed.
+The controller accepted the conservative treatment of training data as potentially sensitive,
+the Switzerland-only GDPR position, the Terms/no-medical-advice wording, the DPIA/no-prior-FDPIC-
+consultation position, the deferred self-service email-change gap, existing-account policy
+acceptance handling, and the stated availability/support posture. The no-medical-advice wording
+has been strengthened, and invite-bound signup prevents the earlier hypothesised typo-created
+account lockout.
 
-**Three findings worth carrying forward:**
+Two operational follow-ups remain, neither of which makes the approval provisional:
 
-- The screening's conclusion is retained but qualified. The revFADP requires a DPIA at **high
-  risk**, particularly extensive sensitive-data processing or large-scale monitoring. Fifty
-  accounts is not large scale, so there is a genuine argument no formal DPIA is mandated. It was
-  completed anyway — and surfaced four real defects that testing had not.
-- **No unmitigable high residual risk was identified**, which on the controller's own reading
-  means prior FDPIC consultation is not required. That reading needs confirmation.
-- **No breach-notification procedure exists.** The revFADP requires notifying the FDPIC as soon
-  as possible for high-risk breaches. Section 12 specifies the minimum procedure; building it is
-  assigned to Goal 5. Launching without it means improvising during the one event where
-  improvisation costs most.
+1. Retrieve and record the current Cloudflare and Resend transfer terms/DPAs in the processor
+   inventory. This is a factual provider-documentation action and remains a launch prerequisite.
+2. Implement and rehearse the personal-data-breach procedure identified in DPIA section 12 as
+   part of Goal 5 incident readiness.
 
-**Eight questions require qualified input**, listed in section 15 and ordered by cost of being
-wrong. The first is the one everything hangs from: whether strength-training history, combined
-with optional browser-only body metrics and unconstrained free-text notes, constitutes health
-data under Art. 5(c) revFADP.
-
-**Approach decided 2026-08-08: documented self-assessment with written risk acceptance**, rather
-than engaging counsel. Proportionate to a free, invitation-only, fifty-account beta operated by
-one person in Switzerland, and consistent with the posture recorded under item 6.
-
-[legal-risk-acceptance.md](legal-risk-acceptance.md) records a proposed position on each of the
-eight questions, with reasoning and residual risk, plus bounded review triggers that void the
-acceptance — widening beyond Switzerland, any monetisation, a material cap increase, new data
-categories or AI features, a breach, or regulatory contact.
-
-**Six of eight are accepted. Two deliberately are not:**
-
-- **Q3, transfer basis, is an action rather than a judgement.** Cloudflare and Resend both
-  publish their terms; retrieving and recording them is twenty minutes. Accepting standard terms
-  is normal for a controller this size — not knowing which terms apply is different.
-- **Q6, the rectification gap, is a defect to fix.** Email and username are immutable with no
-  operator tooling, so an invited user who mistypes their address at signup can end up unable to
-  verify, reset, correct **or** delete an account holding their data. That is a data subject
-  locked out of both rectification and erasure, which is worse than anything else on the list.
-  A documented operator correction procedure is the minimum; assigned to Goal 5.
-
-**Open:** controller signature; the two items above; and one wording change strengthening the
-no-medical-advice clause, since the app computes estimated one-rep maxima that a user could read
-as a prescription.
-
-At that point the choice is between a scoped paid consultation covering only what
-Switzerland-only leaves open, and a documented self-assessment with written residual-risk
-acceptance. The preparatory artifact is the same either way: a full DPIA built out from the
-existing [screening](../dpia-screening.md), the finalized inventory, draft Privacy, Terms and
-Cookie wording, and a specific question list.
-
-**Goal 2 does not close until this item has a recorded resolution.** Deferred is a valid
-interim status; unaddressed is not.
+The DPIA and controller legal-risk acceptance document gates are therefore complete. Rendered
+policy/configuration verification remains a separate deployed-system gate.

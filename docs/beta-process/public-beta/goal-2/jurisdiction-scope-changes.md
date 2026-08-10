@@ -74,7 +74,7 @@ being attempted.
 ### 6. `docs/00-workflow.md:269`
 "50 worldwide-targeted, English-speaking adult founding members" → Switzerland-resident.
 
-### 7. `docs/beta-process/public-beta/launch-gates.md:10`
+### 7. `docs/beta-process/public-beta/goal-1/launch-gates.md:10`
 The counsel gate is written around approving a worldwide target:
 
 > Qualified counsel approves worldwide target or records excluded jurisdictions, Swiss

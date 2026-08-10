@@ -10,17 +10,19 @@ apps/web/public/models/avatar/avatar-base.fbx
 apps/web/public/models/avatar/base-v-2.fbx
 ```
 
-Generated using an online AI 3D model generator (Meshy.ai or equivalent).
+Generated using an online AI 3D model generator (recorded as Meshy.ai or equivalent; exact
+generator account and plan evidence has not been retained in the repository).
 
-> **Terms not yet confirmed.** AI 3D generation services differ substantially in
-> what they grant, and free tiers frequently differ from paid ones. Some place
-> free-tier output under CC BY 4.0, which would require attribution; some
-> restrict commercial use; others assign full ownership to the user. "Free to
-> generate" is not the same as "free to redistribute".
+> **Excluded from MIT; redistribution rights not established.** The repository's
+> MIT licence grants no rights to these FBX files. AI 3D generation services and
+> account tiers differ substantially in what they permit, and the terms applying
+> to these particular outputs have not been proven.
 >
-> Until the terms applying to these specific files are confirmed against the
-> generating account's plan, they are **not** covered by the MIT grant above.
-> Confirm and replace this note with the actual licence.
+> Do not publish, redistribute, or serve these files as part of a public beta on
+> the authority of this repository's MIT licence. Before public delivery, either
+> document the actual generating service, account tier, applicable terms and any
+> attribution requirements, or remove/replace the files with assets carrying
+> known redistributable terms.
 
 ## Exercise catalog
 

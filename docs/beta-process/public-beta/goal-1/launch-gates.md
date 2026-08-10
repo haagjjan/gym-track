@@ -7,9 +7,10 @@ The beta may be promoted only after every blocker is checked with linked evidenc
 - [ ] Real controller legal name and postal address configured.
 - [ ] Dedicated support, privacy and security email addresses configured and tested; API `SUPPORT_EMAIL` matches the published web support contact and Resend reply-to.
 - [ ] Final support provider and every processor/region/transfer/retention recorded.
-- [ ] Swiss FADP applicability, justification per processing category, sensitive-data analysis, transfers, Terms/liability/no-medical-advice, shared contributions and voluntary support are all assessed and recorded. Scope is Switzerland-only per ADR 0016, so excluded-jurisdiction lists and EU representative appointment do not arise. Resolved by documented self-assessment ([legal-risk-acceptance.md](goal-2/legal-risk-acceptance.md)) rather than counsel; that acceptance is void on any of its recorded triggers.
-- [ ] Full DPIA completed, approved and assigned a review date.
+- [x] Swiss FADP applicability, justification per processing category, sensitive-data analysis, Terms/liability/no-medical-advice, shared contributions and voluntary support are assessed and accepted by the controller. Scope is Switzerland-only per ADR 0016. Evidence: [signed legal-risk acceptance](../goal-2/legal-risk-acceptance.md). This is self-assessment rather than counsel review and becomes void on any recorded trigger. Provider transfer documents remain under the processor gate above.
+- [x] Full DPIA completed, approved by the controller on 2026-08-10 and assigned a review date. Evidence: [DPIA](../goal-2/dpia.md).
 - [ ] Final rendered Privacy, Terms, Cookie/Storage, Support and beta-limitations pages match production behavior and are version archived.
+- [ ] Bundled FBX models have documented redistribution terms and required attribution, or are removed/replaced before public delivery; [NOTICE](../../../../NOTICE) matches the delivered asset set.
 
 ## Production systems
 

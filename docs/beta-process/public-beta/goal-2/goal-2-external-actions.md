@@ -70,8 +70,11 @@ A6 — this is now the single highest-consequence configuration choice in Goal 2
 
 **Blocks:** items 1, 4 and 5; `SUPPORT_EMAIL`, and therefore the API boot contract on staging.
 
-### A7 — Create a Resend account · items 4, 12; **blocks Goal 3**
-Confirmed 2026-08-07: nothing has been set up. No account, no key, no sending domain.
+### A7 — Configure Resend for staging · items 4, 12; **partially complete, still blocks Goal 3**
+
+The Resend account was created on 2026-08-07 (free tier, Google SSO, US entity). No secret is
+stored in this repository. Staging still needs its own API key/configuration, and the production
+sending domain remains separate under B2.
 
 This is now on the critical path in two independent ways.
 
@@ -84,16 +87,20 @@ it means Resend precedes staging rather than following it.
 verification, password reset, deletion scheduling and the cancellation link. Without Resend the
 application runs and no one can be invited, verify an address, or recover an account.
 
-Minimum to unblock staging:
+Minimum remaining work to unblock staging:
 
-1. Create the account — the free tier is ample for a 50-account beta.
-2. Take an API key.
-3. Use `onboarding@resend.dev` as the staging sender. No DNS needed, and it can only deliver to
-   your own registered address, so staging cannot reach a real tester by accident.
+1. Verify `send.gymtrack.ch` and create a sending-only staging API key; store it only in the
+   staging secret environment.
+2. Confirm the Resend/Google identity has appropriate MFA and recovery protection.
+3. Use `staging@send.gymtrack.ch` as the staging sender and configure exactly two
+   owner-controlled addresses in the staging-only `EMAIL_RECIPIENT_ALLOWLIST`. The repository
+   guard now refuses staging boot without that list and blocks other recipients before Resend.
 
-Domain verification for `send.gymtrack.ch` is separate and belongs to production — see B2.
+The same verified subdomain is later used for production, but production gets a separate key and
+sender configuration. The staging key and recipient allowlist are never reused.
 
-Record the plan, region and retention while you are in the console; item 4 needs all three.
+Record provider retention and the applicable transfer/DPA terms while you are in the console;
+item 4 still needs those facts.
 
 ### A6 — Break the recovery loop, then build the register · item 6
 The register template comes in Pass C. These parts are urgent and independent of it, because
@@ -124,8 +131,10 @@ addresses into a single account.
 
 ## Non-blocking, but do them early
 
-### B1 — Confirm no helpdesk provider · item 5
-Assumed for now, which keeps item 4 simpler. Say if you would rather use one.
+### ~~B1 — Confirm no helpdesk provider~~ · resolved 2026-08-10
+
+No helpdesk provider is used for the first cohort. Support, privacy and security correspondence
+uses the configured Infomaniak mailbox/aliases and the operator's local mail client.
 
 ### B2 — Add the Resend DNS records for `send.gymtrack.ch` · items 1, 4
 Decided 2026-08-06: Resend sends from a subdomain, so no SPF merging is needed on the root.
@@ -183,8 +192,8 @@ configuration change. See the note in the decision record about one optional wor
 ### ~~B4 — Decide the status page question~~ · resolved 2026-08-06
 The "Service status" section is **removed** from `apps/web/src/app/support/page.tsx` rather
 than deferred, so the page stops pointing at a domain that does not resolve. The template in
-`ops/status/` stays ready and the section returns when the page is genuinely live. The edit
-itself has not been made — it belongs with the item 5 support-page rewrite.
+`ops/status/` stays ready and the section returns when the page is genuinely live. The
+repository edit is complete; deployed rendering remains a later verification step.
 
 ## Handed to other goals
 
@@ -199,7 +208,7 @@ port; see [ADR 0017](../../../decisions/0017-secure-remote-administration.md) an
 |---|---|---|
 | Decide how an external applicant reaches `/beta` while Cloudflare Access gates `app.gymtrack.ch` | Goal 5 | The waitlist form must be publicly reachable for anyone to request access, but Access currently protects the whole hostname. `launch-gates.md` keeps the private gate until direct API signup cannot bypass invite admission, so the two requirements have to be reconciled deliberately rather than discovered at launch |
 | Root `gymtrack.ch` and `www` do not resolve — only `app.` does | Goal 5 | Survivable for a beta, but anyone typing the bare domain gets nothing. Decide whether to redirect to `app.` or leave it |
-| Force dynamic rendering on the legal routes, and build args for client-side `NEXT_PUBLIC_*` | Goal 1 or Goal 5 | Without it, every value from A4 and A5 stays invisible and `PUBLICATION_BLOCKED` stays on the page |
+| Verify the dynamically rendered legal routes with real server-only contact values | Goals 3–5 | The repository fix is complete; staging and production still need to prove the approved version renders without `PUBLICATION_BLOCKED` |
 | Execute [staging-environment-spec.md](staging-environment-spec.md) | Goal 3 | — |
 | Edge must overwrite `cf-connecting-ip` and friends on both hostnames | Goal 3, verified in Goal 4 | Rate limiting is bypassable until it does |
 | Verify rendered production HTML carries real controller values | Goal 4 | The check that catches the prerender defect |

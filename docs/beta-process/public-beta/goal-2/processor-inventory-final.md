@@ -1,7 +1,7 @@
 # Provider and Processor Inventory
 
 Item 4 of the [Goal 2 decision record](goal-2-decision-record.md). Supersedes the unresolved
-cells in [data-processing-inventory.md](../data-processing-inventory.md), which remains
+cells in [data-processing-inventory.md](../goal-1/data-processing-inventory.md), which remains
 authoritative for *what data exists*; this document covers *who touches it*.
 
 **Boundary.** This is an engineering inventory prepared for legal review, not legal advice. It
@@ -22,11 +22,11 @@ Not every provider is a processor, and treating them alike produces a misleading
 
 ## Processors
 
-| Provider | Entity / region | Personal data it touches | Retention | To verify |
+| Provider | Entity / region | Personal data it touches | Transfer basis | Retention |
 |---|---|---|---|---|
-| **Infomaniak** | Infomaniak Network SA, Geneva, **Switzerland** | Inbound and outbound support, privacy and security correspondence, including whatever a user chooses to write. Mailbox contents at rest | Until deleted from the mailbox; provider-side retention to confirm | Plan tier and cost; provider retention policy; DPA/terms reference |
-| **Cloudflare** | Cloudflare, Inc., US (Swiss traffic likely served from EU edge) | Connection metadata for every request: client IP, timestamp, user agent, requested hostname and path. Access identity for operator authentication. **No application payload** — TLS terminates at the tunnel and Caddy | Cloudflare log retention on the free plan to confirm | Free-plan log retention; transfer basis (DPF certification or SCCs); whether Access identity logs are retained separately |
-| **Resend** | Resend, Inc., **US** | Recipient address, subject and full body of every transactional email — invitations, verification, password reset, deletion and cancellation. Delivery, bounce and complaint metadata | Provider-side; the application keeps **no** outbox and no retry payload | Provider retention; transfer basis; bounce and suppression behaviour |
+| **Infomaniak** | Infomaniak Network SA, Geneva, **Switzerland** | Inbound and outbound support, privacy and security correspondence, including whatever a user chooses to write. Mailbox contents at rest | **No transfer** — Swiss processor, Swiss data subjects | Until deleted from the mailbox; provider-side retention not recorded |
+| **Cloudflare** | Cloudflare, Inc., **US** (Swiss traffic likely served from EU edge) | Connection metadata for every request: client IP, timestamp, user agent, requested hostname and path. Access identity for operator authentication. **No application payload** — TLS terminates at the tunnel and Caddy | **Swiss-U.S. Data Privacy Framework**, with EU SCCs (2021/914) plus Swiss modifications as fallback for Restricted Transfers. *Cloudflare DPA v6.4, 2026-04-03; retrieved 2026-08-10* | Free-plan log retention not recorded |
+| **Resend** | Resend, Inc., **US** | Recipient address, subject and full body of every transactional email — invitations, verification, password reset, deletion and cancellation. Delivery, bounce and complaint metadata | **EU SCCs (2021/914) with Swiss modifications** (§6.5). No DPF certification relied on. *Resend DPA, last updated 2025-12-31; retrieved 2026-08-10* | Provider-side; the application keeps **no** outbox and no retry payload |
 | ~~**Telegram**~~ | Telegram Messenger Inc. | **No personal data as of 2026-08-07.** Monitoring alerts only — alert name, severity, component, summary. The beta-request notification is being switched off, see below | n/a | — |
 
 ## Controller-operated
@@ -55,17 +55,29 @@ data actually lives, and the inventory is incomplete without them.
 Switzerland-only scope removes the transfer question for *data subjects*. It does not remove it
 for *processors*: FADP still requires adequate protection when personal data goes abroad.
 
-- **Infomaniak** — Swiss. No transfer. This is the strongest position in the inventory and is a
-  direct consequence of the item 1 provider choice.
-- **Cloudflare** and **Resend** — both US entities. Each needs a recorded basis: Swiss-US Data
-  Privacy Framework certification, Standard Contractual Clauses, or the provider's published
-  Swiss addendum. **Verify and record which applies to each** — do not assume.
-- **Telegram** — minimal pseudonymous data, but the same question applies and the answer is
-  less clear than for the other two. Worth asking whether Telegram alerting is worth keeping at
-  all, given it carries the weakest contractual position for the least benefit. A pull-based
-  admin queue check would remove the processor entirely.
+**Established 2026-08-10** from each provider's published data processing agreement. The
+documents were retrieved and retained privately; the version stamps below are what matters,
+because vendors revise these and what counts is the version relied on.
 
-Concluding whether each basis is adequate is item 2's job, not this document's.
+- **Infomaniak** — Swiss processor, Swiss data subjects. **No transfer arises.** This is the
+  strongest position in the inventory and a direct consequence of the item 1 provider choice.
+- **Cloudflare** — relies on the **Swiss-U.S. Data Privacy Framework**, with EU SCCs (2021/914)
+  plus Swiss modifications as a fallback for Restricted Transfers. *DPA v6.4, 2026-04-03.*
+  Framework participation is the cleaner of the two mechanisms, since it rests on an adequacy
+  determination rather than on contractual terms alone.
+- **Resend** — relies on **EU SCCs (2021/914) with Swiss modifications** (§6.5), with no DPF
+  certification. *DPA last updated 2025-12-31.* SCCs are a recognised mechanism; recording the
+  difference from Cloudflare matters because the two do not rest on the same footing, and
+  Resend is the processor handling the most sensitive payload — recipient addresses and full
+  message bodies.
+- **Telegram** — reduced to infrastructure alerts only, so no personal data is transferred and
+  no basis is required.
+
+**What this does and does not settle.** Each provider's mechanism is now recorded rather than
+assumed, which was the open action. Whether each is *sufficient* for this processing remains a
+judgement the controller has accepted under Q3 of
+[legal-risk-acceptance.md](legal-risk-acceptance.md) rather than one confirmed by a qualified
+adviser. Re-check on any DPA version change — that is a recorded re-screen trigger.
 
 ## Account facts
 
@@ -102,11 +114,15 @@ depend on — the same trigger already recorded for item 6.
 
 Reduced to what actually affects a launch decision.
 
-**For item 2 (legal) — the only one that genuinely matters:**
+**Provider documentation:**
 
-- [ ] Transfer basis for Cloudflare and Resend — Swiss-US Data Privacy Framework certification,
-      Standard Contractual Clauses, or the provider's published Swiss addendum. A question for
-      the legal step, not an engineering lookup.
+- [x] **Transfer basis recorded 2026-08-10** for both US processors — Cloudflare on the
+      Swiss-U.S. Data Privacy Framework (DPA v6.4, 2026-04-03), Resend on EU SCCs with Swiss
+      modifications (DPA of 2025-12-31). See *Transfers abroad* above. This was the last open
+      action in Goal 2.
+- [ ] Provider-side retention windows for Cloudflare and Resend remain unrecorded. Deliberately
+      not chased: both are published standard terms on free or near-free tiers, and neither
+      changes a launch decision. Retrieve if a recorded trigger fires.
 
 **Pairs with the item 8 inspection:**
 
@@ -119,9 +135,8 @@ Reduced to what actually affects a launch decision.
 **Answered 2026-08-07:** Resend account exists (free tier, Google SSO, US entity). FileVault
 confirmed enabled on the MacBook. Telegram no longer processes personal data — see below.
 
-**Not chased:** exact provider-side retention windows and precise plan costs. Free or near-free
-tiers on published standard terms; neither changes a launch decision. If counsel asks during
-item 2, they can be looked up then.
+**Still to record:** exact Cloudflare/Resend provider-side retention from their current terms.
+Precise plan costs are operational bookkeeping rather than a legal approval condition.
 
 ## Telegram — decided 2026-08-07
 

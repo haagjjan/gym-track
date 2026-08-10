@@ -1,10 +1,11 @@
 # DPIA Screening — Founding Beta
 
-Date: 2026-08-05. Owner: controller to be supplied. Review state: **screening indicates a full DPIA and qualified legal review are required before public launch**.
+Date: 2026-08-05. Owner: Jan Haag. Review state: **screening completed; the full DPIA and
+controller legal-risk self-assessment were approved on 2026-08-10**.
 
 This is an engineering screening, not a completed legal assessment. Workout patterns, free-text notes, optional body-profile values, account behavior counters and behavior-triggered feedback can reveal health, routine or lifestyle information. The service involves systematic tracking over time, introduces personalized prompt eligibility, uses processors/transfers, and is operated by one person. Those factors may combine into elevated risk even with a 50-account cap.
 
-Scope was narrowed to Switzerland-only on 2026-08-07, which removes the worldwide exposure this screening originally flagged. **The screening conclusion is unchanged**: geography was never what drove it. Longitudinal, health-adjacent data about identifiable people is, and that is untouched by narrowing the audience. The completed assessment is [goal-2/dpia.md](goal-2/dpia.md).
+Scope was narrowed to Switzerland-only on 2026-08-07, which removes the worldwide exposure this screening originally flagged. **The screening conclusion is unchanged**: geography was never what drove it. Longitudinal, health-adjacent data about identifiable people is, and that is untouched by narrowing the audience. The completed, controller-approved assessment is [dpia.md](../goal-2/dpia.md); the bounded self-assessment is [legal-risk-acceptance.md](../goal-2/legal-risk-acceptance.md). Neither is counsel review or a compliance certification.
 
 ## Processing characteristics
 
@@ -13,7 +14,7 @@ Scope was narrowed to Switzerland-only on 2026-08-07, which removes the worldwid
 - Data: identifiers, credentials, detailed training history and notes, optional browser-only body metrics, usage counters, optional event data and feedback.
 - Decisions: no automated eligibility, pricing, medical decision, or legal-significant profiling. Counters only decide when a configured in-app prompt becomes eligible.
 - Sharing: hosting/database, Resend/email infrastructure, Telegram alerting, off-machine encrypted backups, independent status host, and final support provider.
-- Geography: **Switzerland only** per [ADR 0016](../../decisions/0016-founding-beta-jurisdiction-scope.md), narrowed from worldwide on 2026-08-07. Eligibility is self-attested and enforced by manual approval. Excluded-jurisdiction lists and representative appointment do not arise; processor transfers to the US still require a recorded basis.
+- Geography: **Switzerland only** per [ADR 0016](../../../decisions/0016-founding-beta-jurisdiction-scope.md), narrowed from worldwide on 2026-08-07. Eligibility is self-attested and enforced by manual approval. Excluded-jurisdiction lists and representative appointment do not arise; processor transfers to the US still require a recorded basis.
 
 ## Principal risks and implemented mitigations
 
@@ -24,14 +25,19 @@ Scope was narrowed to Switzerland-only on 2026-08-07, which removes the worldwid
 | Excess collection | Unnecessary profiling | Account analytics off by default; no third-party analytics/ads; essential counters separated; plain bounded responses | Verify deployed storage and logs match notices |
 | Coercive feedback | User discomfort or dark patterns | Responses optional; permanent dismiss; feedback opt-out; at most one prompt; never over active workout | UX/accessibility review required |
 | Deletion failure or backup resurrection | Continued processing after erasure | Immediate lock/session revocation; seven-day grace; idempotent hard deletion; tombstone ledger; 30-day encrypted backup window | Isolated old-backup + latest-ledger proof required |
-| Shared exercise erasure conflict | Other users lose valid history or creator identity persists | Delete unreferenced definitions; null creator on shared references; disclosed rule | Legal review of contribution terms required |
+| Shared exercise erasure conflict | Other users lose valid history or creator identity persists | Delete unreferenced definitions; null creator on shared references; disclosed rule | Controller accepted the disclosed contribution rule; deployed lifecycle verification remains |
 | Applicant enumeration | Harassment/account discovery | Generic waitlist response across new/duplicate/account/blocked cases | Black-box timing/content test required |
 | Privilege misuse | PII/cap/deletion manipulation | Explicit ADMIN role; owner-only APIs; privileged audit events; Telegram is alert-only | Operator credential/MFA/access-log procedure required |
-| International transfers/provider retention | Unlawful or surprising disclosure | Inventory and public processor route foundation | Final providers, regions, contracts, SCC/Swiss safeguards and representatives require counsel |
-| Service/medical misunderstanding | Injury or reliance | Beta limitations and no-medical-advice route | Counsel review and final rendered-text sign-off required |
+| International transfers/provider retention | Unlawful or surprising disclosure | Inventory and public processor route foundation | Retrieve and record current Cloudflare/Resend transfer terms and retention facts |
+| Service/medical misunderstanding | Injury or reliance | Strengthened beta limitations and no-medical-advice wording accepted by controller | Final rendered-text staging/production sign-off required |
 
 ## Required DPIA completion evidence
 
-The controller and qualified reviewer must document: applicable Swiss/EU/other law; purposes and lawful bases per processing category; special/sensitive-data analysis; necessity/proportionality; data-subject consultation decision; processor and transfer assessment; excluded jurisdictions; risk scoring; security controls and test evidence; retention rationale; incident/data-breach workflow; controller/representative/DPO requirements; approval, review date and change triggers.
+The controller-approved DPIA documents applicable law, purposes and justification, potentially
+sensitive-data handling, necessity/proportionality, the consultation decision, processors,
+risk scoring, security evidence, retention, controller/DPO position, approval, review date and
+change triggers. Remaining operational evidence is explicit in the DPIA: provider transfer
+terms, deployed control verification, and the incident/data-breach workflow. Qualified review
+becomes required if a signed risk-acceptance trigger fires.
 
 Re-screen on any material change to data categories, analytics/tracking, campaign logic, automation, minors policy, public geography, processors, payments, AI, sharing, or scale.

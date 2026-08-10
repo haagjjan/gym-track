@@ -95,7 +95,7 @@ future scans are clean, and run `gitleaks` in CI.
 
 ## Publish these later, not at launch
 
-`docs/beta-process/public-beta/launch-gates.md` and `security-review.md` are a different
+`docs/beta-process/public-beta/goal-1/launch-gates.md` and `goal-1/security-review.md` are a different
 category from the homelab documentation. The homelab docs say *here is how I built it*. These
 two say *here is what I know is not yet verified* — an itemised list of one's own unverified
 controls, published while the service is live and the gates are unchecked.
@@ -108,9 +108,11 @@ impression worth giving. Publishing them beforehand mostly gives a reader a road
 
 ## Before flipping visibility
 
-- [ ] Confirm the 3D model terms and replace the placeholder in NOTICE. If redistribution is
-      not permitted, gitignore the `.fbx` files and document how to regenerate them — noting
-      they would also need removing from history.
+- [ ] Resolve the two FBX files before **public beta delivery as well as repository publication**.
+      They are excluded from MIT and their redistribution rights are not established. Either
+      document the actual generator/account-tier terms and required attribution, or remove and
+      replace them with known-redistributable assets. Removing them from a public repository also
+      requires addressing their existing Git history.
 - [ ] Decide on the IPv6 history scrub.
 - [ ] Add `.gitleaksignore`; add gitleaks to CI.
 - [ ] Rewrite `README.md` — it still describes a pre-beta project and points at
