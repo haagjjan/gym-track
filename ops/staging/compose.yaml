@@ -1,0 +1,243 @@
+services:
+  postgres:
+    image: docker.io/library/postgres:17.10-alpine3.24@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: gym_tracker_staging
+      POSTGRES_USER: gym_tracker_staging_owner
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_owner_password
+      POSTGRES_INITDB_ARGS: --data-checksums
+    secrets:
+      - postgres_owner_password
+      - postgres_app_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ${STAGING_POSTGRES_INIT_FILE:?Set STAGING_POSTGRES_INIT_FILE}:/docker-entrypoint-initdb.d/10-init-roles.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gym_tracker_staging_owner -d gym_tracker_staging"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    mem_limit: 1g
+    pids_limit: 256
+    stop_grace_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - database
+    logging: &bounded-logging
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  migrate:
+    image: ${STAGING_MIGRATE_IMAGE:?Set STAGING_MIGRATE_IMAGE to the exact release image}
+    profiles: ["operations"]
+    restart: "no"
+    user: "10001:10001"
+    read_only: true
+    init: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      HOME: /tmp
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        export DATABASE_URL="postgresql://gym_tracker_staging_owner:$$(cat /run/secrets/postgres_owner_password)@postgres:5432/gym_tracker_staging"
+        exec pnpm exec node-pg-migrate --config-file db/migrate.json up
+    secrets:
+      - postgres_owner_password
+    tmpfs:
+      - /tmp:uid=10001,gid=10001,mode=0700
+    depends_on:
+      postgres:
+        condition: service_healthy
+    mem_limit: 512m
+    pids_limit: 256
+    networks:
+      - database
+    logging: *bounded-logging
+
+  api:
+    image: ${STAGING_API_IMAGE:?Set STAGING_API_IMAGE to the exact release image}
+    restart: unless-stopped
+    user: "10001:10001"
+    read_only: true
+    init: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      API_HOST: 0.0.0.0
+      API_PORT: 4000
+      API_TRUST_PROXY: "false"
+      APP_BASE_URL: https://staging.gymtrack.ch
+      APP_ENV: staging
+      APP_RELEASE: ${APP_RELEASE:?Set APP_RELEASE to the full deployed Git SHA}
+      AUTH_COOKIE_NAME: gym_staging_session
+      AUTH_COOKIE_SECURE: "true"
+      AUTH_SESSION_TTL_DAYS: ${AUTH_SESSION_TTL_DAYS:-30}
+      EMAIL_FROM: ${EMAIL_FROM:-Gym Progress Tracker Staging <staging@send.gymtrack.ch>}
+      HOME: /tmp
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      METRICS_ENABLED: "true"
+      NODE_ENV: production
+      REGISTRATION_MODE: ${REGISTRATION_MODE:-INVITE_ONLY}
+      SUPPORT_EMAIL: ${SUPPORT_EMAIL:?Set SUPPORT_EMAIL}
+      TELEGRAM_BETA_BOT_TOKEN: ""
+      TELEGRAM_BETA_CHAT_ID: ""
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        export DATABASE_URL="postgresql://gym_tracker_staging_app:$$(cat /run/secrets/postgres_app_password)@postgres:5432/gym_tracker_staging"
+        export BFF_CLIENT_IP_SECRET="$$(cat /run/secrets/bff_client_ip_secret)"
+        export RESEND_API_KEY="$$(cat /run/secrets/resend_api_key)"
+        export EMAIL_RECIPIENT_ALLOWLIST="$$(cat /run/secrets/email_recipient_allowlist)"
+        exec pnpm --filter @gym-progress-tracker/api start
+    secrets:
+      - postgres_app_password
+      - bff_client_ip_secret
+      - resend_api_key
+      - email_recipient_allowlist
+    tmpfs:
+      - /tmp:uid=10001,gid=10001,mode=0700
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - fetch('http://127.0.0.1:4000/api/v1/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    mem_limit: 512m
+    pids_limit: 256
+    stop_grace_period: 30s
+    networks:
+      - application
+      - database
+    logging: *bounded-logging
+
+  web:
+    image: ${STAGING_WEB_IMAGE:?Set STAGING_WEB_IMAGE to the exact release image}
+    restart: unless-stopped
+    user: "10001:10001"
+    read_only: true
+    init: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      API_BASE_URL: http://api:4000/api/v1
+      APP_ALLOWED_HOSTS: staging.gymtrack.ch
+      APP_ALLOWED_ORIGINS: https://staging.gymtrack.ch
+      APP_BASE_URL: https://staging.gymtrack.ch
+      APP_ENV: staging
+      CONTROLLER_ADDRESS: ${CONTROLLER_ADDRESS:?Set CONTROLLER_ADDRESS}
+      CONTROLLER_NAME: ${CONTROLLER_NAME:?Set CONTROLLER_NAME}
+      HSTS_ENABLED: "false"
+      HOME: /tmp
+      NODE_ENV: production
+      PRIVACY_EMAIL: ${PRIVACY_EMAIL:?Set PRIVACY_EMAIL}
+      REGISTRATION_MODE: ${REGISTRATION_MODE:-INVITE_ONLY}
+      SECURITY_EMAIL: ${SECURITY_EMAIL:?Set SECURITY_EMAIL}
+      SUPPORT_EMAIL: ${SUPPORT_EMAIL:?Set SUPPORT_EMAIL}
+      SUPPORT_URL: ${SUPPORT_URL:-}
+      WEB_HOST: 0.0.0.0
+      WEB_PORT: 3000
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        export BFF_CLIENT_IP_SECRET="$$(cat /run/secrets/bff_client_ip_secret)"
+        exec pnpm --filter @gym-progress-tracker/web start
+    secrets:
+      - bff_client_ip_secret
+    tmpfs:
+      - /tmp:uid=10001,gid=10001,mode=0700
+      - /app/apps/web/.next/cache:uid=10001,gid=10001,mode=0700
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - const http=require('node:http');const r=http.get({host:'127.0.0.1',port:3000,path:'/login',headers:{host:'staging.gymtrack.ch'}},(x)=>process.exit(x.statusCode===200?0:1));r.on('error',()=>process.exit(1))
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    mem_limit: 768m
+    pids_limit: 256
+    stop_grace_period: 30s
+    networks:
+      - frontend
+      - application
+    logging: *bounded-logging
+
+  proxy:
+    image: docker.io/library/caddy:2.11.4-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648
+    restart: unless-stopped
+    user: "10001:10001"
+    read_only: true
+    init: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - 127.0.0.1:${STAGING_PROXY_PORT:-3100}:8080
+    volumes:
+      - ${STAGING_CADDYFILE:?Set STAGING_CADDYFILE}:/etc/caddy/Caddyfile:ro
+    tmpfs:
+      - /tmp:uid=10001,gid=10001,mode=0700
+      - /data:uid=10001,gid=10001,mode=0700
+      - /config:uid=10001,gid=10001,mode=0700
+    depends_on:
+      web:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "--header", "Host: staging.gymtrack.ch", "http://127.0.0.1:8080/login"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    mem_limit: 128m
+    pids_limit: 128
+    stop_grace_period: 15s
+    networks:
+      - frontend
+    logging: *bounded-logging
+
+networks:
+  frontend:
+    internal: true
+  application: {}
+  database:
+    internal: true
+
+volumes:
+  postgres_data:
+
+secrets:
+  postgres_owner_password:
+    file: ${POSTGRES_OWNER_PASSWORD_FILE:?Set POSTGRES_OWNER_PASSWORD_FILE}
+  postgres_app_password:
+    file: ${POSTGRES_APP_PASSWORD_FILE:?Set POSTGRES_APP_PASSWORD_FILE}
+  bff_client_ip_secret:
+    file: ${BFF_CLIENT_IP_SECRET_FILE:?Set BFF_CLIENT_IP_SECRET_FILE}
+  resend_api_key:
+    file: ${RESEND_API_KEY_FILE:?Set RESEND_API_KEY_FILE}
+  email_recipient_allowlist:
+    file: ${EMAIL_RECIPIENT_ALLOWLIST_FILE:?Set EMAIL_RECIPIENT_ALLOWLIST_FILE}
