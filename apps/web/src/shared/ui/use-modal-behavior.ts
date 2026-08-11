@@ -20,7 +20,7 @@ const modalStack: ModalEntry[] = [];
 const inertElements = new Map<HTMLElement, { count: number; wasInert: boolean }>();
 let inertObserver: MutationObserver | null = null;
 let restoreBackgroundInert: (() => void) | null = null;
-let scrollLockCount = 0;
+let scrollLocked = false;
 let previousBodyOverflow = "";
 
 export function useModalBehavior<T extends HTMLElement>({
@@ -59,8 +59,8 @@ function activateModal(
   const restoreFocus = document.activeElement instanceof HTMLElement
     ? document.activeElement
     : null;
-  const restoreScroll = lockBodyScroll();
   modalStack.push(entry);
+  syncBodyScrollLock();
   refreshBackgroundInert();
   const frame = window.requestAnimationFrame(() => focusInitialElement(element, initialFocus));
   const handleKeyDown = (event: KeyboardEvent): void => {
@@ -76,8 +76,8 @@ function activateModal(
     window.cancelAnimationFrame(frame);
     document.removeEventListener("keydown", handleKeyDown);
     removeModal(entry);
+    syncBodyScrollLock();
     refreshBackgroundInert();
-    restoreScroll();
     if (restoreFocus?.isConnected) restoreFocus.focus();
   };
 }
@@ -145,6 +145,12 @@ function refreshBackgroundInert(): void {
   restoreBackgroundInert?.();
   restoreBackgroundInert = null;
 
+  // This already runs on every relevant DOM mutation while a modal is open, so
+  // it is the cheapest place to re-assert the scroll lock. Anything that
+  // clobbers body styles mid-modal is corrected on the next mutation instead of
+  // persisting for the modal's lifetime.
+  syncBodyScrollLock();
+
   const dialog = topModal()?.element;
   if (dialog?.isConnected) restoreBackgroundInert = makeBackgroundInert(dialog);
   if (modalStack.length === 0) {
@@ -161,16 +167,35 @@ function refreshBackgroundInert(): void {
   });
 }
 
-function lockBodyScroll(): () => void {
-  if (scrollLockCount === 0) {
-    previousBodyOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+/**
+ * Derives the scroll lock from `modalStack` rather than from a separate counter.
+ *
+ * The previous implementation only wrote `overflow: hidden` on the 0 → 1
+ * transition of its own counter. That made the lock unrecoverable: if the
+ * counter ever drifted from reality — a leaked increment, or any other writer
+ * touching `document.body.style` — every later modal assumed the page was
+ * already locked and never re-asserted it, leaving the background scrollable
+ * with no way to self-correct.
+ *
+ * Re-asserting on every sync costs one style write and removes that whole class
+ * of failure. `modalStack` is the single source of truth and is maintained on
+ * both activation and teardown, so the lock cannot outlive the last modal.
+ */
+function syncBodyScrollLock(): void {
+  if (modalStack.length > 0) {
+    if (!scrollLocked) {
+      previousBodyOverflow = document.body.style.overflow;
+      scrollLocked = true;
+    }
+    if (document.body.style.overflow !== "hidden") {
+      document.body.style.overflow = "hidden";
+    }
+    return;
   }
-  scrollLockCount += 1;
-  return () => {
-    scrollLockCount -= 1;
-    if (scrollLockCount === 0) document.body.style.overflow = previousBodyOverflow;
-  };
+  if (scrollLocked) {
+    document.body.style.overflow = previousBodyOverflow;
+    scrollLocked = false;
+  }
 }
 
 function makeBackgroundInert(dialog: HTMLElement): () => void {
