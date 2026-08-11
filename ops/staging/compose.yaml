@@ -217,11 +217,13 @@ services:
     stop_grace_period: 15s
     networks:
       - frontend
+      - edge
     logging: *bounded-logging
 
 networks:
   frontend:
     internal: true
+  edge: {}
   application: {}
   database:
     internal: true
