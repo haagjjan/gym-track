@@ -31,6 +31,14 @@ export interface ExerciseNameEvaluation {
   suggestions: string[];
 }
 
+interface SuggestionCandidate {
+  aliasOrder: number;
+  name: string;
+  priority: number;
+  rank: number;
+  score: number;
+}
+
 const normalizedCatalog = canonicalExerciseNames.map((name) => ({
   canonicalName: name,
   lookupName: exerciseNameLookup(name),
@@ -154,41 +162,47 @@ function findSuggestions(name: string): string[] {
   const aliasTargets = new Map(
     resolveExerciseNameAlias(name).map((target, index) => [target, index])
   );
+  const suggestions: SuggestionCandidate[] = [];
 
-  return normalizedCatalog
-    .map((item) => ({
+  for (const item of normalizedCatalog) {
+    const rank = aliasTargets.has(item.canonicalName)
+      ? 0
+      : item.lookupName.startsWith(normalizedLookup)
+        ? 1
+        : item.lookupName.includes(normalizedLookup)
+          ? 2
+          : 3;
+    if (
+      rank === 3
+      && Math.abs(normalizedLookup.length - item.lookupName.length) > MAX_SUGGESTION_DISTANCE
+    ) continue;
+    const score = boundedExerciseNameDistance(
+      normalizedLookup,
+      item.lookupName,
+      MAX_SUGGESTION_DISTANCE
+    );
+    if (rank === 3 && score > MAX_SUGGESTION_DISTANCE) continue;
+    suggestions.push({
       name: item.canonicalName,
-      rank: aliasTargets.has(item.canonicalName)
-        ? 0
-        : item.lookupName.startsWith(normalizedLookup)
-          ? 1
-          : item.lookupName.includes(normalizedLookup)
-            ? 2
-            : 3,
+      rank,
       aliasOrder: aliasTargets.get(item.canonicalName) ?? Number.MAX_SAFE_INTEGER,
       priority: item.priority ? 0 : 1,
-      score: boundedExerciseNameDistance(
-        normalizedLookup,
-        item.lookupName,
-        MAX_SUGGESTION_DISTANCE
-      )
-    }))
-    .filter((item) => item.rank < 3 || item.score <= MAX_SUGGESTION_DISTANCE)
-    .sort((left, right) => {
-      if (left.rank !== right.rank) return left.rank - right.rank;
-      if (left.aliasOrder !== right.aliasOrder) return left.aliasOrder - right.aliasOrder;
-      if (left.priority !== right.priority) {
-        return left.priority - right.priority;
-      }
+      score
+    });
+  }
 
-      if (left.score !== right.score) {
-        return left.score - right.score;
-      }
-
-      return left.name.localeCompare(right.name);
-    })
+  return suggestions
+    .sort(compareSuggestions)
     .slice(0, 5)
     .map((item) => item.name);
+}
+
+function compareSuggestions(left: SuggestionCandidate, right: SuggestionCandidate): number {
+  if (left.rank !== right.rank) return left.rank - right.rank;
+  if (left.aliasOrder !== right.aliasOrder) return left.aliasOrder - right.aliasOrder;
+  if (left.priority !== right.priority) return left.priority - right.priority;
+  if (left.score !== right.score) return left.score - right.score;
+  return left.name.localeCompare(right.name);
 }
 
 function escapeRegExp(value: string): string {

@@ -18,6 +18,8 @@ interface ModalEntry {
 
 const modalStack: ModalEntry[] = [];
 const inertElements = new Map<HTMLElement, { count: number; wasInert: boolean }>();
+let inertObserver: MutationObserver | null = null;
+let restoreBackgroundInert: (() => void) | null = null;
 let scrollLockCount = 0;
 let previousBodyOverflow = "";
 
@@ -57,9 +59,9 @@ function activateModal(
   const restoreFocus = document.activeElement instanceof HTMLElement
     ? document.activeElement
     : null;
-  const restoreInert = makeBackgroundInert(element);
   const restoreScroll = lockBodyScroll();
   modalStack.push(entry);
+  refreshBackgroundInert();
   const frame = window.requestAnimationFrame(() => focusInitialElement(element, initialFocus));
   const handleKeyDown = (event: KeyboardEvent): void => {
     if (topModal() !== entry) return;
@@ -74,7 +76,7 @@ function activateModal(
     window.cancelAnimationFrame(frame);
     document.removeEventListener("keydown", handleKeyDown);
     removeModal(entry);
-    restoreInert();
+    refreshBackgroundInert();
     restoreScroll();
     if (restoreFocus?.isConnected) restoreFocus.focus();
   };
@@ -136,6 +138,27 @@ function topModal(): ModalEntry | undefined {
 function removeModal(entry: ModalEntry): void {
   const index = modalStack.lastIndexOf(entry);
   if (index >= 0) modalStack.splice(index, 1);
+}
+
+function refreshBackgroundInert(): void {
+  inertObserver?.disconnect();
+  restoreBackgroundInert?.();
+  restoreBackgroundInert = null;
+
+  const dialog = topModal()?.element;
+  if (dialog?.isConnected) restoreBackgroundInert = makeBackgroundInert(dialog);
+  if (modalStack.length === 0) {
+    inertObserver = null;
+    return;
+  }
+
+  inertObserver ??= new MutationObserver(refreshBackgroundInert);
+  inertObserver.observe(document.body, {
+    attributeFilter: ["inert"],
+    attributes: true,
+    childList: true,
+    subtree: true
+  });
 }
 
 function lockBodyScroll(): () => void {
