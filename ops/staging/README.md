@@ -77,8 +77,7 @@ Create this root-owned layout:
 ├── deploy/
 │   ├── compose/compose.yaml
 │   ├── config/caddy/Caddyfile
-│   ├── env/staging.env
-│   └── postgres/init-roles.sh
+│   └── env/staging.env
 ├── backups/
 ├── releases/
 ├── repo/
@@ -86,19 +85,19 @@ Create this root-owned layout:
 └── state/
 ```
 
-Install the Compose definition as `root:gym-tracker` mode `0640`, the initialization script as
-`root:gym-tracker` mode `0750`, and the Caddyfile as numeric `root:10001` mode `0440`. Because
-the host deliberately has no named group for container GID `10001`, install the Caddyfile as
+Install the Compose definition as `root:gym-tracker` mode `0640` and the Caddyfile as numeric
+`root:10001` mode `0440`. Because the host deliberately has no named group for container GID
+`10001`, install the Caddyfile as
 `root:root` first and then apply `chown root:10001`; do not create a host group only for this
-mount. Keep
-`deploy/env/staging.env` owned by `admin-gym:gym-tracker` at `0640`, and keep `secrets/` owned
-by `admin-gym:gym-tracker` at `0700`. Each secret file must be numeric `10001:10001` at `0600`
-before a service starts. Numeric group `10001` lets the non-root Caddy container read only its
-non-secret configuration; numeric UID `10001` lets the hardened application containers read only
-their individually mounted secret files.
+mount. Keep `deploy/env/staging.env` owned by `admin-gym:gym-tracker` at `0640`, and keep
+`secrets/` owned by `admin-gym:gym-tracker` at `0700`. Each secret file must be numeric
+`root:10001` at `0440` before a service starts. Numeric group `10001` lets the non-root
+application containers read only their individually mounted secret files and lets Caddy read
+only its non-secret configuration. The staging PostgreSQL image adds its internal `postgres`
+user to the same group; the secrets are still mounted only into the services that need them.
 
 Copy `staging.env.example` to the server environment file and replace every `REQUIRED` marker.
-The three image variables must contain the same full `APP_RELEASE` SHA used as their immutable
+The four image variables must contain the same full `APP_RELEASE` SHA used as their immutable
 tag. `REGISTRATION_MODE` starts as `INVITE_ONLY`.
 
 Create these one-line secret files directly on the server:
@@ -117,25 +116,27 @@ Create the files as `admin-gym` while entering them, then transfer only the comp
 container runtime identity without printing their contents:
 
 ```bash
-chown 10001:10001 /srv/gym-tracker-staging/secrets/*
-chmod 0600 /srv/gym-tracker-staging/secrets/*
+sudo chown root:10001 /srv/gym-tracker-staging/secrets/*
+sudo chmod 0440 /srv/gym-tracker-staging/secrets/*
 ```
 
 Compose implements these local file-backed secrets as bind mounts, so the container sees the
-source file ownership. Mode `0600` with runtime ownership is required for services running as
-`10001:10001`; leaving the files owned by `admin-gym` makes those services fail closed with
-`Permission denied`. The operator retains the recovery copies in the password manager and uses
+source file ownership. Root ownership prevents a compromised non-root container process from
+changing a source secret, while group-read mode lets the intended runtime identities read it.
+Leaving the files owned by `admin-gym` or at mode `0600` makes the services fail closed with
+`Permission denied`. The operator retains recovery copies in the password manager and uses
 `sudo` for later server-side inspection or rotation.
 
 ## Build and validate the exact release
 
-From the clean staging checkout, set `release_sha` to the full reviewed commit and build all
-three application targets:
+From the clean staging checkout, set `release_sha` to the full reviewed commit and build the
+staging PostgreSQL image plus all three application targets:
 
 ```bash
 cd /srv/gym-tracker-staging/repo
 release_sha="$(git rev-parse HEAD)"
 test "$(git status --porcelain)" = ""
+docker build -f ops/staging/postgres/Dockerfile -t "gym-tracker-staging-postgres:${release_sha}" .
 docker build --target migrate -t "gym-tracker-staging-migrate:${release_sha}" .
 docker build --target api -t "gym-tracker-staging-api:${release_sha}" .
 docker build --target web -t "gym-tracker-staging-web:${release_sha}" .

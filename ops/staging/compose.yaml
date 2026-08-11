@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: docker.io/library/postgres:17.10-alpine3.24@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193
+    image: ${STAGING_POSTGRES_IMAGE:?Set STAGING_POSTGRES_IMAGE to the exact release image}
     restart: unless-stopped
     environment:
       POSTGRES_DB: gym_tracker_staging
@@ -12,7 +12,6 @@ services:
       - postgres_app_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ${STAGING_POSTGRES_INIT_FILE:?Set STAGING_POSTGRES_INIT_FILE}:/docker-entrypoint-initdb.d/10-init-roles.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U gym_tracker_staging_owner -d gym_tracker_staging"]
       interval: 5s
