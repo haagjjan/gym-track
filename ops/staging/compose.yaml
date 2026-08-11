@@ -187,7 +187,7 @@ services:
     logging: *bounded-logging
 
   proxy:
-    image: docker.io/library/caddy:2.11.4-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648
+    image: ${STAGING_PROXY_IMAGE:?Set STAGING_PROXY_IMAGE to the exact release image}
     restart: unless-stopped
     user: "10001:10001"
     read_only: true

@@ -115,6 +115,7 @@ jobs:
 
           release_sha="${GITHUB_SHA}"
           postgres_image="gym-tracker-staging-postgres:${release_sha}"
+          proxy_image="gym-tracker-staging-proxy:${release_sha}"
           runtime_dir="$(mktemp -d)"
           compose=(docker compose -p gym-tracker-staging-ci -f ops/staging/compose.yaml)
 
@@ -142,6 +143,7 @@ jobs:
           export STAGING_MIGRATE_IMAGE="gym-tracker-staging-migrate:${release_sha}"
           export STAGING_API_IMAGE="gym-tracker-staging-api:${release_sha}"
           export STAGING_WEB_IMAGE="gym-tracker-staging-web:${release_sha}"
+          export STAGING_PROXY_IMAGE="${proxy_image}"
           export STAGING_CADDYFILE="${GITHUB_WORKSPACE}/ops/staging/Caddyfile"
           export POSTGRES_OWNER_PASSWORD_FILE="${runtime_dir}/postgres-owner-password"
           export POSTGRES_APP_PASSWORD_FILE="${runtime_dir}/postgres-app-password"
@@ -158,6 +160,17 @@ jobs:
             -f ops/staging/postgres/Dockerfile \
             -t "${postgres_image}" \
             .
+          docker build \
+            -f ops/staging/caddy/Dockerfile \
+            -t "${proxy_image}" \
+            .
+          docker run --rm \
+            --user 10001:10001 \
+            --read-only \
+            --cap-drop ALL \
+            --security-opt no-new-privileges:true \
+            "${proxy_image}" \
+            caddy version
           "${compose[@]}" config --quiet
           "${compose[@]}" up -d --wait postgres
           "${compose[@]}" exec -T postgres awk \

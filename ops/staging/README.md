@@ -97,7 +97,7 @@ only its non-secret configuration. The staging PostgreSQL image adds its interna
 user to the same group; the secrets are still mounted only into the services that need them.
 
 Copy `staging.env.example` to the server environment file and replace every `REQUIRED` marker.
-The four image variables must contain the same full `APP_RELEASE` SHA used as their immutable
+The five image variables must contain the same full `APP_RELEASE` SHA used as their immutable
 tag. `REGISTRATION_MODE` starts as `INVITE_ONLY`.
 
 Create these one-line secret files directly on the server:
@@ -130,7 +130,7 @@ Leaving the files owned by `admin-gym` or at mode `0600` makes the services fail
 ## Build and validate the exact release
 
 From the clean staging checkout, set `release_sha` to the full reviewed commit and build the
-staging PostgreSQL image plus all three application targets:
+staging PostgreSQL and capability-free Caddy images plus all three application targets:
 
 ```bash
 cd /srv/gym-tracker-staging/repo
@@ -140,6 +140,7 @@ docker build -f ops/staging/postgres/Dockerfile -t "gym-tracker-staging-postgres
 docker build --target migrate -t "gym-tracker-staging-migrate:${release_sha}" .
 docker build --target api -t "gym-tracker-staging-api:${release_sha}" .
 docker build --target web -t "gym-tracker-staging-web:${release_sha}" .
+docker build -f ops/staging/caddy/Dockerfile -t "gym-tracker-staging-proxy:${release_sha}" .
 ```
 
 Check that `APP_RELEASE` and all image references in `staging.env` equal `release_sha`, then:
@@ -150,7 +151,7 @@ staging_env=/srv/gym-tracker-staging/deploy/env/staging.env
 docker compose --env-file "$staging_env" -p gym-tracker-staging -f "$staging_compose" config --quiet
 docker run --rm \
   -v /srv/gym-tracker-staging/deploy/config/caddy/Caddyfile:/etc/caddy/Caddyfile:ro \
-  docker.io/library/caddy:2.11.4-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648 \
+  "gym-tracker-staging-proxy:${release_sha}" \
   caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
 ```
 
