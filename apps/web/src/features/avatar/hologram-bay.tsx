@@ -37,10 +37,32 @@ const MOTE_COUNT = 90;
 const MOTE_FIELD_RADIUS = 5.5;
 const MOTE_FIELD_HEIGHT = 6.5;
 const WALL_RADIUS = 8;
+/**
+ * Deck-texture resolution. The 1024 sheet is what the mood refs were tuned
+ * against; a CPU rasterizer pays for every one of those texels on upload and
+ * mip generation, and at this camera distance the difference is not visible.
+ */
+const FLOOR_TEXTURE_SIZE = 1024;
+const FLOOR_TEXTURE_SIZE_SOFTWARE = 256;
+/**
+ * PMREM cube resolution. Prefiltering is the single most expensive thing this
+ * scene does on a CPU rasterizer (see the note on `environment` below), and its
+ * cost is dominated by the number of blur passes rather than their size — so a
+ * small cube buys most of the saving while keeping real image-based lighting.
+ *
+ * Dropping the map ENTIRELY was measured and rejected: it is much faster still
+ * (~0.8 s vs ~1.3 s bootstrap) but the pedestal stops reading as a sculpted
+ * object — with nothing to reflect, its tiers, LED bands and front machinery
+ * collapse into a flat silhouette. Fidelity wins here; see docs/14.
+ */
+const ENVIRONMENT_SIZE = 256;
+const ENVIRONMENT_SIZE_SOFTWARE = 32;
 
 export interface HologramBayProps {
   /** Freeze the ambient pulse and drifting motes for reduced-motion users. */
   reducedMotion?: boolean;
+  /** CPU rasterizer: draw the same bay, but skip the expensive prefiltering. */
+  softwareRasterized?: boolean;
 }
 
 /** Soft radial gradient canvas texture — shared for glow pools/pads/halos. */
@@ -114,8 +136,10 @@ function createVerticalGradientTexture(
  * roughness map polishes tile centers and roughens seams/wear so the env-map
  * reflection streaks break up like a used, slightly wet deck.
  */
-function createFloorTextures(): { map: THREE.Texture; roughnessMap: THREE.Texture } {
-  const size = 1024;
+function createFloorTextures(size: number): {
+  map: THREE.Texture;
+  roughnessMap: THREE.Texture;
+} {
   const tiles = 4;
   const tile = size / tiles;
 
@@ -221,7 +245,7 @@ function createFloorTextures(): { map: THREE.Texture; roughnessMap: THREE.Textur
  * mood refs exist only as these reflections (no visible source in frame),
  * which is what makes the floor and pedestal read as wet metal.
  */
-function createBayEnvironment(gl: THREE.WebGLRenderer): THREE.Texture {
+function createBayEnvironment(gl: THREE.WebGLRenderer, size: number): THREE.Texture {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color("#04060a");
 
@@ -273,7 +297,7 @@ function createBayEnvironment(gl: THREE.WebGLRenderer): THREE.Texture {
   scene.add(ground);
 
   const pmrem = new THREE.PMREMGenerator(gl);
-  const environment = pmrem.fromScene(scene, 0.05).texture;
+  const environment = pmrem.fromScene(scene, 0.05, 0.1, 100, { size }).texture;
 
   pmrem.dispose();
   barGeometry.dispose();
@@ -287,12 +311,32 @@ function createBayEnvironment(gl: THREE.WebGLRenderer): THREE.Texture {
   return environment;
 }
 
-export function HologramBay({ reducedMotion = false }: HologramBayProps): ReactNode {
+export function HologramBay({
+  reducedMotion = false,
+  softwareRasterized = false
+}: HologramBayProps): ReactNode {
   const gl = useThree((state) => state.gl);
   const glowTexture = useMemo(createRadialGlowTexture, []);
-  const environment = useMemo(() => createBayEnvironment(gl), [gl]);
+  /**
+   * PMREM prefiltering is the single most expensive thing this scene does on a
+   * CPU rasterizer. Measured on headless chromium (SwiftShader) it is worth
+   * ~1.2 s of the dashboard's ~1.9 s bootstrap freeze: the compositor composites
+   * a WebGL canvas by reading it back synchronously on the renderer's main
+   * thread, so the main thread blocks until the GPU process drains the whole
+   * prefilter. A smaller cube keeps the reflections and removes most of that.
+   */
+  const environment = useMemo(
+    () =>
+      createBayEnvironment(
+        gl,
+        softwareRasterized ? ENVIRONMENT_SIZE_SOFTWARE : ENVIRONMENT_SIZE
+      ),
+    [gl, softwareRasterized]
+  );
   const floorTextures = useMemo(() => {
-    const textures = createFloorTextures();
+    const textures = createFloorTextures(
+      softwareRasterized ? FLOOR_TEXTURE_SIZE_SOFTWARE : FLOOR_TEXTURE_SIZE
+    );
     const anisotropy = Math.min(8, gl.capabilities.getMaxAnisotropy());
 
     // Grazing-angle sharpness: without anisotropy the seams smear to mud
@@ -301,7 +345,7 @@ export function HologramBay({ reducedMotion = false }: HologramBayProps): ReactN
     textures.roughnessMap.anisotropy = anisotropy;
 
     return textures;
-  }, [gl]);
+  }, [gl, softwareRasterized]);
 
   useEffect(() => () => environment.dispose(), [environment]);
 
