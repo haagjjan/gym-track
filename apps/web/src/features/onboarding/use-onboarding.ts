@@ -17,9 +17,14 @@ export function useOnboarding(): { onboarding: OnboardingState | null; mark: (st
     const result = await apiFetch<{ onboarding: OnboardingState }>("/api/users/me/onboarding", { method: "PATCH", body: next });
     setOnboarding(result.onboarding);
   }, []);
+  // Progress flags are best effort, and every caller fires this without awaiting
+  // it. A write that fails — offline, or a request cut short by navigating away
+  // — must not escape as an uncaught rejection; the step simply stays unmarked
+  // and is retried the next time the screen mounts.
   const mark = useCallback(async (step: string): Promise<void> => {
     if (onboarding && !onboarding.steps[step]) {
-      await save({ ...onboarding, steps: { ...onboarding.steps, [step]: true } });
+      await save({ ...onboarding, steps: { ...onboarding.steps, [step]: true } })
+        .catch(() => undefined);
     }
   }, [onboarding, save]);
   const resetTour = useCallback(async (): Promise<void> => {

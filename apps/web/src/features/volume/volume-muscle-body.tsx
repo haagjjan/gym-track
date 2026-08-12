@@ -96,9 +96,13 @@ export function VolumeMuscleBody({
   useEffect(() => {
     let active = true;
 
-    void regionMaps.ready.then(() => {
-      if (active) invalidate();
-    });
+    // A map that never decodes leaves the body rendering untrained, which is the
+    // intended fallback — but the rejection must not escape uncaught.
+    void regionMaps.ready
+      .then(() => {
+        if (active) invalidate();
+      })
+      .catch(() => undefined);
 
     return () => {
       active = false;

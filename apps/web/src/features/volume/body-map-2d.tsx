@@ -90,11 +90,16 @@ export function BodyMap2D({
   useEffect(() => {
     let active = true;
 
-    void loadRegionArt().then((loaded) => {
-      if (active) {
-        setArt(loaded);
-      }
-    });
+    // Leaving the art unset renders the loading fallback, so a fetch that fails
+    // or is cut short by navigating away needs no handling beyond not escaping
+    // as an uncaught rejection.
+    void loadRegionArt()
+      .then((loaded) => {
+        if (active) {
+          setArt(loaded);
+        }
+      })
+      .catch(() => undefined);
 
     return () => {
       active = false;
