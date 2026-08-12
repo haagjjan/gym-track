@@ -120,6 +120,37 @@ Screenshot both screens with the new environment. Self-check against `DESIGN.md`
 — specifically judge whether it feels alive without feeling heavy or busy. **Then stop and show the
 owner for review before starting Part 2.**
 
+#### Follow-up — software-rasterizer quality path (2026-08-12)
+
+The dashboard blocked the renderer's main thread for ~1.9 s on every cold load. Root cause, from a
+DevTools timeline trace: Chromium composites a WebGL canvas by reading it back synchronously during
+`LayerTreeHost::DoUpdateLayers`, so the main thread sits in `GLES2::ReadPixels` until the GPU process
+has drained the first frame. Whatever that first frame costs is main-thread blocking time. On a CPU
+rasterizer the dominant term was the bay's **PMREM prefilter** (~1.2 s of the ~1.9 s).
+
+`HologramBay` therefore takes a `softwareRasterized` prop (detected once via
+`WEBGL_debug_renderer_info` in `useAvatarSceneSupport`) and, when set, prefilters a **32px** cube
+instead of 256 and uses a 256 deck texture instead of 1024. `AvatarStage` renders at `dpr 0.75`
+there. Measured **1.9 s → 1.4 s**.
+
+**Dropping the environment map entirely was measured and rejected on looks, not on numbers.** It is
+much faster still (0.8 s), but a frozen-pose A/B under SwiftShader showed the pedestal stops reading
+as a sculpted object — with nothing to reflect, its tiers, LED bands and front machinery collapse
+into a flat silhouette. That fails this section's own bar, so fidelity won. PMREM's cost is per blur
+pass rather than per texel, which is why a 32px cube keeps the look but only recovers part of the
+time.
+
+This gates **cost, not capability** — the scene still renders on software renderers, which
+`e2e/volume-mobile-gesture.spec.ts` depends on. Hardware GPUs are untouched.
+
+Note for future visual A/Bs of this scene: capture with Playwright's `reducedMotion: "reduce"`, which
+freezes the turntable so the figure sits at its fixed `INITIAL_YAW`. Without it every capture catches
+a different rotation and the shots cannot be compared.
+
+Per this round's "definition of done is a real performance check", note the limits: this was verified
+under headless chromium's SwiftShader (the CI configuration), not on a real low-end phone, where the
+GPU is hardware and this path does not engage. **Real-device thermals still want an owner spot-check.**
+
 ### Part 2 — Muscle-group highlighting spike
 Do in isolation before wiring into the real screen — same spirit as the original avatar spike in doc 10
 Phase 1.
