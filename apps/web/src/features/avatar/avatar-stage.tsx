@@ -36,6 +36,8 @@ const DRAG_SPIN_SPEED = 0.007;
 const INITIAL_YAW = -Math.PI / 2 + THREE.MathUtils.degToRad(12);
 /** Ambient render cap — display refresh (120Hz+) buys nothing here but heat. */
 const MAX_FPS = 60;
+/** Backbuffer scale on CPU rasterizers; below this the figure's edges crawl. */
+const SOFTWARE_DPR = 0.75;
 const BASE_CAMERA_HEIGHT = 1.62;
 const BASE_CAMERA_Z = 4.35;
 /** Pull-back ceiling: beyond this the figure drowns in the bay fog (starts at 9). */
@@ -132,7 +134,7 @@ export function AvatarStage({
   autoSpin = true,
   connectors = []
 }: AvatarStageProps): ReactNode {
-  const { support, reducedMotion } = useAvatarSceneSupport();
+  const { support, reducedMotion, softwareRasterized } = useAvatarSceneSupport();
   const { hostRef, frameloop } = useFrameloopGovernor(reducedMotion);
   const stateRef = useRef<StageState>({ readiness, pulse: 0, burstProgress: 1 });
   const spinRef = useRef<SpinState>({
@@ -176,7 +178,10 @@ export function AvatarStage({
         <div className="absolute inset-0">
           <Canvas
             camera={{ fov: 36, position: [0, BASE_CAMERA_HEIGHT, BASE_CAMERA_Z] }}
-            dpr={[1, 1.5]}
+            // A CPU rasterizer pays per fragment, so the bootstrap frame scales
+            // with the buffer. Rendering below CSS resolution there keeps the
+            // scene live (never gated off) at a fraction of the fill cost.
+            dpr={softwareRasterized ? SOFTWARE_DPR : [1, 1.5]}
             // Ambient rendering is capped at MAX_FPS: the loop runs on demand
             // and FrameRateCap invalidates at most 60×/s while visible.
             frameloop={frameloop === "always" ? "demand" : frameloop}
@@ -195,7 +200,10 @@ export function AvatarStage({
             <directionalLight color="#d8f7fa" intensity={1.6} position={[3.5, 4.5, 2.5]} />
             <directionalLight color="#d9b9ff" intensity={0.7} position={[-3, 2.5, -3.5]} />
 
-            <HologramBay reducedMotion={reducedMotion} />
+            <HologramBay
+              reducedMotion={reducedMotion}
+              softwareRasterized={softwareRasterized}
+            />
 
             <Suspense fallback={null}>
               {/* Only the FIGURE rides the turntable. The FBX's fused pedestal
