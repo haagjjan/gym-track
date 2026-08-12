@@ -34,6 +34,7 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   await page.getByLabel(/ACCESS_CODE/).fill(password);
   await page.getByRole("button", { name: "REGISTER" }).click();
   await expect(page.getByRole("heading", { name: new RegExp(username, "i") })).toBeVisible();
+  await waitForIdleClient(page);
 
   const onboarding = page.getByRole("dialog", { name: "Welcome, Founding Member" });
   await expect(onboarding).toBeFocused();
@@ -72,6 +73,7 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
     await route.continue();
   });
   await page.reload();
+  await waitForIdleClient(page);
   const messageDialog = page.getByRole("dialog", { name: "Beta message" });
   await expect(messageDialog.getByRole("button", { name: "Dismiss message" })).toBeFocused();
   await expectModalContract(page, messageDialog);
@@ -366,6 +368,39 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
 
   expect(pageErrors, pageErrors.join("\n\n")).toHaveLength(0);
 });
+
+/**
+ * The dashboard boots its 3D avatar on the client: a dynamic chunk, a 1 MB FBX
+ * parse, then WebGL program links. On CI's software rasterizer that bootstrap
+ * blocks the renderer main thread for several seconds, and an assertion issued
+ * inside that window burns its whole timeout without the browser ever answering
+ * it: the modal contract then fails for a missing scroll lock that is in fact
+ * applied, because the poll never got a value back at all.
+ *
+ * Waiting for asset loading to stop and for the page to answer promptly again
+ * keeps the assertions that follow measuring the UI, not the avatar bootstrap.
+ * Best effort by design: on timeout it hands back to the real assertions
+ * instead of failing, so it can only ever remove a false negative.
+ */
+async function waitForIdleClient(page: Page): Promise<void> {
+  const requiredCalmSamples = 5;
+  const deadline = Date.now() + 60_000;
+  let calmSamples = 0;
+  let lastResourceCount = -1;
+
+  while (calmSamples < requiredCalmSamples && Date.now() < deadline) {
+    const started = Date.now();
+    const resourceCount = await page.evaluate(() => performance.getEntriesByType("resource").length);
+    const answeredWithin = Date.now() - started;
+
+    calmSamples = answeredWithin < 500 && resourceCount === lastResourceCount ? calmSamples + 1 : 0;
+    lastResourceCount = resourceCount;
+
+    if (calmSamples < requiredCalmSamples) {
+      await page.waitForTimeout(100);
+    }
+  }
+}
 
 async function expectNoHorizontalScroll(page: Page): Promise<void> {
   const hasOverflow = await page.evaluate(
