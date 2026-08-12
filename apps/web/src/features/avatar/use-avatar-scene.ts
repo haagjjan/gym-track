@@ -16,12 +16,17 @@ export type AvatarSceneSupport = "checking" | "ready" | "unavailable";
 export function useAvatarSceneSupport(): {
   support: AvatarSceneSupport;
   reducedMotion: boolean;
+  softwareRasterized: boolean;
 } {
   const [support, setSupport] = useState<AvatarSceneSupport>("checking");
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [softwareRasterized, setSoftwareRasterized] = useState(false);
 
   useEffect(() => {
-    setSupport(canUseWebGl() ? "ready" : "unavailable");
+    const probe = probeWebGl();
+
+    setSupport(probe.available ? "ready" : "unavailable");
+    setSoftwareRasterized(probe.software);
 
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
     const update = (): void => setReducedMotion(query.matches);
@@ -32,7 +37,7 @@ export function useAvatarSceneSupport(): {
     return () => query.removeEventListener("change", update);
   }, []);
 
-  return { support, reducedMotion };
+  return { support, reducedMotion, softwareRasterized };
 }
 
 /**
@@ -73,12 +78,37 @@ export function useFrameloopGovernor(reducedMotion: boolean): {
   return { hostRef, frameloop: reducedMotion || !inView ? "demand" : "always" };
 }
 
-function canUseWebGl(): boolean {
+/**
+ * Renderer strings of the CPU rasterizers the stage degrades quality for:
+ * headless CI's SwiftShader, Mesa's llvmpipe, VMs without GPU passthrough.
+ *
+ * This gates COST, never capability. The scene is always rendered — see
+ * `e2e/volume-mobile-gesture.spec.ts`, which screenshots a live WebGL canvas in
+ * CI and requires the image to change after an orbit drag. Callers may only use
+ * this to pick a cheaper way to draw the same scene.
+ */
+const SOFTWARE_RENDERER = /swiftshader|llvmpipe|softpipe|software|basic render|paravirtual/i;
+
+/**
+ * One throwaway context answers both questions the stage needs before it can
+ * mount a Canvas: is WebGL usable at all, and is it rasterized on the CPU.
+ */
+function probeWebGl(): { available: boolean; software: boolean } {
   try {
     const canvas = document.createElement("canvas");
+    const context = canvas.getContext("webgl2") ?? canvas.getContext("webgl");
 
-    return Boolean(canvas.getContext("webgl2") ?? canvas.getContext("webgl"));
+    if (!context) {
+      return { available: false, software: false };
+    }
+
+    const debugInfo = context.getExtension("WEBGL_debug_renderer_info");
+    const renderer = debugInfo
+      ? String(context.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL))
+      : "";
+
+    return { available: true, software: SOFTWARE_RENDERER.test(renderer) };
   } catch {
-    return false;
+    return { available: false, software: false };
   }
 }
