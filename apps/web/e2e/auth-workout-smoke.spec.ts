@@ -250,6 +250,7 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   await page.getByRole("button", { name: "Workout actions" }).click();
   await page.getByRole("menuitem", { name: "Discard workout" }).click();
   await page.getByRole("alertdialog", { name: "Discard this workout?" }).getByRole("button", { name: "DISCARD WORKOUT" }).click();
+  await expect(page).toHaveURL(/\/workouts$/);
   await page.goto(`/workouts/${workoutId}`);
 
   // Move the completed session outside 3M so range-aware Progress widgets can
