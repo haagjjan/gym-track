@@ -107,7 +107,7 @@ jobs:
             --read-only \
             --tmpfs /tmp:uid=10001,gid=10001,mode=0700 \
             gym-tracker-migrate-runtime-check \
-            pnpm --version
+            /bin/sh -ec 'test -r scripts/promote-admin.mjs; exec pnpm --version'
 
       - name: Verify staging PostgreSQL initialization
         run: |

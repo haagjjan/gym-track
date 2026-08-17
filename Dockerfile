@@ -40,6 +40,7 @@ RUN pnpm --filter @gym-progress-tracker/web build
 FROM deps AS migrate
 
 COPY apps/api/db ./apps/api/db
+COPY apps/api/scripts/promote-admin.mjs ./apps/api/scripts/promote-admin.mjs
 
 WORKDIR /app/apps/api
 

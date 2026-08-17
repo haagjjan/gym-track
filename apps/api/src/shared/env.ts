@@ -90,10 +90,10 @@ const envSchema = rawEnvSchema
       });
     }
 
-    if (env.AUTH_COOKIE_SECURE === "false") {
+    if (env.AUTH_COOKIE_SECURE !== "true") {
       context.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "AUTH_COOKIE_SECURE cannot be false in production.",
+        message: "AUTH_COOKIE_SECURE must be explicitly set to true in production.",
         path: ["AUTH_COOKIE_SECURE"]
       });
     }

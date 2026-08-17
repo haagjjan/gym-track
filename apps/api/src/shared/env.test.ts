@@ -51,9 +51,10 @@ describe("readEnv", () => {
     assert.equal(env.AUTH_SESSION_TTL_DAYS, 7);
   });
 
-  it("defaults secure auth cookies on in production", () => {
+  it("parses explicitly secure auth cookies in production", () => {
     const env = readEnv({
       APP_BASE_URL: "https://app.gymtrack.ch",
+      AUTH_COOKIE_SECURE: "true",
       BFF_CLIENT_IP_SECRET: bffSecret,
       DATABASE_URL: databaseUrl,
       EMAIL_FROM: sender,
@@ -139,6 +140,7 @@ describe("readEnv", () => {
     const base = {
       APP_BASE_URL: "https://staging.gymtrack.ch",
       APP_ENV: "staging",
+      AUTH_COOKIE_SECURE: "true" as const,
       BFF_CLIENT_IP_SECRET: bffSecret,
       DATABASE_URL: databaseUrl,
       EMAIL_FROM: sender,
@@ -192,10 +194,23 @@ describe("readEnv", () => {
     assert.throws(() =>
       readEnv({
         APP_BASE_URL: "https://app.gymtrack.ch",
+        BFF_CLIENT_IP_SECRET: bffSecret,
+        DATABASE_URL: databaseUrl,
+        EMAIL_FROM: sender,
+        NODE_ENV: "production",
+        RESEND_API_KEY: resendApiKey,
+        SUPPORT_EMAIL: supportEmail
+      })
+    );
+    assert.throws(() =>
+      readEnv({
+        APP_BASE_URL: "https://app.gymtrack.ch",
         AUTH_COOKIE_SECURE: "false",
         BFF_CLIENT_IP_SECRET: bffSecret,
         DATABASE_URL: databaseUrl,
+        EMAIL_FROM: sender,
         NODE_ENV: "production",
+        RESEND_API_KEY: resendApiKey,
         SUPPORT_EMAIL: supportEmail
       })
     );

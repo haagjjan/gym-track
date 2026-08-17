@@ -206,8 +206,20 @@ Never use `down --volumes` as an incident response command.
   no `PUBLICATION_BLOCKED` warning.
 - Set `REGISTRATION_MODE=ENABLED`, recreate API/web, register and verify the staging administrator,
   restore `INVITE_ONLY`, recreate API/web and confirm open signup is closed.
-- Run the admin promotion CLI against the staging database, then verify exactly one `ADMIN` user
-  and one `ADMIN_BOOTSTRAPPED_BY_OPERATOR` audit event.
+- Run the packaged admin promotion CLI against the staging database. Enter the address only at
+  its interactive prompt so it does not enter shell history:
+
+  ```bash
+  docker compose --env-file "$staging_env" -p gym-tracker-staging -f "$staging_compose" \
+    --profile operations run --rm --entrypoint /bin/sh migrate -ec '
+      printf "Admin email: " >&2
+      IFS= read -r admin_email
+      export DATABASE_URL="postgresql://gym_tracker_staging_owner:$(cat /run/secrets/postgres_owner_password)@postgres:5432/gym_tracker_staging"
+      exec node scripts/promote-admin.mjs "$admin_email"
+    '
+  ```
+
+  Then verify exactly one `ADMIN` user and one `ADMIN_BOOTSTRAPPED_BY_OPERATOR` audit event.
 - With the second allowlisted inbox, complete waitlist → approval → invitation delivery → signup
   → automatic verification → first workout. Exercise token reuse, cap contention, the three
   runtime switches and `REGISTRATION_MODE=DISABLED`.
