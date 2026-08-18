@@ -1,7 +1,7 @@
 import cookie from "@fastify/cookie";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
-import fastify, { type FastifyInstance } from "fastify";
+import fastify, { LogController, type FastifyInstance } from "fastify";
 import type { Kysely } from "kysely";
 import { createAnalyticsRepository } from "./features/analytics/analytics.repository.js";
 import { registerAnalyticsRoutes } from "./features/analytics/analytics.routes.js";
@@ -102,7 +102,7 @@ export async function buildServer(
     logger,
     bodyLimit: BODY_LIMIT_BYTES,
     trustProxy: extras.trustProxy ?? false,
-    disableRequestLogging: true,
+    logController: new LogController({ disableRequestLogging: true }),
     genReqId: (request) => createRequestId(request.headers["x-request-id"])
   });
   registerApiRequestLogging(server);
