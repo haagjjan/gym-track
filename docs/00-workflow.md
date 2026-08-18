@@ -15,10 +15,12 @@
   `https://app.gymtrack.ch` canonical origin, secure-cookie enforcement, and same-origin
   host/CSRF protection. DNS, Cloudflare Access/Tunnel, server configuration, deployment,
   and external verification remain operator work.
-- Goal 3 repository preparation now includes a separate hardened staging Compose/Caddy topology,
-  file-backed secret boundaries, strict staging recipient containment and an execution/rollback
-  runbook under `ops/staging/`. The environment has not yet been deployed, so no staging or
-  production launch gate is closed by this repository work alone.
+- Goal 3 is complete. The exact green release `4a4fccdae263126ceda164a792059514123f957f`
+  runs in a separate production-shaped owner-only staging Compose/Caddy topology with synthetic
+  data, real Cloudflare Access/Tunnel and Resend delivery, strict recipient containment, verified
+  migrations/restoration/rollback, black-box edge checks and a complete admission/product flow.
+  Production remained healthy throughout. This is staging evidence, not production-launch proof;
+  Goal 4 and later production gates remain next.
 
 ## Phase 0 — Project Setup & Working Style
 
