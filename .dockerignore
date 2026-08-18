@@ -1,17 +1,22 @@
 .git/
+**/.git
 .github/
-.DS_Store
+.claude/
+.claudeignore
+.agents/
+.codex/
+**/.DS_Store
 
-.env
-.env.*
+**/.env
+**/.env.*
 !.env.example
+!ops/staging/staging.env.example
 
-node_modules/
-apps/*/node_modules/
+**/node_modules/
 .pnpm-store/
 
-apps/api/dist/
-apps/web/.next/
+**/dist/
+**/.next/
 coverage/
 .turbo/
 .cache/
@@ -26,3 +31,5 @@ yarn-error.log*
 tmp/
 temp/
 cookies.txt
+**/playwright-report/
+**/test-results/
