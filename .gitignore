@@ -9,6 +9,7 @@
 # editor/IDE
 .vscode/
 .idea/
+.claude/worktrees/
 
 # logs
 *.log
