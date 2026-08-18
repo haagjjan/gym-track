@@ -17,7 +17,7 @@ The V1 usability-audit-v2/v3 remediation, audit-v4 refinements, and Private Beta
 Stage 1 repository readiness includes the fail-closed production registration mode, canonical
 HTTPS origin validation, secure-cookie enforcement, and Next.js host/Origin request guards
 recorded by ADR 0011. The private production host and secure remote administration exist;
-staging and public-beta black-box evidence remain unexecuted.
+public-production black-box evidence remains unexecuted.
 
 Goal 0 is captured by clean baseline `ee537d9`. Goal 1 public-beta hardening and its repository
 acceptance run are complete: accessible modal/zoom behavior, 24-hour user-scoped active-set
@@ -29,9 +29,15 @@ readiness. See
 
 Goal 2 decisions are recorded. The DPIA and bounded legal-risk self-assessment were approved by
 the controller on 2026-08-10 without counsel review. Remaining Goal 2 execution is provider and
-asset evidence: staging Resend configuration, Cloudflare/Resend transfer and retention terms,
-account-recovery bookkeeping, and removing/replacing the FBX models or proving their
-redistribution rights before public delivery.
+asset evidence: final provider recovery/retention bookkeeping and removing/replacing the FBX
+models or proving their redistribution rights before public delivery. Staging Resend and
+Cloudflare configuration is complete.
+
+Goal 3 is complete. The isolated staging environment runs exact green release
+`4a4fccdae263126ceda164a792059514123f957f`; migrations, dump restoration, previous-image
+rollback, fail-closed configuration, Cloudflare edge behavior, real controlled email,
+administrator bootstrap, admission controls and the complete invited-user workout flow passed.
+See `docs/beta-process/public-beta/goal-3/goal-3-staging-report.md`.
 
 ## Source of truth for V1 UI behavior
 
@@ -73,16 +79,17 @@ The older redesign files remain useful for styling and atmosphere, but no longer
 
 ## Recommended next slice
 
-Goal 3's repository deployment foundation is implemented under `ops/staging/`. Complete its
-operator prerequisites and execute it on the Mac mini:
+Do not extend staging unless a release candidate changes. Start the production-readiness goal:
 
-1. Verify `send.gymtrack.ch`, create and protect the staging Resend key, configure the two-address
-   staging allowlist, and record Cloudflare/Resend transfer and retention terms.
-2. Resolve the two FBX models before public delivery by proving their terms or removing/replacing them.
-3. Finish the provider recovery/billing record and commit the approved Switzerland-only policy version.
-4. Execute `ops/staging/README.md` and the staging specification on the Mac mini without using
-   production data or secrets; record results in the Goal 3 report.
-5. Work through `docs/beta-process/public-beta/goal-1/launch-gates.md`; only the two controller-approved document gates are currently complete. All deployed-system gates require Goals 3–6 evidence.
+1. Treat Goal 3's exact release and evidence report as the production-candidate baseline.
+2. Resolve the two FBX models before public delivery by proving their terms or removing/replacing
+   them.
+3. Finish the provider recovery/billing/retention register and configure a production-only
+   Resend key without reusing staging secrets.
+4. Execute the Goal 4 production deployment and black-box verification gates without inferring
+   production behavior from staging success. Keep rollback and production health stop rules.
+5. Continue through the remaining launch gates and Goals 5–6 until the first real capped cohort
+   is invited; avoid unrelated post-beta feature work.
 
 Keep the audit-v4 “Features up for rework” list post-beta. The catalog and local smart matching are included; broad import/export redesign and complete workout-history reset remain outside this gate.
 
@@ -149,11 +156,13 @@ First read:
 - docs/18-public-beta-handoff.md
 - docs/beta-process/public-beta/goal-1/goal-1-remediation-report.md
 - docs/beta-process/public-beta/goal-1/launch-gates.md
+- docs/beta-process/public-beta/goal-3/goal-3-staging-report.md
 
 Important:
 - Audit v4 supersedes audit v3/v2 where they conflict; v3 then v2 define only behavior not superseded by newer audits.
 - Preserve all existing uncommitted work.
-- Verify the implemented Goal 1 remediation and Curated Founding Beta foundation; do not restart the redesign.
+- Treat the completed Goal 3 exact-SHA staging report as the production-candidate baseline; do not restart staging or the redesign unless the candidate changes.
+- Resolve the remaining production, provider, asset, recovery, capacity and device launch gates instead of extending owner-only staging.
 - Do not claim launch readiness without external legal, provider, restore, security, capacity and device evidence.
 - Keep broad import/export redesign, intelligent naming, and full-history reset in the post-beta backlog.
 
