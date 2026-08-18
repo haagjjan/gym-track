@@ -26,15 +26,26 @@ Production registration uses `INVITE_ONLY`. `DISABLED` remains the environment k
 
 ## Evidence and external work still required
 
-The implementation does not make the beta launch-ready by itself. Follow [launch-gates.md](beta-process/public-beta/goal-1/launch-gates.md), the repository findings in [security-review.md](beta-process/public-beta/goal-1/security-review.md), and the bounded [Goal 1 remediation report](beta-process/public-beta/goal-1/goal-1-remediation-report.md). The DPIA and bounded legal-risk self-assessment were approved by the controller on 2026-08-10; they are not counsel review or a compliance certification. Provider transfer documents and the remaining production Resend DNS/delivery/bounce behavior, operator configuration, 30-day pruning, restore/erasure replay, black-box security review, capacity, responsive/device/assistive-technology QA and incident/rollback rehearsals still require evidence. The bundled FBX model rights must be proven or the files removed/replaced before public delivery.
+The implementation and completed owner-only staging rehearsal do not make the beta launch-ready
+by themselves. Follow [launch-gates.md](beta-process/public-beta/goal-1/launch-gates.md), the
+repository findings in [security-review.md](beta-process/public-beta/goal-1/security-review.md),
+and the bounded [Goal 1 remediation report](beta-process/public-beta/goal-1/goal-1-remediation-report.md).
+The DPIA and bounded legal-risk self-assessment were approved by the controller on 2026-08-10;
+they are not counsel review or a compliance certification. Production Resend identity and
+bounce behavior, production configuration, 30-day pruning, restore/erasure replay, production
+black-box security review, capacity, responsive/device/assistive-technology QA and incident
+rehearsals still require evidence. The bundled FBX model rights must be proven or the files
+removed/replaced before public delivery.
 
 The application deliberately renders a visible configuration warning on legal pages while required controller/contact values are absent. Do not remove that gate or publish placeholder facts.
 
 ## Rollout
 
-Goal 1 repository acceptance is complete, and Goal 3's isolated staging definition and runbook
-now exist in the repository. Finish the remaining provider/account/asset actions, deploy and
-rehearse staging, then execute the verification and production goals. Run every operational
-launch gate without inferring deployed evidence from repository tests. Only after every blocker
-has linked evidence, invite 10 users, observe 72 hours, then add no more than 10 per rolling 24
-hours with deliberate pauses. Apply the stop rules in the launch-gate document without exception.
+Goals 1–3 are complete at their stated scopes. Goal 3's exact green release passed the isolated
+production-shaped staging deployment, migration/rollback, provider containment, security and
+invited-user product flow recorded in
+[the staging report](beta-process/public-beta/goal-3/goal-3-staging-report.md). Proceed directly to
+the production verification goals and remaining launch gates; do not infer production behavior
+from staging success. Only after every blocker has linked evidence, invite the first capped
+cohort, observe 72 hours, then add no more than 10 per rolling 24 hours with deliberate pauses.
+Apply the stop rules in the launch-gate document without exception.
