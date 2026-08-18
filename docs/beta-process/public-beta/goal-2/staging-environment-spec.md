@@ -1,10 +1,11 @@
 # Staging Environment Specification
 
 Decision: [ADR 0015](../../../decisions/0015-staging-environment.md). Goal 2 owns this
-specification; Goal 3 executes it. Nothing here has been deployed.
+specification; Goal 3 executed it on 2026-08-10 through 2026-08-18.
 
-Goal 3's reviewed repository definition now lives under `ops/staging/`. Repository readiness is
-not deployment evidence; the checkboxes below remain open until the Mac mini rehearsal is run.
+Goal 3's reviewed repository definition lives under `ops/staging/`. The exact green release
+`4a4fccdae263126ceda164a792059514123f957f` is deployed on the Mac mini and the completed
+sanitized evidence is in [the Goal 3 staging report](../goal-3/goal-3-staging-report.md).
 
 ## Placement
 
@@ -91,10 +92,9 @@ each as a checkable condition, not a guideline.
 > exactly what `APP_ENV=staging` makes it. **Staging will refuse to start without a Resend
 > key.** The fail-closed behaviour is correct; it simply means Resend now comes before staging.
 
-**A Resend account now exists** (created 2026-08-07), but Goal 3 still needs a sending-only
-staging API key stored outside the repository. The chosen execution path brings verification of
-`send.gymtrack.ch` forward so the administrator and invited-user flow can use two distinct,
-owner-controlled inboxes. Staging sends as
+**The staging sender is operational.** `send.gymtrack.ch` is verified, the sending-only staging
+API key is stored outside the repository, receiving is disabled and the two controlled inboxes
+completed real OTP, invitation and signup delivery. Staging sends as
 `Gym Progress Tracker Staging <staging@send.gymtrack.ch>`.
 
 Domain verification removes Resend's one-recipient sandbox protection, so the application adds
@@ -142,23 +142,23 @@ rather than improvising.
 
 Staging is complete when all of the following hold:
 
-- [ ] The stack boots with `APP_ENV=staging` and serves `https://staging.gymtrack.ch`.
-- [ ] Removing any one of `APP_BASE_URL`, `AUTH_COOKIE_SECURE`, `BFF_CLIENT_IP_SECRET`,
+- [x] The stack boots with `APP_ENV=staging` and serves `https://staging.gymtrack.ch`.
+- [x] Removing any one of `APP_BASE_URL`, `AUTH_COOKIE_SECURE`, `BFF_CLIENT_IP_SECRET`,
       `SUPPORT_EMAIL`, `RESEND_API_KEY` or `EMAIL_RECIPIENT_ALLOWLIST` makes the API refuse to
       start. That refusal is the control working.
-- [ ] `Set-Cookie` on login carries `Secure`, `HttpOnly` and `SameSite=Lax`.
-- [ ] A direct request from inside the staging network to the unpublished API, other than health
+- [x] `Set-Cookie` on login carries `Secure`, `HttpOnly` and `SameSite=Lax`.
+- [x] A direct request from inside the staging network to the unpublished API, other than health
       or metrics, returns `BFF_REQUIRED`. No public API hostname exists.
-- [ ] A browser-supplied `cf-connecting-ip` does not influence rate-limit attribution.
-- [ ] `/privacy`, `/terms`, `/cookies` and `/support` render real controller values with no
+- [x] A browser-supplied `cf-connecting-ip` does not influence rate-limit attribution.
+- [x] `/privacy`, `/terms`, `/cookies` and `/support` render real controller values with no
       `PUBLICATION_BLOCKED` banner. This is the check that catches the static-prerender defect.
-- [ ] The full admission flow works end to end: waitlist request, admin approval, invitation
+- [x] The full admission flow works end to end: waitlist request, admin approval, invitation
       email link, signup, automatic verification, first workout.
-- [ ] All nine migrations apply fresh; migrations 8–9 preserve a representative migration-7
+- [x] All nine migrations apply fresh; migrations 8–9 preserve a representative migration-7
       synthetic dataset; destructive down/up behavior is recorded only on a disposable copy;
       and verified dump restoration plus candidate reapplication succeeds.
-- [ ] The admin bootstrap procedure above completes and is written up.
-- [ ] Production is provably unaffected: its containers stayed healthy and its memory headroom
+- [x] The admin bootstrap procedure above completes and is written up.
+- [x] Production is provably unaffected: its containers stayed healthy and its memory headroom
       remained adequate throughout.
 
 ## Cost
