@@ -32,14 +32,14 @@ The beta may be promoted only after every blocker is checked with linked evidenc
 - [ ] Grace-period lock, link cancellation, admin support cancellation and idempotent final erasure pass.
 - [ ] Shared exercise deletion/anonymization passes with both referenced and unreferenced fixtures.
 - [ ] Strict wall-clock 30-day Restic expiry/prune run is recorded; local dump expiry is seven days.
-- [ ] Restore an older snapshot in isolation, obtain the newest valid erasure ledger separately, replay it, and prove erased IDs are absent before opening network access.
+- [x] Restore an older snapshot in isolation, obtain the newest valid erasure ledger separately, replay it, and prove erased IDs are absent before opening network access. Evidence: [Goal 4 production verification](../goal-4/goal-4-production-verification.md), snapshots `a3bc255c` and `905c5b1b`, sanitized host report `erasure-replay-restore-20260818T162455Z.env`.
 - [ ] Recovery runbook explicitly forbids reopening before erasure replay.
 
 ## Security, quality and capacity
 
 - [ ] Security review covers authorization/IDOR, admin, cap races, invite reuse/expiry, CSRF, brute force, enumeration, feedback XSS, deletion, headers and log/metric leakage.
 - [ ] At least 20 concurrent active loggers and 2× measured peak pass with recorded write latency, connections, disk growth, failure and overload behavior.
-- [x] Full `pnpm check`, API DB integration, migration up/down, build, performance and Chromium/Firefox Playwright pass for the exact staging release. Evidence: [Goal 3 staging report](../goal-3/goal-3-staging-report.md). Production-specific black-box, capacity and device gates remain separate below and above.
+- [ ] Full `pnpm check`, API DB integration, migration up/down, build, performance and Chromium/Firefox Playwright pass for the exact production candidate. The [Goal 3 staging report](../goal-3/goal-3-staging-report.md) remains complete evidence for baseline `4a4fccdae263126ceda164a792059514123f957f`, but the Goal 4 dependency/container hardening creates a new candidate that requires exact-SHA CI and focused staging revalidation. Current working-tree preflight is recorded in the [Goal 4 report](../goal-4/goal-4-production-verification.md).
 - [ ] 390 px, 430 px, 1440 px and Samsung S22 Plus Firefox/mobile-data workflow pass.
 - [ ] Keyboard, screen-reader, focus, touch, reduced-motion, mobile keyboard and popover checks pass.
 - [ ] Rollback, database restore/ledger replay, signup pause, campaign pause, incident notice and email outage rehearsals pass.
