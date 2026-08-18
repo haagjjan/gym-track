@@ -21,6 +21,13 @@
   migrations/restoration/rollback, black-box edge checks and a complete admission/product flow.
   Production remained healthy throughout. This is staging evidence, not production-launch proof;
   Goal 4 and later production gates remain next.
+- Goal 4 pre-deployment verification is in progress. Dependency and runtime-image hardening,
+  fresh migrations/integration, hardened-image Chromium/Firefox flows, monitoring syntax and a
+  guarded 20/40-concurrent-logger preflight pass locally. Production cutover is stopped because
+  the latest off-machine backup failed and the last success exceeded the 24-hour RPO. Provider,
+  FBX rights/removal, exact-SHA staging, restore/ledger, production black-box, status and physical-
+  device gates remain. See
+  `docs/beta-process/public-beta/goal-4/goal-4-production-verification.md`.
 
 ## Phase 0 — Project Setup & Working Style
 

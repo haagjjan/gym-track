@@ -39,6 +39,16 @@ rollback, fail-closed configuration, Cloudflare edge behavior, real controlled e
 administrator bootstrap, admission controls and the complete invited-user workout flow passed.
 See `docs/beta-process/public-beta/goal-3/goal-3-staging-report.md`.
 
+Goal 4 pre-deployment verification is active. The prospective working-tree candidate has clean
+full/production dependency audits, minimal non-root API/web images, fresh PostgreSQL integration,
+CI-equivalent hardened-image browser coverage, valid monitoring configuration and passing local
+20/40-active-logger workloads. Production was inspected read-only and not mutated. Deployment is
+blocked by failed/stale off-machine backups, and the new batch commit still requires exact-SHA CI
+and focused staging revalidation. Provider/legal values, FBX rights or replacement, the required
+restore-plus-newest-erasure-ledger drill, independent status, production black-box checks and
+physical-device QA remain open. See
+`docs/beta-process/public-beta/goal-4/goal-4-production-verification.md`.
+
 ## Source of truth for V1 UI behavior
 
 Use these sources in order:
@@ -81,14 +91,19 @@ The older redesign files remain useful for styling and atmosphere, but no longer
 
 Do not extend staging unless a release candidate changes. Start the production-readiness goal:
 
-1. Treat Goal 3's exact release and evidence report as the production-candidate baseline.
-2. Resolve the two FBX models before public delivery by proving their terms or removing/replacing
+1. Treat Goal 3's exact release and evidence report as the verified baseline, while recognizing
+   that the Goal 4 hardening diff creates a new candidate requiring exact-SHA CI and focused
+   staging revalidation.
+2. Restore off-machine backup operation, verify a fresh snapshot within the 24-hour RPO and
+   complete the older-snapshot plus separately obtained newest-erasure-ledger drill before any
+   production deployment.
+3. Resolve the two FBX models before public delivery by proving their terms or removing/replacing
    them.
-3. Finish the provider recovery/billing/retention register and configure a production-only
+4. Finish the provider recovery/billing/retention register and configure a production-only
    Resend key without reusing staging secrets.
-4. Execute the Goal 4 production deployment and black-box verification gates without inferring
+5. Execute the Goal 4 production deployment and black-box verification gates without inferring
    production behavior from staging success. Keep rollback and production health stop rules.
-5. Continue through the remaining launch gates and Goals 5–6 until the first real capped cohort
+6. Continue through the remaining launch gates and Goals 5–6 until the first real capped cohort
    is invited; avoid unrelated post-beta feature work.
 
 Keep the audit-v4 “Features up for rework” list post-beta. The catalog and local smart matching are included; broad import/export redesign and complete workout-history reset remain outside this gate.
