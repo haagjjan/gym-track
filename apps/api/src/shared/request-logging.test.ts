@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import fastify from "fastify";
+import fastify, { LogController } from "fastify";
 import { createApiLogger } from "./logger.js";
 import { createRequestId, registerApiRequestLogging } from "./request-logging.js";
 
@@ -63,7 +63,7 @@ function buildLoggingServer(output: string[]) {
       version: "test-release",
       stream: { write: (message) => output.push(message) }
     }),
-    disableRequestLogging: true,
+    logController: new LogController({ disableRequestLogging: true }),
     genReqId: (request) => createRequestId(request.headers["x-request-id"])
   });
   registerApiRequestLogging(server);
