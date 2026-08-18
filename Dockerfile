@@ -1,4 +1,4 @@
-FROM node:22-bookworm-slim AS base
+FROM node:22-bookworm-slim@sha256:d649c27dae7ba0137b3cef5dd75baa422c08dc3d9e3fc0c23dfb172dc3cc6436 AS base
 
 WORKDIR /app
 
@@ -31,6 +31,8 @@ COPY . .
 
 RUN pnpm --filter @gym-progress-tracker/api build
 
+RUN pnpm --filter @gym-progress-tracker/api --prod deploy --legacy /prod/api
+
 FROM deps AS web-build
 
 COPY . .
@@ -46,18 +48,50 @@ WORKDIR /app/apps/api
 
 CMD ["pnpm", "exec", "node-pg-migrate", "--config-file", "db/migrate.json", "up"]
 
-FROM api-build AS api
+FROM node:22-bookworm-slim@sha256:d649c27dae7ba0137b3cef5dd75baa422c08dc3d9e3fc0c23dfb172dc3cc6436 AS api
+
+WORKDIR /app
 
 ENV NODE_ENV=production
+
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+  && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
+    /usr/local/bin/pnpm /usr/local/bin/pnpx /usr/local/bin/yarn /usr/local/bin/yarnpkg
+
+COPY --from=api-build --chown=node:node /prod/api/package.json ./package.json
+COPY --from=api-build --chown=node:node /prod/api/node_modules ./node_modules
+COPY --from=api-build --chown=node:node /app/apps/api/dist ./dist
+
+USER node
 
 EXPOSE 4000
 
-CMD ["pnpm", "--filter", "@gym-progress-tracker/api", "start"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD ["node", "-e", "fetch('http://127.0.0.1:4000/api/v1/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
 
-FROM web-build AS web
+CMD ["node", "dist/main.js"]
 
+FROM node:22-bookworm-slim@sha256:d649c27dae7ba0137b3cef5dd75baa422c08dc3d9e3fc0c23dfb172dc3cc6436 AS web
+
+WORKDIR /app
+
+ENV HOSTNAME=0.0.0.0
 ENV NODE_ENV=production
+ENV PORT=3000
+
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+  && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
+    /usr/local/bin/pnpm /usr/local/bin/pnpx /usr/local/bin/yarn /usr/local/bin/yarnpkg
+
+COPY --from=web-build --chown=node:node /app/apps/web/.next/standalone ./
+COPY --from=web-build --chown=node:node /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=web-build --chown=node:node /app/apps/web/public ./apps/web/public
+
+USER node
 
 EXPOSE 3000
 
-CMD ["pnpm", "--filter", "@gym-progress-tracker/web", "start"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD ["node", "-e", "fetch('http://127.0.0.1:3000/login').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
+
+CMD ["node", "apps/web/server.js"]
