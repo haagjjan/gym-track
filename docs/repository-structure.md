@@ -78,7 +78,9 @@ This file is the map for where things live in the Gym Progress Tracker repo. Kee
 - `ARCHITECTURE.md` defines module boundaries and dependency direction.
 - `ENGINEERING.md` defines TypeScript, PostgreSQL, structure, and testing rules.
 - `CONTRIBUTING.md` defines the implementation and review workflow.
-- `Dockerfile` owns local production-like API, web, and migration image targets.
+- `Dockerfile` owns local production-like API, web, and migration image targets. Long-running API
+  and standalone Next.js targets are minimal, health-checked and run as the unprivileged Node
+  user; the migration target is a short-lived deployment image.
 - `Dockerfile.render-api` and `Dockerfile.render-web` own Render service images because Render Blueprints build from Dockerfile paths instead of Compose targets.
 - `compose.yaml` owns local infrastructure and app orchestration for PostgreSQL, migrations, API, and web.
 - `compose.monitoring.yaml` is the opt-in Stage 1 overlay for the private Prometheus, Grafana, and exporter stack.
@@ -142,6 +144,9 @@ apps/
 
 - `apps/api` owns the Fastify API, Kysely database access, migrations, API feature slices, and API tests.
 - `apps/api/catalog` owns the reviewed exercise source manifest, legacy-name input, pinned-source review/exclusion record, and generation metadata. `apps/api/scripts/build-system-exercise-catalog.mjs` reproducibly rebuilds the generated runtime manifest and SQL migration from the pinned upstream revision.
+- `apps/api/scripts/beta-capacity.ts` owns the guarded synthetic active-logger workload used for
+  Goal 4 capacity evidence; `capacity-metrics.ts` owns its bounded result summary. The workload
+  requires explicit isolated-data and target approval and must never be aimed at real user data.
 - `apps/api/tsconfig.build.json` owns the compiled API runtime build used by Docker.
 - `apps/api/src/features/<feature>` owns each API vertical slice. Current features include `admin`, `analytics`, `auth`, `beta`, `exercises`, `health`, `lifecycle`, `messages`, `templates`, `users`, and `workouts`.
 - `apps/api/src/features/admin` owns canonical administrator user containment and bounded audit-read interfaces; `apps/api/src/features/lifecycle` owns the single-process startup-and-hourly cleanup scheduler.
