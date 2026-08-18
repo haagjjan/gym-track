@@ -39,7 +39,7 @@ The beta may be promoted only after every blocker is checked with linked evidenc
 
 - [ ] Security review covers authorization/IDOR, admin, cap races, invite reuse/expiry, CSRF, brute force, enumeration, feedback XSS, deletion, headers and log/metric leakage.
 - [ ] At least 20 concurrent active loggers and 2× measured peak pass with recorded write latency, connections, disk growth, failure and overload behavior.
-- [ ] Full `pnpm check`, API DB integration, migration up/down, build, performance and Chromium/Firefox Playwright pass.
+- [x] Full `pnpm check`, API DB integration, migration up/down, build, performance and Chromium/Firefox Playwright pass for the exact staging release. Evidence: [Goal 3 staging report](../goal-3/goal-3-staging-report.md). Production-specific black-box, capacity and device gates remain separate below and above.
 - [ ] 390 px, 430 px, 1440 px and Samsung S22 Plus Firefox/mobile-data workflow pass.
 - [ ] Keyboard, screen-reader, focus, touch, reduced-motion, mobile keyboard and popover checks pass.
 - [ ] Rollback, database restore/ledger replay, signup pause, campaign pause, incident notice and email outage rehearsals pass.
