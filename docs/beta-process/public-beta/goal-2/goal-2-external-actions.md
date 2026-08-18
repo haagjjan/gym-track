@@ -70,34 +70,38 @@ A6 — this is now the single highest-consequence configuration choice in Goal 2
 
 **Blocks:** items 1, 4 and 5; `SUPPORT_EMAIL`, and therefore the API boot contract on staging.
 
-### A7 — Configure Resend for staging · items 4, 12; **partially complete, still blocks Goal 3**
+### A7 — Configure Resend for staging · items 4, 12; **complete for Goal 3**
 
 The Resend account was created on 2026-08-07 (free tier, Google SSO, US entity). No secret is
-stored in this repository. Staging still needs its own API key/configuration, and the production
-sending domain remains separate under B2.
+stored in this repository. `send.gymtrack.ch` is verified, receiving is disabled, and the
+staging-only sending key and two-address recipient allowlist are installed outside Git. A real
+controlled invitation was delivered and an unlisted recipient was rejected before Resend with
+no provider record. Evidence: [Goal 3 staging report](../goal-3/goal-3-staging-report.md).
 
-This is now on the critical path in two independent ways.
+This was on the Goal 3 critical path in two independent ways. The staging requirement is now
+satisfied; the production requirement remains open.
 
-**It blocks staging from booting.** `apps/api/src/shared/env.ts:92-105` requires `EMAIL_FROM`
+**It would block staging from booting if removed.** `apps/api/src/shared/env.ts` requires `EMAIL_FROM`
 and `RESEND_API_KEY` in any production-like deployment, and `APP_ENV=staging` is deliberately
 production-like. Without a key the stack refuses to start — correct fail-closed behaviour, but
-it means Resend precedes staging rather than following it.
+the requirement is now satisfied.
 
-**It blocks the beta outright.** Every account flow depends on delivery: invitations, email
-verification, password reset, deletion scheduling and the cancellation link. Without Resend the
-application runs and no one can be invited, verify an address, or recover an account.
+**Production delivery still blocks the beta outright.** Every account flow depends on delivery:
+invitations, email verification, password reset, deletion scheduling and the cancellation link.
+Without Resend the application runs and no one can be invited, verify an address, or recover an
+account.
 
-Minimum remaining work to unblock staging:
+Completed staging work:
 
-1. Verify `send.gymtrack.ch` and create a sending-only staging API key; store it only in the
-   staging secret environment.
-2. Confirm the Resend/Google identity has appropriate MFA and recovery protection.
-3. Use `staging@send.gymtrack.ch` as the staging sender and configure exactly two
-   owner-controlled addresses in the staging-only `EMAIL_RECIPIENT_ALLOWLIST`. The repository
-   guard now refuses staging boot without that list and blocks other recipients before Resend.
+1. Verified `send.gymtrack.ch` and created a sending-only staging API key stored only in the
+   staging secret environment and password manager.
+2. Used `staging@send.gymtrack.ch` as the staging sender and configured exactly two
+   owner-controlled addresses in the staging-only `EMAIL_RECIPIENT_ALLOWLIST`.
+3. Proved controlled delivery and provider-free rejection of an unlisted recipient through the
+   deployed exact-SHA environment.
 
-The same verified subdomain is later used for production, but production gets a separate key and
-sender configuration. The staging key and recipient allowlist are never reused.
+Production still requires its own separate key and sender configuration. The staging key and
+recipient allowlist are never reused.
 
 Record provider retention and the applicable transfer/DPA terms while you are in the console;
 item 4 still needs those facts.
@@ -136,10 +140,10 @@ addresses into a single account.
 No helpdesk provider is used for the first cohort. Support, privacy and security correspondence
 uses the configured Infomaniak mailbox/aliases and the operator's local mail client.
 
-### B2 — Add the Resend DNS records for `send.gymtrack.ch` · items 1, 4
+### B2 — Add the Resend DNS records for `send.gymtrack.ch` · items 1, 4; **complete for staging**
 Decided 2026-08-06: Resend sends from a subdomain, so no SPF merging is needed on the root.
 
-**Zone state as of 2026-08-07** (7 records, Cloudflare free plan):
+**Historical zone state as of 2026-08-07, before Resend configuration:**
 
 | Record | Type | Purpose |
 |---|---|---|
@@ -150,39 +154,15 @@ Decided 2026-08-06: Resend sends from a subdomain, so no SPF merging is needed o
 | `20260806._domainkey` | TXT `v=DKIM1; t=s; p=…` | DKIM for Infomaniak |
 | `_dmarc` | TXT `v=DMARC1; p=reject;` | DMARC, root |
 
-Infomaniak mail is complete and correct. **No Resend records exist yet** — this action is fully
-open. The subdomain decision is validated by what is already in the zone: the root SPF belongs
-to Infomaniak and must not be touched.
-
-> **`p=reject` with no reporting address is the risk to manage here.** The DMARC record carries
-> no `sp=` tag, so `send.gymtrack.ch` inherits `reject` rather than falling back to something
-> softer. Once Resend starts sending, any SPF or DKIM misalignment causes receiving servers to
-> **reject** the message outright rather than spam-folder it — an invitation simply never
-> arrives, and nothing in the application logs explains why. There is also no `rua=`, so no
-> aggregate reports are produced and the failure is invisible.
->
-> Add reporting **before** configuring Resend, keeping the strict policy:
->
-> ```
-> v=DMARC1; p=reject; rua=mailto:support@gymtrack.ch; fo=1
-> ```
->
-> Keeping `p=reject` is the right posture. It simply leaves no margin for error, which is
-> exactly why the feedback loop has to exist first.
-
-In Resend, add `send.gymtrack.ch` as a sending domain; it will produce SPF, DKIM and (usually)
-a return-path record. Add them **in Cloudflare** as records on the `send` subdomain, leaving
-the root domain's MX and SPF for Infomaniak mail untouched.
-
-Set these records to **DNS only** (grey cloud) rather than proxied. Cloudflare's proxy applies
-to HTTP, and proxying mail-related records breaks them.
-
-Then add one DMARC record at the root — `_dmarc.gymtrack.ch` — covering both. Start at
-`p=none` with a reporting address so you can observe before enforcing, then tighten once the
-first real invitations have been seen to arrive.
-
-Verify in Resend that the domain shows as verified, and confirm SPF, DKIM and DMARC all pass on
-a received test message. That is a launch gate.
+During Goal 3, Resend's DNS-only DKIM record was added at
+`resend._domainkey.send.gymtrack.ch`, with the provider MX and SPF records at
+`send.send.gymtrack.ch`. Resend reports the sending domain verified and a controlled Gmail inbox
+accepted a real invitation from `staging@send.gymtrack.ch`. The root Infomaniak MX, SPF, DKIM and
+strict DMARC records were left unchanged. Production still needs separate-key delivery,
+bounce/complaint/suppression ownership and received-header evidence before its launch gate can
+close. The root DMARC policy remains `p=reject` without an aggregate-reporting address, so failed
+alignment can still be invisible to the operator; decide and document production reporting or an
+equivalent provider-owned monitoring path before launch.
 
 ### ~~B3 — Decide the seat cap~~ · resolved 2026-08-06
 Cap stays at **50**, giving 48 external testers alongside the two operator accounts. No
@@ -208,8 +188,8 @@ port; see [ADR 0017](../../../decisions/0017-secure-remote-administration.md) an
 |---|---|---|
 | Decide how an external applicant reaches `/beta` while Cloudflare Access gates `app.gymtrack.ch` | Goal 5 | The waitlist form must be publicly reachable for anyone to request access, but Access currently protects the whole hostname. `launch-gates.md` keeps the private gate until direct API signup cannot bypass invite admission, so the two requirements have to be reconciled deliberately rather than discovered at launch |
 | Root `gymtrack.ch` and `www` do not resolve — only `app.` does | Goal 5 | Survivable for a beta, but anyone typing the bare domain gets nothing. Decide whether to redirect to `app.` or leave it |
-| Verify the dynamically rendered legal routes with real server-only contact values | Goals 3–5 | The repository fix is complete; staging and production still need to prove the approved version renders without `PUBLICATION_BLOCKED` |
-| Execute [staging-environment-spec.md](staging-environment-spec.md) | Goal 3 | — |
-| Edge must overwrite `cf-connecting-ip` and friends on both hostnames | Goal 3, verified in Goal 4 | Rate limiting is bypassable until it does |
+| Verify the dynamically rendered legal routes with real server-only contact values | Goals 4–5 | Staging passed without `PUBLICATION_BLOCKED`; production still needs to prove the approved version renders |
+| ~~Execute [staging-environment-spec.md](staging-environment-spec.md)~~ | Goal 3, complete | Evidence: [Goal 3 staging report](../goal-3/goal-3-staging-report.md) |
+| Edge must overwrite `cf-connecting-ip` and friends on the public production path | Goal 4 | Staging rejected the forged Cloudflare header and resisted application-header rotation; production must be verified independently |
 | Verify rendered production HTML carries real controller values | Goal 4 | The check that catches the prerender defect |
-| Rehearse the admin bootstrap under `INVITE_ONLY` | Goal 3 | The dedicated admin account cannot be registered normally |
+| ~~Rehearse the admin bootstrap under `INVITE_ONLY`~~ | Goal 3, complete | Packaged CLI produced exactly one administrator and one bootstrap audit event |
