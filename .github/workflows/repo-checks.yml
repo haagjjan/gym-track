@@ -172,6 +172,22 @@ jobs:
             "${proxy_image}" \
             caddy version
           "${compose[@]}" config --quiet
+          "${compose[@]}" config --format json | node -e '
+            let source = "";
+            process.stdin.setEncoding("utf8");
+            process.stdin.on("data", (chunk) => { source += chunk; });
+            process.stdin.on("end", () => {
+              const services = JSON.parse(source).services;
+              const apiCommand = services.api.command.join(" ");
+              const webCommand = services.web.command.join(" ");
+              if (!apiCommand.includes("exec node dist/main.js") || apiCommand.includes("pnpm")) {
+                throw new Error("Staging API command is incompatible with the hardened runtime image");
+              }
+              if (!webCommand.includes("exec node apps/web/server.js") || webCommand.includes("pnpm")) {
+                throw new Error("Staging web command is incompatible with the hardened runtime image");
+              }
+            });
+          '
           "${compose[@]}" up -d --wait postgres
           "${compose[@]}" exec -T postgres awk \
             '/^Groups:/ { for (i = 2; i <= NF; i++) if ($i == 10001) found = 1 } END { exit !found }' \
