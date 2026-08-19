@@ -98,7 +98,7 @@ services:
         export BFF_CLIENT_IP_SECRET="$$(cat /run/secrets/bff_client_ip_secret)"
         export RESEND_API_KEY="$$(cat /run/secrets/resend_api_key)"
         export EMAIL_RECIPIENT_ALLOWLIST="$$(cat /run/secrets/email_recipient_allowlist)"
-        exec pnpm --filter @gym-progress-tracker/api start
+        exec node dist/main.js
     secrets:
       - postgres_app_password
       - bff_client_ip_secret
@@ -159,7 +159,7 @@ services:
       - -ec
       - |
         export BFF_CLIENT_IP_SECRET="$$(cat /run/secrets/bff_client_ip_secret)"
-        exec pnpm --filter @gym-progress-tracker/web start
+        exec node apps/web/server.js
     secrets:
       - bff_client_ip_secret
     tmpfs:
