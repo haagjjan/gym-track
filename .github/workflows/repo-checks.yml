@@ -172,6 +172,19 @@ jobs:
             "${proxy_image}" \
             caddy version
           "${compose[@]}" config --quiet
+
+          node -e '
+            const { readFileSync } = require("node:fs");
+            for (const path of ["ops/staging/Caddyfile", "ops/production/Caddyfile"]) {
+              const source = readFileSync(path, "utf8");
+              for (const key of ["invite", "email", "token", "code", "reset_token", "verification_token", "state"]) {
+                if (!source.includes(`replace ${key} REDACTED`)) {
+                  throw new Error(`${path} does not redact the ${key} query parameter`);
+                }
+              }
+            }
+          '
+
           "${compose[@]}" config --format json | node -e '
             let source = "";
             process.stdin.setEncoding("utf8");
@@ -197,6 +210,102 @@ jobs:
             -d gym_tracker_staging \
             -c "SELECT 1 FROM pg_roles WHERE rolname = 'gym_tracker_staging_app'")"
           test "${role_exists}" = "1"
+
+      - name: Verify public-beta production definition
+        run: |
+          set -euo pipefail
+
+          export APP_RELEASE="${GITHUB_SHA}"
+          export PRODUCTION_MIGRATE_IMAGE="gym-tracker-migrate:${GITHUB_SHA}"
+          export PRODUCTION_API_IMAGE="gym-tracker-api:${GITHUB_SHA}"
+          export PRODUCTION_WEB_IMAGE="gym-tracker-web:${GITHUB_SHA}"
+
+          compose=(
+            docker compose
+            --env-file ops/production/production.env.example
+            --profile operations
+            -p gym-tracker-production-ci
+            -f ops/production/compose.yaml
+          )
+
+          "${compose[@]}" config --quiet
+          "${compose[@]}" config --format json | node -e '
+            let source = "";
+            process.stdin.setEncoding("utf8");
+            process.stdin.on("data", (chunk) => { source += chunk; });
+            process.stdin.on("end", () => {
+              const config = JSON.parse(source);
+              const services = config.services;
+              const api = services.api;
+              const web = services.web;
+              const apiCommand = api.command.join(" ");
+              const webCommand = web.command.join(" ");
+              const apiSecrets = new Set(api.secrets.map((secret) => secret.source));
+
+              if (api.environment.APP_ENV !== "production" || web.environment.APP_ENV !== "production") {
+                throw new Error("Production APP_ENV must be explicit on API and web");
+              }
+              if (api.environment.APP_RELEASE !== process.env.GITHUB_SHA || web.environment.APP_RELEASE !== process.env.GITHUB_SHA) {
+                throw new Error("Production release identity must match the exact CI SHA");
+              }
+              if (api.environment.REGISTRATION_MODE !== "DISABLED" || web.environment.REGISTRATION_MODE !== "DISABLED") {
+                throw new Error("Production definition must remain fail-closed before cutover");
+              }
+              if (api.environment.AUTH_COOKIE_SECURE !== "true" || web.environment.HSTS_ENABLED !== "true") {
+                throw new Error("Production cookie/HSTS settings are not hardened");
+              }
+              if (Object.hasOwn(api.environment, "EMAIL_RECIPIENT_ALLOWLIST")) {
+                throw new Error("Production must not inherit the staging recipient allowlist");
+              }
+              if (api.environment.TELEGRAM_BETA_BOT_TOKEN !== "" || api.environment.TELEGRAM_BETA_CHAT_ID !== "") {
+                throw new Error("Production beta-request Telegram delivery must stay disabled");
+              }
+              if (!apiSecrets.has("bff_client_ip_secret") || !apiSecrets.has("resend_api_key")) {
+                throw new Error("Production API is missing BFF or Resend secret wiring");
+              }
+              if (!apiCommand.includes("exec node dist/main.js") || apiCommand.includes("pnpm")) {
+                throw new Error("Production API command is incompatible with the hardened runtime image");
+              }
+              if (!webCommand.includes("exec node apps/web/server.js") || webCommand.includes("pnpm")) {
+                throw new Error("Production web command is incompatible with the hardened runtime image");
+              }
+              if (services.api.ports || services.web.ports || services.postgres.ports) {
+                throw new Error("API, web and PostgreSQL must not publish host ports");
+              }
+              if (!config.networks.frontend.internal || !config.networks.application.internal || !config.networks.database.internal || !config.networks.monitoring.internal) {
+                throw new Error("Production private networks must remain internal");
+              }
+              if (!Object.hasOwn(services.proxy.networks, "edge") || !Object.hasOwn(services.proxy.networks, "frontend")) {
+                throw new Error("Production proxy must bridge the published edge to the internal frontend");
+              }
+              if (!Object.hasOwn(api.networks, "api-egress") || Object.hasOwn(web.networks, "api-egress")) {
+                throw new Error("Only the production API may use general application egress");
+              }
+              for (const [name, service] of Object.entries(services)) {
+                if (service.build) {
+                  throw new Error(`Production service ${name} contains a build directive`);
+                }
+                if (service.ports && name !== "proxy" && name !== "grafana") {
+                  throw new Error(`Unexpected published ports on production service ${name}`);
+                }
+              }
+              if (services.grafana.ports[0].host_ip !== "127.0.0.1") {
+                throw new Error("Grafana must remain loopback-only");
+              }
+            });
+          '
+
+          docker run --rm \
+            --user 10001:10001 \
+            --read-only \
+            --tmpfs /tmp:uid=10001,gid=10001,mode=0700 \
+            --tmpfs /config:uid=10001,gid=10001,mode=0700 \
+            --tmpfs /data:uid=10001,gid=10001,mode=0700 \
+            --cap-drop ALL \
+            --security-opt no-new-privileges:true \
+            -v "${GITHUB_WORKSPACE}/ops/production/Caddyfile:/etc/caddy/Caddyfile:ro" \
+            "gym-tracker-staging-proxy:${GITHUB_SHA}" \
+            caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
 
   api-integration:
     name: API database integration
