@@ -250,8 +250,65 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Resolve Playwright version
+        id: playwright-version
+        run: |
+          set -euo pipefail
+
+          version="$(pnpm exec playwright --version | awk '{ print $2 }')"
+          test -n "${version}"
+
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+
+      - name: Restore Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}-chromium-firefox
+
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium firefox
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+
+          # --with-deps runs apt-get update first. A stalled Ubuntu mirror must fail
+          # fast and fall through to the next one instead of hanging the job.
+          printf 'Acquire::Retries "3";\nAcquire::http::Timeout "20";\nAcquire::https::Timeout "20";\n' \
+            | sudo tee /etc/apt/apt.conf.d/99-ci-network >/dev/null
+
+          pnpm exec playwright install --with-deps chromium firefox
+
+      - name: Reuse cached Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: |
+          set -euo pipefail
+
+          verify_browsers() {
+            node - <<'NODE'
+          const { chromium, firefox } = require("@playwright/test");
+
+          Promise.all(
+            [chromium, firefox].map(async (browserType) => {
+              const browser = await browserType.launch();
+              await browser.close();
+            })
+          ).catch((error) => {
+            console.error(error.message);
+            process.exit(1);
+          });
+          NODE
+          }
+
+          pnpm exec playwright install chromium firefox
+
+          # The runner image already carries the shared libraries these browsers
+          # need, so the apt step is skipped. Install them on demand if a real
+          # launch proves otherwise.
+          if ! verify_browsers; then
+            pnpm exec playwright install-deps chromium firefox
+            verify_browsers
+          fi
 
       - name: Start local app stack
         run: docker compose up --build -d
