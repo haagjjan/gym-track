@@ -79,13 +79,21 @@ docker run -d \
   -v "${volume_name}:/var/lib/postgresql/data" \
   "${postgres_image}" >/dev/null
 
+ready_streak=0
 for _ in $(seq 1 60); do
   if docker exec "${container_name}" pg_isready -U postgres -d postgres >/dev/null 2>&1; then
-    break
+    ready_streak="$((ready_streak + 1))"
+    [[ "${ready_streak}" -ge 3 ]] && break
+  else
+    ready_streak=0
   fi
   sleep 1
 done
-docker exec "${container_name}" pg_isready -U postgres -d postgres >/dev/null
+[[ "${ready_streak}" -ge 3 ]] || {
+  docker logs --tail 50 "${container_name}" >&2
+  printf 'ERROR: isolated PostgreSQL container did not become stably ready\n' >&2
+  exit 1
+}
 
 docker exec -i "${container_name}" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres >/dev/null <<'SQL'
 CREATE ROLE gym_tracker_owner NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION;
