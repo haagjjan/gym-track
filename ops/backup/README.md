@@ -51,8 +51,15 @@ sudo journalctl -u gym-tracker-backup.service -n 200 --no-pager
 sudo /srv/gym-tracker/scripts/backup-status.sh
 sudo /srv/gym-tracker/scripts/restore-test-postgres.sh
 sudo /srv/gym-tracker/scripts/restore-test-config.sh
+sudo /srv/gym-tracker/scripts/restore-test-erasure-replay.sh OLDER_SNAPSHOT_ID
 sudo /srv/gym-tracker/scripts/replay-erasure-ledger.sh RESTORE_CONTAINER /path/to/newest/current.csv
 ```
+
+The erasure-replay drill requires an older snapshot that predates at least one unexpired
+tombstone. It restores that database and the newest ledger from separate snapshots, requires
+the older database to contain at least one ledger user, replays the newest ledger twice, and
+records only counts and checksums while proving no erased user or direct reference remains.
+The restore container has an internal-only Docker network and is always discarded.
 
 Do not run Restic repair, unlock, forget, or prune commands ad hoc. Preserve existing snapshots and follow the recovery runbooks if a check fails.
 
