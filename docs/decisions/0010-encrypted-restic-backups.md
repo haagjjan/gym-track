@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted. The retention duration and restore ordering were superseded by ADR 0013 on 2026-08-05; topology and access controls remain accepted.
+Accepted. The retention duration and restore ordering were superseded by ADR 0013 on 2026-08-05.
+ADR 0018 replaces only the unreliable direct `.local` destination route with a persistent,
+loopback-bound reverse tunnel; the encryption and restricted-SFTP controls remain accepted.
 
 ## Context
 

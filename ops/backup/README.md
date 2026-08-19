@@ -13,12 +13,21 @@ These are private-production targets, not guarantees. Four daily timer windows g
 
 ```text
 PostgreSQL custom-format dump ─┐
-operational configuration ────┼─> root-only staging ─> encrypted Restic/SFTP ─> MacBook
+operational configuration ────┼─> root-only staging ─> encrypted Restic/SFTP
 required server secrets ──────┘                                      |
-                                                                     └─> isolated restore tests
+                                                                     ├─> isolated restore tests
+                                                                     └─> production loopback :2222
+                                                                          ^
+                                                                          |
+                                                        persistent MacBook reverse SSH tunnel
 ```
 
 The destination uses a dedicated hidden macOS account forced into internal SFTP and chrooted to `/private/var/gym-backup`. The backup key cannot start a shell, request a terminal, or forward traffic. The Restic password has a separate recovery copy outside that chroot and should also be stored in the owner's password manager.
+
+The owner runs `macos/install-reverse-tunnel-launch-agent.sh` without `sudo`. The per-user
+`launchd` agent keeps the existing `gym-prod-remote` SSH connection open and forwards production
+`127.0.0.1:2222` back to Mac loopback port 22. The production listener is not exposed to the LAN
+or Internet. An expired Cloudflare Access grant still requires an interactive owner login.
 
 Recent macOS releases require Remote Login to be enabled interactively under **System Settings → General → Sharing**. Allow only `gym-backup` and do not grant remote users Full Disk Access. The setup script validates and reports this requirement instead of weakening macOS privacy controls.
 
@@ -53,6 +62,13 @@ sudo /srv/gym-tracker/scripts/restore-test-postgres.sh
 sudo /srv/gym-tracker/scripts/restore-test-config.sh
 sudo /srv/gym-tracker/scripts/restore-test-erasure-replay.sh OLDER_SNAPSHOT_ID
 sudo /srv/gym-tracker/scripts/replay-erasure-ledger.sh RESTORE_CONTAINER /path/to/newest/current.csv
+```
+
+MacBook tunnel commands:
+
+```bash
+ops/backup/macos/install-reverse-tunnel-launch-agent.sh
+launchctl print gui/$(id -u)/ch.gymtracker.backup-reverse-tunnel
 ```
 
 The erasure-replay drill requires an older snapshot that predates at least one unexpired

@@ -45,6 +45,11 @@ Recovery requires:
 4. the production SSH/deploy key or another reviewed way to obtain the recorded application commit;
 5. router and LAN administration only if the replacement host receives a different private address.
 
+The active MacBook destination route also requires the per-user
+`ch.gymtracker.backup-reverse-tunnel` launch agent and a valid owner Cloudflare Access grant. The
+agent restarts transport failures but cannot renew an expired interactive grant. Production must
+see the forwarded SFTP endpoint only at `127.0.0.1:2222` before backup or maintenance begins.
+
 Do not store the Restic password only inside the repository it decrypts.
 
 ## Incident responsibility

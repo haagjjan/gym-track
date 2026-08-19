@@ -49,3 +49,4 @@ Use sequential numbering and keep each record focused on one decision.
 - [ADR 0015 - Staging Environment](0015-staging-environment.md)
 - [ADR 0016 - Founding Beta Jurisdiction Scope](0016-founding-beta-jurisdiction-scope.md)
 - [ADR 0017 - Secure Remote Administration](0017-secure-remote-administration.md)
+- [ADR 0018 - Persistent Reverse Backup Tunnel](0018-persistent-reverse-backup-tunnel.md)
