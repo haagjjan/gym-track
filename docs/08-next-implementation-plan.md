@@ -42,11 +42,13 @@ See `docs/beta-process/public-beta/goal-3/goal-3-staging-report.md`.
 Goal 4 pre-deployment verification is active. The prospective working-tree candidate has clean
 full/production dependency audits, minimal non-root API/web images, fresh PostgreSQL integration,
 CI-equivalent hardened-image browser coverage, valid monitoring configuration and passing local
-20/40-active-logger workloads. Production was inspected read-only and not mutated. Deployment is
-blocked by failed/stale off-machine backups, and the new batch commit still requires exact-SHA CI
-and focused staging revalidation. Provider/legal values, FBX rights or replacement, the required
-restore-plus-newest-erasure-ledger drill, independent status, production black-box checks and
-physical-device QA remain open. See
+20/40-active-logger workloads. The application hardening and restore batch is committed as
+`16d013347e577df7f3d0d017358cbc86f91a27f0`, and the controller reports its last CI run clear.
+Production backup transport is now a persistent, loopback-bound macOS launch agent; strict
+30-day maintenance, a fresh backup, newest-snapshot restores and the older-snapshot/newest-ledger
+replay passed. The operational tunnel follow-up remains uncommitted, and the exact candidate still
+needs focused staging revalidation. Provider/legal values, FBX rights or replacement, independent
+status, production black-box checks and physical-device QA remain open. See
 `docs/beta-process/public-beta/goal-4/goal-4-production-verification.md`.
 
 ## Source of truth for V1 UI behavior
@@ -94,9 +96,8 @@ Do not extend staging unless a release candidate changes. Start the production-r
 1. Treat Goal 3's exact release and evidence report as the verified baseline, while recognizing
    that the Goal 4 hardening diff creates a new candidate requiring exact-SHA CI and focused
    staging revalidation.
-2. Restore off-machine backup operation, verify a fresh snapshot within the 24-hour RPO and
-   complete the older-snapshot plus separately obtained newest-erasure-ledger drill before any
-   production deployment.
+2. Review and commit the persistent backup-tunnel operations follow-up, run the appropriate
+   exact-SHA checks, and focused-revalidate the immutable candidate in staging.
 3. Resolve the two FBX models before public delivery by proving their terms or removing/replacing
    them.
 4. Finish the provider recovery/billing/retention register and configure a production-only
