@@ -210,7 +210,9 @@ ops/
 |           `-- alerts.yaml
 ```
 
-- `ops/backup` owns encrypted Restic backup scripts, isolated restore tests, systemd scheduling, recovery deployment, and the restricted macOS SFTP destination setup.
+- `ops/backup` owns encrypted Restic backup scripts, isolated restore tests, systemd scheduling,
+  recovery deployment, the restricted macOS SFTP destination and its persistent reverse-tunnel
+  launch agent.
 - `ops/logging` owns bounded production log-review and secret-audit scripts; it does not own a separate log store.
 - `ops/staging` owns the non-secret, production-shaped Goal 3 staging Compose/Caddy definition,
   PostgreSQL role initialization and operator deployment/rollback runbook. Live staging
