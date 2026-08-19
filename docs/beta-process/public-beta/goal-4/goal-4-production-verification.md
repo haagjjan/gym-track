@@ -1,8 +1,8 @@
 # Goal 4 Production Verification
 
-**Status:** Pre-deployment verification in progress; production cutover blocked by stop rules
+**Status:** Pre-deployment verification in progress; production cutover blocked by remaining launch gates
 
-**Evidence cutoff:** 2026-08-18
+**Evidence cutoff:** 2026-08-19
 
 **Execution model:** Codex performs repository, isolated-system and read-only host checks; the
 controller performs privileged, provider, asset-rights, real-device and cutover approvals.
@@ -15,11 +15,13 @@ controller performs privileged, provider, asset-rights, real-device and cutover 
 | 1 | Complete at repository scope | [Goal 1 remediation report](../goal-1/goal-1-remediation-report.md) |
 | 2 | Decisions complete; later-goal external execution remains | [Goal 2 decision record](../goal-2/goal-2-decision-record.md) and [external actions](../goal-2/goal-2-external-actions.md) |
 | 3 | Complete | Exact release `4a4fccdae263126ceda164a792059514123f957f` and [Goal 3 staging report](../goal-3/goal-3-staging-report.md) |
-| 4 | In progress, stopped before production mutation | This report |
+| 4 | In progress; backup transport and maintenance gates verified | This report |
 
 Goal 3 is not reopened. It remains valid evidence for its exact release. Goal 4 hardening changes
-the prospective production candidate, however, so the new batch commit needs its own green CI
-run and focused staging revalidation before deployment.
+the prospective production candidate, however. The application and restore batch is committed and
+its last CI run was reported green; the current operations follow-up still needs its own commit and
+appropriate checks. The immutable candidate also needs focused staging revalidation before
+deployment.
 
 ## Production preflight and stop decision
 
@@ -42,20 +44,34 @@ backup was 2026-08-17 09:27:52 CEST—outside the 24-hour RPO at inspection time
 On 2026-08-18 the reverse SSH path was restored under operator supervision. A fresh backup then
 completed successfully at 18:07:16 CEST as snapshot `905c5b1b`: the logical dump was 207,457
 bytes, the run took 160 seconds, and Restic's repository check reported no errors across 41
-snapshots. The latest-run metric is now successful and inside the RPO. This transport is currently
-an operator-started reverse tunnel, however, rather than an independently persistent service. A
-scheduled backup will fail again whenever that tunnel and the MacBook destination are unavailable;
-the four daily attempts mitigate sleeping periods but do not make the tunnel durable.
+snapshots.
+
+On 2026-08-19 the approved transport was made persistent under the owner's per-user macOS
+`launchd` domain. The agent keeps an SSH reverse forward from production loopback
+`127.0.0.1:2222` to Mac loopback port 22, restarts failed connections after a 60-second throttle,
+and logs bounded SSH errors under `~/Library/Logs/GymTrackerBackup`. Production acceptance checks
+showed the listener bound only to `127.0.0.1` and a successful TCP connection through it. The
+agent recovered correctly after forced restarts, and a second installer run proved the checked-in
+installation procedure is idempotent. It still cannot back up while the Mac is asleep or renew an
+expired interactive Cloudflare Access grant; four daily attempts and staleness alerts remain
+necessary.
 
 Fresh configuration, PostgreSQL and old-snapshot/newest-ledger restore drills also passed; their
-sanitized results are recorded below. Weekly maintenance remains failed and has not been retried:
-its reviewed command may forget snapshots older than the strict 30-day cutoff and prune repository
-data, so it requires explicit destructive-action approval. The current oldest snapshot is from
-2026-07-22 and was still younger than 30 days at this evidence cutoff.
+sanitized results are recorded below. After explicit destructive-action approval, weekly
+maintenance ran from 10:08:43 to 10:12:53 CEST on 2026-08-19. The exact wall-clock cutoff found no
+snapshots older than 30 days; the oldest remained 2026-07-22. Restic therefore pruned without a
+`forget`: it removed zero blobs, repacked 13 packs, left zero unused bytes and completed a 10%
+data-pack read across 41 snapshots with no errors. The maintenance-success metric is now `1`.
+
+The same persistent tunnel then carried a fresh production backup from 10:15:03 to 10:17:37 CEST.
+Snapshot `f3a81d50` contains the expected 84 files and 417.492 KiB, including a 207,457-byte
+PostgreSQL dump. The 154-second run finished with a full repository check across 42 snapshots and
+no errors. Both backup and maintenance success metrics are `1`, no systemd units are failed, and
+the reverse listener remains reachable only through production loopback.
 
 No application deployment, production migration, public configuration change or gate removal was
-attempted. Production remains stopped pending the exact candidate commit/CI/staging path, approved
-maintenance evidence, durable backup-transport procedure and the other launch gates in this report.
+attempted. Production remains stopped pending the exact candidate staging path and the other launch
+gates in this report.
 
 ## Defects found and remediated in the prospective candidate
 
@@ -120,7 +136,9 @@ are never printed. The disposable database has an internal-only Docker network.
 | Fresh PostgreSQL 17 migrations and integration | All nine migrations applied; 16 tests in four suites passed, covering administrator containment, auth rotation, beta/email compensation, and workout isolation/idempotency/search/templates. |
 | Production-image browsers | Hardened Compose images passed the CI-equivalent worker-one sequence: Chromium core/template/mobile-3D flows and Firefox core/template flows; only intentional project-specific skips remained. |
 | Capacity preflight | See below; passed locally on disposable synthetic data, but does not yet close the staging/production gate. |
-| Fresh production backup | Passed: snapshot `905c5b1b`, 207,457-byte dump, 160 seconds; repository check reported no errors across 41 snapshots. |
+| Fresh production backup | Passed twice. The persistent-tunnel proof produced snapshot `f3a81d50`, a 207,457-byte dump and a 154-second run; the full repository check reported no errors across 42 snapshots and the latest-run metric is `1`. |
+| Strict retention maintenance | Passed after explicit approval: no snapshot exceeded the exact 30-day cutoff; prune removed zero blobs, safely repacked 13 packs and left zero unused bytes; the 10% data-pack read found no errors across 41 snapshots. |
+| Persistent reverse tunnel | Passed: launchd state `running`; production listener restricted to `127.0.0.1:2222`; TCP acceptance, forced-restart recovery, sustained backup traffic and idempotent installer recovery all succeeded. |
 | Latest-snapshot PostgreSQL restore | Passed with the readiness fix in 53 seconds: 22 public tables, zero invalid foreign keys, matching live/restored count hashes and successful runtime-role read. Sanitized host report: `postgres-restore-20260818T161531Z.env`. |
 | Configuration restore | Passed in 38 seconds: 21 protected files and 25 scripts; Compose, Caddy, Prometheus, Alertmanager and dashboard JSON validations passed. Sanitized host report: `config-restore-20260818T161322Z.env`. |
 | Older snapshot plus newest ledger | Passed in 99 seconds: database `a3bc255c` predates separately restored ledger snapshot `905c5b1b`; one ledger user existed before replay, zero users/references remained, one tombstone remained, migration ledgers matched and a second replay was idempotent. Sanitized host report: `erasure-replay-restore-20260818T162455Z.env`. |
@@ -166,10 +184,8 @@ measured-peak definition and monitored recovery/overload evidence.
 
 | Work | Primary owner | SSH needed? | Why it remains open |
 | --- | --- | --- | --- |
-| Batch commit, exact-SHA CI, image rebuild and focused staging regression | Controller commits; Codex verifies | Only for staging deployment | Current workspace still reports the Goal 4 batch as unstaged at `db9c655`; the restore fixes were added after the initial batch was prepared. |
+| Exact-SHA CI, image rebuild and focused staging regression | Controller commits; Codex verifies | Only for staging deployment | The application hardening and restore batch is committed as `16d013347e577df7f3d0d017358cbc86f91a27f0`; the controller reports the last CI run clear. The operational tunnel follow-up remains uncommitted at this cutoff and needs its final commit/check evidence. |
 | Install the committed restore scripts and repeat focused restore verification | Joint | Yes, with owner-supervised privilege | The successful fixes ran from private temporary copies; production's installed script was deliberately not replaced ahead of commit/deploy. |
-| Approve strict 30-day forget/prune maintenance and verify it | Controller approves; Codex can execute and verify | Yes | The command can irreversibly remove expired snapshots and repository packs. |
-| Make the reverse backup tunnel operationally durable | Controller decides; Codex can implement the reviewed option | Local Mac and production verification | The current tunnel is tied to an operator process and is not a durable scheduled service. |
 | Production Resend key, recovery/billing/retention register and delivery monitoring | Controller | Usually no host SSH until secret install | Production provider configuration is incomplete. |
 | FBX redistribution proof or remove/replace both models and update NOTICE | Controller decides; Codex can implement removal/replacement | No | Public delivery is blocked by unknown asset terms. |
 | Controller identity/address and final production-rendered legal/support pages | Controller supplies/approves; Codex verifies | Production black-box step only | Real values and final rendered archive are absent. |
@@ -185,18 +201,19 @@ deployment, rollback and production black-box corroboration.
 
 ## Clean continuation order
 
-1. Controller resolves the FBX path and provider/legal values in parallel with backup recovery.
-2. Commit and deploy the tested restore scripts, establish the reviewed persistent backup-tunnel
-   procedure, then run the explicitly approved strict-retention maintenance check.
-3. Review the working diff, create the requested batch commit and require all exact-SHA CI jobs.
-4. Deploy that immutable SHA to staging; repeat focused browser/security/email/capacity/image
+1. Controller resolves the FBX path and provider/legal values in parallel with candidate work.
+2. Review and commit the persistent-tunnel operations follow-up, then require the appropriate
+   exact-SHA checks.
+3. Deploy the immutable candidate SHA to staging; repeat focused browser/security/email/capacity/image
    checks affected by the new dependency and container changes.
-5. Prepare production-only provider secrets and a verified rollback point.
-6. Deploy under a write/opening freeze, run production black-box checks, and roll back immediately
+4. Prepare production-only provider secrets and a verified rollback point.
+5. Deploy the committed restore scripts and candidate under a write/opening freeze, repeat the
+   focused restore verification, run production black-box checks, and roll back immediately
    on any stop-rule failure.
-7. Complete device/accessibility/status/restore gates, then invite only the first 10-person cohort
+6. Complete device/accessibility/status/restore gates, then invite only the first 10-person cohort
    and observe it for 72 hours before any expansion.
 
 Goal 4 is therefore progressing cleanly. Fresh backup and restore evidence is now strong, including
-the previously missing old-snapshot/newest-ledger proof, but production is **not approved** while
-maintenance, transport durability, exact-candidate and external launch gates remain open.
+the previously missing old-snapshot/newest-ledger proof. Backup maintenance and transport
+durability are now verified, but production is **not approved** while exact-candidate staging and
+external launch gates remain open.

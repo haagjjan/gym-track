@@ -31,7 +31,7 @@ The beta may be promoted only after every blocker is checked with linked evidenc
 - [ ] Export completeness and cross-user isolation pass.
 - [ ] Grace-period lock, link cancellation, admin support cancellation and idempotent final erasure pass.
 - [ ] Shared exercise deletion/anonymization passes with both referenced and unreferenced fixtures.
-- [ ] Strict wall-clock 30-day Restic expiry/prune run is recorded; local dump expiry is seven days.
+- [x] Strict wall-clock 30-day Restic expiry/prune run is recorded; local dump expiry is seven days. Evidence: [Goal 4 production verification](../goal-4/goal-4-production-verification.md), 2026-08-19 maintenance success with no expired snapshots, 13 packs safely repacked, zero unused bytes and a clean 10% repository data read.
 - [x] Restore an older snapshot in isolation, obtain the newest valid erasure ledger separately, replay it, and prove erased IDs are absent before opening network access. Evidence: [Goal 4 production verification](../goal-4/goal-4-production-verification.md), snapshots `a3bc255c` and `905c5b1b`, sanitized host report `erasure-replay-restore-20260818T162455Z.env`.
 - [ ] Recovery runbook explicitly forbids reopening before erasure replay.
 
