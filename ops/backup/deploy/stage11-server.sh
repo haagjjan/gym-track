@@ -136,13 +136,14 @@ configure_secrets() {
     printf 'ERROR: invalid MacBook SSH host key\n' >&2
     exit 1
   }
-  printf 'MacBook-Jan.local %s %s\n' "${host_key_type}" "${host_key_value}" > "${RESTIC_KNOWN_HOSTS_PATH}"
+  printf '[127.0.0.1]:2222 %s %s\n' "${host_key_type}" "${host_key_value}" > "${RESTIC_KNOWN_HOSTS_PATH}"
   chown root:root "${RESTIC_KNOWN_HOSTS_PATH}"
   chmod 0600 "${RESTIC_KNOWN_HOSTS_PATH}"
 
   cat > "${RESTIC_SSH_CONFIG_PATH}" <<EOF
 Host gym-backup-destination
-    HostName MacBook-Jan.local
+    HostName 127.0.0.1
+    Port 2222
     User gym-backup
     IdentityFile ${ROOT}/secrets/restic-sftp-key
     IdentitiesOnly yes
