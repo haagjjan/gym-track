@@ -23,10 +23,13 @@
   Goal 4 and later production gates remain next.
 - Goal 4 pre-deployment verification is in progress. Dependency and runtime-image hardening,
   fresh migrations/integration, hardened-image Chromium/Firefox flows, monitoring syntax and a
-  guarded 20/40-concurrent-logger preflight pass locally. Production cutover is stopped because
-  the latest off-machine backup failed and the last success exceeded the 24-hour RPO. Provider,
-  FBX rights/removal, exact-SHA staging, restore/ledger, production black-box, status and physical-
-  device gates remain. See
+  guarded 20/40-concurrent-logger preflight pass locally. Production backup transport now runs as
+  a persistent, loopback-bound macOS launch agent; strict 30-day maintenance, fresh backup,
+  newest-snapshot restores and the older-snapshot/newest-ledger replay all passed. The application
+  hardening and restore batch is committed as
+  `16d013347e577df7f3d0d017358cbc86f91a27f0`; its focused staging revalidation remains open.
+  Provider/legal values, FBX rights/removal, production black-box, status and physical-device
+  gates also remain. See
   `docs/beta-process/public-beta/goal-4/goal-4-production-verification.md`.
 
 ## Phase 0 — Project Setup & Working Style
