@@ -34,8 +34,9 @@ The DPIA and bounded legal-risk self-assessment were approved by the controller 
 they are not counsel review or a compliance certification. Production Resend identity and
 bounce behavior, production configuration, 30-day pruning, restore/erasure replay, production
 black-box security review, capacity, responsive/device/assistive-technology QA and incident
-rehearsals still require evidence. The bundled FBX model rights must be proven or the files
-removed/replaced before public delivery.
+rehearsals still require evidence. The bundled FBX models are confirmed Tripo 3D Free-tier
+outputs under `CC BY 4.0`; archived contemporaneous pricing, NOTICE and public Support-page
+attribution close their redistribution gate.
 
 The application deliberately renders a visible configuration warning on legal pages while required controller/contact values are absent. Do not remove that gate or publish placeholder facts.
 

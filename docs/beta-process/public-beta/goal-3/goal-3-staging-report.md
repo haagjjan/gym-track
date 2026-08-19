@@ -138,5 +138,6 @@ Goal 3 is complete. The production-shaped owner-only staging environment, immuta
 migration/rollback rehearsal, provider containment, black-box security checks and complete
 admission/product flow have dated sanitized evidence. This closes staging readiness only: it
 does not prove the production edge, production sender, production legal rendering, public
-capacity or real-device launch gates. The unresolved FBX redistribution terms also remain a
-separate blocker before public delivery.
+capacity or real-device launch gates. The FBX redistribution terms were unresolved at this Goal 3
+cutoff and were later closed with the Tripo Free-tier `CC BY 4.0` evidence and attribution recorded
+in Goal 4.

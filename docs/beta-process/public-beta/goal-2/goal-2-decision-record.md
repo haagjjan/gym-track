@@ -26,13 +26,13 @@ approval are checked against the signed records; operational gates still require
 | 1 | Controller identity | **Decided** | dynamic rendering implemented; deployed configuration verification → Goal 5 |
 | 4 | Provider and processor inventory | **Complete** | — |
 | 6 | Billing, ownership, MFA, recovery | **Decided** | residual risk accepted; payment-method check + costs outstanding |
-| 10 | Public repository and licensing | **Decided** | 3D models excluded from MIT; remove/replace or prove redistribution rights before public delivery |
+| 10 | Public repository and licensing | **Decided** | Tripo 3D Free-tier models are separately licensed `CC BY 4.0`; attribution implemented; remaining repository-publication checklist still applies |
 | 2 | Legal review and DPIA | **Complete** | controller-approved self-assessment; no counsel review |
 
 All ten decisions are recorded below. Remaining work is execution or evidence in
 [goal-2-external-actions.md](goal-2-external-actions.md): provider transfer/retention records,
-staging/production email configuration, account-recovery bookkeeping, the FBX asset decision,
-and later deployed verification. The legal/DPIA decision itself is closed.
+staging/production email configuration, account-recovery bookkeeping and later deployed
+verification. The FBX asset decision and the legal/DPIA decision itself are closed.
 
 ---
 
@@ -579,12 +579,14 @@ on a `localStorage` key name matched by entropy.
 are checked rather than before. Beforehand they are an itemised list of one's own unverified
 controls; afterwards the same documents read as evidence of a rigorous verification programme.
 
-**3D model boundary:** the two FBX files are explicitly **not covered by MIT**. Their applicable
-generator/account terms and redistribution rights are not proven. Because the public web app
-serves these files to browsers, this is not only a future GitHub concern: before the first
-public beta they must either be removed/replaced with assets carrying known redistributable
-terms, or their actual terms must be documented in NOTICE. The remaining repository-publication
-work is the pre-publication checklist in the plan.
+**3D model boundary:** the two FBX files are explicitly **not covered by MIT**. The controller
+confirmed on 2026-08-19 that they came from Tripo 3D's Free tier. Archived official pricing from
+2026-06-28 and 2026-07-12—immediately around the files' repository-introduction dates—applies
+`CC BY 4.0` to public Free-tier models. That licence permits redistribution and adaptation with
+attribution. The public Support page and NOTICE now credit Tripo, link the licence and identify the
+application's modifications. See the
+[Tripo FBX licence evidence](tripo-fbx-license-evidence.md). The remaining repository-publication
+work is the unrelated pre-publication checklist in the plan.
 
 ---
 

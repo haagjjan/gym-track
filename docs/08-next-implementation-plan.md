@@ -29,8 +29,9 @@ readiness. See
 
 Goal 2 decisions are recorded. The DPIA and bounded legal-risk self-assessment were approved by
 the controller on 2026-08-10 without counsel review. Remaining Goal 2 execution is provider and
-asset evidence: final provider recovery/retention bookkeeping and removing/replacing the FBX
-models or proving their redistribution rights before public delivery. Staging Resend and
+asset evidence is complete: contemporaneous archived Tripo 3D pricing applies `CC BY 4.0` to the
+Free-tier FBX models, and NOTICE plus the public Support page carry the required attribution and
+modification notice. Final provider recovery/retention bookkeeping remains. Staging Resend and
 Cloudflare configuration is complete.
 
 Goal 3 is complete. The isolated staging environment runs exact green release
@@ -39,16 +40,21 @@ rollback, fail-closed configuration, Cloudflare edge behavior, real controlled e
 administrator bootstrap, admission controls and the complete invited-user workout flow passed.
 See `docs/beta-process/public-beta/goal-3/goal-3-staging-report.md`.
 
-Goal 4 pre-deployment verification is active. The prospective working-tree candidate has clean
-full/production dependency audits, minimal non-root API/web images, fresh PostgreSQL integration,
-CI-equivalent hardened-image browser coverage, valid monitoring configuration and passing local
-20/40-active-logger workloads. The application hardening and restore batch is committed as
-`16d013347e577df7f3d0d017358cbc86f91a27f0`, and the controller reports its last CI run clear.
-Production backup transport is now a persistent, loopback-bound macOS launch agent; strict
-30-day maintenance, a fresh backup, newest-snapshot restores and the older-snapshot/newest-ledger
-replay passed. The operational tunnel follow-up remains uncommitted, and the exact candidate still
-needs focused staging revalidation. Provider/legal values, FBX rights or replacement, independent
-status, production black-box checks and physical-device QA remain open. See
+Goal 4 pre-deployment verification is active. Exact candidate
+`6b31f98981da266304484fb14c3a18904e279e4c` is committed, matches local `main` and
+`origin/main`,
+has a controller-reported fully green CI run and now runs in the isolated staging topology.
+Dependency/image hardening, fresh PostgreSQL integration, hardened-image Chromium/Firefox,
+monitoring syntax, fail-closed configuration, focused edge/cookie/rate-limit/email containment,
+20/40-active-logger capacity and previous/candidate restore checks passed. The controller-
+authenticated public staging browser pass also created and completed a synthetic workout and
+verified History, Progress and Weekly Volume without console errors. Production backup transport
+is a persistent, loopback-bound macOS launch agent; strict 30-day maintenance, a fresh backup,
+newest-snapshot restores and the older-snapshot/newest-ledger replay passed. The exact committed
+restore scripts and recovery runbook are installed, captured in a new backup and reverified; the
+live production fingerprint was unchanged and no disposable restore resources remained.
+Provider/legal values, independent status, production black-box checks and physical-device QA
+remain open. See
 `docs/beta-process/public-beta/goal-4/goal-4-production-verification.md`.
 
 ## Source of truth for V1 UI behavior
@@ -91,20 +97,18 @@ The older redesign files remain useful for styling and atmosphere, but no longer
 
 ## Recommended next slice
 
-Do not extend staging unless a release candidate changes. Start the production-readiness goal:
+Do not extend staging beyond the remaining release gates unless the candidate changes. Continue
+the production-readiness goal:
 
-1. Treat Goal 3's exact release and evidence report as the verified baseline, while recognizing
-   that the Goal 4 hardening diff creates a new candidate requiring exact-SHA CI and focused
-   staging revalidation.
-2. Review and commit the persistent backup-tunnel operations follow-up, run the appropriate
-   exact-SHA checks, and focused-revalidate the immutable candidate in staging.
-3. Resolve the two FBX models before public delivery by proving their terms or removing/replacing
-   them.
-4. Finish the provider recovery/billing/retention register and configure a production-only
+1. Retain `6b31f98981da266304484fb14c3a18904e279e4c` as the immutable candidate unless a
+   defect forces a new SHA.
+2. Finish the provider recovery/billing/retention register and configure a production-only
    Resend key without reusing staging secrets.
-5. Execute the Goal 4 production deployment and black-box verification gates without inferring
-   production behavior from staging success. Keep rollback and production health stop rules.
-6. Continue through the remaining launch gates and Goals 5–6 until the first real capped cohort
+3. Preserve the verified rollback point, then execute the Goal 4 production deployment,
+   post-migration restore and black-box verification gates without inferring production behavior
+   from staging success. Keep rollback and production health stop rules.
+4. Continue through the remaining device/accessibility/status/operational gates and Goals 5–6
+   until the first real capped cohort
    is invited; avoid unrelated post-beta feature work.
 
 Keep the audit-v4 “Features up for rework” list post-beta. The catalog and local smart matching are included; broad import/export redesign and complete workout-history reset remain outside this gate.

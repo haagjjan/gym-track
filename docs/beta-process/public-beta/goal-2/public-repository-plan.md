@@ -108,11 +108,11 @@ impression worth giving. Publishing them beforehand mostly gives a reader a road
 
 ## Before flipping visibility
 
-- [ ] Resolve the two FBX files before **public beta delivery as well as repository publication**.
-      They are excluded from MIT and their redistribution rights are not established. Either
-      document the actual generator/account-tier terms and required attribution, or remove and
-      replace them with known-redistributable assets. Removing them from a public repository also
-      requires addressing their existing Git history.
+- [x] Resolve the two FBX files before **public beta delivery as well as repository publication**.
+      They are confirmed Tripo 3D Free-tier outputs separately licensed `CC BY 4.0`, based on
+      archived official pricing around both repository-introduction dates. NOTICE and the public
+      Support page carry attribution and modification notices. Evidence:
+      [Tripo FBX licence evidence](tripo-fbx-license-evidence.md).
 - [ ] Decide on the IPv6 history scrub.
 - [ ] Add `.gitleaksignore`; add gitleaks to CI.
 - [ ] Rewrite `README.md` — it still describes a pre-beta project and points at

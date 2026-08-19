@@ -22,14 +22,21 @@
   Production remained healthy throughout. This is staging evidence, not production-launch proof;
   Goal 4 and later production gates remain next.
 - Goal 4 pre-deployment verification is in progress. Dependency and runtime-image hardening,
-  fresh migrations/integration, hardened-image Chromium/Firefox flows, monitoring syntax and a
-  guarded 20/40-concurrent-logger preflight pass locally. Production backup transport now runs as
-  a persistent, loopback-bound macOS launch agent; strict 30-day maintenance, fresh backup,
-  newest-snapshot restores and the older-snapshot/newest-ledger replay all passed. The application
-  hardening and restore batch is committed as
-  `16d013347e577df7f3d0d017358cbc86f91a27f0`; its focused staging revalidation remains open.
-  Provider/legal values, FBX rights/removal, production black-box, status and physical-device
-  gates also remain. See
+  fresh migrations/integration, hardened-image Chromium/Firefox flows and monitoring syntax pass.
+  Exact candidate `6b31f98981da266304484fb14c3a18904e279e4c` has a controller-reported fully
+  green CI run and now runs in staging with healthy direct-Node API/web images. Focused
+  fail-closed configuration, security headers/edge behavior, cookie attributes, recipient
+  containment, rate limiting and previous/candidate restore checks passed. Production-shaped
+  staging passed 20 concurrent active loggers and a 40-logger 2x probe with zero failures,
+  recorded resource/database growth and immediate recovery. Production backup transport is a
+  persistent, loopback-bound macOS launch agent; strict 30-day maintenance, fresh backup,
+  newest-snapshot restores and the older-snapshot/newest-ledger replay also passed. An
+  authenticated real-edge staging browser pass created and completed a synthetic workout and
+  verified History, Progress and Weekly Volume without browser-console errors. The exact committed
+  restore scripts and recovery runbook are installed, included in a fresh production backup and
+  reverified without changing the live database fingerprint. Archived Tripo Free-tier
+  `CC BY 4.0` evidence and public attribution close the FBX redistribution gate. Provider/legal
+  values, production black-box, status and physical-device gates remain. See
   `docs/beta-process/public-beta/goal-4/goal-4-production-verification.md`.
 
 ## Phase 0 — Project Setup & Working Style

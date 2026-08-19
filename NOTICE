@@ -10,19 +10,20 @@ apps/web/public/models/avatar/avatar-base.fbx
 apps/web/public/models/avatar/base-v-2.fbx
 ```
 
-Generated using an online AI 3D model generator (recorded as Meshy.ai or equivalent; exact
-generator account and plan evidence has not been retained in the repository).
+Generated using Tripo 3D (`studio.tripo3d.ai`) on the Free tier. The controller confirmed the
+service and tier on 2026-08-19 and supplied a matching account-workspace screenshot. The exact
+asset/share identifier and generation timestamp were not exported, but contemporaneous official
+pricing captures and repository dates are recorded in
+`docs/beta-process/public-beta/goal-2/tripo-fbx-license-evidence.md`.
 
-> **Excluded from MIT; redistribution rights not established.** The repository's
-> MIT licence grants no rights to these FBX files. AI 3D generation services and
-> account tiers differ substantially in what they permit, and the terms applying
-> to these particular outputs have not been proven.
+> **Separately licensed under CC BY 4.0; excluded from MIT.** The repository's MIT licence grants
+> no rights to these FBX files. Official Tripo pricing archived immediately around their July 2026
+> repository introduction identifies Free-tier outputs as `Public models (CC BY 4.0)`.
 >
-> Do not publish, redistribute, or serve these files as part of a public beta on
-> the authority of this repository's MIT licence. Before public delivery, either
-> document the actual generating service, account tier, applicable terms and any
-> attribution requirements, or remove/replace the files with assets carrying
-> known redistributable terms.
+> Attribution: The 3D avatar and pedestal models were generated with Tripo 3D and are used under
+> [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). They were modified for this
+> application through mesh separation, transforms, materials, shaders and rendering integration.
+> Tripo does not endorse this project.
 
 ## Exercise catalog
 

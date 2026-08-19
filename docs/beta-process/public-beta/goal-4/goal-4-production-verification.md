@@ -1,6 +1,7 @@
 # Goal 4 Production Verification
 
-**Status:** Pre-deployment verification in progress; production cutover blocked by remaining launch gates
+**Status:** Exact candidate staged and focused automated/browser verification complete;
+production cutover remains blocked by launch gates
 
 **Evidence cutoff:** 2026-08-19
 
@@ -15,13 +16,15 @@ controller performs privileged, provider, asset-rights, real-device and cutover 
 | 1 | Complete at repository scope | [Goal 1 remediation report](../goal-1/goal-1-remediation-report.md) |
 | 2 | Decisions complete; later-goal external execution remains | [Goal 2 decision record](../goal-2/goal-2-decision-record.md) and [external actions](../goal-2/goal-2-external-actions.md) |
 | 3 | Complete | Exact release `4a4fccdae263126ceda164a792059514123f957f` and [Goal 3 staging report](../goal-3/goal-3-staging-report.md) |
-| 4 | In progress; backup transport and maintenance gates verified | This report |
+| 4 | In progress; exact candidate, backup, restore and capacity evidence verified | This report |
 
-Goal 3 is not reopened. It remains valid evidence for its exact release. Goal 4 hardening changes
-the prospective production candidate, however. The application and restore batch is committed and
-its last CI run was reported green; the current operations follow-up still needs its own commit and
-appropriate checks. The immutable candidate also needs focused staging revalidation before
-deployment.
+Goal 3 is not reopened. It remains valid evidence for its exact release. The immutable Goal 4
+candidate is now `6b31f98981da266304484fb14c3a18904e279e4c`; local `main`, `origin/main` and
+`origin/HEAD` all resolved to that SHA with a clean worktree before the evidence update. The
+controller reported its exact-SHA CI run fully green. The candidate is deployed to the isolated
+staging topology and the focused automated image, migration, security, email-containment,
+capacity and rollback checks below passed. The controller-authenticated public browser pass also
+completed through Cloudflare Access; production remains deliberately unchanged.
 
 ## Production preflight and stop decision
 
@@ -69,9 +72,26 @@ PostgreSQL dump. The 154-second run finished with a full repository check across
 no errors. Both backup and maintenance success metrics are `1`, no systemd units are failed, and
 the reverse listener remains reachable only through production loopback.
 
+After the candidate was committed and its CI run passed, the two committed restore scripts and
+recovery runbook were installed with exact candidate hashes. The prior PostgreSQL script and
+runbook remain available at
+`/srv/gym-tracker/releases/goal4-restore-scripts-pre-6b31f98/`; the previously absent erasure drill
+did not overwrite an older host copy. A post-install backup then completed as snapshot `8eb83d86`
+in 127 seconds with a 207,457-byte dump and 44 repository snapshots. It captured 112 files and
+directories (430.293 KiB), including the installed recovery artifacts.
+
+All three installed drills passed against the production backup set without modifying the live
+database. The PostgreSQL drill restored snapshot `48f0046e` with 22 public tables in 31 seconds;
+the configuration drill restored `8eb83d86`, validated 21 protected files and completed in 33
+seconds; and the erasure drill combined older database snapshot `a3bc255c` with the newest ledger
+from `8eb83d86`, found the required resurrected test record and removed it in 53 seconds. The live
+critical-count fingerprint was `7adb1886f058c2aa878196c581ca105e` both before and after. No
+restore containers, networks, volumes or directories remained; every production container was
+healthy, no systemd unit was failed, and backup, snapshot and maintenance metrics remained `1`.
+
 No application deployment, production migration, public configuration change or gate removal was
-attempted. Production remains stopped pending the exact candidate staging path and the other launch
-gates in this report.
+attempted. Production cutover remains stopped; the live service stays on its older private release
+pending the external, production-black-box and physical-device launch gates in this report.
 
 ## Defects found and remediated in the prospective candidate
 
@@ -104,8 +124,11 @@ and package-manager tooling, and had no image health checks. The API and web fin
 - run as the unprivileged `node` user; and
 - provide built-in health checks and direct Node entry points.
 
-The final rebuilt API and web images are 84,649,602 and 91,607,655 bytes. Live container inspection
-confirmed UID/GID 1000. Offline Trivy image scans found zero Node-package vulnerabilities in
+The exact staged API and web images are 84,646,552 and 91,619,224 bytes, with IDs
+`sha256:0c115b062f692013ce68d58477f5d2d85c1f95bdbec586dfe2021c8b2688fb5a` and
+`sha256:72e82b7b6c2cfa696bee6e8eb6d9b2211d86f0817c70c3b9bb28376423d5ffed`.
+Live container inspection confirmed UID/GID 1000. Offline Trivy image scans found zero
+Node-package vulnerabilities in
 both images. Each retains 22 high/critical Debian findings with no vendor fix available according
 to the scan database; these require ongoing base-image monitoring rather than a false zero-risk
 claim. The migration image remains a privileged one-shot build/dependency target and should be
@@ -131,22 +154,29 @@ are never printed. The disposable database has an internal-only Docker network.
 
 | Check | Result and scope |
 | --- | --- |
-| Full repository check | Passed on the Goal 4 working tree: 212 API and 51 web tests, strict types, lint and both production builds. |
+| Exact candidate and CI | Candidate `6b31f98981da266304484fb14c3a18904e279e4c` is committed and matches `main`, `origin/main` and `origin/HEAD`; the controller reported the exact CI pipeline fully green. Its repository check includes 212 API and 51 web tests, strict types, lint and both production builds. |
 | Performance suites | Passed all four API/web regression tests. |
 | Fresh PostgreSQL 17 migrations and integration | All nine migrations applied; 16 tests in four suites passed, covering administrator containment, auth rotation, beta/email compensation, and workout isolation/idempotency/search/templates. |
 | Production-image browsers | Hardened Compose images passed the CI-equivalent worker-one sequence: Chromium core/template/mobile-3D flows and Firefox core/template flows; only intentional project-specific skips remained. |
-| Capacity preflight | See below; passed locally on disposable synthetic data, but does not yet close the staging/production gate. |
-| Fresh production backup | Passed twice. The persistent-tunnel proof produced snapshot `f3a81d50`, a 207,457-byte dump and a 154-second run; the full repository check reported no errors across 42 snapshots and the latest-run metric is `1`. |
+| Exact staging deployment | All six staging release refs use the candidate SHA. PostgreSQL, API, web and proxy are healthy; API and web execute direct Node entry points; `APP_ENV=staging` and `REGISTRATION_MODE=INVITE_ONLY`; public ingress remains behind Cloudflare Access. |
+| Authenticated public staging browser | Passed through the real Cloudflare Access, Tunnel and staging proxy path. Controller authentication and application login reached the dashboard without exposing credentials. An existing completed workout loaded; a named synthetic workout added Barbell Bench Press and one 20 kg x 8, RIR 2 working set; completion reported one exercise, one set and 160 kg; History, Progress and Weekly Volume reflected the write. No browser-console errors appeared; only pre-existing Three.js deprecation/sample-clipping warnings were recorded. |
+| Focused staging security | Required configuration fails closed; hostile Host returned 421, cross-site POST and CORS preflight returned 403, same-origin login reached the API, secure session-cookie attributes passed, and 12 invalid logins with rotating lower-priority/forged headers produced ten 401s followed by two 429s. |
+| Staging email containment | An unlisted synthetic reset recipient received the generic 200 contract while the failure metric increased by one, sent stayed unchanged, one allowlist-block log appeared and no provider-accept log appeared. Goal 3 retains the separate real controlled-inbox evidence. |
+| Capacity gate | Exact candidate passed 20 active loggers and a 40-logger 2x probe with zero failed requests, bounded resource use and immediate one-user recovery. See the staging evidence below. |
+| Focused rollback | A 150,163-byte pre-candidate dump with SHA-256 `5f65171315e17fb25a346dd0378c438dd22f1974259771433ab7b2b6f260cecd` restored independently. Both previous API image `4a4fccd...` and candidate API image `6b31f98...` reported healthy/database `ok`, rejected direct non-health access and saw baseline counts `2|2|6|9`. All disposable containers, networks and volumes were removed. |
+| Fresh production backup | Passed repeatedly during Goal 4. The latest post-install run produced snapshot `8eb83d86`, a 207,457-byte dump and a 127-second run; it captured 112 files/directories and 430.293 KiB across a repository containing 44 snapshots. Latest-run and snapshot-availability metrics are `1`. The earlier full repository check reported no errors. |
 | Strict retention maintenance | Passed after explicit approval: no snapshot exceeded the exact 30-day cutoff; prune removed zero blobs, safely repacked 13 packs and left zero unused bytes; the 10% data-pack read found no errors across 41 snapshots. |
 | Persistent reverse tunnel | Passed: launchd state `running`; production listener restricted to `127.0.0.1:2222`; TCP acceptance, forced-restart recovery, sustained backup traffic and idempotent installer recovery all succeeded. |
-| Latest-snapshot PostgreSQL restore | Passed with the readiness fix in 53 seconds: 22 public tables, zero invalid foreign keys, matching live/restored count hashes and successful runtime-role read. Sanitized host report: `postgres-restore-20260818T161531Z.env`. |
-| Configuration restore | Passed in 38 seconds: 21 protected files and 25 scripts; Compose, Caddy, Prometheus, Alertmanager and dashboard JSON validations passed. Sanitized host report: `config-restore-20260818T161322Z.env`. |
-| Older snapshot plus newest ledger | Passed in 99 seconds: database `a3bc255c` predates separately restored ledger snapshot `905c5b1b`; one ledger user existed before replay, zero users/references remained, one tombstone remained, migration ledgers matched and a second replay was idempotent. Sanitized host report: `erasure-replay-restore-20260818T162455Z.env`. |
+| Installed recovery artifacts | Exact candidate files are installed root-owned: PostgreSQL restore script SHA-256 `e4bd84e0...`, erasure drill `e10f9afb...`, and recovery runbook `a1226de0...`. Script modes are `750`, the runbook is `640`, and the prior installed artifacts remain in the release-specific rollback directory. The post-install snapshot contains the new files. |
+| Latest-snapshot PostgreSQL restore | Passed both before and after installation. The installed script restored snapshot `48f0046e` in 31 seconds: 22 public tables, zero invalid foreign keys, matching live/restored count hashes and successful runtime-role read. Prior sanitized host report: `postgres-restore-20260818T161531Z.env`. |
+| Configuration restore | Passed both before and after installation. The installed script restored snapshot `8eb83d86` in 33 seconds and validated 21 protected files; Compose, Caddy, Prometheus, Alertmanager and dashboard JSON validations passed. Caddy emitted only its existing formatting warning. Prior sanitized host report: `config-restore-20260818T161322Z.env`. |
+| Older snapshot plus newest ledger | Passed both before and after installation. The installed script combined database snapshot `a3bc255c` with newest-ledger snapshot `8eb83d86` in 53 seconds; one ledger user existed before replay and the test completed with zero resurrected users/references plus idempotent replay. Prior sanitized host report: `erasure-replay-restore-20260818T162455Z.env`. |
+| Post-restore production safety | Live critical-count fingerprint remained `7adb1886f058c2aa878196c581ca105e`; every production container was healthy, no systemd unit was failed, no disposable restore resource remained, and installed hashes still matched the candidate. Production stayed on `APP_RELEASE=ca18717aba553bac51f9c54c24a8c6e67de609d6`, `APP_ENV=private-lan`, `REGISTRATION_MODE=DISABLED`. |
 | Monitoring syntax | Compose rendered; `promtool` accepted all 31 alert rules; `amtool` accepted the Alertmanager route, receiver and inhibit rule using isolated synthetic secret files. |
 | Dependency audit | Full and production audit: no known vulnerabilities. |
 | Image scan | Zero Node-package findings; 22 Debian high/critical findings per image, none currently fixable. |
 | Secret checks | Only `.env.example` is tracked among sensitive filename patterns. A local redacted Git-diff heuristic found no strong credential patterns. This is not equivalent to a complete dedicated secret-scanner attestation. |
-| License inventory | Production packages are predominantly MIT/Apache/BSD/ISC; reviewed exceptions include LGPL-3.0-or-later libvips, MPL-2.0 lightningcss, CC-BY-4.0 caniuse-lite and Zlib. FBX provenance remains unresolved separately. |
+| License inventory | Production packages are predominantly MIT/Apache/BSD/ISC; reviewed exceptions include LGPL-3.0-or-later libvips, MPL-2.0 lightningcss, CC-BY-4.0 caniuse-lite and Zlib. Archived official Tripo pricing around both model-introduction dates applies `CC BY 4.0` to the Free-tier FBX files; NOTICE and the public Support page now provide attribution and describe modifications. |
 
 One exploratory Playwright run used five workers against a single local BFF attribution key and
 correctly reached HTTP 429 limits. It was not counted as an application failure. The exact CI
@@ -175,19 +205,39 @@ database counts matched 122 synthetic users, 122 workouts and 366 sets across al
 and final-image runs. A new one-user write/read flow passed immediately after the final 40-user
 burst.
 
-This is strong defect-detection evidence for the workload and new images, not completion of the
-launch gate. The exact committed image must repeat the workload in production-shaped staging
-while recording peak CPU, memory, connections and disk growth. The gate also needs an explicit
-measured-peak definition and monitored recovery/overload evidence.
+### Production-shaped staging capacity evidence
+
+For the founding-beta gate, 20 concurrent active loggers is the measured operating-peak target;
+40 is the required 2x probe. The exact candidate ran both levels on the isolated staging
+application network. User creation stayed outside the workload phase and also completed with zero
+failures: 20 users in 4,184.33 ms and 40 users in 6,923.26 ms.
+
+| Active loggers | Requests | Failures | Wall time | Throughput | p50 | p95 | p99 | Max |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 20 measured peak | 140 | 0 | 642.11 ms | 218.03 req/s | 86.75 ms | 131.87 ms | 144.76 ms | 151.71 ms |
+| 40 (2x peak) | 280 | 0 | 1,143.01 ms | 244.97 req/s | 167.59 ms | 263.14 ms | 307.33 ms | 332.60 ms |
+
+Across 312 database samples, peak PostgreSQL connections were 17. API peak CPU was 384.92% on
+the multi-core host, peak memory was 236.1 MiB of 512 MiB (46.11%) and peak PIDs were 20.
+PostgreSQL peak CPU was 67.75%, peak memory was 51.88 MiB of 1 GiB (5.07%) and peak PIDs were 22.
+The database grew 532,480 bytes, from 12,031,667 to 12,564,147 bytes. The 2x run produced no
+request failure, health failure or observed overload condition. A one-user seven-request
+write/read flow then passed immediately in 259.96 ms with every set verified, proving recovery.
+
+The synthetic capacity records were intentionally retained in isolated staging for reproducible
+inspection rather than deleted with an unreviewed cleanup query. The later authenticated browser
+smoke added one deliberately named closed workout and one set to the controlled staging tester,
+bringing the known counts to 63 users, 64 workouts and 190 sets; production was never targeted.
+Registration was restored to
+`INVITE_ONLY`, all four staging services are healthy, and the public endpoint still redirects to
+Cloudflare Access. This closes the capacity-specific launch gate for the exact candidate; it is not
+authorization to deploy or open production.
 
 ## Remaining gates and ownership
 
 | Work | Primary owner | SSH needed? | Why it remains open |
 | --- | --- | --- | --- |
-| Exact-SHA CI, image rebuild and focused staging regression | Controller commits; Codex verifies | Only for staging deployment | The application hardening and restore batch is committed as `16d013347e577df7f3d0d017358cbc86f91a27f0`; the controller reports the last CI run clear. The operational tunnel follow-up remains uncommitted at this cutoff and needs its final commit/check evidence. |
-| Install the committed restore scripts and repeat focused restore verification | Joint | Yes, with owner-supervised privilege | The successful fixes ran from private temporary copies; production's installed script was deliberately not replaced ahead of commit/deploy. |
 | Production Resend key, recovery/billing/retention register and delivery monitoring | Controller | Usually no host SSH until secret install | Production provider configuration is incomplete. |
-| FBX redistribution proof or remove/replace both models and update NOTICE | Controller decides; Codex can implement removal/replacement | No | Public delivery is blocked by unknown asset terms. |
 | Controller identity/address and final production-rendered legal/support pages | Controller supplies/approves; Codex verifies | Production black-box step only | Real values and final rendered archive are absent. |
 | Cloudflare production edge, BFF secret, invite mode and email black-box checks | Joint | Yes for internal/API corroboration | Production still runs the old private release. |
 | Independent status page and incident publication rehearsal | Controller/provider setup, Codex verification | Not normally | No independent public status path is deployed. |
@@ -201,19 +251,17 @@ deployment, rollback and production black-box corroboration.
 
 ## Clean continuation order
 
-1. Controller resolves the FBX path and provider/legal values in parallel with candidate work.
-2. Review and commit the persistent-tunnel operations follow-up, then require the appropriate
-   exact-SHA checks.
-3. Deploy the immutable candidate SHA to staging; repeat focused browser/security/email/capacity/image
-   checks affected by the new dependency and container changes.
-4. Prepare production-only provider secrets and a verified rollback point.
-5. Deploy the committed restore scripts and candidate under a write/opening freeze, repeat the
+1. Controller supplies the provider/legal values while the remaining operational gates continue.
+2. Prepare production-only provider secrets and preserve the verified rollback point.
+3. Deploy the candidate under a write/opening freeze, repeat the
    focused restore verification, run production black-box checks, and roll back immediately
    on any stop-rule failure.
-6. Complete device/accessibility/status/restore gates, then invite only the first 10-person cohort
+4. Complete device/accessibility/status/restore gates, then invite only the first 10-person cohort
    and observe it for 72 hours before any expansion.
 
-Goal 4 is therefore progressing cleanly. Fresh backup and restore evidence is now strong, including
-the previously missing old-snapshot/newest-ledger proof. Backup maintenance and transport
-durability are now verified, but production is **not approved** while exact-candidate staging and
-external launch gates remain open.
+Goal 4 is therefore progressing cleanly. Exact-candidate CI, immutable staging deployment,
+automated security/email containment, production-shaped capacity and focused rollback all have
+current evidence. Fresh production backup, strict maintenance, restore/erasure replay and tunnel
+durability are also verified, and the exact committed recovery artifacts are installed and
+reverified. Production is **not approved** while production black-box work and external launch
+gates remain open.
