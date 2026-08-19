@@ -90,6 +90,18 @@ The authoritative latest test date and evidence are recorded in:
 docs/server/reports/11-backup-restore-and-disaster-recovery-report.md
 ```
 
+The public-beta erasure drill must select a snapshot that predates an unexpired tombstone and
+must obtain the newest ledger from a different snapshot:
+
+```bash
+sudo /srv/gym-tracker/scripts/restore-test-erasure-replay.sh OLDER_SNAPSHOT_ID
+```
+
+The drill fails unless the older isolated database contains at least one ledger user, its
+migration ledger matches production, two consecutive ledger replays are idempotent, all erased
+users and direct references are absent afterward, and matching tombstones remain. It never
+connects the restore database to the application network and does not print user identifiers.
+
 ## Limitations
 
 - The MacBook is not always awake.
