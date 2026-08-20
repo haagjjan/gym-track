@@ -79,7 +79,9 @@ controlled invitation was delivered and an unlisted recipient was rejected befor
 no provider record. Evidence: [Goal 3 staging report](../goal-3/goal-3-staging-report.md).
 
 This was on the Goal 3 critical path in two independent ways. The staging requirement is now
-satisfied; the production requirement remains open.
+satisfied. A distinct sending-only production key scoped to `send.gymtrack.ch` was created on
+2026-08-19 and installed as a protected root-owned production secret. The reviewed production
+definition wires it only to API; deployment and production delivery proof remain open.
 
 **It would block staging from booting if removed.** `apps/api/src/shared/env.ts` requires `EMAIL_FROM`
 and `RESEND_API_KEY` in any production-like deployment, and `APP_ENV=staging` is deliberately
@@ -100,11 +102,12 @@ Completed staging work:
 3. Proved controlled delivery and provider-free rejection of an unlisted recipient through the
    deployed exact-SHA environment.
 
-Production still requires its own separate key and sender configuration. The staging key and
-recipient allowlist are never reused.
+Production uses its own separate key and sender configuration. The production key exists but is
+not stored in this repository; host installation passed metadata validation on 2026-08-19
+without exposing its value. Version-controlled Compose wiring is complete but not deployed. The
+staging key and recipient allowlist are never reused.
 
-Record provider retention and the applicable transfer/DPA terms while you are in the console;
-item 4 still needs those facts.
+Provider retention, transfer/DPA terms and plan costs are recorded in the final inventory.
 
 ### A6 — Break the recovery loop, then build the register · item 6
 The register template comes in Pass C. These parts are urgent and independent of it, because
@@ -125,13 +128,16 @@ addresses into a single account.
       syncs elsewhere, or printed.
 - [ ] **Harden the recovery Gmail itself.** It is the root of trust — whoever holds it can take
       the domain. It needs its own MFA and its own recovery path, independent of this project.
-- [ ] MFA on Resend once the account exists (A7), not recovering through `@gymtrack.ch`.
+- [x] Resend uses the operator's Google SSO account and inherits that account's MFA; recovery does
+      not run through `@gymtrack.ch`.
 - [x] Expiry date recorded: **`gymtrack.ch` expires 2027-07-20**.
 - [x] **Auto-renew enabled at Infomaniak** (confirmed by the controller 2026-08-10).
 - [ ] Confirm the card on file does not expire before 2027-07-20 — auto-renew fails silently
       against a dead card.
 - [ ] Calendar reminder for ~2027-06-20 as a backstop independent of provider and card.
-- [ ] Record plan tier, cost and billing method for each provider — item 4 needs these too.
+- [x] Record plan and cost: Infomaniak CHF 9/year for the domain with no other reported charge;
+      Cloudflare and Resend Free plans.
+- [ ] Record the applicable payment method and expiry for the paid Infomaniak domain renewal.
 
 ## Non-blocking, but do them early
 
@@ -159,10 +165,12 @@ During Goal 3, Resend's DNS-only DKIM record was added at
 `send.send.gymtrack.ch`. Resend reports the sending domain verified and a controlled Gmail inbox
 accepted a real invitation from `staging@send.gymtrack.ch`. The root Infomaniak MX, SPF, DKIM and
 strict DMARC records were left unchanged. Production still needs separate-key delivery,
-bounce/complaint/suppression ownership and received-header evidence before its launch gate can
-close. The root DMARC policy remains `p=reject` without an aggregate-reporting address, so failed
-alignment can still be invisible to the operator; decide and document production reporting or an
-equivalent provider-owned monitoring path before launch.
+and received-header evidence before its launch gate can close. Jan Haag is assigned as the
+bounce/complaint/suppression owner; the initial monitoring path is a Resend dashboard review
+before/after each invitation batch and daily during the 72-hour observation window, with an
+immediate invitation pause on unexplained events. The root DMARC policy remains `p=reject` without
+an aggregate-reporting address, so automated aggregate reporting should be reconsidered before
+scope expands beyond the founding cohort.
 
 ### ~~B3 — Decide the seat cap~~ · resolved 2026-08-06
 Cap stays at **50**, giving 48 external testers alongside the two operator accounts. No
