@@ -188,6 +188,11 @@ ops/
 |-- logging/
 |   |-- README.md
 |   `-- scripts/
+|-- production/
+|   |-- compose.yaml
+|   |-- Caddyfile
+|   |-- production.env.example
+|   `-- README.md
 |-- staging/
 |   |-- compose.yaml
 |   |-- Caddyfile
@@ -214,6 +219,9 @@ ops/
   recovery deployment, the restricted macOS SFTP destination and its persistent reverse-tunnel
   launch agent.
 - `ops/logging` owns bounded production log-review and secret-audit scripts; it does not own a separate log store.
+- `ops/production` owns the reviewed non-secret public-beta Compose/Caddy definition, host-only
+  environment template and controlled cutover/rollback order. Live production values and secrets
+  remain under `/srv/gym-tracker` outside Git.
 - `ops/staging` owns the non-secret, production-shaped Goal 3 staging Compose/Caddy definition,
   PostgreSQL role initialization and operator deployment/rollback runbook. Live staging
   environment values and secrets remain only under `/srv/gym-tracker-staging`.
