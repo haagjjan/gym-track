@@ -23,8 +23,8 @@
   Goal 4 and later production gates remain next.
 - Goal 4 pre-deployment verification is in progress. Dependency and runtime-image hardening,
   fresh migrations/integration, hardened-image Chromium/Firefox flows and monitoring syntax pass.
-  Exact candidate `6b31f98981da266304484fb14c3a18904e279e4c` has a controller-reported fully
-  green CI run and now runs in staging with healthy direct-Node API/web images. Focused
+  Staged application baseline `6b31f98981da266304484fb14c3a18904e279e4c` has a fully green CI run and runs in staging with healthy direct-Node API/web
+  images. Focused
   fail-closed configuration, security headers/edge behavior, cookie attributes, recipient
   containment, rate limiting and previous/candidate restore checks passed. Production-shaped
   staging passed 20 concurrent active loggers and a 40-logger 2x probe with zero failures,
@@ -35,8 +35,14 @@
   verified History, Progress and Weekly Volume without browser-console errors. The exact committed
   restore scripts and recovery runbook are installed, included in a fresh production backup and
   reverified without changing the live database fingerprint. Archived Tripo Free-tier
-  `CC BY 4.0` evidence and public attribution close the FBX redistribution gate. Provider/legal
-  values, production black-box, status and physical-device gates remain. See
+  `CC BY 4.0` evidence and public attribution close the FBX redistribution gate. A reviewed
+  non-secret production Compose/Caddy definition now supplies exact-SHA, fail-closed BFF/Resend,
+  legal-contact and rollback wiring, with matching CI invariants. These policy/configuration
+  changes do not invalidate functional evidence, but the final SHA still needs green CI and a
+  focused rendered-policy staging pass. The corrected Cloudflare scope is reaffirmed, provider
+  costs are recorded, and the production Resend and BFF secrets are installed with verified
+  protected metadata; a fresh backup containing both secrets, cutover black-box, status and
+  physical-device gates remain. See
   `docs/beta-process/public-beta/goal-4/goal-4-production-verification.md`.
 
 ## Phase 0 — Project Setup & Working Style
