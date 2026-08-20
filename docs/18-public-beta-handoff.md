@@ -31,10 +31,13 @@ by themselves. Follow [launch-gates.md](beta-process/public-beta/goal-1/launch-g
 repository findings in [security-review.md](beta-process/public-beta/goal-1/security-review.md),
 and the bounded [Goal 1 remediation report](beta-process/public-beta/goal-1/goal-1-remediation-report.md).
 The DPIA and bounded legal-risk self-assessment were approved by the controller on 2026-08-10;
-they are not counsel review or a compliance certification. Production Resend identity and
-bounce behavior, production configuration, 30-day pruning, restore/erasure replay, production
-black-box security review, capacity, responsive/device/assistive-technology QA and incident
-rehearsals still require evidence. The bundled FBX models are confirmed Tripo 3D Free-tier
+they are not counsel review or a compliance certification. A 2026-08-19 correction now records
+that Cloudflare processes application content at its public TLS edge; the controller reaffirmed
+that corrected scope and its residual risk on the same date. Production Resend identity and a
+manual bounce/complaint owner exist; deployed delivery/header proof, production installation,
+production black-box security review, physical-device/assistive-technology QA, independent
+status and incident rehearsals still require evidence. Goal 4 records current 30-day pruning,
+restore/erasure replay and capacity evidence. The bundled FBX models are confirmed Tripo 3D Free-tier
 outputs under `CC BY 4.0`; archived contemporaneous pricing, NOTICE and public Support-page
 attribution close their redistribution gate.
 
@@ -46,7 +49,8 @@ Goals 1–3 are complete at their stated scopes. Goal 3's exact green release pa
 production-shaped staging deployment, migration/rollback, provider containment, security and
 invited-user product flow recorded in
 [the staging report](beta-process/public-beta/goal-3/goal-3-staging-report.md). Proceed directly to
-the production verification goals and remaining launch gates; do not infer production behavior
-from staging success. Only after every blocker has linked evidence, invite the first capped
+the production verification goals using the reviewed non-secret definition in `ops/production`;
+do not infer production behavior from staging success. Only after every blocker has linked
+evidence, invite the first capped
 cohort, observe 72 hours, then add no more than 10 per rolling 24 hours with deliberate pauses.
 Apply the stop rules in the launch-gate document without exception.
