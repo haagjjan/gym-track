@@ -25,14 +25,14 @@ approval are checked against the signed records; operational gates still require
 | 3 | Allowed jurisdictions | **Decided** | Switzerland-only wording implemented in current worktree |
 | 1 | Controller identity | **Decided** | dynamic rendering implemented; deployed configuration verification → Goal 5 |
 | 4 | Provider and processor inventory | **Complete** | — |
-| 6 | Billing, ownership, MFA, recovery | **Decided** | residual risk accepted; payment-method check + costs outstanding |
+| 6 | Billing, ownership, MFA, recovery | **Decided** | residual risk accepted; payment-card expiry check and calendar reminder outstanding |
 | 10 | Public repository and licensing | **Decided** | Tripo 3D Free-tier models are separately licensed `CC BY 4.0`; attribution implemented; remaining repository-publication checklist still applies |
-| 2 | Legal review and DPIA | **Complete** | controller-approved self-assessment; no counsel review |
+| 2 | Legal review and DPIA | **Decided** | corrected Cloudflare payload scope reaffirmed by the controller 2026-08-19 |
 
 All ten decisions are recorded below. Remaining work is execution or evidence in
 [goal-2-external-actions.md](goal-2-external-actions.md): provider transfer/retention records,
 staging/production email configuration, account-recovery bookkeeping and later deployed
-verification. The FBX asset decision and the legal/DPIA decision itself are closed.
+verification. The FBX asset and legal/DPIA decisions are closed.
 
 ---
 
@@ -444,9 +444,9 @@ Written as [processor-inventory-final.md](processor-inventory-final.md). Every p
 classified as processor, controller-operated, or no-personal-data, because treating them alike
 produced a misleading picture.
 
-**Three processors:** Infomaniak (CH — mail), Cloudflare (US — connection metadata, no payload),
-and Resend (US — recipient address and full message body). Telegram is limited to
-infrastructure alerts and does not receive personal data.
+**Three processors:** Infomaniak (CH — mail), Cloudflare (US — connection metadata and all public
+application content in transit), and Resend (US — recipient address and full message body).
+Telegram is limited to infrastructure alerts and does not receive personal data.
 
 **Findings worth carrying forward:**
 
@@ -477,17 +477,24 @@ Telegram streams are already independently configured, so it is achieved by leav
 
 Worth recording that the two do **not** rest on the same footing. Cloudflare's Framework
 participation follows an adequacy determination; Resend relies on contractual clauses alone —
-and Resend handles the most sensitive payload in the inventory, being recipient addresses and
-full message bodies including single-use action links. Both accepted under Q3 of the risk
-acceptance, with any DPA version change already a recorded re-screen trigger.
+and Resend stores recipient addresses and full message bodies including single-use action links.
+Cloudflare's payload scope is broader because it processes all public application content in
+transit, though it is not the system of record. The transfer mechanisms were accepted under Q3;
+the corrected Cloudflare scope was reaffirmed by the controller on 2026-08-19. Any DPA version
+change remains a recorded re-screen trigger.
 
-**Deliberately not chased:** provider-side retention windows, `gym-prod` disk encryption (pairs
-with a future SSH session), and a status-page host if that page is ever deployed. None changes a
-launch decision.
+**Resolved 2026-08-19:** current provider documentation records Cloudflare's Free-plan
+customer-visible log windows and Resend's email, backup and termination-deletion windows. The
+same review corrected the earlier false claim that Cloudflare could not see application payload:
+Cloudflare terminates public TLS and processes application content in transit. The transfer basis
+is unchanged, and the controller reaffirmed the signed legal-risk acceptance with the corrected
+scope on 2026-08-19.
 
-Exact provider retention windows still need to be recorded because the processing inventory and
-launch gate promise them. Plan costs are operational bookkeeping and do not change the launch
-decision.
+Infomaniak billing is now recorded as CHF 9/year for the domain with no other reported cost or
+separately billed mail plan; operations therefore do not rely on paid-tier mailbox recovery. A
+status-page host remains open if that page is deployed. Goal 4 inspection has now recorded that
+`gym-prod` uses plain ext4 without full-disk
+encryption; the documents no longer imply that control exists.
 
 A draft public-facing processor summary for the Privacy Notice is included, publishable once
 the open cells close and item 2 approves the wording.
@@ -542,7 +549,8 @@ Remaining renewal safeguards:
 - [ ] Add a calendar reminder for roughly 2027-06-20 as a backstop that does not depend on the
       card or the provider.
 
-**Also remaining, for item 4 rather than item 6:** plan and cost per provider.
+**Provider cost recorded 2026-08-19:** Infomaniak costs CHF 9/year for the domain, with no other
+reported Infomaniak charge. Cloudflare and Resend remain on their Free plans.
 
 ---
 
@@ -592,12 +600,15 @@ work is the unrelated pre-publication checklist in the plan.
 
 ## Item 2 — Legal review and DPIA
 
-**Status: Decided** · controller approval recorded 2026-08-10
+**Status: Decided** · original controller approval recorded 2026-08-10; Cloudflare-scope
+correction reaffirmed 2026-08-19
 
-The full [DPIA](dpia.md) is complete and approved by Jan Haag as controller. The companion
-[legal-risk acceptance](legal-risk-acceptance.md) is signed on the same date. The chosen approach
+The full [DPIA](dpia.md) was approved by Jan Haag as controller. The companion
+[legal-risk acceptance](legal-risk-acceptance.md) was signed on the same date. The chosen approach
 is documented self-assessment and written residual-risk acceptance rather than engaging counsel
-for this free, Switzerland-only, invitation-only beta capped at 50 accounts.
+for this free, Switzerland-only, invitation-only beta capped at 50 accounts. A 2026-08-19
+correction records that Cloudflare processes public application content at its TLS edge; the
+controller reaffirmed the acceptance with that corrected scope on 2026-08-19.
 
 This is deliberately precise: the documents are **controller-approved, not counsel-reviewed**,
 and they do not certify legal compliance. The acceptance becomes void and qualified review is
@@ -611,12 +622,10 @@ acceptance handling, and the stated availability/support posture. The no-medical
 has been strengthened, and invite-bound signup prevents the earlier hypothesised typo-created
 account lockout.
 
-Two operational follow-ups remain, neither of which makes the approval provisional:
+The transfer terms and current provider retention facts have now been recorded. One Goal 5
+follow-up remains:
 
-1. Retrieve and record the current Cloudflare and Resend transfer terms/DPAs in the processor
-   inventory. This is a factual provider-documentation action and remains a launch prerequisite.
-2. Implement and rehearse the personal-data-breach procedure identified in DPIA section 12 as
+1. Implement and rehearse the personal-data-breach procedure identified in DPIA section 12 as
    part of Goal 5 incident readiness.
 
-The DPIA and controller legal-risk acceptance document gates are therefore complete. Rendered
-policy/configuration verification remains a separate deployed-system gate.
+Rendered policy/configuration verification remains a separate deployed-system gate.
