@@ -4,9 +4,9 @@ The beta may be promoted only after every blocker is checked with linked evidenc
 
 ## External/legal blockers
 
-- [ ] Real controller legal name and postal address configured.
-- [ ] Dedicated support, privacy and security email addresses configured and tested; API `SUPPORT_EMAIL` matches the published web support contact and Resend reply-to.
-- [ ] Final support provider and every processor/region/transfer/retention recorded.
+- [ ] Real controller legal name and postal address configured. The controller approved `Jan Haag, Lerchenstrasse 74, 4059 Basel, Switzerland` and both values are recorded in the version-controlled production environment template. A read-only production check on 2026-08-20 found the deployed Compose sets neither variable, so the live pages would still render the `PUBLICATION_BLOCKED` banner. This is a deployment and rendering verification, not an open decision.
+- [ ] Dedicated support, privacy and security email addresses configured and tested; API `SUPPORT_EMAIL` matches the published web support contact and Resend reply-to. The three addresses were configured and tested under Goal 2 item A5 and all reach the controller's inbox. The three-way match is structural rather than a matter of discipline: both services read the same `SUPPORT_EMAIL` name and the API derives `EMAIL_REPLY_TO` from it. The read-only production check on 2026-08-20 found the deployed Compose sets none of these variables, so only the deployed confirmation remains.
+- [x] Final support provider and every processor/region/transfer/retention recorded. Evidence: the [processor inventory](../goal-2/processor-inventory-final.md) names Infomaniak Network SA (Geneva) as the support, privacy and security correspondence processor, and records entity/region, personal data touched, transfer basis and retention for Infomaniak, Cloudflare and Resend. Telegram is recorded as carrying no personal data, and controller-operated infrastructure is listed separately as a non-processor relationship.
 - [x] Swiss FADP applicability, justification per processing category, sensitive-data analysis, Terms/liability/no-medical-advice, shared contributions and voluntary support are assessed and accepted by the controller. The original acceptance was signed 2026-08-10; the controller reaffirmed it on 2026-08-19 after correcting Cloudflare's scope from metadata-only to application content in transit. Evidence: [legal-risk acceptance](../goal-2/legal-risk-acceptance.md).
 - [x] Full DPIA completed and originally approved by the controller on 2026-08-10 with a review date. Version 1.2 corrects Cloudflare's payload-processing scope and was reaffirmed by the controller on 2026-08-19. Evidence: [DPIA](../goal-2/dpia.md).
 - [ ] Final rendered Privacy, Terms, Cookie/Storage, Support and beta-limitations pages match production behavior and are version archived.
@@ -19,11 +19,11 @@ The beta may be promoted only after every blocker is checked with linked evidenc
 - [ ] Admission settings read cap 50, approvals/day 10, and all three runtime controls work.
 - [ ] Cloudflare private gate remains until unauthenticated direct API signup cannot bypass invite admission.
 - [ ] BFF/API share a 32+ character `BFF_CLIENT_IP_SECRET`; forged browser headers fail attribution tests and direct non-health requests to the API hostname return `BFF_REQUIRED`.
-- [ ] Resend domain verified; SPF, DKIM and DMARC pass; bounce/complaint monitoring and suppression owner assigned.
+- [ ] Resend domain verified; SPF, DKIM and DMARC pass; bounce/complaint monitoring and suppression owner assigned. The sending domain is verified and its DNS records are published through Cloudflare, and the controller is named as the delivery owner in the [production runbook](../../../../ops/production/README.md) with a per-batch and daily Resend dashboard review. Outstanding: received-header evidence that SPF, DKIM and DMARC **align** on a real delivered message from `noreply@send.gymtrack.ch`, which needs a production send. Verified records do not by themselves prove alignment when the From domain and the DKIM `d=` domain differ.
 - [ ] Invite, verification, reset, deletion and cancellation black-box emails pass HTML/plain/link/expiry tests.
 - [ ] Telegram infrastructure alerts contain no applicant/account data; beta-request Telegram notification variables remain unset, and approval works only in authenticated admin.
 - [ ] `status.gymtrack.ch` is deployed independently with TLS and an incident publication rehearsal.
-- [ ] Optional support URL, if configured, has approved provider terms and voluntary/no-benefit wording.
+- [x] Optional support URL, if configured, has approved provider terms and voluntary/no-benefit wording. The controller decided on 2026-08-20 not to offer a voluntary-support link for the Founding Beta, so `SUPPORT_URL` stays empty in the production environment template and no provider terms are required. Any later link must carry approved terms and no-benefit wording before it is configured.
 
 ## Data lifecycle and recovery
 
