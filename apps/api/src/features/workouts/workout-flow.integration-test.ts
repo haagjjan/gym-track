@@ -1227,6 +1227,101 @@ describe("workout API database flow", { skip: databaseUrl ? false : "INTEGRATION
       await server.close();
     }
   });
+
+  /**
+   * Launch gate SQC-1, authorization/IDOR row: the multi-account matrix.
+   *
+   * Covers guessed identifiers, writes aimed at another account's rows, a client
+   * mutation id reused across accounts, and the shared-catalogue boundary where
+   * reuse is allowed but editing another member's definition is not.
+   */
+  it("denies cross-account reads and writes while allowing shared exercise reuse", async () => {
+    const server = await buildIntegrationServer(db);
+
+    try {
+      const tag = `${Date.now().toString(36)}${process.pid}idor`;
+      const owner = await signup(server, tag);
+      const intruder = await signup(server, `${tag}other`);
+
+      const ownerExerciseId = await createExercise(server, owner.cookie, `${tag} Owned`);
+      const ownerWorkoutId = await createWorkout(server, owner.cookie);
+      const ownerSessionExerciseId = await addExerciseToWorkout(server, owner.cookie, ownerWorkoutId, ownerExerciseId);
+      const ownerSetId = await addSet(server, owner.cookie, ownerWorkoutId, ownerSessionExerciseId);
+
+      // A real but foreign workout and a guessed identifier answer identically,
+      // so the status code cannot be used to prove a workout exists.
+      const foreignRead = await server.inject({
+        method: "GET", url: `/api/v1/workouts/${ownerWorkoutId}`, cookies: authCookies(intruder.cookie)
+      });
+      const guessedRead = await server.inject({
+        method: "GET", url: `/api/v1/workouts/${randomUUID()}`, cookies: authCookies(intruder.cookie)
+      });
+      assert.equal(foreignRead.statusCode, 404);
+      assert.equal(guessedRead.statusCode, 404);
+
+      const foreignAddExercise = await addExerciseRequest(
+        server, intruder.cookie, ownerWorkoutId, ownerExerciseId, randomUUID()
+      );
+      const foreignAddSet = await addSetRequest(
+        server, intruder.cookie, ownerWorkoutId, ownerSessionExerciseId, randomUUID()
+      );
+      const foreignSetUpdate = await server.inject({
+        method: "PATCH",
+        url: `/api/v1/sets/${ownerSetId}`,
+        cookies: authCookies(intruder.cookie),
+        payload: { reps: 99 }
+      });
+      assert.equal(foreignAddExercise.statusCode, 404);
+      assert.equal(foreignAddSet.statusCode, 404);
+      assert.equal(foreignSetUpdate.statusCode, 404);
+
+      // Idempotency keys are scoped to the owned parent row, so the same client
+      // mutation id from two accounts must produce two independent records.
+      const sharedMutationId = randomUUID();
+      const ownerWrite = await addExerciseRequest(
+        server, owner.cookie, ownerWorkoutId, ownerExerciseId, sharedMutationId
+      );
+      const intruderWorkoutId = await createWorkout(server, intruder.cookie);
+      const intruderWrite = await addExerciseRequest(
+        server, intruder.cookie, intruderWorkoutId, ownerExerciseId, sharedMutationId
+      );
+      assert.equal(ownerWrite.statusCode, 201);
+      assert.equal(intruderWrite.statusCode, 201);
+      assert.notEqual(
+        readData<SessionExercisePayload>(intruderWrite).sessionExercise.id,
+        readData<SessionExercisePayload>(ownerWrite).sessionExercise.id
+      );
+
+      // Shared catalogue: logging another member's exercise is allowed, editing
+      // their definition is not.
+      // The update schema is the full write shape, so send a valid body: a 422
+      // would prove nothing about the authorization boundary.
+      const intruderMuscleGroupId = await getChestMuscleGroupId(server, intruder.cookie);
+      const foreignEdit = await server.inject({
+        method: "PATCH",
+        url: `/api/v1/exercises/${ownerExerciseId}`,
+        cookies: authCookies(intruder.cookie),
+        payload: {
+          name: `${exercisePrefix}${tag} Hijacked`,
+          equipment: "barbell",
+          exerciseType: "compound",
+          primaryMuscleGroupId: intruderMuscleGroupId,
+          secondaryMuscleGroupIds: [],
+          confirmNameWarning: true
+        }
+      });
+      assert.equal(foreignEdit.statusCode, 403);
+      assert.equal(foreignEdit.json().error.code, "EXERCISE_FORBIDDEN");
+
+      // Nothing above reached the owner's records.
+      const ownerDetail = await getWorkout(server, owner.cookie, ownerWorkoutId);
+      assert.equal(ownerDetail.exercises.length, 2);
+      assert.equal(ownerDetail.exercises[0]?.sets.length, 1);
+      assert.equal(ownerDetail.exercises[0]?.exercise.name, `${exercisePrefix}${tag} Owned`);
+    } finally {
+      await server.close();
+    }
+  });
 });
 
 async function buildIntegrationServer(
