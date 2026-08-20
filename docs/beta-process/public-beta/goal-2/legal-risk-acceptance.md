@@ -8,13 +8,16 @@ preference to engaging counsel. Proportionate to a free, invitation-only, fifty-
 operated by one person in Switzerland, and consistent with the risk posture recorded under
 item 6.
 
-> **Status: ACCEPTED BY THE CONTROLLER — 2026-08-10.** The controller confirmed the positions
-> below and accepts the recorded residual risks. This is a deliberate self-assessment, not legal
-> advice or qualified-counsel approval. The acceptance is bounded by the review triggers below.
+> **Status: ACCEPTED BY THE CONTROLLER — 2026-08-10; CORRECTED SCOPE REAFFIRMED 2026-08-19.** A 2026-08-19
+> correction records that Cloudflare terminates public TLS and processes application content in
+> transit, rather than connection metadata alone. The transfer mechanisms are unchanged, but the
+> controller expressly reaffirmed the acceptance with that corrected data scope. This is a
+> deliberate self-assessment, not legal advice or qualified-counsel approval.
 
-## All eight are now resolved
+## Eight positions documented and accepted
 
-Two were not straightforward risk-acceptance items when this was drafted, and both are closed:
+Two were not straightforward risk-acceptance items when this was drafted. Their factual portions
+are closed, including the 2026-08-19 reaffirmation of Q3's corrected scope:
 
 **Q3 was researchable, not a judgement call** — the providers publish their transfer terms, so
 reading them was the work. Done 2026-08-10; both mechanisms are recorded with version stamps,
@@ -38,8 +41,9 @@ without claiming the classification.
 This costs almost nothing, because the controls it implies were built anyway: no third-party
 disclosure beyond the named processors, opt-in analytics defaulting off, restricted self-hosted
 storage, encrypted off-machine backups, hard erasure on request, and no sharing or profiling.
-The production host's full-disk encryption state remains an infrastructure fact to verify, not
-an assumed control.
+Goal 4 inspection confirmed that the production root filesystem is plain ext4 without full-disk
+encryption. Physical access control, least-privilege host access and encrypted off-machine backups
+mitigate but do not remove that residual risk.
 
 One genuine structural mitigation: the **body profile — the most clearly physiological
 category — never reaches the server.** It is browser-only, excluded from the account export by
@@ -75,24 +79,35 @@ control than most services of this size have.
 | **Cloudflare** | Swiss-U.S. Data Privacy Framework, with EU SCCs (2021/914) plus Swiss modifications as fallback for Restricted Transfers | DPA v6.4, 2026-04-03 |
 | **Resend** | EU SCCs (2021/914) with Swiss modifications (§6.5) — no DPF certification | DPA last updated 2025-12-31 |
 
-This was the open *action*; what remains is the *judgement*, and that is accepted.
+The transfer-mechanism research is closed. The original judgement was accepted, and its
+application to the corrected Cloudflare payload scope was reaffirmed on 2026-08-19.
 
 **Position: accept both mechanisms as adequate for this processing.**
 
 Cloudflare's Framework participation rests on an adequacy determination and is the cleaner of
 the two. Resend relies on contractual clauses alone — a recognised mechanism, but not the same
-footing, and Resend handles the most sensitive payload in the inventory: recipient addresses
-and full message bodies including invitation and reset links.
+footing.
 
-Accepted because both are standard, published, widely relied-upon mechanisms; because the
-alternative for a fifty-account free beta would be finding a Swiss-hosted transactional email
-provider at material cost and effort; and because the exposure is bounded — no workout data,
-no health data and no credentials pass through email, only addresses and single-use action
-links that expire.
+**Scope correction, 2026-08-19.** The original assessment incorrectly described Cloudflare as
+seeing connection metadata but no payload. Cloudflare's own HTTP-processing documentation states
+that proxied HTTPS is decrypted and inspected at its edge, then re-encrypted toward the origin.
+For this application, Cloudflare therefore processes public request/response content in transit,
+potentially including credentials, action tokens, workout records and free-text notes. Configured
+customer-visible logs are metadata-oriented and the application does not deliberately cache
+authenticated API responses, but those controls do not make the edge blind to payload content.
 
-**Residual risk: low-medium, accepted.** Re-check on any DPA version change, which is already a
-recorded re-screen trigger. A change in Resend's status — losing SCC coverage, or a decision
-invalidating the Framework — would justify revisiting the provider rather than the acceptance.
+The original position accepted both providers because their mechanisms are standard, published
+and widely relied upon, and because replacing either for a fifty-account free beta would add
+material cost and effort. For Resend, exposure remains bounded to addresses and single-use email
+links rather than workout data. For Cloudflare, the corrected exposure is broader but transient:
+it protects and proxies the service rather than acting as the system of record, while configured
+customer-visible logs remain metadata-oriented.
+
+**Residual risk: low-medium; accepted and reaffirmed by the controller for the corrected
+Cloudflare scope on 2026-08-19.** Re-check on any DPA version change, which is already a recorded
+re-screen trigger. A
+change in Resend's status — losing SCC coverage — or a decision invalidating the Framework would
+justify revisiting the provider rather than the acceptance.
 
 ## Q4 — Do the Terms hold?
 
@@ -202,7 +217,7 @@ Decided under items 5 and 7; recorded here for completeness.
 |---|---|---|
 | 1 | Sensitive data | Accepted — conservative handling, no classification asserted |
 | 2 | GDPR applicability | Accepted — with voluntary equivalent controls |
-| 3 | Transfer basis | **Closed 2026-08-10** — both recorded; mechanisms accepted |
+| 3 | Transfer basis and scope | Mechanisms accepted 2026-08-10; corrected Cloudflare payload scope reaffirmed 2026-08-19 |
 | 4 | Terms | Accepted — with a no-medical-advice wording change |
 | 5 | DPIA and consultation | Accepted |
 | 6 | Rectification gap | Accepted — email change planned, not launch-blocking |
@@ -234,7 +249,16 @@ Date: 10.8.2026
 Signature: Jan Haag
 ```
 
-This signature completes the controller-approval part of Goal 2 item 2. Q3 remains a separate
-factual provider-documentation action: retrieve and record the Cloudflare and Resend transfer
-terms. It does not make this acceptance provisional, but it remains a launch prerequisite in
-the processor inventory and launch gates.
+This signature completed the original controller-approval part of Goal 2 item 2. The later
+Cloudflare data-scope correction was accepted through the narrow amendment below.
+
+### 2026-08-19 Cloudflare scope amendment
+
+The controller reaffirmed that the 2026-08-10 acceptance continues with Cloudflare processing
+public application content in transit as described under Q3.
+
+```
+Controller:  Jan Haag
+Date:        19.8.2026
+Decision:    Reaffirmed; corrected scope and recorded residual risk accepted
+```

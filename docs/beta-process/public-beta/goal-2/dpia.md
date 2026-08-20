@@ -1,13 +1,17 @@
 # Data Protection Impact Assessment — Founding Beta
 
-Version 1.1 · prepared 2026-08-08 · controller-approved 2026-08-10 · supersedes nothing; completes
+Version 1.2 · prepared 2026-08-08 · amended and reaffirmed 2026-08-19;
+supersedes nothing; completes
 [dpia-screening.md](../goal-1/dpia-screening.md)
 
-**Status: approved by the controller, Jan Haag, on 2026-08-10.** This is the controller's own
-assessment, prepared with engineering input. Approval records the controller's decision and
-risk acceptance; it is not legal advice, a legal-compliance certification, or approval by a
-qualified adviser. Section 15 preserves the questions that would need independent review if a
-recorded trigger fires.
+**Status: the original assessment was approved by the controller, Jan Haag, on 2026-08-10. A
+2026-08-19 correction records that Cloudflare terminates public TLS and processes application
+content in transit; the controller reaffirmed the assessment with that corrected scope on the
+same date.** This is the
+controller's own assessment, prepared with engineering input. Approval records the controller's
+decision and risk acceptance; it is not legal advice, a legal-compliance certification, or
+approval by a qualified adviser. Section 15 preserves the questions that would need independent
+review if a recorded trigger fires.
 
 ---
 
@@ -117,8 +121,9 @@ health and routine. The screening reached this conclusion independently.
 sensitive-data handling throughout: no disclosure to third parties beyond the processors in
 section 6, opt-in analytics, restricted self-hosted storage, encrypted off-machine backups, and
 hard erasure on request. This is the conservative option and costs little, since the controls
-were built anyway. The production host's full-disk encryption state remains to be recorded and
-is not assumed here.
+were built anyway. Goal 4 inspection confirmed that the production root filesystem is plain ext4
+without full-disk encryption. Physical access control, least-privilege host access and encrypted
+off-machine backups mitigate but do not remove that residual risk.
 
 Mitigating factor worth noting: the body profile — the most clearly physiological category —
 **never reaches the server**. It lives in browser storage only, is excluded from the account
@@ -131,13 +136,16 @@ Detail in [processor-inventory-final.md](processor-inventory-final.md).
 | Processor | Location | Data |
 |---|---|---|
 | Infomaniak | **Switzerland** | Support, privacy and security correspondence |
-| Cloudflare | United States | Connection metadata — IP, timestamp, hostname. No payload |
+| Cloudflare | United States; dynamic edge location | Connection metadata plus public application request/response content in transit. Cloudflare terminates TLS at its edge before re-encrypting traffic toward the Tunnel; this can include credentials, action tokens, workout data and free-text notes |
 | Resend | United States | Recipient address and full body of transactional email |
 
 Telegram was reduced to infrastructure alerts only and no longer processes personal data.
 
 The application, database and encrypted backups run on hardware the controller operates
-personally in Switzerland. No third party has access.
+personally in Switzerland. They are not hosted by a third party, but public application traffic
+passes through Cloudflare as described above. Configured customer-visible Cloudflare logs are
+metadata-oriented; that does not change the provider's ability to process payload content while
+proxying it.
 
 **Transfers.** Cloudflare and Resend are US entities, so personal data goes abroad. The revFADP
 requires adequate protection for such transfers. The basis applying to each — Swiss-US Data
@@ -148,7 +156,9 @@ Privacy Framework certification, Standard Contractual Clauses, or a provider Swi
 
 - Collection is minimal: an email address and a username. No name, no date of birth, no
   address, no payment data, no device identifiers.
-- The most sensitive category is browser-only and never transmitted.
+- The body profile—the most directly physiological structured category—is browser-only and never
+  transmitted. Workout history and free-text notes may still be potentially sensitive and pass
+  through Cloudflare in transit.
 - Analytics is off by default and adds nothing to the service when disabled.
 - No advertising, no third-party trackers, no data sharing, no profiling with legal effect.
 - Automated decisions are limited to when an in-app prompt becomes eligible. Nothing is decided
@@ -273,7 +283,7 @@ claimed as consultation.
 | | |
 |---|---|
 | Prepared | 2026-08-08 |
-| Approved by | **Jan Haag, controller, 2026-08-10** |
+| Approved by | **Jan Haag, controller, 2026-08-10; corrected Cloudflare scope reaffirmed 2026-08-19** |
 | Review date | Within 12 months of launch, or on any trigger below |
 
 **Re-screen triggers**, unchanged from the screening: material change to data categories,
@@ -286,9 +296,10 @@ form of monetisation is a trigger.
 These are the points where independent advice could reduce uncertainty, ordered by what it
 costs to be wrong. The controller chose the documented positions in
 [legal-risk-acceptance.md](legal-risk-acceptance.md) and approved them on 2026-08-10 instead of
-engaging counsel for this bounded beta. They are not open approval conditions. A qualified
-adviser should revisit them if any recorded review trigger fires. The provider transfer basis
-in item 3 remains a factual documentation action, not a legal-approval question.
+engaging counsel for this bounded beta. The controller reaffirmed the 2026-08-19 Cloudflare scope
+correction; all positions are accepted. A qualified adviser should
+revisit them if any recorded review trigger fires. The provider transfer mechanisms themselves
+are documented, and the corrected payload scope is included in the accepted assessment.
 
 1. **Is this sensitive personal data?** Does strength-training history — combined with optional
    browser-only body metrics and unconstrained free-text notes — constitute data on health under
