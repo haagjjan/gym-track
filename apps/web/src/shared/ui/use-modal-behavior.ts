@@ -16,6 +16,11 @@ interface ModalEntry {
   onClose: () => void;
 }
 
+// Generous enough to outlast a pending mutation settling into a re-render,
+// short enough that a dialog which is legitimately inert-by-design stops
+// retrying instead of polling for its whole lifetime.
+const INITIAL_FOCUS_SETTLE_MS = 3_000;
+
 const modalStack: ModalEntry[] = [];
 const inertElements = new Map<HTMLElement, { count: number; wasInert: boolean }>();
 let inertObserver: MutationObserver | null = null;
@@ -62,7 +67,22 @@ function activateModal(
   modalStack.push(entry);
   syncBodyScrollLock();
   refreshBackgroundInert();
-  const frame = window.requestAnimationFrame(() => focusInitialElement(element, initialFocus));
+  const focusDeadline = performance.now() + INITIAL_FOCUS_SETTLE_MS;
+  let frame = 0;
+  const placeInitialFocus = (): void => {
+    const target = initialFocusTarget(element, initialFocus);
+    if (target) {
+      target.focus();
+      return;
+    }
+    // Nothing in the dialog can hold focus yet. Park it on the dialog so the
+    // inert background stays unreachable, then retry until a control settles.
+    if (!element.contains(document.activeElement)) element.focus();
+    if (performance.now() < focusDeadline) {
+      frame = window.requestAnimationFrame(placeInitialFocus);
+    }
+  };
+  frame = window.requestAnimationFrame(placeInitialFocus);
   const handleKeyDown = (event: KeyboardEvent): void => {
     if (topModal() !== entry) return;
     if (event.key === "Escape" && mayCloseOnEscape() && !event.repeat) {
@@ -82,14 +102,22 @@ function activateModal(
   };
 }
 
-function focusInitialElement(dialog: HTMLElement, initialFocus: InitialFocus): void {
-  if (initialFocus === "dialog") {
-    dialog.focus();
-    return;
-  }
+/**
+ * Resolves the element that should take initial focus, or `null` when nothing
+ * in the dialog can hold it yet.
+ *
+ * A dialog can mount with every control disabled: `ConfirmDialog` disables both
+ * buttons while `isPending` is true, and a caller whose pending state has not
+ * settled yet renders exactly that for a frame or two. Focusing a disabled
+ * element silently does nothing and this effect never re-runs on its own, so
+ * returning `null` — rather than the disabled element — is what lets the caller
+ * retry instead of stranding focus outside the dialog for the modal's lifetime.
+ */
+function initialFocusTarget(dialog: HTMLElement, initialFocus: InitialFocus): HTMLElement | null {
+  if (initialFocus === "dialog") return dialog;
   const marked = dialog.querySelector<HTMLElement>("[data-modal-initial-focus]");
-  const target = marked && isFocusable(marked) ? marked : focusableElements(dialog)[0];
-  (target ?? dialog).focus();
+  if (marked && isFocusable(marked)) return marked;
+  return focusableElements(dialog)[0] ?? null;
 }
 
 function trapFocus(event: KeyboardEvent, dialog: HTMLElement): void {
@@ -128,6 +156,7 @@ function focusableElements(dialog: HTMLElement): HTMLElement[] {
 function isFocusable(element: HTMLElement): boolean {
   return element.getClientRects().length > 0
     && getComputedStyle(element).visibility !== "hidden"
+    && !element.matches(":disabled")
     && !element.closest("[inert]");
 }
 
