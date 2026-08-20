@@ -1,6 +1,7 @@
 # Goal 4 Production Verification
 
-**Status:** Exact candidate staged and focused automated/browser verification complete;
+**Status:** Application baseline staged and focused automated/browser verification complete;
+final policy/configuration candidate awaits commit, CI and rendered-page staging verification;
 production cutover remains blocked by launch gates
 
 **Evidence cutoff:** 2026-08-19
@@ -14,9 +15,9 @@ controller performs privileged, provider, asset-rights, real-device and cutover 
 | --- | --- | --- |
 | 0 | Complete | Clean baseline `ee537d9` |
 | 1 | Complete at repository scope | [Goal 1 remediation report](../goal-1/goal-1-remediation-report.md) |
-| 2 | Decisions complete; later-goal external execution remains | [Goal 2 decision record](../goal-2/goal-2-decision-record.md) and [external actions](../goal-2/goal-2-external-actions.md) |
+| 2 | Decisions complete; corrected Cloudflare scope reaffirmed 2026-08-19 | [Goal 2 decision record](../goal-2/goal-2-decision-record.md), [DPIA](../goal-2/dpia.md) and [legal-risk acceptance](../goal-2/legal-risk-acceptance.md) |
 | 3 | Complete | Exact release `4a4fccdae263126ceda164a792059514123f957f` and [Goal 3 staging report](../goal-3/goal-3-staging-report.md) |
-| 4 | In progress; exact candidate, backup, restore and capacity evidence verified | This report |
+| 4 | In progress; application baseline, backup, restore and capacity evidence verified; final configuration SHA and deployed proof remain | This report |
 
 Goal 3 is not reopened. It remains valid evidence for its exact release. The immutable Goal 4
 candidate is now `6b31f98981da266304484fb14c3a18904e279e4c`; local `main`, `origin/main` and
@@ -25,6 +26,19 @@ controller reported its exact-SHA CI run fully green. The candidate is deployed 
 staging topology and the focused automated image, migration, security, email-containment,
 capacity and rollback checks below passed. The controller-authenticated public browser pass also
 completed through Cloudflare Access; production remains deliberately unchanged.
+
+After that verification, the controller committed the Tripo evidence and public Support-page
+attribution as `5c322c8b6ec55c6781df8a25bab7b7e4fcdd0065` and
+`db5f12270cc460975f3ac822b5dc58ccf0256f5f`. The current batch changes policy rendering,
+documentation, CI validation and a new non-secret production deployment definition; it does not
+change application workflows, the database schema or runtime image contents. Therefore
+`6b31f98...` remains valid
+evidence for application images, migrations, security, capacity, restore and product workflows,
+but it is no longer the prospective production SHA. After the controller commits this batch, the
+new exact SHA requires green CI, including the production Compose/Caddy invariant check, and a
+focused staging check of Privacy, Terms, Cookie/Storage, Support and beta-limitations rendering.
+The unchanged capacity/restore/security matrix does not need to be repeated without an
+application, database or deployed-topology delta.
 
 ## Production preflight and stop decision
 
@@ -154,10 +168,12 @@ are never printed. The disposable database has an internal-only Docker network.
 
 | Check | Result and scope |
 | --- | --- |
-| Exact candidate and CI | Candidate `6b31f98981da266304484fb14c3a18904e279e4c` is committed and matches `main`, `origin/main` and `origin/HEAD`; the controller reported the exact CI pipeline fully green. Its repository check includes 212 API and 51 web tests, strict types, lint and both production builds. |
+| Staged application baseline and CI | Baseline `6b31f98981da266304484fb14c3a18904e279e4c` was committed and matched `main`, `origin/main` and `origin/HEAD` at verification time; the controller reported its exact CI pipeline fully green. Its repository check includes 212 API and 51 web tests, strict types, lint and both production builds. Later policy/configuration-only changes require a new final SHA, green CI and focused rendered-page staging verification, not repetition of unchanged functional evidence. |
+| Version-controlled production definition | `ops/production` now contains the non-secret public-beta Compose/Caddy source, exact-SHA environment template and controlled cutover/rollback order. Local Compose interpolation/invariant checks pass: API, web and PostgreSQL publish no host ports; only Caddy and loopback Grafana do; private frontend/application/database/monitoring networks are internal; Caddy bridges a separate edge network; only API joins the general application-egress network for Resend; API/web use direct Node commands, explicit production mode, secure cookies/HSTS, fail-closed registration and file-backed BFF/Resend secrets; no production service has a build directive. Both staging and production Caddy templates redact invitation addresses and all known action-link query parameters. CI repeats these assertions and validates the Caddyfile with the pinned staging Caddy image. This closes the host-only-definition setup gap but does not claim deployed production behavior. |
 | Performance suites | Passed all four API/web regression tests. |
 | Fresh PostgreSQL 17 migrations and integration | All nine migrations applied; 16 tests in four suites passed, covering administrator containment, auth rotation, beta/email compensation, and workout isolation/idempotency/search/templates. |
 | Production-image browsers | Hardened Compose images passed the CI-equivalent worker-one sequence: Chromium core/template/mobile-3D flows and Firefox core/template flows; only intentional project-specific skips remained. |
+| Automated responsive/accessibility | The exact browser suite exercises the 390 px core workout flow, 320 px overflow floor, eight authenticated routes at 430/1440 px, zoom availability, representative axe WCAG A/AA scans, modal focus/inert/Escape/restoration, non-modal popover focus, reduced motion and 390 px touch scroll/orbit behavior. Physical Samsung/Firefox, Android keyboard and screen-reader review remain manual gates. |
 | Exact staging deployment | All six staging release refs use the candidate SHA. PostgreSQL, API, web and proxy are healthy; API and web execute direct Node entry points; `APP_ENV=staging` and `REGISTRATION_MODE=INVITE_ONLY`; public ingress remains behind Cloudflare Access. |
 | Authenticated public staging browser | Passed through the real Cloudflare Access, Tunnel and staging proxy path. Controller authentication and application login reached the dashboard without exposing credentials. An existing completed workout loaded; a named synthetic workout added Barbell Bench Press and one 20 kg x 8, RIR 2 working set; completion reported one exercise, one set and 160 kg; History, Progress and Weekly Volume reflected the write. No browser-console errors appeared; only pre-existing Three.js deprecation/sample-clipping warnings were recorded. |
 | Focused staging security | Required configuration fails closed; hostile Host returned 421, cross-site POST and CORS preflight returned 403, same-origin login reached the API, secure session-cookie attributes passed, and 12 invalid logins with rotating lower-priority/forged headers produced ten 401s followed by two 429s. |
@@ -237,9 +253,10 @@ authorization to deploy or open production.
 
 | Work | Primary owner | SSH needed? | Why it remains open |
 | --- | --- | --- | --- |
-| Production Resend key, recovery/billing/retention register and delivery monitoring | Controller | Usually no host SSH until secret install | Production provider configuration is incomplete. |
-| Controller identity/address and final production-rendered legal/support pages | Controller supplies/approves; Codex verifies | Production black-box step only | Real values and final rendered archive are absent. |
-| Cloudflare production edge, BFF secret, invite mode and email black-box checks | Joint | Yes for internal/API corroboration | Production still runs the old private release. |
+| Production Resend configuration and delivery monitoring | Joint | Yes for internal verification | A sending-only `gym-track-production` key scoped to `send.gymtrack.ch` was created and installed on 2026-08-19 as the root-owned `resend-api-key-container` secret (`0440`, GID `10001`; value never recorded). The version-controlled candidate wires it only to API; deployed delivery proof remains. |
+| Controller identity/address and final production-rendered legal/support pages | Controller supplies/approves; Codex verifies | Production black-box step only | The approved real values are present in the production environment template; deployed rendering and the final archive remain absent. |
+| Final policy/configuration SHA, CI and legal-page staging refresh | Controller commits; Codex verifies | Only for the focused staging refresh | The fully tested application baseline remains valid, but later policy and deployment-definition changes move the deployable SHA. |
+| Cloudflare production edge, invite mode and narrow email black-box checks | Joint | Yes for internal/API corroboration | The shared file-backed BFF secret is installed with verified `root:10001`, `0440` metadata and 64-character length, but production still runs the old private release. Broader real-user confirmation belongs to the selected beta tester. |
 | Independent status page and incident publication rehearsal | Controller/provider setup, Codex verification | Not normally | No independent public status path is deployed. |
 | Samsung S22 Plus Firefox/mobile-data and final accessibility/manual QA | Controller/device operator | No | Physical device, network and assistive-technology evidence is required. |
 | Production deployment, rollback readiness and public gate change | Controller approval; Codex can execute guided checks | Yes | Destructive/external transition must follow all stop rules. |
@@ -251,9 +268,11 @@ deployment, rollback and production black-box corroboration.
 
 ## Clean continuation order
 
-1. Controller supplies the provider/legal values while the remaining operational gates continue.
-2. Prepare production-only provider secrets and preserve the verified rollback point.
-3. Deploy the candidate under a write/opening freeze, repeat the
+1. Controller commits the now-reaffirmed policy/provider/production-definition batch; require
+   green exact-SHA CI and focused legal-page staging.
+2. Capture both protected production secrets in a fresh backup, then validate/install the
+   version-controlled definition while preserving the verified rollback point.
+3. Deploy the final candidate under a write/opening freeze, repeat the
    focused restore verification, run production black-box checks, and roll back immediately
    on any stop-rule failure.
 4. Complete device/accessibility/status/restore gates, then invite only the first 10-person cohort
