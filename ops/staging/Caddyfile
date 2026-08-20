@@ -9,6 +9,8 @@
 			wrap json
 			fields {
 				request>uri query {
+					replace invite REDACTED
+					replace email REDACTED
 					replace token REDACTED
 					replace code REDACTED
 					replace reset_token REDACTED
