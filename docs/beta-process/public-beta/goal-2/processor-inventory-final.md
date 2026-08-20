@@ -24,9 +24,9 @@ Not every provider is a processor, and treating them alike produces a misleading
 
 | Provider | Entity / region | Personal data it touches | Transfer basis | Retention |
 |---|---|---|---|---|
-| **Infomaniak** | Infomaniak Network SA, Geneva, **Switzerland** | Inbound and outbound support, privacy and security correspondence, including whatever a user chooses to write. Mailbox contents at rest | **No transfer** — Swiss processor, Swiss data subjects | Until deleted from the mailbox; provider-side retention not recorded |
-| **Cloudflare** | Cloudflare, Inc., **US** (Swiss traffic likely served from EU edge) | Connection metadata for every request: client IP, timestamp, user agent, requested hostname and path. Access identity for operator authentication. **No application payload** — TLS terminates at the tunnel and Caddy | **Swiss-U.S. Data Privacy Framework**, with EU SCCs (2021/914) plus Swiss modifications as fallback for Restricted Transfers. *Cloudflare DPA v6.4, 2026-04-03; retrieved 2026-08-10* | Free-plan log retention not recorded |
-| **Resend** | Resend, Inc., **US** | Recipient address, subject and full body of every transactional email — invitations, verification, password reset, deletion and cancellation. Delivery, bounce and complaint metadata | **EU SCCs (2021/914) with Swiss modifications** (§6.5). No DPF certification relied on. *Resend DPA, last updated 2025-12-31; retrieved 2026-08-10* | Provider-side; the application keeps **no** outbox and no retry payload |
+| **Infomaniak** | Infomaniak Network SA, Geneva, **Switzerland** | Inbound and outbound support, privacy and security correspondence, including whatever a user chooses to write. Mailbox contents at rest | **No transfer** — Swiss processor, Swiss data subjects | Messages remain for the contract/account lifetime unless deleted. No separately billed mail plan is active, so operations conservatively assume no provider-side mailbox recovery entitlement rather than relying on the 30-day recovery published for paid Mail Service/kSuite tiers |
+| **Cloudflare** | Cloudflare, Inc., **US**; edge processing location is dynamic on the Free plan | All public HTTP traffic is decrypted at Cloudflare's edge before being re-encrypted toward the Tunnel, so request/response content in transit can include account credentials, action tokens, workout data and potentially sensitive notes. Customer-visible records also include connection metadata and Access identity | **Swiss-U.S. Data Privacy Framework**, with EU SCCs (2021/914) plus Swiss modifications as fallback for Restricted Transfers. *Cloudflare DPA v6.4, 2026-04-03; retrieved 2026-08-10* | Free Zero Trust Access/HTTP logs: 24 hours; Free Security Analytics: up to 7 days; account/admin audit logs: 18 months. Cloudflare's operational records and deletion after contract termination follow its DPA rather than one published universal timer |
+| **Resend** | Resend, Inc., **US**; account data is stored in the US regardless of sending region | Recipient address, subject and full body of every transactional email — invitations, verification, password reset, deletion and cancellation. Delivery, bounce and complaint metadata | **EU SCCs (2021/914) with Swiss modifications** (§6.5). No DPF certification relied on. *Resend DPA, last updated 2025-12-31; retrieved 2026-08-10* | Email data: 30 days on the Free plan; production backups: 30 days; customer data deleted within 90 days after account termination. The application keeps **no** outbox or retry payload |
 | ~~**Telegram**~~ | Telegram Messenger Inc. | **No personal data as of 2026-08-07.** Monitoring alerts only — alert name, severity, component, summary. The beta-request notification is being switched off, see below | n/a | — |
 
 ## Controller-operated
@@ -36,7 +36,7 @@ data actually lives, and the inventory is incomplete without them.
 
 | Component | Location | Holds | Note |
 |---|---|---|---|
-| `gym-prod` Mac mini | Operator's home, Switzerland | The production PostgreSQL database — every account, workout, set, note and token | Physical security is the operator's home. Disk encryption state should be recorded |
+| `gym-prod` Mac mini | Operator's home, Switzerland | The production PostgreSQL database — every account, workout, set, note and token | Physical security is the operator's home. Goal 4 inspection confirmed the root filesystem is plain ext4 without full-disk encryption; this accepted residual risk must not be presented as an implemented control |
 | Restic backup destination | Operator's MacBook, Switzerland | Encrypted snapshots of the full database plus deployment configuration and secrets | Encrypted before leaving the server. 30-day strict retention per ADR 0013 |
 | **Apple Mail on the operator's Mac** | Switzerland | Local copies of all support, privacy and security correspondence | Support mail containing personal data is stored on a laptop that leaves the house. **FileVault confirmed enabled 2026-08-07** |
 | Erasure ledger | `gym-prod`, root-owned, outside the database dump | Deleted user UUIDs and finalization times | Replayed before any restored database is reopened |
@@ -67,37 +67,37 @@ because vendors revise these and what counts is the version relied on.
   determination rather than on contractual terms alone.
 - **Resend** — relies on **EU SCCs (2021/914) with Swiss modifications** (§6.5), with no DPF
   certification. *DPA last updated 2025-12-31.* SCCs are a recognised mechanism; recording the
-  difference from Cloudflare matters because the two do not rest on the same footing, and
-  Resend is the processor handling the most sensitive payload — recipient addresses and full
-  message bodies.
+  difference from Cloudflare matters because the two do not rest on the same footing. Resend
+  stores recipient addresses and full message bodies; Cloudflare processes the broader public
+  application payload in transit.
 - **Telegram** — reduced to infrastructure alerts only, so no personal data is transferred and
   no basis is required.
 
 **What this does and does not settle.** Each provider's mechanism is now recorded rather than
 assumed, which was the open action. Whether each is *sufficient* for this processing remains a
-judgement the controller has accepted under Q3 of
+judgement the controller originally accepted under Q3 of
 [legal-risk-acceptance.md](legal-risk-acceptance.md) rather than one confirmed by a qualified
-adviser. Re-check on any DPA version change — that is a recorded re-screen trigger.
+adviser. The controller reaffirmed the corrected Cloudflare payload scope on 2026-08-19. Re-check
+on any DPA version change — that is a recorded re-screen trigger.
 
 ## Account facts
 
 | Provider | Account | Plan | Limits | Notes |
 |---|---|---|---|---|
-| Infomaniak | Direct | Mail service on the domain | — | Cost to record |
+| Infomaniak | Direct | Domain registration with no separately billed mail plan | — | CHF 9/year total; no other Infomaniak cost reported by the controller on 2026-08-19 |
 | Cloudflare | Direct | **Free** | — | |
-| Resend | **Google SSO** (operator's main personal Google account), created 2026-08-07 | **Free** | ~3,000/month; the free tier is also commonly capped around 100/day | Region not exposed on the free plan |
+| Resend | **Google SSO** (operator's main personal Google account), created 2026-08-07 | **Free** | 100/day and 3,000/month | Sending region does not change US account-data storage |
 | GitHub | Direct | | | |
 | Telegram | Bot | | | |
 
-**On the Resend region.** The setting is not surfaced on the free plan, and it does not change
-the analysis: Resend, Inc. is a US entity, so the data goes to the US regardless of which
-datacenter serves it. What matters for FADP is the transfer basis, not the region string.
-Record it as US and move on.
+**On the Resend region.** The provider now documents multiple sending regions, but it explicitly
+states that all account data, including email metadata, logs and API records, remains stored in
+the US regardless of the selected sending region. Record account-data storage as US.
 
-**On the send limits.** Whatever the exact figures, there is ample headroom. The admission
+**On the send limits.** The current Free quotas are 100 emails/day and 3,000/month. The admission
 design caps approvals at 10 per rolling 24 hours, so invitation traffic cannot exceed 10 mails
 a day. Verification, reset and deletion mail is incidental on top of that. A 50-account beta
-will not approach a 3,000/month ceiling.
+has ample headroom, but bounce and complaint monitoring still matters independently of quota.
 
 **On Google SSO.** Resend has no password of its own — it is only as secure as the Google
 account behind it, and inherits that account's MFA rather than having its own. Recovery runs
@@ -120,13 +120,20 @@ Reduced to what actually affects a launch decision.
       Swiss-U.S. Data Privacy Framework (DPA v6.4, 2026-04-03), Resend on EU SCCs with Swiss
       modifications (DPA of 2025-12-31). See *Transfers abroad* above. This was the last open
       action in Goal 2.
-- [ ] Provider-side retention windows for Cloudflare and Resend remain unrecorded. Deliberately
-      not chased: both are published standard terms on free or near-free tiers, and neither
-      changes a launch decision. Retrieve if a recorded trigger fires.
+- [x] **Provider-side retention recorded 2026-08-19.** Cloudflare Free exposes Access/HTTP logs
+      for 24 hours, Security Analytics for up to seven days and account/admin audit logs for 18
+      months. Resend keeps email data for 30 days, backups for 30 days and deletes customer data
+      within 90 days after account termination. Source links are recorded below.
+- [x] **Infomaniak billing/retention posture recorded 2026-08-19.** The controller pays CHF 9/year
+      for the domain and reports no other Infomaniak cost or separately billed mail plan. Do not
+      rely on the 30-day recovery published for paid Mail Service/kSuite tiers; operate as though
+      no provider-side mailbox recovery is available.
 
 **Pairs with the item 8 inspection:**
 
-- [ ] Disk encryption state on `gym-prod` — needs SSH.
+- [x] `gym-prod` disk state recorded from Goal 4 inspection: plain ext4 without full-disk
+      encryption. Physical access control, least-privilege host access and encrypted off-machine
+      backups mitigate but do not remove that residual risk.
 
 **If it ever happens:**
 
@@ -135,8 +142,20 @@ Reduced to what actually affects a launch decision.
 **Answered 2026-08-07:** Resend account exists (free tier, Google SSO, US entity). FileVault
 confirmed enabled on the MacBook. Telegram no longer processes personal data — see below.
 
-**Still to record:** exact Cloudflare/Resend provider-side retention from their current terms.
-Precise plan costs are operational bookkeeping rather than a legal approval condition.
+**Recorded 2026-08-19:** Infomaniak costs CHF 9/year for the domain, with no other reported cost.
+Because no paid mail plan is active, the launch posture does not claim a 30-day provider backup.
+
+### Retention sources retrieved 2026-08-19
+
+- [Cloudflare Zero Trust log retention](https://developers.cloudflare.com/cloudflare-one/insights/logs/)
+- [Cloudflare Free Security Analytics retention](https://developers.cloudflare.com/waf/analytics/security-analytics/)
+- [Cloudflare account audit-log retention](https://developers.cloudflare.com/fundamentals/account/account-security/review-audit-logs/)
+- [Cloudflare default HTTP/TLS processing](https://developers.cloudflare.com/data-localization/regional-services/http-requests/)
+- [Resend email-data retention](https://resend.com/docs/dashboard/webhooks/how-to-store-webhooks-data)
+- [Resend account-data region](https://resend.com/docs/dashboard/domains/regions)
+- [Resend security and backup retention](https://resend.com/docs/security)
+- [Resend DPA termination deletion](https://resend.com/legal/dpa)
+- [Infomaniak mailbox and backup retention](https://www.infomaniak.com/en/support/faq/1203/restore-an-email-account-recover-deleted-emails)
 
 ## Telegram — decided 2026-08-07
 
@@ -175,11 +194,12 @@ placeholder. Publishable only once the open cells close and item 2 approves the 
 > also in Switzerland.
 >
 > Three external providers are involved. **Infomaniak** (Switzerland) hosts the email addresses
-> used for support, privacy and security correspondence. **Cloudflare** (United States) carries
-> traffic to the application and sees connection information such as your IP address, but not
-> the contents of what you do in the app. **Resend** (United States) delivers account emails —
-> invitations, verification, password resets and deletion notices — and therefore handles your
-> email address and the contents of those messages.
+> used for support, privacy and security correspondence. **Cloudflare** (United States) protects
+> and routes the public service. HTTPS is decrypted and inspected at its edge before being
+> re-encrypted toward the application, so Cloudflare processes both connection information and
+> application request/response content in transit. **Resend** (United States) delivers account
+> emails — invitations, verification, password resets and deletion notices — and therefore
+> handles your email address and the contents of those messages.
 >
 > No advertising networks and no third-party analytics are used.
 
