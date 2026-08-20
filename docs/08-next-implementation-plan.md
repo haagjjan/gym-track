@@ -28,11 +28,17 @@ readiness. See
 `docs/beta-process/public-beta/goal-1/goal-1-remediation-report.md`.
 
 Goal 2 decisions are recorded. The DPIA and bounded legal-risk self-assessment were approved by
-the controller on 2026-08-10 without counsel review. Remaining Goal 2 execution is provider and
-asset evidence is complete: contemporaneous archived Tripo 3D pricing applies `CC BY 4.0` to the
+the controller on 2026-08-10 without counsel review. A 2026-08-19 correction records Cloudflare's
+actual application-content processing at its TLS edge; the controller reaffirmed that corrected
+scope and accepted the recorded residual risk on the same date. Asset evidence is complete:
+contemporaneous archived Tripo 3D pricing applies
+`CC BY 4.0` to the
 Free-tier FBX models, and NOTICE plus the public Support page carry the required attribution and
-modification notice. Final provider recovery/retention bookkeeping remains. Staging Resend and
-Cloudflare configuration is complete.
+modification notice. Provider retention and costs are recorded; Infomaniak is CHF 9/year for the
+domain with no other reported cost, so no paid-tier mailbox recovery is assumed. Staging Resend
+and Cloudflare configuration is complete, and a separate sending-only production Resend key has
+been created and installed as a protected host secret; the reviewed production definition wires
+it for the controlled cutover.
 
 Goal 3 is complete. The isolated staging environment runs exact green release
 `4a4fccdae263126ceda164a792059514123f957f`; migrations, dump restoration, previous-image
@@ -40,10 +46,9 @@ rollback, fail-closed configuration, Cloudflare edge behavior, real controlled e
 administrator bootstrap, admission controls and the complete invited-user workout flow passed.
 See `docs/beta-process/public-beta/goal-3/goal-3-staging-report.md`.
 
-Goal 4 pre-deployment verification is active. Exact candidate
-`6b31f98981da266304484fb14c3a18904e279e4c` is committed, matches local `main` and
-`origin/main`,
-has a controller-reported fully green CI run and now runs in the isolated staging topology.
+Goal 4 pre-deployment verification is active. Application baseline
+`6b31f98981da266304484fb14c3a18904e279e4c` has a controller-reported fully green CI run
+and runs in the isolated staging topology.
 Dependency/image hardening, fresh PostgreSQL integration, hardened-image Chromium/Firefox,
 monitoring syntax, fail-closed configuration, focused edge/cookie/rate-limit/email containment,
 20/40-active-logger capacity and previous/candidate restore checks passed. The controller-
@@ -53,8 +58,12 @@ is a persistent, loopback-bound macOS launch agent; strict 30-day maintenance, a
 newest-snapshot restores and the older-snapshot/newest-ledger replay passed. The exact committed
 restore scripts and recovery runbook are installed, captured in a new backup and reverified; the
 live production fingerprint was unchanged and no disposable restore resources remained.
-Provider/legal values, independent status, production black-box checks and physical-device QA
-remain open. See
+Provider/legal values are recorded and reaffirmed, the production Resend key is protected on the
+host, the production BFF secret is protected on the host, and a reviewed non-secret production
+Compose/Caddy definition plus CI invariants now replace the host-only setup gap. Independent
+status, production black-box checks and physical-device QA remain open. Later policy/configuration
+changes do not reopen unchanged application evidence, but the final commit needs green CI and a
+focused rendered-policy staging pass. See
 `docs/beta-process/public-beta/goal-4/goal-4-production-verification.md`.
 
 ## Source of truth for V1 UI behavior
@@ -100,11 +109,12 @@ The older redesign files remain useful for styling and atmosphere, but no longer
 Do not extend staging beyond the remaining release gates unless the candidate changes. Continue
 the production-readiness goal:
 
-1. Retain `6b31f98981da266304484fb14c3a18904e279e4c` as the immutable candidate unless a
-   defect forces a new SHA.
-2. Finish the provider recovery/billing/retention register and configure a production-only
-   Resend key without reusing staging secrets.
-3. Preserve the verified rollback point, then execute the Goal 4 production deployment,
+1. Commit the final policy/provider/production-definition batch, require green exact-SHA CI and focused staging
+   verification of the rendered policy/support pages; retain `6b31f98...` as the unchanged
+   functional evidence baseline.
+2. Capture both verified production secrets in a fresh backup, validate/install the exact
+   committed production definition and preserve the verified rollback point.
+3. Execute the Goal 4 production deployment,
    post-migration restore and black-box verification gates without inferring production behavior
    from staging success. Keep rollback and production health stop rules.
 4. Continue through the remaining device/accessibility/status/operational gates and Goals 5–6
