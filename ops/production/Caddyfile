@@ -1,0 +1,48 @@
+{
+	admin off
+	auto_https off
+}
+
+:80 {
+	log {
+		format filter {
+			wrap json
+			fields {
+				request>uri query {
+					replace invite REDACTED
+					replace email REDACTED
+					replace token REDACTED
+					replace code REDACTED
+					replace reset_token REDACTED
+					replace verification_token REDACTED
+					replace state REDACTED
+				}
+			}
+		}
+	}
+
+	request_body {
+		max_size 10MB
+	}
+
+	encode zstd gzip
+
+	header {
+		-Server
+		-X-Powered-By
+		-Via
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Content-Type-Options "nosniff"
+	}
+
+	reverse_proxy web:3000 {
+		header_up -X-Gym-Client-IP
+		header_up -X-Gym-Client-Signature
+		transport http {
+			dial_timeout 5s
+			response_header_timeout 60s
+			keepalive 30s
+		}
+	}
+}

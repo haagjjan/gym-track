@@ -1,0 +1,542 @@
+name: gym-tracker
+
+services:
+  postgres:
+    image: docker.io/library/postgres:17.10-alpine3.24@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_bootstrap_password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    secrets:
+      - postgres_bootstrap_password
+    volumes:
+      - type: bind
+        source: /srv/gym-tracker/data/postgres
+        target: /var/lib/postgresql/data
+        bind:
+          create_host_path: false
+    networks:
+      - database
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 1m
+    logging: &bounded-logging
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  migrate:
+    image: ${PRODUCTION_MIGRATE_IMAGE:?Set PRODUCTION_MIGRATE_IMAGE to the exact release image}
+    profiles: ["operations"]
+    restart: "no"
+    user: "10001:10001"
+    read_only: true
+    init: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      HOME: /tmp
+      NODE_ENV: production
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        export DATABASE_URL="$$(cat /run/secrets/database_migration_url)"
+        exec pnpm exec node-pg-migrate --config-file db/migrate.json up
+    secrets:
+      - database_migration_url
+    tmpfs:
+      - /tmp:uid=10001,gid=10001,mode=0700
+    depends_on:
+      postgres:
+        condition: service_healthy
+    mem_limit: 512m
+    pids_limit: 256
+    networks:
+      - database
+    logging: *bounded-logging
+
+  api:
+    image: ${PRODUCTION_API_IMAGE:?Set PRODUCTION_API_IMAGE to the exact release image}
+    restart: unless-stopped
+    user: "10001:10001"
+    read_only: true
+    init: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      API_HOST: 0.0.0.0
+      API_PORT: 4000
+      API_TRUST_PROXY: "false"
+      APP_BASE_URL: https://app.gymtrack.ch
+      APP_ENV: production
+      APP_RELEASE: ${APP_RELEASE:?Set APP_RELEASE to the full deployed Git SHA}
+      AUTH_COOKIE_NAME: gym_progress_session
+      AUTH_COOKIE_SECURE: "true"
+      AUTH_SESSION_TTL_DAYS: ${AUTH_SESSION_TTL_DAYS:-30}
+      EMAIL_FROM: ${EMAIL_FROM:?Set EMAIL_FROM}
+      HOME: /tmp
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      METRICS_ENABLED: "true"
+      NODE_ENV: production
+      REGISTRATION_MODE: ${REGISTRATION_MODE:-DISABLED}
+      SUPPORT_EMAIL: ${SUPPORT_EMAIL:?Set SUPPORT_EMAIL}
+      TELEGRAM_BETA_BOT_TOKEN: ""
+      TELEGRAM_BETA_CHAT_ID: ""
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        export DATABASE_URL="$$(cat /run/secrets/database_runtime_url)"
+        export BFF_CLIENT_IP_SECRET="$$(cat /run/secrets/bff_client_ip_secret)"
+        export RESEND_API_KEY="$$(cat /run/secrets/resend_api_key)"
+        exec node dist/main.js
+    secrets:
+      - database_runtime_url
+      - bff_client_ip_secret
+      - resend_api_key
+    tmpfs:
+      - /tmp:uid=10001,gid=10001,mode=0700
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - fetch('http://127.0.0.1:4000/api/v1/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    mem_limit: 512m
+    pids_limit: 256
+    stop_grace_period: 30s
+    networks:
+      - application
+      - database
+      - monitoring
+      - api-egress
+    logging: *bounded-logging
+
+  web:
+    image: ${PRODUCTION_WEB_IMAGE:?Set PRODUCTION_WEB_IMAGE to the exact release image}
+    restart: unless-stopped
+    user: "10001:10001"
+    read_only: true
+    init: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      API_BASE_URL: http://api:4000/api/v1
+      APP_BASE_URL: https://app.gymtrack.ch
+      APP_ENV: production
+      APP_RELEASE: ${APP_RELEASE:?Set APP_RELEASE to the full deployed Git SHA}
+      CONTROLLER_ADDRESS: ${CONTROLLER_ADDRESS:?Set CONTROLLER_ADDRESS}
+      CONTROLLER_NAME: ${CONTROLLER_NAME:?Set CONTROLLER_NAME}
+      HSTS_ENABLED: "true"
+      HOME: /tmp
+      NEXT_PUBLIC_CLIENT_DIAGNOSTICS: "0"
+      NODE_ENV: production
+      PRIVACY_EMAIL: ${PRIVACY_EMAIL:?Set PRIVACY_EMAIL}
+      REGISTRATION_MODE: ${REGISTRATION_MODE:-DISABLED}
+      SECURITY_EMAIL: ${SECURITY_EMAIL:?Set SECURITY_EMAIL}
+      SUPPORT_EMAIL: ${SUPPORT_EMAIL:?Set SUPPORT_EMAIL}
+      SUPPORT_URL: ${SUPPORT_URL:-}
+      WEB_HOST: 0.0.0.0
+      WEB_PORT: 3000
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        export BFF_CLIENT_IP_SECRET="$$(cat /run/secrets/bff_client_ip_secret)"
+        exec node apps/web/server.js
+    secrets:
+      - bff_client_ip_secret
+    tmpfs:
+      - /tmp:uid=10001,gid=10001,mode=0700
+      - /app/apps/web/.next/cache:uid=10001,gid=10001,mode=0700
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - const http=require('node:http');const r=http.get({host:'127.0.0.1',port:3000,path:'/login',headers:{host:'app.gymtrack.ch'}},(x)=>process.exit(x.statusCode===200?0:1));r.on('error',()=>process.exit(1))
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    mem_limit: 768m
+    pids_limit: 256
+    stop_grace_period: 30s
+    networks:
+      - frontend
+      - application
+    logging: *bounded-logging
+
+  proxy:
+    image: docker.io/library/caddy:2.11.4-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648
+    restart: unless-stopped
+    user: "10001:10001"
+    read_only: true
+    init: true
+    cap_drop: [ALL]
+    cap_add:
+      - NET_BIND_SERVICE
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - ${PRODUCTION_PROXY_BIND:?Set PRODUCTION_PROXY_BIND}:${PRODUCTION_PROXY_PORT:?Set PRODUCTION_PROXY_PORT}:80
+    volumes:
+      - type: bind
+        source: /srv/gym-tracker/deploy/config/caddy/Caddyfile
+        target: /etc/caddy/Caddyfile
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: /srv/gym-tracker/data/proxy/data
+        target: /data
+        bind:
+          create_host_path: false
+      - type: bind
+        source: /srv/gym-tracker/data/proxy/config
+        target: /config
+        bind:
+          create_host_path: false
+    tmpfs:
+      - /tmp:uid=10001,gid=10001,mode=0700
+    depends_on:
+      web:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "--header", "Host: app.gymtrack.ch", "http://127.0.0.1/login"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 15s
+    mem_limit: 128m
+    pids_limit: 128
+    stop_grace_period: 30s
+    networks:
+      - frontend
+      - edge
+    logging: *bounded-logging
+
+  prometheus:
+    image: docker.io/prom/prometheus:v3.5.2@sha256:f0a6cf785cde2d1e9b201ae1921391eab7fcbb08ce64d8a9d840c087c09b8355
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=30d
+      - --storage.tsdb.retention.size=5GB
+    expose:
+      - "9090"
+    volumes:
+      - type: bind
+        source: /srv/gym-tracker/deploy/monitoring/prometheus/prometheus.yml
+        target: /etc/prometheus/prometheus.yml
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: /srv/gym-tracker/deploy/monitoring/prometheus/rules
+        target: /etc/prometheus/rules
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: /srv/gym-tracker/data/prometheus
+        target: /prometheus
+        bind:
+          create_host_path: false
+    networks:
+      - monitoring
+    depends_on:
+      alertmanager:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9090/-/healthy"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+    stop_grace_period: 30s
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=32m,mode=1777
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    logging: *bounded-logging
+
+  alertmanager:
+    image: docker.io/prom/alertmanager:v0.32.1@sha256:51a825c2a40acc3e338fdd00d622e01ec090f72be2b3ea46be0839cd47a4d286
+    user: "65534:65534"
+    init: true
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+      - --data.retention=120h
+      - --web.listen-address=0.0.0.0:9093
+      - --log.format=json
+    expose:
+      - "9093"
+    volumes:
+      - type: bind
+        source: /srv/gym-tracker/deploy/monitoring/alertmanager/alertmanager.yml
+        target: /etc/alertmanager/alertmanager.yml
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: /srv/gym-tracker/data/alertmanager
+        target: /alertmanager
+        bind:
+          create_host_path: false
+    secrets:
+      - alertmanager_telegram_bot_token
+      - alertmanager_telegram_chat_id
+    networks:
+      - monitoring
+      - alerting-egress
+    healthcheck:
+      test: ["CMD", "/bin/amtool", "--alertmanager.url=http://127.0.0.1:9093", "config", "show"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+    stop_grace_period: 30s
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=32m,mode=1777
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    logging: *bounded-logging
+
+  node-exporter:
+    image: docker.io/prom/node-exporter:v1.11.1@sha256:fbd8062b4529e166e902bd62cd93de2f48b36d50af942620d419657265bc20b1
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/rootfs
+      - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run|var/lib/docker/.+|var/lib/containerd/.+)($$|/)
+      - --collector.textfile.directory=/var/lib/node-exporter/textfile
+    expose:
+      - "9100"
+    volumes:
+      - type: bind
+        source: /proc
+        target: /host/proc
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: /sys
+        target: /host/sys
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: /
+        target: /rootfs
+        read_only: true
+        bind:
+          propagation: rslave
+          create_host_path: false
+      - type: bind
+        source: /srv/gym-tracker/data/node-exporter-textfile
+        target: /var/lib/node-exporter/textfile
+        read_only: true
+        bind:
+          create_host_path: false
+    networks:
+      - monitoring
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    logging: *bounded-logging
+
+  cadvisor:
+    image: ghcr.io/google/cadvisor:v0.57.0@sha256:1742bab953d9d9ab166cba24604a9488efdff7d73dc6d18a087c09a1bcd6cb9d
+    command:
+      - --docker_only=true
+      - --store_container_labels=false
+      - --whitelisted_container_labels=com.docker.compose.project,com.docker.compose.service
+    expose:
+      - "8080"
+    privileged: true
+    devices:
+      - /dev/kmsg:/dev/kmsg
+    volumes:
+      - type: bind
+        source: /
+        target: /rootfs
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: /var/run
+        target: /var/run
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: /sys
+        target: /sys
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: /var/lib/docker
+        target: /var/lib/docker
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: /dev/disk
+        target: /dev/disk
+        read_only: true
+        bind:
+          create_host_path: false
+    networks:
+      - monitoring
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=32m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    logging: *bounded-logging
+
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.19.1@sha256:a0c79a8210d1079760ebeb3fa5c07659bc3ceb9ccc8bb921ba1073ef6fd4164f
+    command:
+      - --collector.long_running_transactions
+    environment:
+      DATA_SOURCE_URI: postgres:5432/gym_tracker?sslmode=disable
+      DATA_SOURCE_USER: gym_tracker_monitor
+      DATA_SOURCE_PASS_FILE: /run/secrets/postgres_monitor_password
+      PG_EXPORTER_COLLECTION_TIMEOUT: 10s
+    secrets:
+      - postgres_monitor_password
+    expose:
+      - "9187"
+    networks:
+      - database
+      - monitoring
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    logging: *bounded-logging
+
+  grafana:
+    image: docker.io/grafana/grafana:13.1.0@sha256:6ea068891652aa6a65ca9065c26b89de939653803c836426970305c11fd00534
+    environment:
+      GF_SECURITY_ADMIN_USER: operator
+      GF_SECURITY_ADMIN_PASSWORD__FILE: /run/secrets/grafana_admin_password
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_NEWS_NEWS_FEED_ENABLED: "false"
+      GF_PLUGINS_PREINSTALL_DISABLED: "true"
+      GF_PLUGINS_PLUGIN_ADMIN_ENABLED: "false"
+      GF_SERVER_ROOT_URL: http://127.0.0.1:3001
+    secrets:
+      - grafana_admin_password
+    ports:
+      - "127.0.0.1:3001:3000"
+    volumes:
+      - type: bind
+        source: /srv/gym-tracker/data/grafana
+        target: /var/lib/grafana
+        bind:
+          create_host_path: false
+      - type: bind
+        source: /srv/gym-tracker/deploy/monitoring/grafana/provisioning
+        target: /etc/grafana/provisioning
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: /srv/gym-tracker/deploy/monitoring/grafana/dashboards
+        target: /var/lib/grafana/dashboards
+        read_only: true
+        bind:
+          create_host_path: false
+    networks:
+      - monitoring
+      - monitoring-access
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    restart: unless-stopped
+    stop_grace_period: 30s
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=64m,mode=1777
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    logging: *bounded-logging
+
+networks:
+  frontend:
+    internal: true
+  edge: {}
+  application:
+    internal: true
+  api-egress: {}
+  database:
+    internal: true
+  monitoring:
+    internal: true
+  monitoring-access: {}
+  alerting-egress: {}
+
+secrets:
+  postgres_bootstrap_password:
+    file: /srv/gym-tracker/secrets/postgres-bootstrap-password
+  database_runtime_url:
+    file: /srv/gym-tracker/secrets/database-runtime-url-container
+  database_migration_url:
+    file: /srv/gym-tracker/secrets/database-migration-url-container
+  bff_client_ip_secret:
+    file: /srv/gym-tracker/secrets/bff-client-ip-secret-container
+  resend_api_key:
+    file: /srv/gym-tracker/secrets/resend-api-key-container
+  postgres_monitor_password:
+    file: /srv/gym-tracker/secrets/postgres-monitor-password-container
+  grafana_admin_password:
+    file: /srv/gym-tracker/secrets/grafana-admin-password-container
+  alertmanager_telegram_bot_token:
+    file: /srv/gym-tracker/secrets/alerting-telegram-bot-token-container
+  alertmanager_telegram_chat_id:
+    file: /srv/gym-tracker/secrets/alerting-telegram-chat-id-container
