@@ -1,6 +1,6 @@
 # Goal 5 Scope — Prepare and Verify Production
 
-**Status:** Scope defined; execution not started
+**Status:** Read-only production preflight started; cutover not started
 
 **Recorded:** 2026-08-20
 
@@ -36,6 +36,35 @@ there:
   [ops/production](../../../../ops/production/README.md), with CI invariant checks.
 
 What remains below is the work that still has no evidence.
+
+## Read-only production preflight — 2026-08-20
+
+The first Goal 5 production preflight reached `gym-prod` through the documented
+`gym-prod-remote` Cloudflare Access path. No deployment, migration, configuration change or
+production write was attempted.
+
+- The server repository is clean on branch
+  `codex/gym-prod-public-beta-ops-hotfix-20260806T075754Z` at
+  `d9d78a204545f80af3322d05cc13b95f3171a5bc`. The deployed application remains the older
+  private release `ca18717aba553bac51f9c54c24a8c6e67de609d6` with `APP_ENV=private-lan` and
+  `REGISTRATION_MODE=DISABLED`. The active Compose configuration parses successfully, but the
+  final public-beta production definition and approved controller/contact values are not yet
+  installed.
+- The host had 28 GiB available memory, 384 GiB free on `/`, 3% inode use and synchronized NTP.
+  Docker, Cloudflare Tunnel and SSH were active. The LAN-only Caddy listener returned the beta
+  and Privacy pages successfully, and loopback Grafana health returned 200.
+- The preflight initially stopped because the 15:28 CEST scheduled backup had failed when the
+  loopback reverse tunnel refused port 2222. The prior successful backup from 09:24 CEST was
+  still inside the 24-hour RPO, and the reverse listener was reachable again before recovery.
+- Under controller supervision, a fresh backup completed at 21:14 CEST as snapshot `8268e822`:
+  34 seconds, a 208,221-byte PostgreSQL dump and a clean Restic repository check across 48
+  snapshots. Backup metrics returned to success, the reverse listener remained reachable only
+  on production loopback, and `systemctl --failed` returned zero units. This clears the backup
+  stop condition; it does not authorize cutover.
+- Container-level health and hardening inspection still requires a shared privileged terminal.
+  The controller and Codex will use one named remote `tmux` session for the next privileged work
+  window so the controller can authenticate `sudo` inside the same TTY without sharing a
+  password.
 
 ## Work items
 
