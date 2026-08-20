@@ -159,6 +159,126 @@ describe("public beta database flow", { skip: databaseUrl ? false : "INTEGRATION
     }
   });
 
+  /**
+   * Launch gate SQC-1: administrator authorization from the direct API, the
+   * single-use property of the deletion cancellation link, and enumeration
+   * parity on password reset.
+   */
+  it("refuses administrator routes to members, keeps cancellation links single-use, and does not enumerate accounts", async () => {
+    const api = await server("ENABLED");
+    const email = `${prefix}ordinary@example.test`;
+    const member = await signup(api, email, `${prefix}ordinary`, {});
+    createdUserIds.add(member.id);
+
+    try {
+      // Direct-API administrator denial: the web guard is secondary, so every
+      // administrator surface must reject an ordinary session on its own.
+      const adminAttempts = await Promise.all([
+        api.inject({ method: "GET", url: "/api/v1/admin/users", cookies: cookie(member.cookie) }),
+        api.inject({ method: "GET", url: "/api/v1/admin/audit-events", cookies: cookie(member.cookie) }),
+        api.inject({ method: "PATCH", url: "/api/v1/admin/beta/settings", cookies: cookie(member.cookie), payload: { waitlistOpen: true } }),
+        api.inject({ method: "PATCH", url: `/api/v1/admin/users/${member.id}/status`, cookies: cookie(member.cookie), payload: { action: "SUSPEND" } }),
+        api.inject({ method: "POST", url: `/api/v1/admin/users/${member.id}/sessions/revoke`, cookies: cookie(member.cookie), payload: {} })
+      ]);
+      assert.deepEqual(
+        adminAttempts.map((response) => response.statusCode),
+        [403, 403, 403, 403, 403]
+      );
+      assert.equal(
+        await db.selectFrom("users").select("account_status").where("id", "=", member.id)
+          .executeTakeFirstOrThrow().then((row) => row.account_status),
+        "ACTIVE"
+      );
+
+      assert.equal((await requestDeletion(api, member.cookie)).statusCode, 200);
+      const cancellationToken = tokenFromLatestMessage("deletion");
+
+      const firstCancel = await api.inject({
+        method: "POST", url: "/api/v1/users/me/deletion/cancel", payload: { token: cancellationToken }
+      });
+      const replayedCancel = await api.inject({
+        method: "POST", url: "/api/v1/users/me/deletion/cancel", payload: { token: cancellationToken }
+      });
+      assert.equal(firstCancel.statusCode, 200);
+      assert.notEqual(replayedCancel.statusCode, 200, "a cancellation link must be single-use");
+
+      const forgedCancel = await api.inject({
+        method: "POST", url: "/api/v1/users/me/deletion/cancel", payload: { token: `${cancellationToken}tampered` }
+      });
+      assert.notEqual(forgedCancel.statusCode, 200);
+
+      // Enumeration: a known and an unknown address must be indistinguishable.
+      const knownReset = await api.inject({
+        method: "POST", url: "/api/v1/auth/forgot-password", payload: { email }
+      });
+      const unknownReset = await api.inject({
+        method: "POST", url: "/api/v1/auth/forgot-password", payload: { email: `${prefix}absent@example.test` }
+      });
+      assert.equal(knownReset.statusCode, unknownReset.statusCode);
+      assert.deepEqual(knownReset.json(), unknownReset.json());
+    } finally {
+      await api.close();
+    }
+  });
+
+  /**
+   * Launch gate SQC-1: invitation expiry. Reuse, supersede and wrong-address are
+   * covered by the admission test; an invitation that simply ran out of time is
+   * the remaining rejection path.
+   */
+  it("rejects an invitation whose expiry has passed", async () => {
+    const bootstrap = await server("ENABLED");
+    const expiryAdminEmail = `${prefix}expiry-admin@example.test`;
+    const expiryAdmin = await signup(bootstrap, expiryAdminEmail, `${prefix}expiry-admin`, {});
+    createdUserIds.add(expiryAdmin.id);
+    await db.updateTable("users").set({ role: "ADMIN" }).where("id", "=", expiryAdmin.id).execute();
+    await bootstrap.close();
+
+    const api = await server("INVITE_ONLY");
+    const inviteeEmail = `${prefix}expired@example.test`;
+
+    try {
+      await api.inject({
+        method: "PATCH",
+        url: "/api/v1/admin/beta/settings",
+        cookies: cookie(expiryAdmin.cookie),
+        payload: { waitlistOpen: true, invitationsOpen: true, accountCap: 10_000, dailyApprovalLimit: 1_000 }
+      });
+      const requested = await api.inject({
+        method: "POST",
+        url: "/api/v1/beta/waitlist",
+        payload: { email: inviteeEmail, adultAttested: true, termsVersion: PUBLIC_TERMS_VERSION, privacyVersion: PUBLIC_PRIVACY_VERSION }
+      });
+      assert.equal(requested.statusCode, 202);
+
+      const queue = await api.inject({ method: "GET", url: "/api/v1/admin/beta/requests", cookies: cookie(expiryAdmin.cookie) });
+      const requestId = queue.json().data.items.find((item: { email: string }) => item.email === inviteeEmail)?.id as string;
+      assert.ok(requestId);
+
+      const approved = await api.inject({
+        method: "POST", url: `/api/v1/admin/beta/requests/${requestId}`,
+        cookies: cookie(expiryAdmin.cookie), payload: { action: "APPROVE" }
+      });
+      assert.equal(approved.statusCode, 200);
+      const invite = tokenFromLatestMessage("invite");
+
+      // Age the invitation rather than waiting out its real window.
+      await db.updateTable("beta_access_requests")
+        .set({ invitation_expires_at: new Date(Date.now() - 1_000) })
+        .where("id", "=", requestId).execute();
+
+      const expiredSignup = await signupResponse(api, inviteeEmail, `${prefix}expired`, { inviteToken: invite });
+      assert.equal(expiredSignup.statusCode, 403);
+      assert.equal(
+        await db.selectFrom("users").select("id").where("email", "=", inviteeEmail).executeTakeFirst(),
+        undefined,
+        "an expired invitation must not create an account"
+      );
+    } finally {
+      await api.close();
+    }
+  });
+
   async function server(registrationMode: "ENABLED" | "INVITE_ONLY"): Promise<FastifyInstance> {
     return buildServer(db, { cookieName: "gym_progress_session", cookieSecure: false, registrationMode, sessionTtlDays: 30 }, false, { events: "off", mailer, operatorNotifier: notifier, appBaseUrl: "https://app.example.test" });
   }
