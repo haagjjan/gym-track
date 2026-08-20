@@ -1,0 +1,59 @@
+name: Status page
+
+# The status page must survive the outage it reports on, so it is published to
+# GitHub Pages rather than to the Mac mini or anything behind its tunnel.
+# Deploying only on changes to ops/status keeps an application release from
+# republishing a status claim nobody reviewed.
+on:
+  push:
+    branches: [main]
+    paths:
+      - ops/status/public/**
+      - .github/workflows/status-page.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: status-page
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish status page
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Verify the published directory carries no build step
+        run: |
+          set -euo pipefail
+
+          # The page is deliberately dependency-free: no script may run on a
+          # host that is supposed to stay available when everything else is not.
+          if grep -rqiE '<script|onerror=|onload=' ops/status/public; then
+            printf 'ERROR: the status page must remain script-free\n' >&2
+            exit 1
+          fi
+
+          test -f ops/status/public/index.html
+          test "$(cat ops/status/public/CNAME)" = "status.gymtrack.ch"
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ops/status/public
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
