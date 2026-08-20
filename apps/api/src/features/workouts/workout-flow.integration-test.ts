@@ -3,6 +3,8 @@ import { randomUUID } from "node:crypto";
 import { after, before, describe, it } from "node:test";
 import type { FastifyInstance } from "fastify";
 import { createDatabase, type AppDatabase } from "../../db/database.js";
+import { createUserAccountRepository } from "../users/user-account.repository.js";
+import type { Mailer } from "../../shared/mailer.js";
 import { buildServer } from "../../server.js";
 import type { Kysely } from "kysely";
 
@@ -98,6 +100,17 @@ interface CompletedExercisesPayload {
     plottedSetCount: number;
     totalSets: number;
   }[];
+}
+
+interface ExportArchive {
+  profile: { email: string };
+  accessHistory: unknown[];
+  workouts: { id: string }[];
+  sessionExercises: { id: string }[];
+  sets: { id: string }[];
+  templates: { id: string }[];
+  templateExercises: unknown[];
+  customExercises: { id: string }[];
 }
 
 interface CsvImportPayload {
@@ -1017,17 +1030,225 @@ describe("workout API database flow", { skip: databaseUrl ? false : "INTEGRATION
       await server.close();
     }
   });
+
+  /**
+   * Launch gate: shared exercise deletion/anonymization must pass with both a
+   * referenced and an unreferenced fixture.
+   *
+   * `finalizeDeletion` removes the erased account's own sessions and templates
+   * before it re-checks each custom exercise, so "referenced" at that point can
+   * only mean referenced by somebody else. An exercise another member still uses
+   * survives with its creator nulled by the `ON DELETE SET NULL` foreign key; one
+   * nobody references is removed along with its muscle join rows.
+   */
+  it("anonymizes shared exercises and deletes unreferenced ones when a creator is erased", async () => {
+    const mailer: Mailer = { async send() { return { provider: "log" }; } };
+    const server = await buildIntegrationServer(db, true, mailer);
+
+    try {
+      const tag = `${Date.now()}_${process.pid}_erasure`;
+      const creator = await signup(server, tag);
+      const otherMember = await signup(server, `${tag}_other`);
+
+      const sharedExerciseId = await createExercise(server, creator.cookie, `${tag} Shared`);
+      const orphanExerciseId = await createExercise(server, creator.cookie, `${tag} Orphan`);
+
+      // The other member's workout is the only reference that outlives the erasure.
+      const otherWorkoutId = await createWorkout(server, otherMember.cookie);
+      await addExerciseToWorkout(server, otherMember.cookie, otherWorkoutId, sharedExerciseId);
+
+      // The creator's own reference is deleted with their sessions, so the orphan
+      // is genuinely unreferenced by the time the exercise sweep runs.
+      const creatorWorkoutId = await createWorkout(server, creator.cookie);
+      await addExerciseToWorkout(server, creator.cookie, creatorWorkoutId, orphanExerciseId);
+
+      // Schedule through the real endpoint: `users_deletion_window_check` requires
+      // `deletion_requested_at` and `deletion_due_at` to be set together, so a
+      // hand-written status update cannot produce a valid pending account.
+      const scheduled = await server.inject({
+        method: "POST",
+        url: "/api/v1/users/me/deletion",
+        cookies: authCookies(creator.cookie),
+        payload: { password: "integration-secret-1" }
+      });
+      assert.equal(scheduled.statusCode, 200);
+
+      await db.updateTable("users").set({ deletion_due_at: new Date(Date.now() - 1_000) })
+        .where("id", "=", creator.userId).execute();
+
+      assert.equal(
+        await createUserAccountRepository(db).finalizeDeletion(creator.userId, new Date()),
+        true
+      );
+
+      const shared = await db.selectFrom("exercises").select(["id", "created_by_user_id"])
+        .where("id", "=", sharedExerciseId).executeTakeFirst();
+      assert.ok(shared, "an exercise another member still references must survive erasure");
+      assert.equal(shared.created_by_user_id, null, "the erased creator must not remain attributable");
+
+      const orphan = await db.selectFrom("exercises").select("id")
+        .where("id", "=", orphanExerciseId).executeTakeFirst();
+      assert.equal(orphan, undefined, "an unreferenced custom exercise must be deleted");
+
+      const orphanMuscles = await db.selectFrom("exercise_muscle_groups").select("exercise_id")
+        .where("exercise_id", "=", orphanExerciseId).executeTakeFirst();
+      assert.equal(orphanMuscles, undefined, "deleting an exercise must not strand its muscle rows");
+
+      // The surviving reference must still resolve for the member who owns it.
+      const otherWorkout = await getWorkout(server, otherMember.cookie, otherWorkoutId);
+      assert.equal(otherWorkout.exercises.length, 1);
+      assert.equal(otherWorkout.exercises[0]?.exercise.name, `${exercisePrefix}${tag} Shared`);
+    } finally {
+      await server.close();
+    }
+  });
+
+  /**
+   * The narrowest form of the same launch gate: a member who created one custom
+   * exercise and never shared it must still be erasable.
+   */
+  it("erases a member whose only custom exercise is unreferenced", async () => {
+    const mailer: Mailer = { async send() { return { provider: "log" }; } };
+    const server = await buildIntegrationServer(db, true, mailer);
+
+    try {
+      const tag = `${Date.now()}_${process.pid}_solo`;
+      const member = await signup(server, tag);
+      await createExercise(server, member.cookie, `${tag} Solo`);
+
+      const scheduled = await server.inject({
+        method: "POST",
+        url: "/api/v1/users/me/deletion",
+        cookies: authCookies(member.cookie),
+        payload: { password: "integration-secret-1" }
+      });
+      assert.equal(scheduled.statusCode, 200);
+
+      await db.updateTable("users").set({ deletion_due_at: new Date(Date.now() - 1_000) })
+        .where("id", "=", member.userId).execute();
+
+      assert.equal(
+        await createUserAccountRepository(db).finalizeDeletion(member.userId, new Date()),
+        true
+      );
+      assert.equal(
+        await db.selectFrom("users").select("id").where("id", "=", member.userId).executeTakeFirst(),
+        undefined
+      );
+
+      // Finalization runs from a scheduler that can retry, so a second pass must
+      // be a no-op rather than an error.
+      assert.equal(
+        await createUserAccountRepository(db).finalizeDeletion(member.userId, new Date()),
+        false
+      );
+    } finally {
+      await server.close();
+    }
+  });
+
+  /**
+   * Launch gate: export completeness and cross-user isolation.
+   *
+   * Completeness is asserted per category rather than by a spot check, so a new
+   * table added to the export without test coverage shows up as a gap here.
+   */
+  it("exports every owned record and leaks nothing across accounts", async () => {
+    const server = await buildIntegrationServer(db);
+
+    try {
+      const tag = `${Date.now()}_${process.pid}_archive`;
+      const owner = await signup(server, tag);
+      const other = await signup(server, `${tag}_other`);
+
+      const exerciseId = await createExercise(server, owner.cookie, `${tag} Archive`);
+      const workoutId = await createWorkout(server, owner.cookie);
+      const sessionExerciseId = await addExerciseToWorkout(server, owner.cookie, workoutId, exerciseId);
+      const setId = await addSet(server, owner.cookie, workoutId, sessionExerciseId);
+      await endWorkout(server, owner.cookie, workoutId);
+
+      const createdTemplate = await server.inject({
+        method: "POST",
+        url: "/api/v1/workout-templates",
+        cookies: authCookies(owner.cookie),
+        // "Export" in a name trips the export-noise block; use a neutral word.
+        payload: { name: "Push A", exerciseIds: [exerciseId] }
+      });
+      assert.equal(createdTemplate.statusCode, 201);
+      const templateId = readData<{ template: { id: string } }>(createdTemplate).template.id;
+
+      const exported = await server.inject({
+        method: "POST",
+        url: "/api/v1/users/me/export",
+        cookies: authCookies(owner.cookie),
+        payload: { password: "integration-secret-1" }
+      });
+      assert.equal(exported.statusCode, 200);
+      const archive = exported.json() as ExportArchive;
+
+      assert.equal(archive.profile.email, `${userPrefix}${tag}@example.com`);
+      assert.equal("password_hash" in archive.profile, false);
+      assert.deepEqual(archive.workouts.map((entry) => entry.id), [workoutId]);
+      assert.deepEqual(archive.sessionExercises.map((entry) => entry.id), [sessionExerciseId]);
+      assert.deepEqual(archive.sets.map((entry) => entry.id), [setId]);
+      assert.deepEqual(archive.templates.map((entry) => entry.id), [templateId]);
+      assert.deepEqual(archive.customExercises.map((entry) => entry.id), [exerciseId]);
+      assert.equal(archive.templateExercises.length, 1);
+      assert.ok(archive.accessHistory.length >= 1, "the signup session must appear in access history");
+
+      const otherExported = await server.inject({
+        method: "POST",
+        url: "/api/v1/users/me/export",
+        cookies: authCookies(other.cookie),
+        payload: { password: "integration-secret-1" }
+      });
+      assert.equal(otherExported.statusCode, 200);
+      const otherArchive = otherExported.json() as ExportArchive;
+
+      assert.deepEqual(otherArchive.workouts, []);
+      assert.deepEqual(otherArchive.sessionExercises, []);
+      assert.deepEqual(otherArchive.sets, []);
+      assert.deepEqual(otherArchive.templates, []);
+      assert.deepEqual(otherArchive.customExercises, []);
+
+      const foreignWorkout = await server.inject({
+        method: "GET",
+        url: `/api/v1/workouts/${workoutId}`,
+        cookies: authCookies(other.cookie)
+      });
+      const foreignTemplate = await server.inject({
+        method: "GET",
+        url: `/api/v1/workout-templates/${templateId}`,
+        cookies: authCookies(other.cookie)
+      });
+      assert.equal(foreignWorkout.statusCode, 404);
+      assert.equal(foreignTemplate.statusCode, 404);
+    } finally {
+      await server.close();
+    }
+  });
 });
 
 async function buildIntegrationServer(
   db: Kysely<AppDatabase>,
-  registrationEnabled = true
+  registrationEnabled = true,
+  mailer?: Mailer
 ): Promise<FastifyInstance> {
-  return buildServer(db, {
+  const options = {
     cookieName,
     cookieSecure: false,
     registrationEnabled,
     sessionTtlDays: 30
+  };
+
+  // Deletion scheduling sends a required email and compensates the account back
+  // to ACTIVE when no provider accepts it, so that flow needs a mailer injected.
+  if (!mailer) return buildServer(db, options);
+
+  return buildServer(db, options, false, {
+    events: "off",
+    mailer,
+    appBaseUrl: "https://app.example.test"
   });
 }
 

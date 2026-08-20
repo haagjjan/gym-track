@@ -214,8 +214,6 @@ export function createUserAccountRepository(db: Kysely<AppDatabase>): UserAccoun
         await trx.insertInto("erasure_tombstones").values({
           user_id: userId, finalized_at: now, expires_at: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
         }).onConflict((conflict) => conflict.column("user_id").doUpdateSet({ finalized_at: now })).execute();
-        await trx.deleteFrom("users").where("id", "=", userId).execute();
-
         for (const exercise of customExercises) {
           const referenced = await trx.selectFrom("session_exercises").select("id").where("exercise_id", "=", exercise.id).limit(1).executeTakeFirst()
             ?? await trx.selectFrom("workout_template_exercises").select("id").where("exercise_id", "=", exercise.id).limit(1).executeTakeFirst();
@@ -225,6 +223,9 @@ export function createUserAccountRepository(db: Kysely<AppDatabase>): UserAccoun
             await trx.deleteFrom("exercises").where("id", "=", exercise.id).execute();
           }
         }
+
+        await trx.deleteFrom("users").where("id", "=", userId).execute();
+
         return true;
       });
     },
