@@ -270,7 +270,10 @@ docs/
 - `docs/08-next-implementation-plan.md` records the current fresh-session handoff and remaining implementation blocks.
 - `docs/09-observability-and-data-structures.md` records implemented data structures and the planned logging/diagnostics approach for client and API failures.
 - `docs/beta-process/private-beta-1/` keeps the original report/evidence and its observation-to-code remediation matrix.
-- `docs/18-public-beta-handoff.md` is the Founding Beta implementation handoff; `docs/public-beta/` owns the processing inventory, DPIA screening, launch evidence gates, and erasure/restore runbook.
+- `docs/beta-process/public-beta/goal-structure.md` is the canonical Goal 0-6 declaration: what each
+  goal covers, who can complete each task type, and how the numbering reconciles with the executed
+  goal reports.
+- `docs/18-public-beta-handoff.md` is the Founding Beta implementation handoff; `docs/beta-process/public-beta/` owns the goal declaration, per-goal evidence reports, processing inventory, DPIA, launch evidence gates, and erasure/restore runbook.
 - `docs/Usability_Audit/` records V1 responsive-web usability decisions and the pure-function performance regression baseline. Read usability audit v4 first, then v3 and v2 only for behavior not superseded by a newer audit; the audit-v4 rework list remains post-beta.
 - `docs/deployment-runbook.md` records Render deployment, migration, backup, restore-test, and monitoring steps for small-batch users.
 - `docs/status/` contains short-lived status reviews, audit notes, and private-beta readiness updates.
