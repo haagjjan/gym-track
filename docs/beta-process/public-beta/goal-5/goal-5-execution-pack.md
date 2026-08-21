@@ -59,9 +59,16 @@ signup page during the beta — inherits that gate and would deliver an Access l
 
 **Decided 2026-08-20: path-scoped Access.**
 
-Public: `/beta`, `/privacy`, `/terms`, `/cookies`, `/support`, and the waitlist endpoint the beta
-page posts to. Gated: everything else, including the application itself, until PROD-1 flips
-registration to `INVITE_ONLY`.
+**Corrected 2026-08-21.** An earlier draft of this section proposed keeping the application behind
+Access and exposing only `/beta` and the policy pages. That is unworkable: Access currently admits
+one whitelisted address, members cannot be given Access identities, and an invited member who
+cannot reach the application after signing up has not been admitted to anything. The gate text is
+explicit that the private gate *remains until* server-side admission is proven — it is a temporary
+shield to remove, not a scope to narrow.
+
+The member-facing application therefore comes out from behind Access entirely. Access may be
+retained on administrative surfaces as defence in depth, but nothing a member needs may sit behind
+it.
 
 **Must be re-proven after any narrowing, before the cohort is invited**
 
