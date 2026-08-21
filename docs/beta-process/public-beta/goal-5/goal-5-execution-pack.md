@@ -16,7 +16,15 @@ gate requires. It takes the address as an explicit argument, updates exactly one
 rolls back, and records an `ADMIN_BOOTSTRAPPED_BY_OPERATOR` audit event with a null actor and
 `{"method":"operator_cli"}`. There is no runtime email inference anywhere in the promotion path.
 
-**Decision needed:** which existing account becomes the first administrator.
+**Decided 2026-08-20:** the controller's own `JV` account becomes the first administrator.
+
+Confirm which row the CLI will match **before** running it. The script refuses to act unless exactly
+one non-admin account matches, so a mistyped address fails safe rather than promoting the wrong
+member — but confirming first turns a rollback into a non-event:
+
+```sql
+SELECT id, email, username, role, account_status FROM users WHERE lower(email) = lower('<jv-address>');
+```
 
 **Ordering constraint.** The CLI promotes an account that already exists. Production runs with
 `REGISTRATION_MODE=DISABLED` through cutover, so no account can be created in that window. The
