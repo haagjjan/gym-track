@@ -1,7 +1,8 @@
 # Goal 5 Scope — Prepare and Verify Production
 
-**Status:** Privileged production preflight, final-candidate staging refresh and reversible
-production artifact preparation complete; production cutover not started
+**Status:** Production cutover complete on exact release
+`2cac1fe0e20f294c951cb8cb8115b83601ae6a5f` with registration and admission closed;
+administrator bootstrap and UI verification complete
 
 **Recorded:** 2026-08-20
 
@@ -172,6 +173,57 @@ The cutover procedure now includes three explicit requirements:
    `web` from that SHA and set all three image names plus `APP_RELEASE` to it, even if the image
    contents are byte-identical to the prior build. Any release-identity mismatch remains a hard
    stop.
+
+## Controlled production cutover and containment — 2026-08-21
+
+The controller reported all three CI jobs green for exact release
+`2cac1fe0e20f294c951cb8cb8115b83601ae6a5f`. Production was clean at that detached commit before
+the cutover. The preflight found all ten services running, all seven healthchecked services
+healthy, no failed systemd units, registration disabled, all three admission controls paused,
+and a current successful off-machine backup. Compose and Caddy validation passed before any
+service was replaced.
+
+Migrate, API and web were rebuilt and tagged for the exact release. Their production image IDs
+are `sha256:dc9d9c272a7e2cd65d4337841ec562dbfcece392d5b87d6febea7446e535d23b`,
+`sha256:818025d633183537cdde19dedd1ff8214057b015d6f2c8653773e351e00d8f03` and
+`sha256:760ac64e2a66ef1c62e8696eb22eb405577299831b45987f40a466b11332aebe`, respectively. The one-shot
+migration reported no pending work and the ledger remained exactly nine entries. API, web and
+proxy were then recreated sequentially, with a health wait after each. API and web expose the
+exact release through `APP_RELEASE`, run with `APP_ENV=production` and
+`REGISTRATION_MODE=DISABLED`, and retain the non-root/read-only/capability-drop hardening. The
+post-cutover data fingerprint was unchanged.
+
+The fixed Caddy filter was proved with a synthetic request containing sentinel values for every
+removed identity, Cloudflare Access and signed BFF header. The resulting access records contained
+zero sensitive header fields and zero sentinel values. The old proxy container and its Docker
+`json-file` log disappeared during recreation; the exact new proxy log was then truncated and the
+proxy remained healthy. Backup staging excludes Docker logs, and the logging utilities only read
+them locally, so neither Restic nor a third-party log destination received the retained request
+logs.
+
+The usable rollback bundle was regenerated under the hotfix release with the prior application
+image references, registration disabled and the fixed Caddyfile. Its Compose rendering and Caddy
+validation passed, and earlier defective rollback directories were marked unsafe so they cannot
+silently restore the leaking filter.
+
+The first post-cutover backup attempt failed closed before creating a dump because the stricter
+exact-image Compose variables were not available to the systemd service. A persistent service
+drop-in now loads the protected production environment file; the installed and backup-staged
+copies match, and `systemd-analyze verify` passes. The retry completed as encrypted off-machine
+snapshot `8b2ae9db`; the full Restic repository check found no errors. Backup metrics record success
+at timestamp `1787313457`, after the retry began. The final audit again found ten of ten services
+running, seven of seven healthchecked services healthy, six of six Prometheus targets up, no
+failed systemd units, exact release identity, registration disabled, and waitlist, invitations and
+campaigns all paused. The database settings remain account cap 50 and daily approval limit 10.
+
+Immediately before administrator bootstrap, production contained exactly one active ordinary
+account named `JV` and no administrator. The controller had already captured authenticated 403
+responses from three administrator routes while that account still had `role=USER`. The
+exact-release operator CLI then promoted exactly that one row without printing its address and
+created exactly one matching `ADMIN_BOOTSTRAPPED_BY_OPERATOR` audit event with a null actor and
+`operator_cli` method. The controller confirmed the same existing session could enter the
+administrator UI, which displayed account cap 50, daily approval limit 10 and all three runtime
+controls paused. Sanitized promotion evidence is retained under the release archive.
 
 ## Work items
 
