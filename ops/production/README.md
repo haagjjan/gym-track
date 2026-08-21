@@ -24,8 +24,11 @@ commits the final Goal 4 batch:
    `/srv/gym-tracker/deploy/env/production.env`, replace every `REQUIRED_FULL_GIT_SHA` with the
    same SHA, and keep `REGISTRATION_MODE=DISABLED` through initial production verification.
 
-Every application image name and `APP_RELEASE` must resolve to that same SHA. A mismatch stops
-the deployment.
+Every application image name and `APP_RELEASE` must resolve to that same SHA. This also applies
+to a configuration-only release: rebuild and retag the `migrate`, `api` and `web` targets from
+the new exact clean SHA even when their resulting filesystem contents are byte-identical to the
+previous images. Do not reuse the previous tags or override `APP_RELEASE`; a mismatch stops the
+deployment.
 
 ## Required protected files
 
@@ -117,9 +120,38 @@ The selected external tester performs the broader real-user product confirmation
 not repeat the already green capacity and full staging suite unless application or database
 behavior changes.
 
+## Access-log credential containment
+
+Caddy access-log redaction changes prevent new records from containing protected edge identity
+or BFF headers; they do not remove records already written by Docker. For an access-log
+redaction release, all of these steps are mandatory:
+
+1. Before deployment, confirm the proxy uses Docker's bounded `json-file` driver and resolve its
+   exact container ID and log path without printing log contents.
+2. Deploy the new exact-SHA application images and fixed Caddy configuration, force-recreating
+   the proxy so it cannot retain the old in-memory encoder.
+3. Send only non-secret synthetic header markers through the deployed proxy. Retain sanitized
+   counts showing that an access record was written while the protected header fields and marker
+   values were absent.
+4. Truncate the exact proxy `json-file` log after the deployed redaction proof, then require the
+   file to be empty and the proxy plus monitoring to remain healthy. Validate that the resolved
+   path belongs to the exact current proxy container before truncating; never use a glob or a
+   directory target.
+5. Regenerate the release-specific rollback bundle after the fixed deployment. A rollback may
+   reference the previous application images, but it must contain the newly redacted Caddyfile.
+   Mark every older bundle carrying the defective Caddyfile as unsafe for direct application and
+   validate the replacement Compose/Caddy hashes and Caddy syntax.
+
+The containment review confirmed that `stage-backup-files.sh` stages deployment configuration,
+operator scripts, state and protected files, but not Docker container logs. Restic snapshots
+therefore did not copy the affected proxy log. The logging helpers under `ops/logging/scripts`
+read `docker logs` locally and do not ship request logs to a third party. There is no off-host
+request-log copy to purge; the on-host proxy log remains the required containment target.
+
 ## Rollback
 
-On a stop-rule failure, reapply the release-specific previous Compose/Caddy files and immutable
-previous image tags. If the migration changed live data incompatibly, keep writes closed and
-restore the verified pre-migration backup plus newest erasure ledger before reopening. Never run
-the destructive public-beta down migration on production.
+On a stop-rule failure, reapply the release-specific previous Compose definition and immutable
+previous image tags together with the current redacted Caddyfile. Never restore a Caddyfile that
+predates the access-log credential filter. If the migration changed live data incompatibly, keep
+writes closed and restore the verified pre-migration backup plus newest erasure ledger before
+reopening. Never run the destructive public-beta down migration on production.
