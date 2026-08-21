@@ -4,12 +4,17 @@ name: Status page
 # GitHub Pages rather than to the Mac mini or anything behind its tunnel.
 # Deploying only on changes to ops/status keeps an application release from
 # republishing a status claim nobody reviewed.
+# Manual-only until the repository is published and Pages is enabled. A push
+# trigger would fail every run against a repository with no Pages site, and a
+# permanently red workflow on main means SQC-4 has no green exact-SHA run to
+# point at. Restore the push trigger below once Pages is live.
+#
+#   push:
+#     branches: [main]
+#     paths:
+#       - ops/status/public/**
+#       - .github/workflows/status-page.yml
 on:
-  push:
-    branches: [main]
-    paths:
-      - ops/status/public/**
-      - .github/workflows/status-page.yml
   workflow_dispatch:
 
 permissions:
