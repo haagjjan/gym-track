@@ -8,6 +8,12 @@
 		format filter {
 			wrap json
 			fields {
+				request>headers>Cf-Access-Jwt-Assertion delete
+				request>headers>Cf-Access-Authenticated-User-Email delete
+				request>headers>Cf-Access-Client-Id delete
+				request>headers>Cf-Access-Client-Secret delete
+				request>headers>X-Gym-Client-Ip delete
+				request>headers>X-Gym-Client-Signature delete
 				request>uri query {
 					replace invite REDACTED
 					replace email REDACTED

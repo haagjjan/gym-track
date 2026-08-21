@@ -182,6 +182,18 @@ jobs:
                   throw new Error(`${path} does not redact the ${key} query parameter`);
                 }
               }
+              for (const header of [
+                "Cf-Access-Jwt-Assertion",
+                "Cf-Access-Authenticated-User-Email",
+                "Cf-Access-Client-Id",
+                "Cf-Access-Client-Secret",
+                "X-Gym-Client-Ip",
+                "X-Gym-Client-Signature"
+              ]) {
+                if (!source.includes(`request>headers>${header} delete`)) {
+                  throw new Error(`${path} does not remove ${header} from access logs`);
+                }
+              }
             }
           '
 
