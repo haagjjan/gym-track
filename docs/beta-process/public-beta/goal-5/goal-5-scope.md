@@ -1,6 +1,7 @@
 # Goal 5 Scope — Prepare and Verify Production
 
-**Status:** Read-only production preflight started; cutover not started
+**Status:** Privileged production preflight, final-candidate staging refresh and reversible
+production artifact preparation complete; production cutover not started
 
 **Recorded:** 2026-08-20
 
@@ -61,10 +62,116 @@ production write was attempted.
   snapshots. Backup metrics returned to success, the reverse listener remained reachable only
   on production loopback, and `systemctl --failed` returned zero units. This clears the backup
   stop condition; it does not authorize cutover.
-- Container-level health and hardening inspection still requires a shared privileged terminal.
-  The controller and Codex will use one named remote `tmux` session for the next privileged work
-  window so the controller can authenticate `sudo` inside the same TTY without sharing a
-  password.
+- The subsequent scheduled run also succeeded at 21:23 CEST as snapshot `80880f58`; the
+  repository then contained 49 snapshots. This is the fresh rollback point for the next
+  production window.
+- The controller and Codex established the named remote `tmux` session and authenticated `sudo`
+  inside the shared TTY without sharing a password. Production container inspection found every
+  service healthy on the unchanged private release. After the isolated staging refresh, the host
+  still had about 30.4 GB available memory and 411 GB free on `/`; production services remained
+  healthy and no production configuration, migration or data was changed.
+
+## Final-candidate staging refresh — 2026-08-20
+
+The controller confirmed final candidate
+`5a29890aa02f686e18fcfaa419981aa39be5adb4` and reported its Project checks, API DB integration
+and Web smoke GitHub Actions jobs green. Local `pnpm check`, performance, production Compose
+invariants and pinned-Caddy validation passed. The staging repository was clean at that exact
+commit before building five immutable images:
+
+| Image | Runtime image ID |
+| --- | --- |
+| PostgreSQL | `sha256:7b2434c0826b05057aa70c30d20fdf0631a6c71deca64bacbc50752628ea2153` |
+| Migrate | `sha256:800a0df2cacf3d906c5bfeea9fe3b1e1b954500dab8a0a97ba7dbb4d1f70da26` |
+| API | `sha256:ae2676e8578892b269b526aeb6a38a84e8d277140c10488010a44ef3c11d9fbb` |
+| Web | `sha256:469a4b1fe827944300a22cd44e69f4c691af7d9d78b42519cc48bdff05971e66` |
+| Proxy | `sha256:4d18b8a4a6c998d03c220dd881dedb30032b12ce0fe000e42408db702bd62439` |
+
+The prior staging Compose, Caddy and environment inputs were preserved under the release-specific
+rollback directory before installation. The reviewed Compose and Caddy hashes matched the
+candidate, required ownership/modes remained intact, Compose rendered cleanly and the exact proxy
+image accepted the Caddyfile. There was no database-file delta from the previous staging release;
+the one-shot migration still ran and reported no pending work before the migration ledger grant
+was revoked again.
+
+PostgreSQL, API, web and proxy became healthy on the exact tags. Runtime `APP_RELEASE` matched the
+candidate. API, web and proxy ran as `10001:10001`, with read-only roots, all capabilities
+dropped and no-new-privileges; PostgreSQL retained its one-GiB/256-PID limits and
+no-new-privileges. Staging published only `127.0.0.1:3100`.
+
+Focused exact-release checks passed without a browser:
+
+- Privacy, Terms, Cookie/Storage, Support and beta-limitations each returned HTTP 200 with no
+  `PUBLICATION_BLOCKED` or placeholder marker.
+- The approved controller name and full address rendered, all three public contacts matched, and
+  the beta page showed invitation-only mode and the 50-account limit.
+- Allowed Host returned 200 and hostile Host 421. An unsigned direct non-health API request
+  returned 403 `BFF_REQUIRED`, while direct health and metrics returned 200.
+- CSP, Permissions Policy, Referrer Policy, `nosniff` and frame denial were present. A live
+  synthetic query probe appeared only as `REDACTED` in proxy logs.
+
+Production was checked immediately before and after this staging-only operation and stayed
+healthy on release `ca18717aba553bac51f9c54c24a8c6e67de609d6`, `APP_ENV=private-lan` and
+`REGISTRATION_MODE=DISABLED`. This closes SQC-4 only; it is not production-cutover approval.
+
+## Reversible production artifact preparation — 2026-08-20
+
+The production repository fetched the remote history and then switched to a clean detached
+checkout of the confirmed candidate. The fetch observed newer `origin/main` commit
+`84fd94a2a4afa79e6883e45671d556958dd8ff3d`, but `5a29890...` is its ancestor and the intervening
+files are limited to the independent status-page workflow/content and launch documentation. The
+newer tip was not substituted for the exact SHA that passed CI and staging.
+
+Without recreating any service, the host built the exact candidate's production images:
+
+| Image | Image ID | Size |
+| --- | --- | ---: |
+| Migrate | `sha256:670867ffe3c53dcc5ac0de88a0d388055f7489528e5dfc4192071eefaeff5cef` | 424,567,888 bytes |
+| API | `sha256:5fb5acdd8ac3c795fdd112f1c5dda6f1309857b0c1b114eda23023ae1a476dab` | 84,652,349 bytes |
+| Web | `sha256:0de1e7d011d1c74ace87c7acc3c135e2338ea8e1d8ced4f7ea85a20bfc791254` | 91,619,161 bytes |
+
+API and web retained the hardened direct-Node commands, non-root image user and built-in health
+checks. The new host-only `production.env` is `admin-gym:gym-tracker` mode `0640`; its
+`APP_RELEASE` and three image tags match the candidate, `REGISTRATION_MODE` remains `DISABLED`,
+and its controller/contact values match the approved production values. It contains no provider
+or database secret.
+
+Static production Compose rendering and the pinned-Caddy validation passed against the prepared
+environment. The database runtime URL, database migration URL, BFF secret and Resend key files
+all remain `root:10001` mode `0440`; the BFF file is 64 bytes and the Resend key file is nonempty.
+No secret value was printed or copied into the environment file.
+
+The current active Compose and Caddy inputs were copied with matching SHA-256 hashes to
+`/srv/gym-tracker/releases/pre-5a29890aa02f686e18fcfaa419981aa39be5adb4-20260820T220800Z/`.
+The active Compose/Caddy files themselves were not replaced, no migration ran, no container was
+recreated and no production data or edge state changed. Final inspection still found every
+production and monitoring service healthy on the old private release. The next action is the
+controlled cutover boundary and still requires the pre-cutover pauses plus explicit controller
+approval.
+
+## Phase 3 access-log containment requirement — 2026-08-21
+
+The production forged-header correlation exposed a stop condition: the active Caddy access log
+retained Cloudflare Access identity/credential headers and the signed BFF client-address headers.
+The redaction hotfix must pass exact-SHA CI and production-equivalent isolated validation before
+the remaining Phase 3 gates continue.
+
+The cutover procedure now includes three explicit requirements:
+
+1. The fixed Caddy configuration stops new leakage but does not erase existing Docker
+   `json-file` records. After redeployment and a sanitized production redaction proof, truncate
+   only the exact current proxy container log, confirm it is empty and recheck proxy/monitoring
+   health. The configuration backup staging script excludes container logs, and the local
+   `ops/logging/scripts` readers do not ship them off-host, so no Restic snapshot or third-party
+   request-log destination requires separate containment.
+2. Regenerate the release-specific rollback bundle after deployment. Previous application image
+   references may be retained for rollback, but every usable rollback copy must carry the fixed
+   Caddyfile; an older copy with the defective filter is unsafe because it silently reintroduces
+   the leak.
+3. Treat the configuration fix as a new exact-SHA release. Rebuild and retag `migrate`, `api` and
+   `web` from that SHA and set all three image names plus `APP_RELEASE` to it, even if the image
+   contents are byte-identical to the prior build. Any release-identity mismatch remains a hard
+   stop.
 
 ## Work items
 
