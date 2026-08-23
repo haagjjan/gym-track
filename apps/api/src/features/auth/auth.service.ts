@@ -60,6 +60,10 @@ interface AuthServiceOptions {
 
 const LOCKOUT_THRESHOLD = 10;
 const LOCKOUT_MINUTES = 15;
+// A valid Argon2id hash keeps an unknown username on the same password-verification
+// path as a known username. The plaintext used to create it is not a credential.
+const UNKNOWN_USER_PASSWORD_HASH =
+  "$argon2id$v=19$m=65536,t=3,p=4$VOgJWeBaBtsa2i9Ei3yqLg$TGecR0+XS8kpMyQdVJZmFdFK5kcxF7TVIWbiU2gIAIk";
 
 export function createAuthService(options: AuthServiceOptions): AuthService {
   const now = options.now ?? (() => new Date());
@@ -112,6 +116,8 @@ export function createAuthService(options: AuthServiceOptions): AuthService {
       const user = await options.repository.findUserByUsername(input.username);
 
       if (!user) {
+        await options.passwordHasher.verify(UNKNOWN_USER_PASSWORD_HASH, input.password);
+
         return { ok: false, reason: "invalid_credentials" };
       }
 

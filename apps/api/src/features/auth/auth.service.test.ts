@@ -29,12 +29,13 @@ function userRecord(overrides: Partial<AuthUserRecord> = {}): AuthUserRecord {
   };
 }
 
-function passwordHasher(matches = true): PasswordHasher {
+function passwordHasher(matches = true, onVerify?: () => void): PasswordHasher {
   return {
     async hash(password) {
       return `hashed:${password}`;
     },
     async verify() {
+      onVerify?.();
       return matches;
     }
   };
@@ -210,10 +211,12 @@ describe("auth service", () => {
     assert.equal(repository.createdSession?.userId, "user-1");
   });
 
-  it("rejects invalid login credentials", async () => {
+  it("rejects invalid login credentials after verifying known and unknown usernames", async () => {
+    let verificationCount = 0;
+    const hasher = passwordHasher(false, () => { verificationCount += 1; });
     const service = createAuthService({
       repository: new FakeAuthRepository(),
-      passwordHasher: passwordHasher(false),
+      passwordHasher: hasher,
       sessionTokens: sessionTokens(),
       sessionTtlDays: 30,
       now: () => now
@@ -225,6 +228,20 @@ describe("auth service", () => {
     });
 
     assert.deepEqual(result, { ok: false, reason: "invalid_credentials" });
+    const unknownService = createAuthService({
+      repository: new FakeAuthRepository(null),
+      passwordHasher: hasher,
+      sessionTokens: sessionTokens(),
+      sessionTtlDays: 30,
+      now: () => now
+    });
+    const unknownResult = await unknownService.login({
+      username: "unknown-user",
+      password: "bad-password"
+    });
+
+    assert.deepEqual(unknownResult, { ok: false, reason: "invalid_credentials" });
+    assert.equal(verificationCount, 2);
   });
 
   it("revokes a hashed session token on logout", async () => {
