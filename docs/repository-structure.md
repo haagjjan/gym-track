@@ -218,7 +218,8 @@ ops/
 - `ops/backup` owns encrypted Restic backup scripts, isolated restore tests, systemd scheduling,
   recovery deployment, the restricted macOS SFTP destination and its persistent reverse-tunnel
   launch agent.
-- `ops/logging` owns bounded production log-review and secret-audit scripts; it does not own a separate log store.
+- `ops/logging` owns bounded production log-review, secret-audit and strict weekly Docker-log
+  retention automation; it does not own a separate log store.
 - `ops/production` owns the reviewed non-secret public-beta Compose/Caddy definition, host-only
   environment template and controlled cutover/rollback order. Live production values and secrets
   remain under `/srv/gym-tracker` outside Git.
