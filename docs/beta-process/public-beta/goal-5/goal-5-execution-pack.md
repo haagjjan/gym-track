@@ -81,6 +81,16 @@ it.
 
 Narrowing Access removes a layer. Do not narrow it and invite in the same session.
 
+**Executed 2026-08-21 — PASS.** The controller removed Access enforcement from the member-facing
+hostname and confirmed a clean browser reached the app without a Cloudflare redirect. Before any
+invitation was issued, the deployed `INVITE_ONLY` release returned `403 INVITATION_REQUIRED` for a
+same-origin tokenless signup and created no user; the Fastify-shaped public path returned 404; an
+existing-account waitlist submission returned the generic 202 response without creating a request
+row; and the unauthenticated administrator route returned `401 UNAUTHORIZED`. The earlier
+forged-header rate-limit proof remains on the same proxied DNS, Caddy and signed BFF path. The
+subsequent PROD-1 emergency rehearsal also proved `REGISTRATION_DISABLED` under the closed mode and
+restored `INVITE_ONLY` before the member flow began.
+
 ## PROD-6 and PROD-7 — Real mailbox and delivery evidence
 
 **Already recorded.** The sending domain is verified with DNS published through Cloudflare, and the
