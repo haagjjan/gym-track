@@ -225,6 +225,29 @@ created exactly one matching `ADMIN_BOOTSTRAPPED_BY_OPERATOR` audit event with a
 administrator UI, which displayed account cap 50, daily approval limit 10 and all three runtime
 controls paused. Sanitized promotion evidence is retained under the release archive.
 
+### Opening-door verification — 2026-08-21
+
+The controller replaced the hostname-wide Cloudflare Access login wall with public access while
+retaining Cloudflare proxying, TLS, Tunnel and the normal zone controls. A clean browser session
+reached the application without a Cloudflare redirect. Production then moved from
+`REGISTRATION_MODE=DISABLED` to `INVITE_ONLY` by recreating API and web sequentially from the same
+immutable release; both retained their non-root, read-only, all-capabilities-dropped and
+no-new-privileges hardening.
+
+The public boundary was re-proved before issuing an invitation. A same-origin signup without a
+token returned `403 INVITATION_REQUIRED` and created no user; the public origin still returned 404
+for the Fastify path; an existing-account waitlist submission returned the generic 202 response
+without creating a request row; and an unauthenticated administrator request returned
+`401 UNAUTHORIZED`. The emergency switch was then rehearsed end to end between
+`2026-08-21T16:30:17Z` and `16:31:49Z`: API and web were recreated under `DISABLED`, the same signup
+returned `403 REGISTRATION_DISABLED`, and both services were recreated under `INVITE_ONLY`, where
+the response returned to `403 INVITATION_REQUIRED`.
+
+Final state was exact release `2cac1fe0e20f294c951cb8cb8115b83601ae6a5f`, 10/10 services
+running, 7/7 healthchecked services healthy, 6/6 Prometheus targets up and no synthetic user row.
+The production environment and its protected pre-change rollback copy are both mode 0640. A fresh
+encrypted off-machine backup completed as snapshot `599aec7e`, and no systemd unit remained failed.
+
 ## Work items
 
 Labels follow the ownership model in [goal-structure.md](../goal-structure.md).
