@@ -1,0 +1,12 @@
+[Unit]
+Description=Prune Gym Tracker application logs weekly
+
+[Timer]
+OnCalendar=Mon *-*-* 04:10:00
+RandomizedDelaySec=20m
+Persistent=true
+AccuracySec=1m
+Unit=gym-tracker-log-retention.service
+
+[Install]
+WantedBy=timers.target
