@@ -1,0 +1,18 @@
+[Unit]
+Description=Enforce Gym Tracker application-log retention
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0077
+ExecStart=/srv/gym-tracker/scripts/prune-container-logs.sh
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/docker/containers /run/docker.sock
+RestrictAddressFamilies=AF_UNIX
+CapabilityBoundingSet=CAP_DAC_OVERRIDE CAP_FOWNER
