@@ -159,6 +159,45 @@ describe("public beta database flow", { skip: databaseUrl ? false : "INTEGRATION
     }
   });
 
+  it("serializes deletion finalization against a simultaneous cancellation", async () => {
+    const api = await server("ENABLED");
+    const email = `${prefix}deletion-race@example.test`;
+    const user = await signup(api, email, `${prefix}deletion-race`, {});
+    createdUserIds.add(user.id);
+
+    try {
+      assert.equal((await requestDeletion(api, user.cookie)).statusCode, 200);
+      const dueAt = new Date(Date.now() - 1_000);
+      await db.updateTable("users").set({ deletion_due_at: dueAt }).where("id", "=", user.id).execute();
+      const token = await db.selectFrom("account_deletion_tokens")
+        .select("token_hash")
+        .where("user_id", "=", user.id)
+        .executeTakeFirstOrThrow();
+      const repository = createUserAccountRepository(db);
+
+      const [cancelled, finalized] = await Promise.all([
+        repository.cancelDeletion(token.token_hash, new Date()),
+        repository.finalizeDeletion(user.id, new Date())
+      ]);
+
+      assert.notEqual(Boolean(cancelled), finalized, "exactly one row-lock winner must commit");
+      const persisted = await db.selectFrom("users").select("account_status")
+        .where("id", "=", user.id).executeTakeFirst();
+      const tombstone = await db.selectFrom("erasure_tombstones").select("user_id")
+        .where("user_id", "=", user.id).executeTakeFirst();
+      if (cancelled) {
+        assert.equal(persisted?.account_status, "ACTIVE");
+        assert.equal(tombstone, undefined);
+      } else {
+        assert.equal(finalized, true);
+        assert.equal(persisted, undefined);
+        assert.equal(tombstone?.user_id, user.id);
+      }
+    } finally {
+      await api.close();
+    }
+  });
+
   /**
    * Launch gate SQC-1: administrator authorization from the direct API, the
    * single-use property of the deletion cancellation link, and enumeration
