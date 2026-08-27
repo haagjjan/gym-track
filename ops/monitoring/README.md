@@ -104,7 +104,7 @@ Production operator commands:
 
 `restart-monitoring.sh` restarts only Prometheus, Alertmanager, Grafana, Node Exporter, cAdvisor, and PostgreSQL Exporter. It does not restart PostgreSQL or the application services. The normal `restart.sh` remains application-only.
 
-Prometheus evaluates 27 version-controlled rules under `ops/monitoring/prometheus/rules`, including four Stage 11 backup rules. Alertmanager groups notifications by alert, component, and severity. A warning repeats after six hours, a critical alert after one hour, and a resolved notification is sent when the condition clears. A critical alert inhibits a simultaneous warning for the same component.
+Prometheus evaluates 31 version-controlled rules under `ops/monitoring/prometheus/rules`, including four Stage 11 backup rules and four lifecycle/email liveness rules. Alertmanager groups notifications by alert, component, and severity. A warning repeats after six hours, a critical alert after one hour, and a resolved notification is sent when the condition clears. A critical alert inhibits a simultaneous warning for the same component.
 
 For a plain-language explanation of every production dashboard and panel, read [`docs/server/GRAFANA-DASHBOARD-GUIDE.md`](../../docs/server/GRAFANA-DASHBOARD-GUIDE.md).
 
