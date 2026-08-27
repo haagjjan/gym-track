@@ -13,8 +13,8 @@
     <header>
       <p class="eyebrow">GYM PROGRESS TRACKER</p>
       <h1>Service status</h1>
-      <p class="test">● Test incident — publication rehearsal</p>
-      <p class="muted">Published: 2026-08-27 11:04 UTC.</p>
+      <p class="test">● Maintenance degraded</p>
+      <p class="muted">Last manually reviewed: 2026-08-27 11:06 UTC.</p>
     </header>
     <section aria-label="Components" class="components">
       <div class="row"><span>Web application</span><strong class="ok">Operational</strong></div>
@@ -25,10 +25,14 @@
       <div class="row"><span>Maintenance</span><strong class="test">Under observation</strong></div>
     </section>
     <section class="incident" aria-labelledby="incident-title">
-      <h2 id="incident-title">Test incident: status publication path</h2>
-      <p><strong>User impact:</strong> None. This is a clearly marked publication rehearsal.</p>
-      <p><strong>Investigation:</strong> Confirming that an incident can be published independently of the application and viewed without authentication.</p>
-      <p><strong>Next update:</strong> By 2026-08-27 11:20 UTC.</p>
+      <h2 id="incident-title">Maintenance: backup recovery validation</h2>
+      <p><strong>User impact:</strong> The application remains available; the latest scheduled off-machine backup attempt failed.</p>
+      <p><strong>Investigation:</strong> The backup connection is reachable again and recovery validation is in progress.</p>
+      <p><strong>Next update:</strong> After the next successful backup validation.</p>
+    </section>
+    <section class="incident" aria-labelledby="history-title">
+      <h2 id="history-title">Resolved test incidents</h2>
+      <p><strong>2026-08-27 11:04–11:06 UTC:</strong> The incident publication path rehearsal passed. The test notice was publicly visible without authentication through the independent status host, then resolved and archived here. There was no user impact.</p>
     </section>
     <footer>
       <p>This page is hosted separately from the Gym Progress Tracker application stack.</p>
