@@ -2,12 +2,38 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="robots" content="noindex">
-  <title>Gym Progress Tracker status</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gym Progress Tracker — Service status</title>
   <style>
-    :root{color-scheme:dark;font-family:ui-sans-serif,system-ui,sans-serif;background:#090b10;color:#eef2f7}body{margin:0}.wrap{max-width:720px;margin:auto;padding:48px 20px}header{border-bottom:1px solid #29303d;padding-bottom:28px}.eyebrow{color:#67e8f9;font-size:12px;font-weight:700;letter-spacing:.14em}.ok{color:#86efac}.components{margin-top:30px;border:1px solid #29303d;border-radius:12px;overflow:hidden}.row{display:flex;justify-content:space-between;gap:20px;padding:15px 18px;border-top:1px solid #29303d}.row:first-child{border:0}.muted{color:#94a3b8;font-size:14px}a{color:#67e8f9}footer{margin-top:30px;font-size:13px;color:#94a3b8}
+    :root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,sans-serif;background:#090b10;color:#e5e7eb}.wrap{max-width:760px;margin:0 auto;padding:56px 22px 72px}h1{font-size:clamp(34px,7vw,56px);line-height:1;margin:8px 0 18px}.eyebrow{color:#67e8f9;font-size:12px;font-weight:700;letter-spacing:.14em}.test{color:#fbbf24}.ok{color:#86efac}.components,.incident{margin-top:30px;border:1px solid #29303d;border-radius:12px;overflow:hidden}.row{display:flex;justify-content:space-between;gap:20px;padding:15px 18px;border-top:1px solid #29303d}.row:first-child{border:0}.incident{padding:18px}.incident h2{margin:0 0 10px;font-size:20px}.incident p{margin:8px 0}.muted{color:#94a3b8;font-size:14px}a{color:#67e8f9}footer{margin-top:30px;font-size:13px;color:#94a3b8}
   </style>
 </head>
-<body><main class="wrap"><header><p class="eyebrow">GYM PROGRESS TRACKER</p><h1>Service status</h1><p class="muted">● Status publication setup pending</p><p class="muted">Last manually reviewed: not yet verified.</p></header><section aria-label="Components" class="components"><div class="row"><span>Web application</span><strong>Not verified</strong></div><div class="row"><span>API</span><strong>Not verified</strong></div><div class="row"><span>Authentication</span><strong>Not verified</strong></div><div class="row"><span>Email delivery</span><strong>Not verified</strong></div><div class="row"><span>Database writes</span><strong>Not verified</strong></div><div class="row"><span>Maintenance</span><strong>Not published</strong></div></section><footer><p>This static page must be hosted separately from the application stack at <strong>status.gymtrack.ch</strong>. During an incident, update the component labels, visible review timestamp, and a short incident note before publishing.</p><p><a href="https://app.gymtrack.ch/support">Support</a></p></footer></main></body>
+<body>
+  <main class="wrap">
+    <header>
+      <p class="eyebrow">GYM PROGRESS TRACKER</p>
+      <h1>Service status</h1>
+      <p class="test">● Test incident — publication rehearsal</p>
+      <p class="muted">Published: 2026-08-27 11:04 UTC.</p>
+    </header>
+    <section aria-label="Components" class="components">
+      <div class="row"><span>Web application</span><strong class="ok">Operational</strong></div>
+      <div class="row"><span>API</span><strong class="ok">Operational</strong></div>
+      <div class="row"><span>Authentication</span><strong class="ok">Operational</strong></div>
+      <div class="row"><span>Email delivery</span><strong class="ok">Operational</strong></div>
+      <div class="row"><span>Database writes</span><strong class="ok">Operational</strong></div>
+      <div class="row"><span>Maintenance</span><strong class="test">Under observation</strong></div>
+    </section>
+    <section class="incident" aria-labelledby="incident-title">
+      <h2 id="incident-title">Test incident: status publication path</h2>
+      <p><strong>User impact:</strong> None. This is a clearly marked publication rehearsal.</p>
+      <p><strong>Investigation:</strong> Confirming that an incident can be published independently of the application and viewed without authentication.</p>
+      <p><strong>Next update:</strong> By 2026-08-27 11:20 UTC.</p>
+    </section>
+    <footer>
+      <p>This page is hosted separately from the Gym Progress Tracker application stack.</p>
+      <p><a href="https://app.gymtrack.ch/support">Support</a></p>
+    </footer>
+  </main>
+</body>
 </html>
