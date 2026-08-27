@@ -2,18 +2,10 @@ name: Status page
 
 # The status page must survive the outage it reports on, so it is published to
 # GitHub Pages rather than to the Mac mini or anything behind its tunnel.
-# Deploying only on changes to ops/status keeps an application release from
-# republishing a status claim nobody reviewed.
-# Manual-only until the repository is published and Pages is enabled. A push
-# trigger would fail every run against a repository with no Pages site, and a
-# permanently red workflow on main means SQC-4 has no green exact-SHA run to
-# point at. Restore the push trigger below once Pages is live.
-#
-#   push:
-#     branches: [main]
-#     paths:
-#       - ops/status/public/**
-#       - .github/workflows/status-page.yml
+# Publication remains manual even though Pages is live: every deployment is a
+# reviewed operational claim, and an unrelated application push must not
+# republish stale status. The workflow still checks out the selected main SHA,
+# so the deployed page remains attributable to a specific commit.
 on:
   workflow_dispatch:
 

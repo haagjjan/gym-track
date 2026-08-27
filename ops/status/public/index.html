@@ -13,8 +13,8 @@
     <header>
       <p class="eyebrow">GYM PROGRESS TRACKER</p>
       <h1>Service status</h1>
-      <p class="test">● Maintenance degraded</p>
-      <p class="muted">Last manually reviewed: 2026-08-27 11:06 UTC.</p>
+      <p class="ok">● All systems operational</p>
+      <p class="muted">Last manually reviewed: 2026-08-27 11:42 UTC.</p>
     </header>
     <section aria-label="Components" class="components">
       <div class="row"><span>Web application</span><strong class="ok">Operational</strong></div>
@@ -22,16 +22,11 @@
       <div class="row"><span>Authentication</span><strong class="ok">Operational</strong></div>
       <div class="row"><span>Email delivery</span><strong class="ok">Operational</strong></div>
       <div class="row"><span>Database writes</span><strong class="ok">Operational</strong></div>
-      <div class="row"><span>Maintenance</span><strong class="test">Under observation</strong></div>
-    </section>
-    <section class="incident" aria-labelledby="incident-title">
-      <h2 id="incident-title">Maintenance: backup recovery validation</h2>
-      <p><strong>User impact:</strong> The application remains available; the latest scheduled off-machine backup attempt failed.</p>
-      <p><strong>Investigation:</strong> The backup connection is reachable again and recovery validation is in progress.</p>
-      <p><strong>Next update:</strong> After the next successful backup validation.</p>
+      <div class="row"><span>Maintenance</span><strong class="ok">Operational</strong></div>
     </section>
     <section class="incident" aria-labelledby="history-title">
-      <h2 id="history-title">Resolved test incidents</h2>
+      <h2 id="history-title">Resolved incidents</h2>
+      <p><strong>2026-08-27 09:32–11:42 UTC:</strong> An off-machine backup attempt failed while its destination connection was unavailable. The application remained available with no user impact. The connection was restored, a fresh encrypted snapshot completed, and the full backup repository check found no errors.</p>
       <p><strong>2026-08-27 11:04–11:06 UTC:</strong> The incident publication path rehearsal passed. The test notice was publicly visible without authentication through the independent status host, then resolved and archived here. There was no user impact.</p>
     </section>
     <footer>

@@ -1,8 +1,8 @@
 # Goal 5 Scope — Prepare and Verify Production
 
-**Status:** Production cutover complete on exact release
-`2cac1fe0e20f294c951cb8cb8115b83601ae6a5f` with registration and admission closed;
-administrator bootstrap and UI verification complete
+**Status:** Complete — production verified on release
+`9bbca92923b222d5b9edf8861d977b1c7845b39b`, all deployed-production launch gates closed;
+Goal 6 remains subject to an explicit go/no-go decision
 
 **Recorded:** 2026-08-20
 
@@ -37,7 +37,8 @@ there:
 - The version-controlled non-secret production Compose/Caddy definition and cutover runbook in
   [ops/production](../../../../ops/production/README.md), with CI invariant checks.
 
-What remains below is the work that still has no evidence.
+The sections below preserve what was still outstanding when Goal 5 began; later sections record
+its execution and final closure rather than rewriting that chronology.
 
 ## Read-only production preflight — 2026-08-20
 
@@ -283,7 +284,7 @@ The controller decided:
 This is deliberately a two-phase change. Record the post-beta switch as a follow-up so the beta
 redirect does not silently become the permanent behavior.
 
-## Open conflict — Access scope versus public `/beta`
+## Access scope versus public `/beta` — resolved 2026-08-21
 
 These two committed requirements are currently incompatible, and the redirect above depends on
 resolving them:
@@ -296,15 +297,41 @@ Cloudflare Access currently protects the whole `app.gymtrack.ch` hostname, so a 
 redirect inherits the gate and delivers an Access login wall instead of the signup form. Goal 2
 flagged this as something to reconcile deliberately rather than discover at launch.
 
-The likely shape of the answer is per-path Access scoping — public `/beta` and the legal and
-support pages, gated everything else — but that must be decided and then verified from the
-server side, because the gate's protection is what currently prevents direct API signup from
-bypassing invite admission. Do not narrow Access scope without re-proving that property.
+The controller resolved this by removing Cloudflare Access enforcement from the member hostname
+while retaining proxied DNS, TLS, Tunnel and normal zone protections. PROD-4 and PROD-5 then proved
+from outside that public/legal pages are reachable, tokenless signup remains refused by invitation
+admission, hostile Origin requests are refused, administrator routes require authentication and
+the direct Fastify surface is unavailable. The application controls—not an outer login wall—are
+therefore the evidenced boundary.
 
 ## Exit criteria
+
+### Final gate closure — 2026-08-27
+
+- **PROD-9 closed.** The independent GitHub Pages status host passed unauthenticated HTTPS and
+  redirect verification. A clearly labelled no-impact incident was published at 11:04 UTC,
+  observed publicly, resolved at 11:06 UTC and retained in history. Pages runs `33065801517` and
+  `33065888143` succeeded for commits `c5af146` and `6ccc1d8`.
+- **SQC-1 closed.** The focused review now resolves every row at the approved Founding Beta scope.
+  The last missing database interleaving—deletion cancellation racing final erasure—was added in
+  `c41d32c`; exact-SHA run `33066859946` passed Project checks, API PostgreSQL integration and Web
+  smoke. Production runs clean release `9bbca92`, all six scrape targets are up, only bounded
+  non-personal metric labels are exposed, source/history secret scans are clean, and all 31 alert
+  rules validate and load healthy. A temporary lifecycle alert traversed pending, firing and
+  resolved/absent without member impact, proving the deployed evaluation/reload path.
+- **Backup stop condition cleared.** Final verification found that the scheduled encrypted backup
+  had failed while the Mac destination's loopback reverse tunnel was unavailable. The persistent
+  launch agent was restored, loopback reachability was re-proven, snapshot `7ff8599c` was written,
+  and the full Restic repository check was required to finish successfully before this closure was
+  accepted. The failure was repaired rather than waived.
+- **Unnecessary exposure was rejected as evidence.** A provider event cannot be expected to omit
+  the invitation/reset link it is contracted to deliver. Opening a real member message would expose
+  content without strengthening the control. The meaningful boundary is instead hashed application
+  storage, redacted/bounded telemetry, provider access and documented retention; those controls are
+  now recorded in the security review and processor inventory.
 
 Goal 5 is complete when production runs the approved release with verified configuration, every
 launch gate in [launch-gates.md](../goal-1/launch-gates.md) that depends on a deployed production
 carries current evidence for that same release, and the rollback path has been exercised rather
-than assumed. Goal 6 — the first ten-person cohort — starts only after an explicit recorded
-go/no-go decision.
+than assumed. Those conditions are satisfied. Goal 6 — the first ten-person cohort — starts only
+after an explicit recorded go/no-go decision; this closure does not make that decision.

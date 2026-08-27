@@ -1,6 +1,6 @@
 # SQC-9 Rehearsal Script
 
-**Status:** Four of six evidenced; campaign pause and incident notice blocked pending a cohorted member
+**Status:** Complete — all six rehearsals evidenced and controls restored
 
 **Recorded:** 2026-08-21
 
@@ -82,6 +82,14 @@ campaign. **Rehearsals 2 and 3 require a fresh campaign published after a cohort
 which places them after the PROD-7 invitation. The rehearsal campaign should be `END`ed rather than
 carried forward.
 
+**Executed 2026-08-23 against deployed production — PASS.** After a cohorted invited member
+existed, a fresh campaign was used. Publishing a DRAFT while `campaignsOpen` was false returned
+`409`. With campaign `2efc5829` published and then paused, the cohorted member's
+`GET /api/messages` returned `{"items":[]}` after the `NEXT_LOGIN` trigger was already satisfied,
+so the empty result proved the pause rather than an untriggered message. Resuming exposed the same
+message without another trigger; the rehearsal campaign was then ended and the global setting was
+restored. This supersedes the 2026-08-21 precondition block above.
+
 Worth recording beyond the rehearsal: because delivery requires a cohort, the operator account never
 receives its own incident notices. During a real incident, "I can see it" is not a valid confirmation
 that members received anything.
@@ -116,6 +124,11 @@ would silently exclude exactly the people who opted out of optional messaging.
 **Evidence.** Sign in as the test account and confirm the notice appears, is dismissible, and that
 `message_deliveries` records the delivery with its shown and dismissed timestamps. Then `END` the
 campaign. Do not leave a rehearsal notice publishable.
+
+**Executed 2026-08-23 against deployed production — PASS.** Resuming the controlled essential
+notice made it appear to the cohorted member in both the application and the API response, proving
+the member-facing incident channel. The notice was dismissed, its delivery state was recorded,
+and the campaign was ended so no rehearsal content remained publishable.
 
 ## 4. Email outage — handoff for the SSH operator
 
