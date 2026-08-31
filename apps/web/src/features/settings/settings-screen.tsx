@@ -12,6 +12,7 @@ import { FavoriteLiftsPanel } from "./favorite-lifts-panel";
 import { HeatCeilingPanel } from "./heat-ceiling-panel";
 import { MergeExercisesPanel } from "./merge-exercises-panel";
 import { PrivacyDataPanel } from "./privacy-data-panel";
+import { RestTimerPanel } from "./rest-timer-panel";
 import { HelpSupportPanel } from "./help-support-panel";
 import { InfoPopover } from "../../shared/ui/info-popover";
 
@@ -33,9 +34,9 @@ export function SettingsScreen({ supportUrl, user }: { supportUrl?: string | und
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4 lg:p-6">
-      <header><p className="label-caps text-outline">SYSTEM_CONFIG</p><h1 className="font-display text-2xl font-bold tracking-tight text-fg">Settings</h1></header>
+      <header><p className="label-caps text-outline">Your account</p><h1 className="font-display text-2xl font-bold tracking-tight text-fg">Settings</h1></header>
       <SettingsSection title="Account & Security"><AccountPanel user={user} /></SettingsSection>
-      <SettingsSection title="Training & Volume"><FavoriteLiftsPanel /><HeatCeilingPanel /></SettingsSection>
+      <SettingsSection title="Training & Volume"><RestTimerPanel /><FavoriteLiftsPanel /><HeatCeilingPanel /></SettingsSection>
       <SettingsSection title="Body Profile"><BodyProfilePanel form={form} onChange={setForm} onSave={() => { save(form); setSaved(true); window.setTimeout(() => setSaved(false), 1600); }} saved={saved} /></SettingsSection>
       <SettingsSection title="Display"><DisplayPanel /></SettingsSection>
       <SettingsSection title="Privacy & Data"><PrivacyDataPanel /></SettingsSection>
@@ -54,9 +55,9 @@ function SettingsSection({ children, title }: { children: ReactNode; title: stri
 function AccountPanel({ user }: { user: AuthUser }): ReactNode {
   return (
     <Panel accent="cyan">
-      <dl className="space-y-1.5 text-sm"><div className="flex justify-between gap-2"><dt className="text-fg-muted">Username</dt><dd className="font-mono text-fg">{user.username}</dd></div><div className="flex justify-between gap-2"><dt className="text-fg-muted">Email</dt><dd className="truncate font-mono text-fg">{user.email}</dd></div></dl>
+      <dl className="space-y-1.5 text-sm"><div className="flex justify-between gap-3"><dt className="shrink-0 text-fg-muted">Username</dt><dd className="min-w-0 break-words text-right font-mono text-fg">{user.username}</dd></div><div className="flex justify-between gap-3"><dt className="shrink-0 text-fg-muted">Email</dt><dd className="min-w-0 break-all text-right font-mono text-fg">{user.email}</dd></div></dl>
       {!user.emailVerified ? <EmailVerificationNotice /> : null}
-      {user.betaCohort ? <p className="label-caps mt-3 rounded border border-lavender/40 bg-lavender/5 px-3 py-2 text-lavender">FOUNDING_BETA_MEMBER · ACCESS_HAS_NO_SCHEDULED_EXPIRY</p> : null}
+      {user.betaCohort ? <p className="mt-3 rounded border border-lavender/40 bg-lavender/5 px-3 py-2 text-xs leading-5 text-lavender">Founding Beta member. Your access has no scheduled end date.</p> : null}
     </Panel>
   );
 }
@@ -70,11 +71,11 @@ function EmailVerificationNotice(): ReactNode {
       setState(result.status === "FAILED" ? "failed" : result.status === "NOT_REQUIRED" ? "not_required" : "sent");
     } catch { setState("failed"); }
   }
-  return <div className="mt-3 flex flex-col gap-2 rounded-lg border border-lavender/40 bg-lavender/5 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between"><p className="text-xs text-lavender"><span className="label-caps mr-2">EMAIL_UNVERIFIED</span>Confirm your email to secure account recovery.</p><button className="label-caps min-h-11 rounded border border-lavender/50 px-3 text-lavender" disabled={state === "sending" || state === "sent" || state === "not_required"} onClick={() => void resend()} type="button">{state === "sent" ? "LINK_SENT ✓" : state === "not_required" ? "ALREADY_VERIFIED ✓" : state === "sending" ? "SENDING…" : state === "failed" ? "RETRY_SEND" : "RESEND_LINK"}</button></div>;
+  return <div className="mt-3 flex flex-col gap-2 rounded-lg border border-lavender/40 bg-lavender/5 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between"><p className="min-w-0 text-xs leading-5 text-lavender"><span className="label-caps mr-2">Email not confirmed</span>Confirm your email so you can recover your account later.</p><button className="label-caps min-h-11 shrink-0 rounded border border-lavender/50 px-3 text-lavender" disabled={state === "sending" || state === "sent" || state === "not_required"} onClick={() => void resend()} type="button">{state === "sent" ? "Link sent ✓" : state === "not_required" ? "Already confirmed ✓" : state === "sending" ? "Sending…" : state === "failed" ? "Try again" : "Resend link"}</button></div>;
 }
 
 function BodyProfilePanel({ form, onChange, onSave, saved }: { form: Biometrics; onChange: (value: Biometrics) => void; onSave: () => void; saved: boolean }): ReactNode {
-  return <Panel accent="lavender"><p className="mb-3 text-[11px] leading-relaxed text-fg-muted">Used for your dashboard body profile. These values stay on this device.<InfoPopover label="body profile storage">Body profile values are optional functional storage, scoped to this account in this browser, and omitted from the server export.</InfoPopover></p><div className="grid grid-cols-2 gap-3"><BioField label="AGE" onChange={(age) => onChange({ ...form, age })} unit="YRS" value={form.age} /><BioField label="HEIGHT" onChange={(heightCm) => onChange({ ...form, heightCm })} unit="CM" value={form.heightCm} /><BioField label="WEIGHT" onChange={(weightKg) => onChange({ ...form, weightKg })} unit="KG" value={form.weightKg} /><BioField label="EST_BFP" onChange={(bodyFatPct) => onChange({ ...form, bodyFatPct })} unit="%" value={form.bodyFatPct} /></div><HudButton className="mt-4 w-full" onClick={onSave}>{saved ? "PROFILE_SAVED" : "SAVE_BODY_PROFILE"}</HudButton></Panel>;
+  return <Panel accent="lavender"><p className="mb-3 text-[11px] leading-relaxed text-fg-muted">Used for the body profile on your dashboard. These values stay on this device.<InfoPopover label="body profile storage">Body profile values are optional functional storage, scoped to this account in this browser, and omitted from the server export.</InfoPopover></p><div className="grid grid-cols-2 gap-3"><BioField label="Age" onChange={(age) => onChange({ ...form, age })} unit="YRS" value={form.age} /><BioField label="Height" onChange={(heightCm) => onChange({ ...form, heightCm })} unit="CM" value={form.heightCm} /><BioField label="Weight" onChange={(weightKg) => onChange({ ...form, weightKg })} unit="KG" value={form.weightKg} /><BioField label="Body fat" onChange={(bodyFatPct) => onChange({ ...form, bodyFatPct })} unit="%" value={form.bodyFatPct} /></div><HudButton className="mt-4 w-full" onClick={onSave}>{saved ? "Saved" : "Save body profile"}</HudButton></Panel>;
 }
 
 function BioField({ label, onChange, unit, value }: { label: string; onChange: (value: number | null) => void; unit: string; value: number | null }): ReactNode {
