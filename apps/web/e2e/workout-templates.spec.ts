@@ -11,10 +11,10 @@ test("creates, filters, edits, and launches a workout template", async ({ page }
   await page.setViewportSize({ width: 390, height: 900 });
   await page.goto("/signup");
   await page.locator('form[data-hydrated="true"]').waitFor();
-  await page.getByLabel(/EMAIL_ADDRESS/).fill(`${username}@example.com`);
-  await page.getByLabel(/OPERATOR_ID/).fill(username);
-  await page.getByLabel(/ACCESS_CODE/).fill("template-passphrase-1");
-  await page.getByRole("button", { name: "REGISTER" }).click();
+  await page.getByLabel(/Email address/i).fill(`${username}@example.com`);
+  await page.getByLabel(/^Username$/i).fill(username);
+  await page.getByLabel(/^Password \(at least 10 characters\)$/i).fill("template-passphrase-1");
+  await page.getByRole("button", { name: "CREATE ACCOUNT" }).click();
   await expect(page.getByRole("heading", { name: new RegExp(username, "i") })).toBeVisible();
   const onboarding = page.getByRole("dialog", { name: "Welcome, Founding Member" });
   await expect(onboarding).toBeFocused();
@@ -31,7 +31,7 @@ test("creates, filters, edits, and launches a workout template", async ({ page }
   await expect(tabs.getByRole("link", { name: "Exercise List" })).toBeVisible();
 
   await page.getByRole("button", { name: /New template/i }).click();
-  await page.getByLabel("TEMPLATE_NAME").fill(templateName);
+  await page.getByLabel("Template name").fill(templateName);
   await page.getByRole("button", { name: "Choose exercises" }).click();
   const picker = page.getByRole("dialog", { name: "Choose template exercises" });
   await picker.getByRole("button", { name: /^Filters/ }).click();
@@ -52,7 +52,7 @@ test("creates, filters, edits, and launches a workout template", async ({ page }
   await reopenedPicker.getByRole("searchbox").fill("Bench Press");
   await reopenedPicker.getByRole("button", { name: /^Bench Press\b/ }).first().click();
   await reopenedPicker.getByRole("button", { name: "Add selected exercises (1)" }).click();
-  await page.getByRole("button", { name: "SAVE_TEMPLATE" }).click();
+  await page.getByRole("button", { name: "SAVE TEMPLATE" }).click();
   await expect(page.getByRole("heading", { name: templateName })).toBeVisible();
 
   await page.getByRole("searchbox", { name: "Search workout templates" }).fill(templateName);
@@ -89,7 +89,7 @@ test("creates, filters, edits, and launches a workout template", async ({ page }
 
   await page.getByRole("button", { name: "Edit" }).click();
   await expect(page.getByRole("heading", { name: "Edit Template" })).toBeVisible();
-  await page.getByLabel("TEMPLATE_NAME").fill(`${templateName} changed`);
+  await page.getByLabel("Template name").fill(`${templateName} changed`);
   await page.getByRole("button", { name: "CANCEL" }).click();
   const discard = page.getByRole("alertdialog", {
     name: "Discard unsaved template changes?"
