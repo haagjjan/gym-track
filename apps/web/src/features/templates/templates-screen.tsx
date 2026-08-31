@@ -83,7 +83,7 @@ export function TemplatesScreen({ userId }: { userId: string }): ReactNode {
       />
       <FacetFilters filters={filters} onChange={setFilters} onClear={clear} onSortChange={(value) => setSort(value as typeof sort)} sort={sort} sortOptions={sortOptions} />
 
-      {actionError ? <ErrorState message={actionError} title="TEMPLATE_ACTION_FAILED" /> : null}
+      {actionError ? <ErrorState message={actionError} title="That did not work" /> : null}
       {templates.isLoading ? <TemplateSkeleton /> : templates.isError ? (
         <ErrorState message={errorMessage(templates.error, "Templates could not be loaded.")} retry={() => void templates.refetch()} />
       ) : (templates.data ?? []).length === 0 ? (
@@ -122,7 +122,7 @@ function TemplateCard({ isDuplicating, isStarting, onDelete, onDuplicate, onEdit
   return (
     <Panel accent="lavender" className="flex h-full flex-col">
       <div className="min-w-0 flex-1">
-        <h2 className="font-display text-lg font-bold text-fg">{template.name}</h2>
+        <h2 className="break-words font-display text-lg font-bold text-fg">{template.name}</h2>
         <p className="mt-1 text-xs text-outline">{template.exercises.length} exercises · {template.lastUsedAt ? `last used ${new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(template.lastUsedAt))}` : "not used yet"}</p>
         <ol className="mt-2 flex flex-wrap gap-1 text-[10px] text-fg-muted">
           {template.exercises.slice(0, 5).map((entry) => <li className="rounded-sm border border-outline-dim/60 px-1.5 py-0.5" key={entry.id}>{entry.position}. {entry.exercise.name}</li>)}
