@@ -9,6 +9,9 @@ const newPasswordSchema = z
   .min(10, "Use at least 10 characters.")
   .max(200);
 const loginPasswordSchema = z.string().min(1).max(200);
+// Sign-in accepts either the username or the account email, so the identifier
+// is bounded by the wider of the two (email) rather than the username limit.
+const loginIdentifierSchema = z.string().trim().min(1).max(254);
 const actionTokenSchema = z.string().trim().min(20).max(200);
 const policyVersionSchema = z.string().trim().min(1).max(50);
 
@@ -23,7 +26,7 @@ export const signupRequestSchema = z.object({
 });
 
 export const loginRequestSchema = z.object({
-  username: usernameSchema,
+  username: loginIdentifierSchema,
   password: loginPasswordSchema
 });
 

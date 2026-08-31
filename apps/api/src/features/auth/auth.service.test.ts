@@ -66,6 +66,8 @@ class FakeAuthRepository implements AuthRepository {
   public updatedPasswordHash: string | null = null;
   public revokedAllForUserId: string | null = null;
   public consumableToken: { userId: string } | null = null;
+  public usernameLookups: string[] = [];
+  public emailLookups: string[] = [];
 
   public constructor(
     private readonly existingUser: AuthUserRecord | null = userRecord(),
@@ -88,11 +90,15 @@ class FakeAuthRepository implements AuthRepository {
     this.createdSession = session;
   }
 
-  public async findUserByUsername(): Promise<AuthUserRecord | null> {
+  public async findUserByUsername(username: string): Promise<AuthUserRecord | null> {
+    this.usernameLookups.push(username);
+
     return this.existingUser;
   }
 
-  public async findUserByEmail(): Promise<AuthUserRecord | null> {
+  public async findUserByEmail(email: string): Promise<AuthUserRecord | null> {
+    this.emailLookups.push(email);
+
     return this.existingUser;
   }
 
@@ -143,6 +149,15 @@ class FakeAuthRepository implements AuthRepository {
   }
 
   public async deleteExpiredAuthRecords(): Promise<void> {}
+}
+
+/** Mirrors an account that can only be found by email, never by username. */
+class EmailOnlyAuthRepository extends FakeAuthRepository {
+  public override async findUserByUsername(username: string): Promise<AuthUserRecord | null> {
+    await super.findUserByUsername(username);
+
+    return null;
+  }
 }
 
 describe("auth service", () => {
@@ -209,6 +224,43 @@ describe("auth service", () => {
 
     assert.equal(result.ok, true);
     assert.equal(repository.createdSession?.userId, "user-1");
+  });
+
+  it("signs in with the account email when the identifier is not a username", async () => {
+    const repository = new EmailOnlyAuthRepository();
+    const service = createAuthService({
+      repository,
+      passwordHasher: passwordHasher(true),
+      sessionTokens: sessionTokens(),
+      sessionTtlDays: 30,
+      now: () => now
+    });
+
+    const result = await service.login({
+      username: "jan@example.com",
+      password: "secret"
+    });
+
+    assert.equal(result.ok, true);
+    assert.equal(repository.createdSession?.userId, "user-1");
+    assert.deepEqual(repository.usernameLookups, ["jan@example.com"]);
+    assert.deepEqual(repository.emailLookups, ["jan@example.com"]);
+  });
+
+  it("never runs an email lookup for an identifier that cannot be an email", async () => {
+    const repository = new EmailOnlyAuthRepository();
+    const service = createAuthService({
+      repository,
+      passwordHasher: passwordHasher(true),
+      sessionTokens: sessionTokens(),
+      sessionTtlDays: 30,
+      now: () => now
+    });
+
+    const result = await service.login({ username: "jan", password: "secret" });
+
+    assert.deepEqual(result, { ok: false, reason: "invalid_credentials" });
+    assert.deepEqual(repository.emailLookups, []);
   });
 
   it("rejects invalid login credentials after verifying known and unknown usernames", async () => {

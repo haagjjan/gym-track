@@ -77,6 +77,22 @@ export function createAuthService(options: AuthServiceOptions): AuthService {
     ...(options.logger ? { logger: options.logger } : {})
   });
 
+  /**
+   * Resolves a sign-in identifier that may be either the username or the
+   * account email. Usernames are checked first so an account whose username
+   * happens to look like somebody else's email can never shadow that account,
+   * and the email lookup only runs for identifiers that can be an email at all.
+   */
+  async function findUserByIdentifier(identifier: string): Promise<AuthUserRecord | null> {
+    const byUsername = await options.repository.findUserByUsername(identifier);
+
+    if (byUsername || !identifier.includes("@")) {
+      return byUsername;
+    }
+
+    return options.repository.findUserByEmail(identifier);
+  }
+
   return {
     async signup(input) {
       const passwordHash = await options.passwordHasher.hash(input.password);
@@ -113,7 +129,7 @@ export function createAuthService(options: AuthServiceOptions): AuthService {
       return authenticatedUser(result.user, session);
     },
     async login(input) {
-      const user = await options.repository.findUserByUsername(input.username);
+      const user = await findUserByIdentifier(input.username);
 
       if (!user) {
         await options.passwordHasher.verify(UNKNOWN_USER_PASSWORD_HASH, input.password);
