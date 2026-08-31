@@ -4,8 +4,10 @@ import dynamic from "next/dynamic";
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { EmptyState, ErrorState, Metric, Panel, Skeleton } from "../../shared/ui/ui";
 import { BayAmbience } from "../avatar/bay-ambience";
+//import { useDisplaySettings } from "../dashboard/use-display-settings";
 import { errorMessage } from "../../shared/api/client";
 import { useUserPreferences, useWeeklyVolume } from "../../shared/api/hooks";
+//import { BodyMap2D } from "./body-map-2d";
 import {
   HEAT_MAX_WEEKLY_SETS,
   type RegionSlug
@@ -43,6 +45,8 @@ export function VolumeScreen(): ReactNode {
   const preferences = useUserPreferences();
   const heatCeiling = preferences.data?.volumeHeatCeiling ?? HEAT_MAX_WEEKLY_SETS;
   const [selectedSlug, setSelectedSlug] = useState<RegionSlug | null>(null);
+  //const { settings: displaySettings, isLoaded: displaySettingsLoaded } =
+  //  useDisplaySettings();
   const [debugRegions] = useState(
     () => typeof window !== "undefined" && window.location.search.includes("debugRegions")
   );
@@ -89,7 +93,7 @@ export function VolumeScreen(): ReactNode {
       <div className="relative z-10 mx-auto max-w-6xl space-y-4 p-4 lg:p-6">
         <header>
           <div>
-            <p className="label-caps text-outline">Training load</p>
+            //<p className="label-caps text-outline">BODY_RECONSTRUCTION</p>
             <h1 className="font-display text-2xl font-bold tracking-tight text-fg">
               Muscle volume
             </h1>

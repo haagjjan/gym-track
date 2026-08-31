@@ -95,9 +95,9 @@ export function MuscleIntel({
       <h2 className="font-display text-lg font-bold tracking-tight text-fg">{aggregate.name}</h2>
       <p className="label-caps mt-0.5 text-lavender">{loadStatus(aggregate.weeklyAvg, heatCeiling)}</p>
       <dl className="mt-3 space-y-1.5">
-        <IntelRow label="WEEKLY_AVG" value={`${formatNumber(aggregate.weeklyAvg)} sets`} />
-        <IntelRow label={`${windowLabel}_TOTAL`} value={`${aggregate.totalSets} sets`} />
-        <IntelRow label="LATEST_WEEK" value={`${aggregate.latestWeekSets} sets`} />
+        <IntelRow label="Weekly average" value={`${formatNumber(aggregate.weeklyAvg)} sets`} />
+        <IntelRow label={`${windowLabel} total`} value={`${aggregate.totalSets} sets`} />
+        <IntelRow label="This week" value={`${aggregate.latestWeekSets} sets`} />
       </dl>
       <ContributionList aggregate={aggregate} />
     </div>
@@ -109,7 +109,7 @@ function ContributionList({ aggregate }: { aggregate: MuscleAggregate }): ReactN
     <>
       {aggregate.exercises.length > 0 ? (
         <div className="mt-4">
-          <p className="label-caps text-outline">CONTRIBUTING_LIFTS</p>
+          <p className="label-caps text-outline">Lifts that trained it</p>
           <ul className="mt-1.5 space-y-1">
             {aggregate.exercises.slice(0, 5).map((exercise) => (
               <li className="flex items-baseline justify-between gap-2" key={exercise.id}>
@@ -122,7 +122,7 @@ function ContributionList({ aggregate }: { aggregate: MuscleAggregate }): ReactN
       ) : null}
       {aggregate.sessions.length > 0 ? (
         <div className="mt-4">
-          <p className="label-caps text-outline">RECENT_SESSIONS</p>
+          <p className="label-caps text-outline">Recent workouts</p>
           <ul className="mt-1.5 space-y-1">
             {aggregate.sessions.slice(0, 4).map((session) => (
               <li key={`${session.workoutId}-${session.date}`}>
@@ -155,7 +155,7 @@ export function DistributionMatrix({
   selectedSlug: string | null;
 }): ReactNode {
   const rows = [...aggregates.values()].sort((left, right) => right.weeklyAvg - left.weeklyAvg);
-  if (rows.length === 0) return <EmptyState message="Muscle groups appear here once the window has data." title="NO_DISTRIBUTION_DATA" />;
+  if (rows.length === 0) return <EmptyState message="Muscle groups appear here once this window has logged sets." title="Nothing logged yet" />;
 
   return (
     <ul className="space-y-1">
