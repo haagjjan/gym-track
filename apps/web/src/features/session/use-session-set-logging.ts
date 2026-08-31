@@ -12,8 +12,7 @@ import {
   type ActiveSetDraft,
   type SetDraft
 } from "./set-draft-storage";
-
-const DEFAULT_REST_SECONDS = 120;
+import { readRestSeconds } from "./use-rest-preferences";
 
 interface SessionSetLoggingOptions {
   activeExercise: SessionExercise | null;
@@ -114,7 +113,10 @@ export function useSessionSetLogging(options: SessionSetLoggingOptions) {
       clearSetDraft(options.userId, options.workoutId, exercise.id);
       setDrafts((current) => omitKey(current, exercise.id));
       setNewSetOpen(false);
-      setRestTimer({ seconds: DEFAULT_REST_SECONDS, startedAt: now });
+      // Read at save time rather than on mount, so a rest length changed in
+      // Settings applies to the very next set. Zero means the countdown is off.
+      const restSeconds = readRestSeconds(options.userId);
+      setRestTimer(restSeconds > 0 ? { seconds: restSeconds, startedAt: now } : null);
       options.onError(null);
       options.onStatus(`Set ${saved.setOrder} logged.`);
       return true;
