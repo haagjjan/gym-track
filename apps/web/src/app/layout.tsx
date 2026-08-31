@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     default: "Gym Progress Tracker",
     template: "%s | Gym Progress Tracker"
   },
-  description: "Workout logging and progress tracking"
+  description: "Log your workouts, track every lift, and see how your training load spreads across your body."
 };
 
 export const viewport: Viewport = {

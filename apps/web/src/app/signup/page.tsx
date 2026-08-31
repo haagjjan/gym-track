@@ -5,7 +5,7 @@ import { RegistrationDisabledScreen } from "../../features/auth/registration-dis
 import { readRegistrationMode } from "../../features/auth/registration-mode";
 import { getCurrentUser } from "../../features/auth/server-auth";
 
-export const metadata = { title: "Signup" };
+export const metadata = { title: "Create account" };
 
 export default async function SignupPage({
   searchParams
