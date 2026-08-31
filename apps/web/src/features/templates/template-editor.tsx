@@ -80,14 +80,14 @@ export function TemplateEditor({
   return (
     <div className="mx-auto max-w-3xl space-y-4 p-4 lg:p-6">
       <header>
-        <p className="label-caps text-outline">TEMPLATE_EDITOR</p>
+        <p className="label-caps text-outline">Template</p>
         <h1 className="font-display text-2xl font-bold text-fg">
           {initial ? "Edit Template" : "New Workout Template"}
         </h1>
       </header>
       <Panel accent="cyan">
         <label className="block">
-          <span className="label-caps text-outline">TEMPLATE_NAME</span>
+          <span className="label-caps text-outline">Template name</span>
           <input className="mt-1 min-h-12 w-full rounded border border-outline-dim bg-surface-low px-3 font-mono text-base text-fg focus:border-cyan focus:outline-none" maxLength={120} onChange={(event) => setName(event.currentTarget.value)} value={name} />
         </label>
         <div className="mt-4 space-y-2" role="list">
@@ -109,7 +109,7 @@ export function TemplateEditor({
         </div>
         <HudButton className="mt-3 w-full" disabled={isSaving} onClick={() => { setSelectedExercises([]); setPickerOpen(true); }} variant="outline">Choose exercises</HudButton>
         {error ? <p className="mt-2 text-[11px] text-red" role="alert">{error}</p> : null}
-        <div className="mt-4 flex gap-2"><HudButton className="flex-1" disabled={isSaving || !dirty} onClick={() => void save()}>{isSaving ? "SAVING…" : "SAVE_TEMPLATE"}</HudButton><HudButton onClick={close} variant="ghost">CANCEL</HudButton></div>
+        <div className="mt-4 flex gap-2"><HudButton className="flex-1" disabled={isSaving || !dirty} onClick={() => void save()}>{isSaving ? "SAVING…" : "SAVE TEMPLATE"}</HudButton><HudButton onClick={close} variant="ghost">CANCEL</HudButton></div>
       </Panel>
       <ExercisePicker
         footer={<HudButton className="w-full" disabled={selectedExercises.length === 0 || isSaving} onClick={addSelectedExercises}>Add selected exercises ({selectedExercises.length})</HudButton>}
