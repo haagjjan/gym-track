@@ -13,6 +13,8 @@ import {
   IconGrid,
   IconHistory,
   IconLogout,
+  IconMail,
+  IconShield,
   IconVolume
 } from "./icons";
 import { DevicePrivacyProvider } from "../privacy/device-privacy";
@@ -176,7 +178,7 @@ function DesktopSidebar({ pathname, user }: { pathname: string; user: AuthUser }
           type="button"
         >
           <IconLogout />
-          Logout
+          Sign out
         </button>
       </div>
     </aside>
@@ -185,12 +187,27 @@ function DesktopSidebar({ pathname, user }: { pathname: string; user: AuthUser }
 
 function MobileTopBar({ user }: { user: AuthUser }): ReactNode {
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between border-b border-outline-dim/40 bg-void/80 px-4 py-3 backdrop-blur-md lg:hidden">
-      <p className="font-display text-xs font-bold uppercase tracking-[0.08em] text-fg">
+    <header className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-outline-dim/40 bg-void/80 px-4 py-3 backdrop-blur-md lg:hidden">
+      <p className="min-w-0 truncate font-display text-xs font-bold uppercase tracking-[0.08em] text-fg">
         Gym Progress Tracker {user.betaCohort ? <span className="text-[9px] text-lavender">· Founding</span> : null}
       </p>
-      <div className="flex items-center">
-        <Link aria-label="Messages" className="inline-flex size-11 items-center justify-center rounded font-display text-xs font-bold text-fg-muted hover:text-cyan" href="/messages">MSG</Link>
+      <div className="flex shrink-0 items-center">
+        {user.role === "ADMIN" ? (
+          <Link
+            aria-label="Administration"
+            className="inline-flex size-11 items-center justify-center rounded text-fg-muted transition-colors hover:bg-surface-low hover:text-lavender"
+            href="/admin"
+          >
+            <IconShield />
+          </Link>
+        ) : null}
+        <Link
+          aria-label="Messages"
+          className="inline-flex size-11 items-center justify-center rounded text-fg-muted transition-colors hover:bg-surface-low hover:text-cyan"
+          href="/messages"
+        >
+          <IconMail />
+        </Link>
         <Link
           aria-label="Settings"
           className="relative inline-flex size-11 items-center justify-center rounded text-fg-muted transition-colors hover:bg-surface-low hover:text-cyan"
