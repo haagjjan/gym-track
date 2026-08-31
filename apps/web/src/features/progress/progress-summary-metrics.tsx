@@ -25,7 +25,7 @@ export function ProgressSummaryMetrics({
       <Panel accent="cyan">
         <Metric
           detail={detail}
-          label="TOTAL_SETS"
+          label="Total sets"
           tone="cyan"
           value={rangeLoading ? "…" : String(range?.totalSets ?? 0)}
         />
@@ -33,7 +33,7 @@ export function ProgressSummaryMetrics({
       <Panel accent="lavender">
         <Metric
           detail={detail}
-          label="TOTAL_TONNAGE"
+          label="Total tonnage"
           tone="lavender"
           value={rangeLoading ? "…" : formatTonnageKg(range?.totalVolumeKg ?? 0)}
         />
@@ -41,7 +41,7 @@ export function ProgressSummaryMetrics({
       <Panel accent="green">
         <Metric
           detail={allTime?.bestTopSet ? shortDate(allTime.bestTopSet.sessionDate) : undefined}
-          label="BEST_SET"
+          label="Best set"
           tone="green"
           value={
             allTimeLoading

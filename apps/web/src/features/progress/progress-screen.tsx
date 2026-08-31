@@ -60,7 +60,7 @@ export function ProgressScreen(): ReactNode {
   return (
     <div className="mx-auto max-w-5xl space-y-4 p-4 lg:p-6">
       <header>
-        <p className="label-caps text-outline">EVOLUTION_ANALYSIS</p>
+        <p className="label-caps text-outline">Analytics</p>
         <h1 className="font-display text-2xl font-bold tracking-tight text-fg">
           Progress analytics
         </h1>
@@ -84,7 +84,7 @@ export function ProgressScreen(): ReactNode {
           <Panel
             accent="cyan"
             className="glass-cyan"
-            eyebrow="WORKING_SET_SIGNAL"
+            eyebrow="Working sets over time"
             right={
               <div className="flex gap-1" role="radiogroup" aria-label="Time window">
                 {timeWindows.map((item) => (
@@ -110,7 +110,7 @@ export function ProgressScreen(): ReactNode {
               </div>
             }
           >
-            <h2 className="font-display text-lg font-bold tracking-tight text-fg">
+            <h2 className="break-words font-display text-lg font-bold tracking-tight text-fg">
               {selected?.name ?? "No lift selected"}
             </h2>
             <p className="text-[11px] uppercase tracking-[0.08em] text-outline">
@@ -122,8 +122,8 @@ export function ProgressScreen(): ReactNode {
             <div className="mt-4">
               {!selected ? (
                 <EmptyState
-                  message="Select a tracked lift to load its strength signal."
-                  title="NO_LIFT_SELECTED"
+                  message="Choose a lift above to see how it has progressed."
+                  title="No lift selected"
                 />
               ) : progress.isLoading ? (
                 <Skeleton className="h-64" />
@@ -167,7 +167,7 @@ export function ProgressScreen(): ReactNode {
                 window={window}
               />
 
-              <Panel accent="none" eyebrow="RECENT_SET_LOG">
+              <Panel accent="none" eyebrow="Recent sets">
                 <RecentLogs isLoading={progress.isLoading} items={progress.data ?? []} mode={chartMode} window={window} />
               </Panel>
             </>

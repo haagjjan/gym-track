@@ -34,7 +34,7 @@ import { useFavoriteLifts } from "./use-favorite-lifts";
 
 const AvatarStage = dynamic(
   () => import("../avatar/avatar-stage").then((module) => module.AvatarStage),
-  { ssr: false, loading: () => <AvatarFallback label="CALIBRATING_SCANNER" /> }
+  { ssr: false, loading: () => <AvatarFallback label="Loading your figure" /> }
 );
 
 const connectorLinks: ConnectorLink[] = [
@@ -170,7 +170,7 @@ export function DashboardScreen({ user }: { user: AuthUser }): ReactNode {
             {activeWorkout ? (
               <p className="label-caps absolute left-1/2 top-1 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded border border-cyan/40 bg-void/80 px-3 py-1.5 text-cyan sm:top-3">
                 <span aria-hidden className="status-dot animate-pulse-slow bg-cyan shadow-glow-cyan" />
-                ACTIVE_SESSION // {shortDate(activeWorkout.startedAt)}
+                In progress · {shortDate(activeWorkout.startedAt)}
               </p>
             ) : null}
           </div>
@@ -181,14 +181,14 @@ export function DashboardScreen({ user }: { user: AuthUser }): ReactNode {
             onClick={() => void start()}
             variant="primary"
           >
-            {isStarting ? "OPENING…" : activeWorkout ? "RESUME_SESSION" : "START_SESSION"}
+            {isStarting ? "OPENING…" : activeWorkout ? "RESUME WORKOUT" : "START WORKOUT"}
           </HudButton>
         </div>
 
         {/* ===== Left column ===== */}
         <div className="order-2 space-y-4 lg:order-1">
           <TiltCard>
-            <Panel accent="none" className="glass-cyan" data-connector-id="card-identity" eyebrow="OPERATOR_ID">
+            <Panel accent="none" className="glass-cyan" data-connector-id="card-identity" eyebrow="Signed in as">
               <h1 className="min-w-0 break-words font-display text-2xl font-bold uppercase tracking-tight text-fg [overflow-wrap:anywhere]">
                 {user.username}
               </h1>
@@ -200,7 +200,7 @@ export function DashboardScreen({ user }: { user: AuthUser }): ReactNode {
             <Panel
               accent="green"
               data-connector-id="card-performance"
-              eyebrow="PERFORMANCE_PB"
+              eyebrow="Personal bests"
               right={<IconBolt className="text-green-dim" />}
             >
               <PerformanceRows
@@ -212,30 +212,30 @@ export function DashboardScreen({ user }: { user: AuthUser }): ReactNode {
             </Panel>
           </TiltCard>
 
-          {startError ? <ErrorState message={startError} title="LAUNCH_ERROR" /> : null}
+          {startError ? <ErrorState message={startError} title="Could not start a workout" /> : null}
         </div>
 
         {/* ===== Right column ===== */}
         <div className="order-3 space-y-4">
           <TiltCard>
-            <Panel accent="none" className="glass-cyan chamfer" data-connector-id="card-sessions" eyebrow="PREVIOUS_SESSIONS">
+            <Panel accent="none" className="glass-cyan chamfer" data-connector-id="card-sessions" eyebrow="Recent workouts">
               <SessionRows isLoading={workouts.isLoading} sessions={completedSessions.slice(0, 3)} />
               <Link
                 className="mt-2 block text-center text-[10px] uppercase tracking-[0.1em] text-outline transition-colors hover:text-cyan"
                 href="/workout"
               >
-                Open workout launch →
+                See all workouts →
               </Link>
             </Panel>
           </TiltCard>
 
           <nav aria-label="Analytics quick views" className="space-y-1">
-            <QuickLink href="/progress" icon={<IconChart />} label="PROGRESS_MENU_VIEW" />
-            <QuickLink href="/weekly-volume" icon={<IconVolume />} label="VOLUME_MENU_VIEW" />
+            <QuickLink href="/progress" icon={<IconChart />} label="Progress" />
+            <QuickLink href="/weekly-volume" icon={<IconVolume />} label="Muscle volume" />
           </nav>
 
           <TiltCard>
-            <Panel accent="lavender" data-connector-id="card-biometrics" eyebrow="BIOMETRIC_STATUS">
+            <Panel accent="lavender" data-connector-id="card-biometrics" eyebrow="Body profile">
               <BiometricRows systemCharge={systemCharge} />
             </Panel>
           </TiltCard>
@@ -245,7 +245,7 @@ export function DashboardScreen({ user }: { user: AuthUser }): ReactNode {
         <div className="order-4 hidden lg:col-span-3 lg:order-3 lg:block">
           <Panel accent="none" className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <div className="min-w-0 flex-1">
-              <p className="label-caps text-outline">LATEST_LOGS</p>
+              <p className="label-caps text-outline">Latest workouts</p>
               <LatestLogs isLoading={workouts.isLoading} sessions={completedSessions.slice(0, 4)} />
             </div>
             <HudButton
@@ -254,7 +254,7 @@ export function DashboardScreen({ user }: { user: AuthUser }): ReactNode {
               onClick={() => void start()}
               size="lg"
             >
-              {activeWorkout ? "RESUME_SESSION" : "INITIATE_SESSION"}
+              {activeWorkout ? "RESUME WORKOUT" : "START WORKOUT"}
             </HudButton>
           </Panel>
         </div>

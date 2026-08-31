@@ -83,7 +83,7 @@ export function RestTimer({
 
       <div className="min-w-0 flex-1">
         <p className={`label-caps ${isDone ? "text-green" : "text-outline"}`}>
-          {isDone ? "REST_COMPLETE // GO" : "REST_PROTOCOL"}
+          {isDone ? "Rest done — go" : "Resting"}
         </p>
         <p
           className={`font-mono font-medium tracking-[0.05em] ${
@@ -96,13 +96,25 @@ export function RestTimer({
 
       <div className="flex shrink-0 gap-2">
         {!isDone ? (
-          <button
-            className="min-h-11 cursor-pointer rounded border border-outline-dim px-3 font-display text-[11px] font-bold uppercase tracking-[0.1em] text-fg-muted transition-colors hover:border-cyan hover:text-cyan"
-            onClick={() => onAdjust(30)}
-            type="button"
-          >
-            +30S
-          </button>
+          <>
+            {/* Quarter-minute steps, matching the rest length in Settings. */}
+            <button
+              aria-label="Shorten this rest by 15 seconds"
+              className="min-h-11 cursor-pointer rounded border border-outline-dim px-3 font-display text-[11px] font-bold uppercase tracking-[0.1em] text-fg-muted transition-colors hover:border-cyan hover:text-cyan"
+              onClick={() => onAdjust(-15)}
+              type="button"
+            >
+              −15S
+            </button>
+            <button
+              aria-label="Extend this rest by 15 seconds"
+              className="min-h-11 cursor-pointer rounded border border-outline-dim px-3 font-display text-[11px] font-bold uppercase tracking-[0.1em] text-fg-muted transition-colors hover:border-cyan hover:text-cyan"
+              onClick={() => onAdjust(15)}
+              type="button"
+            >
+              +15S
+            </button>
+          </>
         ) : null}
         <button
           className={`min-h-11 cursor-pointer rounded border px-3 font-display text-[11px] font-bold uppercase tracking-[0.1em] transition-colors ${

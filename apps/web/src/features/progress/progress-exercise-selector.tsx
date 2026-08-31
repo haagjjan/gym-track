@@ -44,7 +44,7 @@ export function ProgressExerciseSelector(props: ProgressExerciseSelectorProps): 
     <Panel
       accent="cyan"
       className={`mb-4 lg:mb-0 ${isExpanded ? "" : "[&>header]:mb-0 lg:[&>header]:mb-3"}`}
-      eyebrow="SELECT_LIFT"
+      eyebrow="Choose a lift"
       right={<SelectorToggle expanded={isExpanded} onToggle={() => setIsExpanded((value) => !value)} />}
     >
       <div className={`${isExpanded ? "block" : "hidden"} lg:block`}>

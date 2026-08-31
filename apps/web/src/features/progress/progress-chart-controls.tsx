@@ -7,8 +7,8 @@ export function ProgressChartControls({ mode, onModeChange, onShowRepsChange, on
   return (
     <div className="relative mb-2 flex flex-wrap items-center justify-between gap-2">
       <div className="flex items-center gap-1.5" role="radiogroup" aria-label="Chart mode">
-        <ModeChip isActive={mode === "loadReps"} label="LOAD_REPS" onClick={() => onModeChange("loadReps")} />
-        <span className="flex items-center"><ModeChip isActive={mode === "estimated"} label="EST_1RM" onClick={() => onModeChange("estimated")} /><InfoHint label="How estimated 1RM is calculated"><span className="block">Estimated 1RM projects the weight you could lift once from a working set. It becomes less reliable at high rep counts.</span><span className="mt-1 block font-mono text-fg">e1RM = weight × (1 + reps ÷ 30)</span><span className="mt-2 block text-outline">This is a calculation from sets you already recorded, not a recommendation to attempt that lift.</span></InfoHint></span>
+        <ModeChip isActive={mode === "loadReps"} label="Load & reps" onClick={() => onModeChange("loadReps")} />
+        <span className="flex items-center"><ModeChip isActive={mode === "estimated"} label="Est. 1RM" onClick={() => onModeChange("estimated")} /><InfoHint label="How estimated 1RM is calculated"><span className="block">Estimated 1RM projects the weight you could lift once from a working set. It becomes less reliable at high rep counts.</span><span className="mt-1 block font-mono text-fg">e1RM = weight × (1 + reps ÷ 30)</span><span className="mt-2 block text-outline">This is a calculation from sets you already recorded, not a recommendation to attempt that lift.</span></InfoHint></span>
       </div>
       {mode === "loadReps" ? <div className="flex gap-1.5"><SeriesChip color="cyan" isActive={showWeight} label="WEIGHT" onClick={() => { if (!showWeight && !showReps) return; onShowWeightChange(!showWeight); }} /><SeriesChip color="lavender" isActive={showReps} label="REPS" onClick={() => { if (!showReps && !showWeight) return; onShowRepsChange(!showReps); }} /></div> : null}
     </div>

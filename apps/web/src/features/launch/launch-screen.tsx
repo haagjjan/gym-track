@@ -64,7 +64,7 @@ export function LaunchScreen(): ReactNode {
   return (
     <div className="mx-auto max-w-3xl space-y-4 p-4 lg:p-6">
       <header>
-        <p className="label-caps text-outline">WORKOUT_LAUNCH</p>
+        <p className="label-caps text-outline">New workout</p>
         <h1 className="font-display text-2xl font-bold tracking-tight text-fg">
           Start a workout
         </h1>
@@ -80,7 +80,7 @@ export function LaunchScreen(): ReactNode {
         />
       ) : (
         <>
-          <Panel accent="cyan" className="glass-cyan" eyebrow="START_FROM_SCRATCH">
+          <Panel accent="cyan" className="glass-cyan" eyebrow="Start from scratch">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-display text-base font-bold text-fg">Start from scratch</p>
@@ -109,7 +109,7 @@ export function LaunchScreen(): ReactNode {
         </>
       )}
 
-      {launchError ? <ErrorState message={launchError} title="LAUNCH_ERROR" /> : null}
+      {launchError ? <ErrorState message={launchError} title="Could not start a workout" /> : null}
     </div>
   );
 }
@@ -126,7 +126,7 @@ function ResumeWorkout({
   title: string | null;
 }): ReactNode {
   return (
-    <Panel accent="green" className="glass-cyan" eyebrow="WORKOUT_IN_PROGRESS">
+    <Panel accent="green" className="glass-cyan" eyebrow="Workout in progress">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <p className="truncate font-display text-lg font-bold text-fg">
@@ -164,7 +164,7 @@ function TemplateChoice({
   return (
     <Panel
       accent="lavender"
-      eyebrow="USE_WORKOUT_TEMPLATE"
+      eyebrow="Use a template"
       right={<Link className="label-caps text-cyan-dim" href="/workouts/templates">View templates →</Link>}
     >
       {isLoading ? (
@@ -175,7 +175,7 @@ function TemplateChoice({
         <EmptyState
           action={<Link className="label-caps text-cyan-dim" href="/workouts/templates">Create a template →</Link>}
           message="Save a repeatable exercise list to start it in one tap."
-          title="NO_TEMPLATES"
+          title="No templates yet"
         />
       ) : (
         <ul className="space-y-2">
@@ -191,6 +191,7 @@ function TemplateChoice({
                 </p>
               </div>
               <HudButton
+                className="shrink-0"
                 disabled={pendingChoice !== null}
                 onClick={() => onStart(template.id)}
                 variant="outline"
