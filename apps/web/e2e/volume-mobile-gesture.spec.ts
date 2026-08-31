@@ -13,10 +13,10 @@ test("lets a mobile swipe scroll from the 3D Volume figure while sideways drag s
 
   await page.goto("/signup");
   await page.locator('form[data-hydrated="true"]').waitFor();
-  await page.getByLabel(/EMAIL_ADDRESS/).fill(`volume_${tag}@example.com`);
-  await page.getByLabel(/OPERATOR_ID/).fill(username);
-  await page.getByLabel(/ACCESS_CODE/).fill("volume-passphrase-1");
-  await page.getByRole("button", { name: "REGISTER" }).click();
+  await page.getByLabel(/Email address/i).fill(`volume_${tag}@example.com`);
+  await page.getByLabel(/^Username$/i).fill(username);
+  await page.getByLabel(/^Password \(at least 10 characters\)$/i).fill("volume-passphrase-1");
+  await page.getByRole("button", { name: "CREATE ACCOUNT" }).click();
   await expect(page.getByRole("heading", { name: new RegExp(username, "i") })).toBeVisible();
 
   await page.goto("/weekly-volume");

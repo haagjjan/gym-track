@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { getCurrentUser } from "../../../features/auth/server-auth";
 import { SessionScreen } from "../../../features/session/session-screen";
 
-export const metadata = { title: "Live Session" };
+export const metadata = { title: "Workout" };
 
 interface SessionPageProps {
   params: Promise<{ workoutId: string }>;

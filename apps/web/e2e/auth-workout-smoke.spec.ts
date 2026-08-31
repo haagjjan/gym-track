@@ -29,10 +29,10 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   await page.locator('form[data-hydrated="true"]').waitFor();
   await expectZoomEnabled(page);
   await expectNoSeriousAccessibilityViolations(page);
-  await page.getByLabel(/EMAIL_ADDRESS/).fill(`${username}@example.com`);
-  await page.getByLabel(/OPERATOR_ID/).fill(username);
-  await page.getByLabel(/ACCESS_CODE/).fill(password);
-  await page.getByRole("button", { name: "REGISTER" }).click();
+  await page.getByLabel(/Email address/i).fill(`${username}@example.com`);
+  await page.getByLabel(/^Username$/i).fill(username);
+  await page.getByLabel(/^Password \(at least 10 characters\)$/i).fill(password);
+  await page.getByRole("button", { name: "CREATE ACCOUNT" }).click();
   await expect(page.getByRole("heading", { name: new RegExp(username, "i") })).toBeVisible();
   await waitForIdleClient(page);
 
@@ -85,24 +85,19 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   // resend affordance inside Settings (not a persistent top-of-app banner).
   await expect(page.getByLabel("Settings")).toBeVisible();
   await page.goto("/settings");
-  await expect(page.getByText("EMAIL_UNVERIFIED")).toBeVisible();
+  await expect(page.getByText("Email not confirmed")).toBeVisible();
   await expectNoSeriousAccessibilityViolations(page);
 
-  // Volume defaults to 3D; the lightweight 2D map is a device-local Settings
-  // preference rather than an always-visible control on the Volume screen.
-  const volumeMapSettings = page.getByRole("radiogroup", {
-    name: "Volume body map"
-  });
+  await page.getByRole("link", { name: "Contact support & service status" }).click();
+  await expect(page.getByRole("heading", { name: "Support & Service Status" })).toBeVisible();
+  await page.getByRole("link", { name: "Back to Settings" }).click();
+  await expect(page).toHaveURL(/\/settings$/);
+  await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
 
-  await expect(volumeMapSettings.getByRole("radio", { name: "3d" })).toHaveAttribute(
-    "aria-checked",
-    "true"
-  );
-  await volumeMapSettings.getByRole("radio", { name: "2d" }).click();
-  await expect(volumeMapSettings.getByRole("radio", { name: "2d" })).toHaveAttribute(
-    "aria-checked",
-    "true"
-  );
+  // The 3D body is the only Volume renderer, so Settings no longer offers a
+  // renderer choice at all.
+  await expect(page.getByRole("radiogroup", { name: "Volume body map" })).toHaveCount(0);
+
   await page.getByRole("spinbutton", { name: "Volume heat ceiling" }).fill("35");
   await page.getByRole("button", { name: "SAVE HEAT CEILING" }).click();
   await expect(page.getByRole("button", { name: "SAVED" })).toBeVisible();
@@ -113,33 +108,29 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   });
   await page.goto("/login");
   await page.locator('form[data-hydrated="true"]').waitFor();
-  await page.getByLabel(/OPERATOR_ID/).fill(username);
-  await page.getByLabel(/ACCESS_CODE/).fill(password);
-  await page.getByRole("button", { name: "AUTHENTICATE" }).click();
+  await page.getByLabel(/Username or email/i).fill(username);
+  await page.getByLabel(/^Password$/i).fill(password);
+  await page.getByRole("button", { name: "SIGN IN" }).click();
   await expect(page.getByRole("heading", { name: new RegExp(username, "i") })).toBeVisible();
 
   await page.goto("/settings");
   await expect(page.getByRole("spinbutton", { name: "Volume heat ceiling" })).toHaveValue("35");
 
-  // The Settings preference survives navigation/auth and the same-muscle
-  // interaction toggles selection off on its second click.
+  // The heat-ceiling preference survives navigation and auth. The 3D body is
+  // now the only Volume renderer, so neither the flat map nor any renderer
+  // toggle should be reachable.
   await page.goto("/weekly-volume");
-  await expect(page.getByRole("group", { name: "FRONT muscle map" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Muscle volume" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "FRONT muscle map" })).toHaveCount(0);
   await expect(page.getByRole("radiogroup", { name: "Body view" })).toHaveCount(0);
-
-  const chestRegion = page.getByLabel("chest", { exact: true }).first();
-
-  await chestRegion.click();
-  await expect(chestRegion).toHaveAttribute("stroke", "#d9b9ff");
-  await chestRegion.click();
-  await expect(chestRegion).toHaveAttribute("stroke", "#0a0a0a");
 
   // ---- Start a session from the launch screen ----
   await page.goto("/workout");
   await expect(page.getByRole("heading", { name: "Start a workout" })).toBeVisible();
-  await expect(page.getByText("Start from scratch", { exact: true })).toBeVisible();
-  await expect(page.getByText("USE_WORKOUT_TEMPLATE", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "START", exact: true }).click();
+  const startFromScratch = page.getByRole("button", { name: "START", exact: true });
+  await expect(startFromScratch).toBeVisible();
+  await expect(page.getByText("Use a template", { exact: true })).toBeVisible();
+  await startFromScratch.click();
   await expect(page).toHaveURL(/\/workouts\/[0-9a-f-]+\?focusName=1$/);
   const workoutId = page.url().match(/\/workouts\/([0-9a-f-]+)/)?.[1];
   expect(workoutId).toBeTruthy();
@@ -165,7 +156,8 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   await expect(initialPicker).toHaveCount(0);
   await expect(chooseExercises).toBeFocused();
   await chooseExercises.click();
-  await page.getByPlaceholder(/Scan catalog/).fill("Bench Press");
+  const exercisePicker = page.getByRole("dialog", { name: "Choose exercises" });
+  await exercisePicker.getByRole("searchbox", { name: "Search exercises" }).fill("Bench Press");
   await page
     .getByRole("button", { name: /^Bench Press\b/ })
     .first()
@@ -202,14 +194,14 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   await page.getByRole("button", { name: "SAVE SET" }).click();
   await expect(page.getByText(/60 kg × 8/)).toBeVisible();
   await expect(page.getByText("Working", { exact: true })).toBeVisible();
-  await expect(page.getByText("REST_PROTOCOL")).toBeVisible();
-  const timerDock = page.locator("div.fixed.inset-x-0.bottom-0").filter({ hasText: "REST_PROTOCOL" });
+  await expect(page.getByText("Resting", { exact: true })).toBeVisible();
+  const timerDock = page.locator("div.fixed.inset-x-0.bottom-0").filter({ hasText: "Resting" });
   await expect(timerDock).toBeVisible();
   const timerBeforeEdit = await timerDock.locator("p.font-mono").textContent();
   await page.getByRole("button", { name: /60 kg × 8/ }).click();
   const editSetDialog = page.getByRole("dialog", { name: "Edit set 1" });
   await expect(editSetDialog).toBeVisible();
-  await expect(page.getByText("REST_PROTOCOL")).toHaveCount(0);
+  await expect(page.getByText("Resting", { exact: true })).toHaveCount(0);
   await expect(editSetDialog.locator('input[inputmode="decimal"]')).not.toBeFocused();
   await editSetDialog.getByRole("radio", { name: "warmup" }).click();
   await editSetDialog.getByLabel("Note").fill("Smoke edit");
@@ -288,13 +280,13 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   await page.goto("/progress");
   await expect(page.getByRole("heading", { name: "Progress analytics" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Bench Press" })).toBeVisible();
-  await expect(page.getByRole("radio", { name: "EST_1RM" })).toBeVisible();
-  await expect(metricValue(page, "TOTAL_SETS")).toHaveText("0");
-  await expect(metricValue(page, "TOTAL_TONNAGE")).toHaveText("0 KG");
-  await expect(metricValue(page, "BEST_SET")).toHaveText("60×8");
+  await expect(page.getByRole("radio", { name: "Est. 1RM" })).toBeVisible();
+  await expect(metricValue(page, "Total sets")).toHaveText("0");
+  await expect(metricValue(page, "Total tonnage")).toHaveText("0 KG");
+  await expect(metricValue(page, "Best set")).toHaveText("60×8");
   await page.getByRole("radio", { name: "MAX" }).click();
-  await expect(metricValue(page, "TOTAL_SETS")).toHaveText("1");
-  await expect(metricValue(page, "TOTAL_TONNAGE")).toHaveText("480 KG");
+  await expect(metricValue(page, "Total sets")).toHaveText("1");
+  await expect(metricValue(page, "Total tonnage")).toHaveText("480 KG");
   await page.getByRole("button", { name: "How estimated 1RM is calculated" }).click();
   const estimatedHelp = page.getByRole("tooltip");
   await expect(estimatedHelp).toContainText("e1RM = weight × (1 + reps ÷ 30)");

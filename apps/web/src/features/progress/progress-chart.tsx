@@ -88,7 +88,7 @@ export function ProgressChart({
         />
         <EmptyState
           message="No working sets in this window. Widen the range or log a session."
-          title="NO_SIGNAL_IN_WINDOW"
+          title="Nothing in this window"
         />
       </div>
     );

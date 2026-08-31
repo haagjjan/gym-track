@@ -2,15 +2,14 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { EmptyState, ErrorState, HudButton, Panel, Skeleton } from "../../shared/ui/ui";
-import { useModalBehavior } from "../../shared/ui/use-modal-behavior";
 import { errorMessage } from "../../shared/api/client";
 import { useExerciseMutations, useExercises } from "../../shared/api/hooks";
 import type { Exercise } from "../../shared/api/types";
-import { IconClose, IconPlus } from "../shell/icons";
+import { IconPlus } from "../shell/icons";
 import { FacetFilters } from "../workouts/facet-filters";
 import { usePersistentFilters } from "../workouts/filter-persistence";
 import { WorkoutTabs } from "../workouts/workout-tabs";
-import { ExerciseForm } from "./exercise-form";
+import { ExerciseEditorDialog } from "./exercise-editor-dialog";
 import { ExerciseMuscleBadges } from "./exercise-muscle-badges";
 
 const sortOptions = [
@@ -52,11 +51,11 @@ export function ExercisesScreen({ userId }: { userId: string }): ReactNode {
       {exercises.isLoading ? <ExerciseSkeleton /> : exercises.isError ? (
         <ErrorState message={errorMessage(exercises.error, "Exercises could not be loaded.")} retry={() => void exercises.refetch()} />
       ) : (exercises.data ?? []).length === 0 ? (
-        <EmptyState message="No exercise matches the current search and filters." title="NO_MATCH" />
+        <EmptyState message="No exercise matches the current search and filters." title="Nothing found" />
       ) : (
         <ExerciseList exercises={exercises.data ?? []} onEdit={setEditing} sort={sort} userId={userId} />
       )}
-      <ExerciseEditor
+      <ExerciseEditorDialog
         exercise={editing}
         isSaving={mutations.create.isPending || mutations.update.isPending}
         onClose={() => setEditing(null)}
@@ -105,12 +104,6 @@ function ReadOnlyInfo({ exerciseId, system }: { exerciseId: string; system: bool
       <p className={`absolute right-0 top-12 z-20 w-64 rounded-lg border border-outline-dim bg-surface p-3 text-xs leading-5 text-fg-muted shadow-2xl ${open ? "block" : "hidden group-hover:block"}`} id={`read-only-help-${exerciseId}`} role="tooltip">{message}</p>
     </div>
   );
-}
-
-function ExerciseEditor({ exercise, isSaving, onClose, onSave, onSelectExisting }: { exercise: Exercise | "new" | null; isSaving: boolean; onClose: () => void; onSave: Parameters<typeof ExerciseForm>[0]["onSubmit"]; onSelectExisting: (exercise: Exercise) => void }): ReactNode {
-  const dialogRef = useModalBehavior<HTMLElement>({ isOpen: exercise !== null, onClose });
-  if (!exercise) return null;
-  return <div className="fixed inset-0 z-50 flex items-end justify-center bg-void/70 backdrop-blur-sm lg:items-center"><section aria-labelledby="exercise-editor-title" aria-modal="true" className="glass-cyan max-h-[92dvh] w-full overflow-y-auto rounded-t-xl p-4 lg:max-w-2xl lg:rounded-xl" ref={dialogRef} role="dialog" tabIndex={-1}><header className="mb-3 flex items-center justify-between gap-2"><h2 className="font-display text-lg font-bold text-fg" id="exercise-editor-title">{exercise === "new" ? "Create exercise" : "Edit exercise"}</h2><button aria-label="Close exercise editor" className="flex size-11 items-center justify-center rounded border border-outline-dim text-fg-muted" data-modal-initial-focus onClick={onClose} type="button"><IconClose /></button></header><ExerciseForm initial={exercise === "new" ? null : exercise} isSubmitting={isSaving} onCancel={onClose} onSelectExisting={onSelectExisting} onSubmit={onSave} /></section></div>;
 }
 
 function sortGroup(exercise: Exercise, sort: string): string { if (sort === "muscle") return exercise.primaryMuscleGroups[0]?.name ?? "Unspecified"; if (sort === "equipment") return exercise.equipment ?? "Unspecified"; if (sort === "type") return exercise.exerciseType ?? "Unspecified"; return ""; }

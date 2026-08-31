@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import {
+  canonicalRedirectTarget,
   evaluateRequestSecurity,
   readWebSecurityConfig,
   securityHeaders,
@@ -21,6 +22,23 @@ export function middleware(request: NextRequest): NextResponse {
       },
       503
     );
+  }
+
+  // The bare domain and its `www.` variant are bounced to the canonical origin
+  // before the host guard runs, so visitors who type `gymtrack.ch` land on the
+  // app instead of on an "untrusted host" error.
+  const redirectTarget = canonicalRedirectTarget(
+    {
+      host: request.headers.get("host"),
+      pathAndQuery: `${request.nextUrl.pathname}${request.nextUrl.search}`
+    },
+    securityConfig
+  );
+
+  if (redirectTarget) {
+    const redirect = NextResponse.redirect(redirectTarget, 308);
+    applySecurityHeaders(redirect, securityConfig, request.headers.get("host"));
+    return redirect;
   }
 
   const rejection = evaluateRequestSecurity(

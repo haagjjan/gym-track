@@ -37,7 +37,7 @@ export function MergeExercisesPanel(): ReactNode {
 
   return (
     <>
-      <Panel accent="red" eyebrow="MERGE_EXERCISES">
+      <Panel accent="red" eyebrow="Merge duplicate exercises">
         <p className="mb-3 text-[11px] leading-relaxed text-fg-muted">Replace a duplicate or misnamed exercise in your workout and template references. This cannot be undone.</p>
         <div className="space-y-3">
           <ExercisePicker excludeId={target?.id ?? null} label="MERGE_AWAY (duplicate)" onClear={() => setSource(null)} onSelect={(candidate) => { setSource(candidate); setResult(null); }} selected={source} />
@@ -87,11 +87,11 @@ function ExercisePicker({ excludeId, label, onClear, onSelect, selected }: { exc
     <div>
       <p className="label-caps mb-1 text-outline">{label}</p>
       <input aria-label={`Search ${label}`} className="min-h-11 w-full rounded border border-outline-dim bg-surface-low/60 px-3 font-mono text-sm text-fg placeholder:text-outline focus:border-cyan focus:outline-none" onChange={(event) => setSearch(event.currentTarget.value)} placeholder="Search exercise catalog…" type="search" value={search} />
-      {search.trim() ? <div className="mt-2 max-h-52 space-y-1 overflow-y-auto">{results.isLoading ? <Skeleton className="h-11" /> : candidates.length === 0 ? <p className="text-[11px] text-outline">NO_MATCH</p> : candidates.map((exercise) => <button className="flex min-h-11 w-full items-center justify-between rounded border border-outline-dim/60 px-3 text-left hover:border-cyan/60" key={exercise.id} onClick={() => { onSelect({ id: exercise.id, name: exercise.name }); setSearch(""); }} type="button"><span><span className="block text-sm text-fg">{exercise.name}</span><span className="text-[9px] uppercase text-outline">{exercise.primaryMuscleGroup.name}</span></span><IconPlus className="text-cyan-dim" /></button>)}</div> : null}
+      {search.trim() ? <div className="mt-2 max-h-52 space-y-1 overflow-y-auto">{results.isLoading ? <Skeleton className="h-11" /> : candidates.length === 0 ? <p className="text-[11px] text-outline">Nothing found</p> : candidates.map((exercise) => <button className="flex min-h-11 w-full items-center justify-between rounded border border-outline-dim/60 px-3 text-left hover:border-cyan/60" key={exercise.id} onClick={() => { onSelect({ id: exercise.id, name: exercise.name }); setSearch(""); }} type="button"><span className="min-w-0"><span className="block break-words text-sm text-fg">{exercise.name}</span><span className="block break-words text-[9px] uppercase text-outline">{exercise.primaryMuscleGroup.name}</span></span><IconPlus className="shrink-0 text-cyan-dim" /></button>)}</div> : null}
     </div>
   );
 }
 
 function SelectedCandidate({ label, onClear, selected }: { label: string; onClear: () => void; selected: MergeCandidate }): ReactNode {
-  return <div><p className="label-caps mb-1 text-outline">{label}</p><div className="flex min-h-11 items-center gap-3 rounded border border-cyan/30 bg-surface-low/40 px-3"><span className="min-w-0 flex-1 truncate text-sm text-fg">{selected.name}</span><button aria-label={`Clear ${label}`} className="flex size-9 items-center justify-center rounded text-outline hover:text-red" onClick={onClear} type="button"><IconClose /></button></div></div>;
+  return <div><p className="label-caps mb-1 text-outline">{label}</p><div className="flex min-h-11 items-center gap-3 rounded border border-cyan/30 bg-surface-low/40 px-3"><span className="min-w-0 flex-1 truncate text-sm text-fg">{selected.name}</span><button aria-label={`Clear ${label}`} className="flex size-9 shrink-0 items-center justify-center rounded text-outline hover:text-red" onClick={onClear} type="button"><IconClose /></button></div></div>;
 }

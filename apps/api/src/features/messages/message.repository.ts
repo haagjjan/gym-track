@@ -14,9 +14,32 @@ export interface UserMessage {
   shownAt: Date | null;
 }
 
+/** One recipient's delivery state for a campaign, including their answer. */
+export interface CampaignResponseRecord {
+  userId: string;
+  username: string;
+  email: string;
+  shownAt: Date | null;
+  dismissedAt: Date | null;
+  respondedAt: Date | null;
+  response: unknown;
+}
+
+export interface CampaignResponseRecords {
+  campaign: {
+    id: string;
+    title: string;
+    status: string;
+    responseType: string;
+    responseOptions: string[];
+  };
+  recipients: CampaignResponseRecord[];
+}
+
 export interface MessageRepository {
   createCampaign(adminUserId: string, input: CreateCampaign, now: Date): Promise<{ id: string }>;
   listCampaigns(): Promise<Array<Record<string, unknown>>>;
+  listCampaignResponses(campaignId: string): Promise<CampaignResponseRecords | null>;
   setCampaignStatus(adminUserId: string, campaignId: string, action: "PUBLISH" | "PAUSE" | "RESUME" | "END", now: Date): Promise<boolean>;
   listEligibleMessages(userId: string, now: Date): Promise<UserMessage[]>;
   listInboxMessages(userId: string): Promise<Array<UserMessage & { dismissedAt: Date | null; respondedAt: Date | null }>>;
@@ -51,6 +74,31 @@ export function createMessageRepository(db: Kysely<AppDatabase>): MessageReposit
         "action_url as actionUrl", "essential", "starts_at as startsAt", "ends_at as endsAt", "scheduled_at as scheduledAt",
         "created_at as createdAt", "published_at as publishedAt", "ended_at as endedAt"
       ]).orderBy("created_at", "desc").limit(200).execute() as Promise<Array<Record<string, unknown>>>;
+    },
+    async listCampaignResponses(campaignId) {
+      const campaign = await db.selectFrom("campaigns")
+        .select(["id", "title", "status", "response_type as responseType", "response_options as responseOptions"])
+        .where("id", "=", campaignId).executeTakeFirst();
+      if (!campaign) return null;
+      const recipients = await db.selectFrom("message_deliveries")
+        .innerJoin("users", "users.id", "message_deliveries.user_id")
+        .select([
+          "users.id as userId", "users.username as username", "users.email as email",
+          "message_deliveries.shown_at as shownAt", "message_deliveries.dismissed_at as dismissedAt",
+          "message_deliveries.responded_at as respondedAt", "message_deliveries.response as response"
+        ])
+        .where("message_deliveries.campaign_id", "=", campaignId)
+        // Answered first so the responses an administrator came to read are on
+        // screen without paging past every silent recipient. Postgres sorts
+        // NULLs first on DESC, which would do exactly the opposite.
+        .orderBy("message_deliveries.responded_at", (order) => order.desc().nullsLast())
+        .orderBy("users.username", "asc")
+        .limit(500)
+        .execute();
+      return {
+        campaign: { ...campaign, responseOptions: parseOptions(campaign.responseOptions) },
+        recipients: recipients.map((row) => ({ ...row, response: parseResponse(row.response) }))
+      };
     },
     async setCampaignStatus(adminUserId, campaignId, action, now) {
       return db.transaction().execute(async (trx) => {
@@ -137,6 +185,19 @@ export function createMessageRepository(db: Kysely<AppDatabase>): MessageReposit
       });
     }
   };
+}
+
+/**
+ * `response` is a JSON column, so drivers hand it back either already parsed or
+ * still as text depending on the column type. Normalise both to a value.
+ */
+function parseResponse(value: unknown): unknown {
+  if (typeof value !== "string") return value ?? null;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
 }
 
 function parseOptions(value: unknown): string[] {

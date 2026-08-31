@@ -4,7 +4,7 @@ import { getCurrentUser } from "../../features/auth/server-auth";
 import { HelpScreen } from "../../features/onboarding/help-screen";
 import { AppShell } from "../../features/shell/app-shell";
 
-export const metadata = { title: "Help & Tutorial" };
+export const metadata = { title: "Help & tutorial" };
 
 export default async function HelpPage(): Promise<ReactNode> {
   const user = await getCurrentUser();

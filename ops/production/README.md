@@ -11,6 +11,21 @@ listener; Caddy routes only to Next.js; Fastify, PostgreSQL and monitoring stay 
 The web/API service path is internal, and the API alone joins a general-egress network for
 Resend. The Compose project retains the existing production database and monitoring bind mounts.
 
+## Apex and `www` hostnames
+
+`app.gymtrack.ch` stays the only canonical origin. The Next.js middleware answers `gymtrack.ch`
+and `www.gymtrack.ch` with a permanent 308 redirect to `https://app.gymtrack.ch`, preserving path
+and query, so visitors who type the bare domain reach the app instead of an untrusted-host error.
+No Caddy change is needed: Caddy listens on `:80` without host matching and passes the Host header
+through.
+
+For the redirect to be reachable, both hostnames must resolve to the same Cloudflare Tunnel as
+`app.gymtrack.ch`. Add them as tunnel public hostnames with the same `http://caddy:80` origin.
+Until that routing exists the redirect cannot fire, because the request never reaches Next.js.
+
+The redirect hosts are derived from `APP_BASE_URL`; set `APP_REDIRECT_HOSTS` only to override that
+default, and to an empty value to disable the redirect entirely.
+
 ## Commit and CI gate
 
 Do not install this definition from a dirty worktree or a branch name. After the controller

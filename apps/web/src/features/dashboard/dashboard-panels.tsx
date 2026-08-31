@@ -26,7 +26,7 @@ export function IdentityRows(): ReactNode {
   const { biometrics, isLoaded } = useBiometrics();
   const rows = [
     { label: "Height", value: biometrics.heightCm ? `${biometrics.heightCm} cm` : "—" },
-    { label: "BW", value: biometrics.weightKg ? `${biometrics.weightKg} kg` : "—" }
+    { label: "Weight", value: biometrics.weightKg ? `${biometrics.weightKg} kg` : "—" }
   ];
   if (!isLoaded) return <Skeleton className="mt-3 h-10" />;
 
@@ -40,7 +40,7 @@ export function IdentityRows(): ReactNode {
       ))}
       {!biometrics.heightCm && !biometrics.weightKg ? (
         <Link className="label-caps mt-1 inline-block text-cyan-dim hover:text-cyan" href="/settings">
-          CONFIGURE_IN_SETTINGS →
+          Add yours in Settings →
         </Link>
       ) : null}
     </dl>
@@ -62,7 +62,7 @@ export function PerformanceRows({
     return <div className="space-y-2"><Skeleton className="h-9" /><Skeleton className="h-9" /><Skeleton className="h-9" /></div>;
   }
   if (exercises.length === 0) {
-    return <EmptyState action={<Link className="label-caps text-cyan-dim hover:text-cyan" href="/settings">PIN_LIFTS_IN_SETTINGS →</Link>} message="Pin favorite lifts in Settings, or log working sets to derive them." title="NO_TRACKED_LIFTS" />;
+    return <EmptyState action={<Link className="label-caps text-cyan-dim hover:text-cyan" href="/settings">Pin lifts in Settings →</Link>} message="Pin your favourite lifts in Settings, or log working sets and they will appear here." title="No lifts tracked yet" />;
   }
 
   return (
@@ -75,7 +75,7 @@ export function PerformanceRows({
               <div className="min-w-0">
                 <p className="truncate text-xs font-medium text-fg">{exercise.name}</p>
                 <p className="truncate text-[10px] uppercase tracking-[0.08em] text-outline">
-                  {topSet ? `${formatKgValue(topSet.weightKg)}kg × ${topSet.reps} // ${shortDate(topSet.sessionDate)}` : exercise.totalSets > 0 ? `${exercise.totalSets} sets logged` : "NO_DATA_YET"}
+                  {topSet ? `${formatKgValue(topSet.weightKg)}kg × ${topSet.reps} // ${shortDate(topSet.sessionDate)}` : exercise.totalSets > 0 ? `${exercise.totalSets} sets logged` : "No sets yet"}
                 </p>
               </div>
               <p className="whitespace-nowrap font-mono text-base font-medium tracking-[0.05em] text-green">
@@ -92,7 +92,7 @@ export function PerformanceRows({
 
 export function SessionRows({ isLoading, sessions }: { isLoading: boolean; sessions: WorkoutSummary[] }): ReactNode {
   if (isLoading) return <div className="space-y-2"><Skeleton className="h-11" /><Skeleton className="h-11" /><Skeleton className="h-11" /></div>;
-  if (sessions.length === 0) return <EmptyState message="Completed sessions will stack up here for one-tap review." title="NO_SESSION_HISTORY" />;
+  if (sessions.length === 0) return <EmptyState message="Finished workouts collect here, one tap from a full review." title="No workouts yet" />;
   return (
     <ul className="space-y-1.5">
       {sessions.map((session) => (
@@ -123,10 +123,10 @@ export function BiometricRows({ systemCharge }: { systemCharge: number }): React
   const { biometrics, isLoaded } = useBiometrics();
   if (!isLoaded) return <Skeleton className="h-28" />;
   const rows = [
-    { label: "AGE", value: biometrics.age !== null ? String(biometrics.age) : "—", unit: "" },
-    { label: "HEIGHT", value: biometrics.heightCm !== null ? String(biometrics.heightCm) : "—", unit: "CM" },
-    { label: "WEIGHT", value: biometrics.weightKg !== null ? String(biometrics.weightKg) : "—", unit: "KG" },
-    { label: "EST_BFP", value: biometrics.bodyFatPct !== null ? String(biometrics.bodyFatPct) : "—", unit: "%" }
+    { label: "Age", value: biometrics.age !== null ? String(biometrics.age) : "—", unit: "" },
+    { label: "Height", value: biometrics.heightCm !== null ? String(biometrics.heightCm) : "—", unit: "CM" },
+    { label: "Weight", value: biometrics.weightKg !== null ? String(biometrics.weightKg) : "—", unit: "KG" },
+    { label: "Body fat", value: biometrics.bodyFatPct !== null ? String(biometrics.bodyFatPct) : "—", unit: "%" }
   ];
   return (
     <div>
@@ -134,7 +134,7 @@ export function BiometricRows({ systemCharge }: { systemCharge: number }): React
         {rows.map((row) => <div className="flex items-baseline justify-between gap-2" key={row.label}><dt className="label-caps text-outline">{row.label}</dt><dd className="font-mono text-sm tracking-[0.05em] text-fg">{row.value}{row.unit ? <span className="ml-1 text-[10px] text-outline">{row.unit}</span> : null}</dd></div>)}
       </dl>
       <div className="mt-4">
-        <div className="flex items-baseline justify-between"><p className="label-caps text-outline">SYSTEM_CHARGE</p><p className="font-mono text-sm text-lavender">{systemCharge}%</p></div>
+        <div className="flex items-baseline justify-between"><p className="label-caps text-outline">Weekly volume</p><p className="font-mono text-sm text-lavender">{systemCharge}%</p></div>
         <div aria-hidden className="mt-1.5 h-1 rounded-full bg-surface-high"><div className="h-full rounded-full bg-lavender shadow-glow-lavender transition-all duration-700" style={{ width: `${systemCharge}%` }} /></div>
         <p className="mt-1 text-[10px] text-outline">Weekly working sets vs 48-set target.</p>
       </div>
@@ -144,7 +144,7 @@ export function BiometricRows({ systemCharge }: { systemCharge: number }): React
 
 export function LatestLogs({ isLoading, sessions }: { isLoading: boolean; sessions: WorkoutSummary[] }): ReactNode {
   if (isLoading) return <Skeleton className="mt-2 h-9" />;
-  if (sessions.length === 0) return <p className="mt-2 text-xs text-fg-muted">No sessions logged yet — initialize the first one to activate telemetry.</p>;
+  if (sessions.length === 0) return <p className="mt-2 text-xs text-fg-muted">No workouts logged yet — your first one will show up here.</p>;
   return (
     <div className="mt-2 flex flex-wrap gap-x-6 gap-y-2">
       {sessions.map((session) => (

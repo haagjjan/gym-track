@@ -89,7 +89,7 @@ export function CsvPanel({ onImported }: { onImported: () => void }): ReactNode 
   const hasBlocked = (preview?.blocked.length ?? 0) > 0;
 
   return (
-    <Panel accent="lavender" eyebrow="DATA_PORTABILITY">
+    <Panel accent="lavender" eyebrow="Import and export">
       <p className="text-[11px] leading-relaxed text-fg-muted">
         Export your closed workouts, or import history in the canonical CSV format
         (max 5,000 rows per file).
@@ -122,7 +122,7 @@ export function CsvPanel({ onImported }: { onImported: () => void }): ReactNode 
           onClick={() => void handlePreview()}
           variant="outline"
         >
-          {isPending && !preview ? "SCANNING…" : "PREVIEW_IMPORT"}
+          {isPending && !preview ? "CHECKING…" : "PREVIEW IMPORT"}
         </HudButton>
       </div>
 
@@ -152,7 +152,7 @@ export function CsvPanel({ onImported }: { onImported: () => void }): ReactNode 
             <ReviewList items={preview.blocked} title="BLOCKED_EXERCISE_NAMES" tone="red" />
           ) : null}
           {hasWarnings ? (
-            <ReviewList items={preview.warnings} title="NAMES_TO_REVIEW" tone="lavender" />
+            <ReviewList items={preview.warnings} title="Names to review" tone="lavender" />
           ) : null}
 
           {!hasBlocked ? (
@@ -161,7 +161,7 @@ export function CsvPanel({ onImported }: { onImported: () => void }): ReactNode 
               onClick={() => void handleImport(hasWarnings)}
               size="sm"
             >
-              {isPending ? "IMPORTING…" : hasWarnings ? "CONFIRM_IMPORT" : "IMPORT_NOW"}
+              {isPending ? "IMPORTING…" : hasWarnings ? "CONFIRM IMPORT" : "IMPORT NOW"}
             </HudButton>
           ) : (
             <p className="text-[11px] text-red">

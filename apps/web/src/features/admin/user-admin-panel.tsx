@@ -1,27 +1,40 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { apiFetch, errorMessage } from "../../shared/api/client";
 import { ConfirmDialog } from "../../shared/ui/confirm-dialog";
 import { Panel } from "../../shared/ui/ui";
+import { FilterBar, ResultCount, SearchFilter, SelectFilter, humanise, matchesSearch } from "./admin-filters";
 import type { AdminUser } from "./admin-types";
 
 type ContainmentAction = "SUSPEND" | "REACTIVATE" | "REVOKE_SESSIONS";
 interface PendingAction { action: ContainmentAction; user: AdminUser; }
+
+const roles = ["USER", "ADMIN"] as const;
+const statuses = ["ACTIVE", "SUSPENDED", "DELETION_PENDING"] as const;
 
 export function UserAdminPanel(): ReactNode {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<PendingAction | null>(null);
   const [isPending, setIsPending] = useState(false);
+  const [search, setSearch] = useState("");
+  const [role, setRole] = useState("ALL");
+  const [status, setStatus] = useState("ALL");
   const load = useCallback(async () => {
     const result = await apiFetch<{ items: AdminUser[] }>("/api/admin/users");
     setUsers(result.items);
   }, []);
   useEffect(() => {
-    void load().catch((error) => setNotice(errorMessage(error, "User containment data could not be loaded.")));
+    void load().catch((error) => setNotice(errorMessage(error, "The member list could not be loaded.")));
   }, [load]);
+
+  const visible = useMemo(() => users.filter((user) =>
+    (role === "ALL" || user.role === role)
+    && (status === "ALL" || user.status === status)
+    && matchesSearch(search, user.username, user.email, user.cohort)
+  ), [role, search, status, users]);
 
   async function applyAction(): Promise<void> {
     if (!confirmation) return;
@@ -37,7 +50,7 @@ export function UserAdminPanel(): ReactNode {
       setNotice(successMessage(confirmation, result.revokedSessions));
       setConfirmation(null);
     } catch (error) {
-      setNotice(errorMessage(error, "The containment action failed."));
+      setNotice(errorMessage(error, "The action failed."));
     } finally {
       setIsPending(false);
     }
@@ -45,16 +58,25 @@ export function UserAdminPanel(): ReactNode {
 
   return (
     <section className="space-y-4">
-      <h2 className="font-display text-xl font-bold text-fg">User containment</h2>
-      <Panel accent="red" eyebrow="ACCOUNT_AND_SESSION_CONTROLS">
-        <p className="mb-3 text-xs leading-5 text-fg-muted">Suspension revokes all sessions. Reactivation never signs the user in or changes email verification. Administrator accounts are protected.</p>
-        <div className="overflow-x-auto">
+      <h2 className="font-display text-xl font-bold text-fg">Member accounts</h2>
+      <Panel accent="red" eyebrow="Account and session controls">
+        <p className="mb-3 text-xs leading-5 text-fg-muted">Suspending an account signs it out everywhere. Reactivating never signs the member back in and never changes their email verification. Administrator accounts cannot be changed here.</p>
+
+        <FilterBar>
+          <SearchFilter label="Search" onChange={setSearch} placeholder="Username, email, or cohort" value={search} />
+          <SelectFilter label="Role" onChange={setRole} options={roles} value={role} />
+          <SelectFilter label="Status" onChange={setStatus} options={statuses} value={status} />
+          <ResultCount noun="account" shown={visible.length} total={users.length} />
+        </FilterBar>
+
+        <div className="mt-3 overflow-x-auto">
           <table className="w-full min-w-[820px] text-left text-sm">
-            <caption className="sr-only">Beta user accounts and containment actions</caption>
-            <thead className="label-caps text-outline"><tr><th className="p-2">User</th><th className="p-2">Role / status</th><th className="p-2">Sessions</th><th className="p-2">Created</th><th className="p-2">Actions</th></tr></thead>
-            <tbody>{users.map((user) => <UserRow key={user.id} onAction={(action) => setConfirmation({ action, user })} user={user} />)}</tbody>
+            <caption className="sr-only">Member accounts and the actions available on them</caption>
+            <thead className="label-caps text-outline"><tr><th className="p-2">Member</th><th className="p-2">Role / status</th><th className="p-2">Sessions</th><th className="p-2">Joined</th><th className="p-2">Actions</th></tr></thead>
+            <tbody>{visible.map((user) => <UserRow key={user.id} onAction={(action) => setConfirmation({ action, user })} user={user} />)}</tbody>
           </table>
-          {users.length === 0 ? <p className="p-4 text-outline">No user accounts found.</p> : null}
+          {users.length === 0 ? <p className="p-4 text-outline">No member accounts yet.</p> : null}
+          {users.length > 0 && visible.length === 0 ? <p className="p-4 text-outline">No account matches these filters.</p> : null}
         </div>
       </Panel>
       {notice ? <p className="text-sm text-outline" role="status">{notice}</p> : null}
@@ -75,7 +97,7 @@ export function UserAdminPanel(): ReactNode {
 
 function UserRow({ onAction, user }: { onAction(action: ContainmentAction): void; user: AdminUser }): ReactNode {
   const protectedAccount = user.role === "ADMIN";
-  return <tr className="border-t border-outline-dim/50"><td className="p-2"><span className="block font-medium text-fg">{user.username}</span><span className="text-xs text-fg-muted">{user.email}</span></td><td className="p-2"><span className="block text-lavender">{user.role}</span><span className="text-xs text-outline">{user.status}</span></td><td className="p-2 text-fg">{user.activeSessionCount} active</td><td className="p-2 text-xs text-fg-muted">{new Date(user.createdAt).toLocaleString()}</td><td className="p-2">{protectedAccount ? <span className="text-xs text-outline">Protected administrator</span> : <div className="flex flex-wrap gap-1">{user.status === "ACTIVE" ? <ActionButton label="Suspend" onClick={() => onAction("SUSPEND")} tone="danger" /> : null}{user.status === "SUSPENDED" ? <ActionButton label="Reactivate" onClick={() => onAction("REACTIVATE")} /> : null}<ActionButton label="Revoke sessions" onClick={() => onAction("REVOKE_SESSIONS")} />{user.status === "DELETION_PENDING" ? <span className="self-center text-xs text-outline">Use deletion support to change status</span> : null}</div>}</td></tr>;
+  return <tr className="border-t border-outline-dim/50"><td className="max-w-64 p-2"><span className="block break-words font-medium text-fg">{user.username}</span><span className="block break-all text-xs text-fg-muted">{user.email}</span></td><td className="p-2"><span className="block text-lavender">{humanise(user.role)}</span><span className="text-xs text-outline">{humanise(user.status)}</span></td><td className="p-2 text-fg">{user.activeSessionCount} active</td><td className="p-2 text-xs text-fg-muted">{new Date(user.createdAt).toLocaleString()}</td><td className="p-2">{protectedAccount ? <span className="text-xs text-outline">Protected administrator</span> : <div className="flex flex-wrap gap-1">{user.status === "ACTIVE" ? <ActionButton label="Suspend" onClick={() => onAction("SUSPEND")} tone="danger" /> : null}{user.status === "SUSPENDED" ? <ActionButton label="Reactivate" onClick={() => onAction("REACTIVATE")} /> : null}<ActionButton label="Sign out everywhere" onClick={() => onAction("REVOKE_SESSIONS")} />{user.status === "DELETION_PENDING" ? <span className="self-center text-xs text-outline">Use the deletion panel to change this status</span> : null}</div>}</td></tr>;
 }
 
 function ActionButton({ label, onClick, tone = "normal" }: { label: string; onClick(): void; tone?: "danger" | "normal" }): ReactNode {
@@ -84,14 +106,14 @@ function ActionButton({ label, onClick, tone = "normal" }: { label: string; onCl
 
 function statusUrl(userId: string): string { return `/api/admin/users/${encodeURIComponent(userId)}/status`; }
 function sessionUrl(userId: string): string { return `/api/admin/users/${encodeURIComponent(userId)}/sessions/revoke`; }
-function actionLabel(action: ContainmentAction): string { return action === "SUSPEND" ? "SUSPEND" : action === "REACTIVATE" ? "REACTIVATE" : "REVOKE SESSIONS"; }
+function actionLabel(action: ContainmentAction): string { return action === "SUSPEND" ? "SUSPEND" : action === "REACTIVATE" ? "REACTIVATE" : "SIGN OUT EVERYWHERE"; }
 function confirmationMessage(input: PendingAction): string {
-  if (input.action === "SUSPEND") return `Suspend ${input.user.username} and immediately revoke every session? This action is audited.`;
-  if (input.action === "REACTIVATE") return `Reactivate ${input.user.username}? They must sign in again. This action is audited.`;
-  return `Revoke every session for ${input.user.username}? Their account status will not change. This action is audited.`;
+  if (input.action === "SUSPEND") return `Suspend ${input.user.username} and sign them out of every device right now? This action is recorded in the audit log.`;
+  if (input.action === "REACTIVATE") return `Reactivate ${input.user.username}? They will have to sign in again. This action is recorded in the audit log.`;
+  return `Sign ${input.user.username} out of every device? Their account status stays the same. This action is recorded in the audit log.`;
 }
 function successMessage(input: PendingAction, count: number): string {
-  if (input.action === "SUSPEND") return `${input.user.username} suspended; ${count} session${count === 1 ? "" : "s"} revoked.`;
-  if (input.action === "REACTIVATE") return `${input.user.username} reactivated without creating a session.`;
-  return `${count} session${count === 1 ? "" : "s"} revoked for ${input.user.username}.`;
+  if (input.action === "SUSPEND") return `${input.user.username} suspended; ${count} session${count === 1 ? "" : "s"} ended.`;
+  if (input.action === "REACTIVATE") return `${input.user.username} reactivated. They were not signed in.`;
+  return `${count} session${count === 1 ? "" : "s"} ended for ${input.user.username}.`;
 }

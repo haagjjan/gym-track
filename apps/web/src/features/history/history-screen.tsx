@@ -103,14 +103,14 @@ export function HistoryScreen({ userId }: { userId: string }): ReactNode {
         sortOptions={historySortOptions}
       />
 
-      {actionError ? <ErrorState message={actionError} title="DELETE_FAILED" /> : null}
+      {actionError ? <ErrorState message={actionError} title="Could not delete" /> : null}
       <p aria-live="polite" className="sr-only">{status}</p>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <SummaryMetric accent="cyan" label="TOTAL SESSIONS" loading={workouts.isLoading} value={allTime ? String(allTime.totalSessions) : "—"} />
-        <SummaryMetric accent="cyan" label="TONNAGE" loading={workouts.isLoading} value={allTime ? `${formatNumber(Number(allTime.cumulativeTonnageKg))} kg` : "—"} />
+        <SummaryMetric accent="cyan" label="Tonnage" loading={workouts.isLoading} value={allTime ? `${formatNumber(Number(allTime.cumulativeTonnageKg))} kg` : "—"} />
         <SummaryMetric accent="lavender" label="AVG DURATION" loading={workouts.isLoading} value={allTime?.averageCompletedDurationSeconds != null ? `${Math.round(allTime.averageCompletedDurationSeconds / 60)} min` : "—"} />
-        <SummaryMetric accent="cyan" label="COMPLETION" loading={workouts.isLoading} value={allTime ? `${Math.round(allTime.completionRate * 100)}%` : "—"} />
+        <SummaryMetric accent="cyan" label="Completion" loading={workouts.isLoading} value={allTime ? `${Math.round(allTime.completionRate * 100)}%` : "—"} />
       </div>
 
       {workouts.isError ? <ErrorState message={errorMessage(workouts.error, "Workout history could not be loaded.")} retry={() => void workouts.refetch()} /> : null}

@@ -34,7 +34,15 @@ export function ExerciseForm({
   const [secondaryIds, setSecondaryIds] = useState(initial?.secondaryMuscleGroups.map((group) => group.id) ?? []);
   const [error, setError] = useState<string | null>(null);
   const [review, setReview] = useState<{ details: ExerciseNameReviewDetails; blocked: boolean } | null>(null);
+  // The "Did you mean?" list floats over the fields below the name. Without a
+  // way to put it away, a member who deliberately wants a name close to an
+  // existing one cannot reach the rest of the form.
+  const [suggestionsDismissed, setSuggestionsDismissed] = useState(false);
   const suggestions = useExerciseNameSuggestions(initial ? "" : debouncedName);
+  const showSuggestions = !initial
+    && !suggestionsDismissed
+    && debouncedName.length >= 2
+    && (suggestions.data?.length ?? 0) > 0;
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedName(name.trim()), 250);
@@ -80,25 +88,49 @@ export function ExerciseForm({
             autoComplete="off"
             className="mt-1 min-h-11 w-full rounded border border-outline-dim bg-surface-low px-3 text-base text-fg focus:border-cyan focus:outline-none"
             maxLength={120}
-            onChange={(event) => { setName(event.currentTarget.value); setReview(null); }}
+            onChange={(event) => {
+              setName(event.currentTarget.value);
+              setReview(null);
+              // Clearing the field starts a fresh naming attempt, so offer
+              // matches again; otherwise a dismissal sticks while typing.
+              if (event.currentTarget.value.trim().length < 2) setSuggestionsDismissed(false);
+            }}
+            onKeyDown={(event) => {
+              // Escape puts the suggestions away without closing the dialog.
+              if (event.key === "Escape" && showSuggestions) {
+                event.stopPropagation();
+                setSuggestionsDismissed(true);
+              }
+            }}
             value={name}
           />
         </label>
 
-        {!initial && debouncedName.length >= 2 && (suggestions.data?.length ?? 0) > 0 ? (
+        {showSuggestions ? (
           <section aria-label="Existing exercise suggestions" className="absolute left-0 right-0 top-[calc(100%+0.25rem)] max-h-56 overflow-y-auto rounded-lg border border-cyan/30 bg-surface p-2 shadow-xl">
-            <p className="label-caps px-1 text-cyan">Did you mean?</p>
-            <p className="px-1 text-xs text-fg-muted">Choose an existing match, or keep your custom name and create it below.</p>
+            <div className="flex items-start justify-between gap-2 px-1">
+              <div className="min-w-0">
+                <p className="label-caps text-cyan">Did you mean?</p>
+                <p className="text-xs text-fg-muted">Pick an existing exercise, or keep the name you typed.</p>
+              </div>
+              <button
+                className="min-h-11 shrink-0 rounded border border-outline-dim px-2 text-[11px] text-fg-muted hover:border-cyan hover:text-cyan"
+                onClick={() => setSuggestionsDismissed(true)}
+                type="button"
+              >
+                Keep my name
+              </button>
+            </div>
             <div className="mt-1 space-y-1">
               {suggestions.data?.slice(0, 5).map((exercise) => (
                 <button
-                  className="flex min-h-11 w-full items-center justify-between rounded px-2 text-left hover:bg-cyan/10"
+                  className="flex min-h-11 w-full items-center justify-between gap-3 rounded px-2 text-left hover:bg-cyan/10"
                   key={exercise.id}
                   onClick={() => void onSelectExisting?.(exercise)}
                   type="button"
                 >
-                  <span className="text-sm text-fg">{exercise.name}</span>
-                  <span className="text-xs text-outline">{exercise.equipment ?? "Unspecified"}</span>
+                  <span className="min-w-0 break-words text-sm text-fg">{exercise.name}</span>
+                  <span className="shrink-0 text-xs text-outline">{exercise.equipment ?? "Unspecified"}</span>
                 </button>
               ))}
             </div>

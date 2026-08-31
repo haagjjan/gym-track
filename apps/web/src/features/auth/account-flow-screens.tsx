@@ -72,7 +72,7 @@ export function ForgotPasswordScreen(): ReactNode {
     const email = String(new FormData(event.currentTarget).get("email") ?? "").trim();
 
     if (email.length === 0) {
-      setError("Enter the account email address.");
+      setError("Enter the email address on your account.");
       return;
     }
 
@@ -83,13 +83,13 @@ export function ForgotPasswordScreen(): ReactNode {
       await apiFetch("/api/auth/forgot-password", { method: "POST", body: { email } });
       setIsRequested(true);
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : "Request failed. Try again.");
+      setError(caught instanceof ApiError ? caught.message : "That request did not go through. Try again.");
       setIsPending(false);
     }
   }
 
   return (
-    <FlowCard eyebrow="ACCESS_RECOVERY" title="RESET_ACCESS_CODE">
+    <FlowCard eyebrow="Account recovery" title="Reset your password">
       {isRequested ? (
         <div className="mt-4">
           <p className="rounded border border-green/40 bg-green/5 px-3 py-3 text-xs leading-relaxed text-green-bright">
@@ -97,29 +97,29 @@ export function ForgotPasswordScreen(): ReactNode {
             works once and expires in 60 minutes.
           </p>
           <Link className="label-caps mt-5 inline-block text-cyan-dim hover:text-cyan" href="/login">
-            ← BACK_TO_LOGIN
+            ← Back to sign in
           </Link>
         </div>
       ) : (
         <>
           <p className="mt-2 text-xs leading-relaxed text-fg-muted">
-            Enter the email on the account and we will send a single-use reset link.
+            Enter the email on your account and we will send you a single-use reset link.
           </p>
           <form className="mt-6 space-y-4" noValidate onSubmit={(event) => void handleSubmit(event)}>
-            <FlowField autoComplete="email" label="EMAIL_ADDRESS" name="email" type="email" />
+            <FlowField autoComplete="email" label="Email address" name="email" type="email" />
             {error ? (
               <p className="rounded border border-red/40 bg-red/5 px-3 py-2 text-xs text-red" role="alert">
                 {error}
               </p>
             ) : null}
             <HudButton className="w-full" disabled={isPending} size="lg" type="submit">
-              {isPending ? "TRANSMITTING…" : "SEND_RESET_LINK"}
+              {isPending ? "SENDING…" : "SEND RESET LINK"}
             </HudButton>
           </form>
           <p className="mt-5 text-center text-xs text-fg-muted">
             Remembered it?{" "}
             <Link className="font-display font-bold tracking-[0.08em] text-cyan hover:text-cyan-bright" href="/login">
-              LOGIN
+              SIGN IN
             </Link>
           </p>
         </>
@@ -143,12 +143,12 @@ export function ResetPasswordScreen(): ReactNode {
     const confirm = String(formData.get("confirm") ?? "");
 
     if (password.length < 10) {
-      setError("The new access code needs at least 10 characters.");
+      setError("Your new password needs at least 10 characters.");
       return;
     }
 
     if (password !== confirm) {
-      setError("Both access code fields must match.");
+      setError("Both password fields must match.");
       return;
     }
 
@@ -165,7 +165,7 @@ export function ResetPasswordScreen(): ReactNode {
       setError(
         caught instanceof ApiError
           ? caught.message
-          : "The access code could not be reset. Try again."
+          : "Your password could not be reset. Try again."
       );
       setIsPending(false);
     }
@@ -173,41 +173,41 @@ export function ResetPasswordScreen(): ReactNode {
 
   if (!token) {
     return (
-      <FlowCard eyebrow="ACCESS_RECOVERY" title="LINK_INCOMPLETE">
+      <FlowCard eyebrow="Account recovery" title="This link is incomplete">
         <p className="mt-2 text-xs leading-relaxed text-fg-muted">
           This reset link is missing its token. Open the link from the email directly, or
           request a fresh one.
         </p>
         <Link className="label-caps mt-5 inline-block text-cyan-dim hover:text-cyan" href="/forgot-password">
-          REQUEST_NEW_LINK →
+          Request a new link →
         </Link>
       </FlowCard>
     );
   }
 
   return (
-    <FlowCard eyebrow="ACCESS_RECOVERY" title="SET_NEW_ACCESS_CODE">
+    <FlowCard eyebrow="Account recovery" title="Choose a new password">
       {isDone ? (
         <div className="mt-4">
           <p className="rounded border border-green/40 bg-green/5 px-3 py-3 text-xs leading-relaxed text-green-bright">
-            Access code updated. Every previous session was signed out — log in with the
-            new code.
+            Your password is updated, and you were signed out everywhere else. Sign in
+            with the new password.
           </p>
           <Link className="label-caps mt-5 inline-block text-cyan-dim hover:text-cyan" href="/login">
-            → PROCEED_TO_LOGIN
+            → Go to sign in
           </Link>
         </div>
       ) : (
         <form className="mt-6 space-y-4" noValidate onSubmit={(event) => void handleSubmit(event)}>
           <FlowField
             autoComplete="new-password"
-            label="NEW_ACCESS_CODE (MIN 10)"
+            label="New password (at least 10 characters)"
             name="password"
             type="password"
           />
           <FlowField
             autoComplete="new-password"
-            label="CONFIRM_ACCESS_CODE"
+            label="Confirm new password"
             name="confirm"
             type="password"
           />
@@ -217,7 +217,7 @@ export function ResetPasswordScreen(): ReactNode {
             </p>
           ) : null}
           <HudButton className="w-full" disabled={isPending} size="lg" type="submit">
-            {isPending ? "REWRITING…" : "RESET_ACCESS_CODE"}
+            {isPending ? "SAVING…" : "RESET PASSWORD"}
           </HudButton>
         </form>
       )}
@@ -258,32 +258,32 @@ export function VerifyEmailScreen(): ReactNode {
 
   const copy: Record<VerifyState, { title: string; body: string; tone: string }> = {
     verifying: {
-      title: "VERIFYING…",
-      body: "Confirming this email address with Gym Progress Tracker.",
+      title: "Confirming your email…",
+      body: "This only takes a moment.",
       tone: "text-fg-muted"
     },
     verified: {
-      title: "EMAIL_VERIFIED",
-      body: "This account is confirmed. Telemetry channels are fully open.",
+      title: "Email confirmed",
+      body: "Your account is confirmed. You can close this page and carry on.",
       tone: "text-green-bright"
     },
     failed: {
-      title: "LINK_EXPIRED",
-      body: "This verification link is invalid or has expired. Request a new one from the dashboard banner.",
+      title: "This link has expired",
+      body: "This confirmation link is no longer valid. Request a new one from Settings.",
       tone: "text-red"
     },
     missing: {
-      title: "LINK_INCOMPLETE",
-      body: "This verification link is missing its token. Open the link from the email directly.",
+      title: "This link is incomplete",
+      body: "Open the link straight from the email rather than retyping it.",
       tone: "text-fg-muted"
     }
   };
 
   return (
-    <FlowCard eyebrow="IDENTITY_VERIFICATION" title={copy[state].title}>
+    <FlowCard eyebrow="Email confirmation" title={copy[state].title}>
       <p className={`mt-2 text-xs leading-relaxed ${copy[state].tone}`}>{copy[state].body}</p>
       <Link className="label-caps mt-5 inline-block text-cyan-dim hover:text-cyan" href="/">
-        → OPEN_APP
+        → Open the app
       </Link>
     </FlowCard>
   );

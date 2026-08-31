@@ -62,14 +62,14 @@ export function ExercisePicker({
       <section aria-labelledby="exercise-picker-title" aria-modal="true" className="glass-cyan flex h-[92dvh] max-h-[92dvh] w-full flex-col rounded-t-xl p-4 lg:h-auto lg:max-h-[84dvh] lg:max-w-2xl lg:rounded-xl" ref={dialogRef} role="dialog" tabIndex={-1}>
         <header className="mb-3 flex shrink-0 items-center justify-between gap-2">
           <div>
-            <p className="label-caps text-outline">EXERCISE_CATALOG</p>
+            <p className="label-caps text-outline">Exercises</p>
             <h2 className="font-display text-lg font-bold text-fg" id="exercise-picker-title">{title}</h2>
           </div>
           <button aria-label="Close exercise picker" className="flex size-11 items-center justify-center rounded border border-outline-dim text-fg-muted hover:border-cyan hover:text-cyan" data-modal-initial-focus onClick={onClose} type="button"><IconClose /></button>
         </header>
 
         <div className="shrink-0">
-          <input aria-label="Search exercises" className="min-h-12 w-full rounded border border-outline-dim bg-surface-low/60 px-3 font-mono text-base text-fg placeholder:text-outline focus:border-cyan focus:outline-none" onChange={(event) => setQuery(event.currentTarget.value)} placeholder="Scan catalog… Search exercise or muscle" type="search" value={query} />
+          <input aria-label="Search exercises" className="min-h-12 w-full rounded border border-outline-dim bg-surface-low/60 px-3 font-mono text-base text-fg placeholder:text-outline focus:border-cyan focus:outline-none" onChange={(event) => setQuery(event.currentTarget.value)} placeholder="Search by exercise or muscle…" type="search" value={query} />
         </div>
 
         <div className="my-2 shrink-0">
@@ -89,7 +89,7 @@ export function ExercisePicker({
         <div className="min-h-0 flex-1 overflow-y-auto pb-2">
           {exercises.isLoading ? <div className="space-y-2"><Skeleton className="h-16" /><Skeleton className="h-16" /><Skeleton className="h-16" /></div>
             : exercises.isError ? <ErrorState message={errorMessage(exercises.error, "Exercises could not be loaded.")} retry={() => void exercises.refetch()} />
-            : exerciseItems.length === 0 ? <EmptyState title="NO_MATCH" message="No exercise matches the current search and filters." />
+            : exerciseItems.length === 0 ? <EmptyState title="Nothing found" message="No exercise matches this search and these filters." />
             : <>
                 {sort === "muscle" && debounced.length === 0
                   ? <GroupedResults exercises={exerciseItems} isSubmitting={isSubmitting} onSelect={onSelect} selectedIds={selectedIds} selectionMode={selectionMode} />

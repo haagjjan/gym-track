@@ -4,7 +4,7 @@ import { AdminScreen } from "../../features/admin/admin-screen";
 import { getCurrentUser } from "../../features/auth/server-auth";
 import { AppShell } from "../../features/shell/app-shell";
 
-export const metadata = { title: "Beta administration" };
+export const metadata = { title: "Administration" };
 
 export default async function AdminPage(): Promise<ReactNode> {
   const user = await getCurrentUser();

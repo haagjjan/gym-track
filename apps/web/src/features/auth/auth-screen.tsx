@@ -11,22 +11,24 @@ type AuthMode = "login" | "signup";
 
 const copy = {
   login: {
-    title: "OPERATOR_LOGIN",
-    intro: "Authorize your operator profile to access session logs and telemetry.",
-    submit: "AUTHENTICATE",
-    pending: "AUTHENTICATING…",
+    eyebrow: "SIGN IN",
+    title: "Welcome back",
+    intro: "Sign in with your username or the email address on your account.",
+    submit: "SIGN IN",
+    pending: "SIGNING IN…",
     switchText: "Need an account?",
     switchHref: "/signup",
-    switchLabel: "CREATE_PROFILE"
+    switchLabel: "CREATE ACCOUNT"
   },
   signup: {
-    title: "CREATE_OPERATOR_PROFILE",
-    intro: "Register a profile for fast session logging and durable progress history.",
-    submit: "REGISTER",
-    pending: "REGISTERING…",
-    switchText: "Already registered?",
+    eyebrow: "NEW ACCOUNT",
+    title: "Create your account",
+    intro: "Pick a username and a password. Your email is used for sign-in, verification, and account recovery.",
+    submit: "CREATE ACCOUNT",
+    pending: "CREATING ACCOUNT…",
+    switchText: "Already have an account?",
     switchHref: "/login",
-    switchLabel: "LOGIN"
+    switchLabel: "SIGN IN"
   }
 } as const;
 
@@ -94,7 +96,9 @@ export function AuthScreen({
         return;
       }
 
-      setFormError("Authentication failed. Try again.");
+      setFormError(mode === "signup"
+        ? "The account could not be created. Try again."
+        : "Sign-in failed. Check your connection and try again.");
     }
   }
 
@@ -111,7 +115,7 @@ export function AuthScreen({
         </p>
 
         <section aria-labelledby="auth-title" className="glass-cyan chamfer rounded-xl p-6 sm:p-8">
-          <p className="label-caps text-outline">IDENTITY_VERIFICATION</p>
+          <p className="label-caps text-outline">{details.eyebrow}</p>
           <h1 className="mt-2 font-display text-2xl font-bold tracking-tight text-fg" id="auth-title">
             {details.title}
           </h1>
@@ -127,7 +131,7 @@ export function AuthScreen({
               <AuthField
                 autoComplete="email"
                 error={fieldErrors.email}
-                label="EMAIL_ADDRESS"
+                label="Email address"
                 name="email"
                 readOnly={Boolean(email)}
                 type="email"
@@ -137,7 +141,7 @@ export function AuthScreen({
             <AuthField
               autoComplete="username"
               error={fieldErrors.username}
-              label="OPERATOR_ID"
+              label={mode === "signup" ? "Username" : "Username or email"}
               name="username"
               type="text"
             />
@@ -151,7 +155,7 @@ export function AuthScreen({
             <AuthField
               autoComplete={mode === "signup" ? "new-password" : "current-password"}
               error={fieldErrors.password}
-              label={mode === "signup" ? "ACCESS_CODE (MIN 10 CHARS)" : "ACCESS_CODE"}
+              label={mode === "signup" ? "Password (at least 10 characters)" : "Password"}
               name="password"
               type="password"
             />
@@ -162,7 +166,7 @@ export function AuthScreen({
                   className="text-[11px] uppercase tracking-[0.08em] text-outline transition-colors hover:text-cyan"
                   href="/forgot-password"
                 >
-                  Forgot access code?
+                  Forgot your password?
                 </Link>
               </p>
             ) : null}
@@ -187,7 +191,7 @@ export function AuthScreen({
             </p>
           ) : (
             <p className="mt-5 text-center text-xs text-fg-muted">
-              PRIVATE_ACCESS · EXISTING_OPERATORS_ONLY
+              Sign-ups are closed right now. Existing accounts can still sign in.
             </p>
           )}
         </section>

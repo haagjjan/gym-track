@@ -7,10 +7,15 @@ import { BACK_MAP_URL, FRONT_MAP_URL } from "./region-map";
 /**
  * Flat front/back muscle map — the same authored SVGs that drive the 3D body
  * (region-map.ts), rendered directly and recolored by weekly volume. Precise
- * by construction (it IS the art) and cheap (no WebGL), so it doubles as the
- * user-selectable low-power / at-a-glance alternative to the default 3D view.
- * Trained muscles take the cyan → violet ramp; untrained stay slate; the selected
- * group is outlined in lavender.
+ * by construction (it IS the art) and cheap (no WebGL). Trained muscles take
+ * the cyan → violet ramp; untrained stay slate; the selected group is outlined
+ * in lavender.
+ *
+ * NOT CURRENTLY RENDERED. The Volume screen offered this as a device-local
+ * alternative to the 3D body; that choice was withdrawn and the 3D body is now
+ * the only renderer. The component is kept intact — it is the cheapest
+ * low-power fallback available if one is ever needed again — but nothing
+ * imports it today.
  */
 
 const UNTRAINED = "#2f353c";

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  canonicalRedirectTarget,
   evaluateRequestSecurity,
   readWebSecurityConfig,
   securityHeaders
@@ -27,6 +28,57 @@ describe("web request security", () => {
       [...config.allowedOrigins].sort(),
       ["http://192.168.1.57", "https://app.gymtrack.ch"]
     );
+  });
+
+  it("redirects the bare domain and its www variant to the canonical origin", () => {
+    const config = readWebSecurityConfig(productionEnv);
+
+    assert.deepEqual(
+      [...config.redirectHosts].sort(),
+      ["gymtrack.ch", "www.gymtrack.ch"]
+    );
+    assert.equal(
+      canonicalRedirectTarget({ host: "www.gymtrack.ch", pathAndQuery: "/" }, config),
+      "https://app.gymtrack.ch/"
+    );
+    assert.equal(
+      canonicalRedirectTarget({ host: "gymtrack.ch", pathAndQuery: "/login?next=%2F" }, config),
+      "https://app.gymtrack.ch/login?next=%2F"
+    );
+  });
+
+  it("never redirects a host that is served directly", () => {
+    const config = readWebSecurityConfig(productionEnv);
+
+    for (const host of ["app.gymtrack.ch", "192.168.1.57", "unknown.example"]) {
+      assert.equal(canonicalRedirectTarget({ host, pathAndQuery: "/" }, config), null);
+    }
+  });
+
+  it("lets the deployment override or disable the redirect hosts", () => {
+    const overridden = readWebSecurityConfig({
+      ...productionEnv,
+      APP_REDIRECT_HOSTS: "gymtrack.example, www.gymtrack.example"
+    });
+
+    assert.deepEqual(
+      [...overridden.redirectHosts].sort(),
+      ["gymtrack.example", "www.gymtrack.example"]
+    );
+
+    const disabled = readWebSecurityConfig({ ...productionEnv, APP_REDIRECT_HOSTS: "" });
+
+    assert.equal(disabled.redirectHosts.size, 0);
+  });
+
+  it("derives no redirect hosts for a hostname without a registrable domain", () => {
+    const config = readWebSecurityConfig({
+      APP_BASE_URL: "http://localhost:3000",
+      APP_ENV: "local",
+      NODE_ENV: "production"
+    });
+
+    assert.equal(config.redirectHosts.size, 0);
   });
 
   it("fails closed when production has no canonical URL", () => {

@@ -51,7 +51,7 @@ export function RecentLogs({
     [items, mode, window]
   );
   if (isLoading) return <Skeleton className="h-24" />;
-  if (rows.length === 0) return <EmptyState message="Sets logged in this window will appear here." title="NO_SET_TELEMETRY" />;
+  if (rows.length === 0) return <EmptyState message="Sets logged in this window will appear here." title="No sets in this window" />;
 
   return (
     <ul className="divide-y divide-outline-dim/30">

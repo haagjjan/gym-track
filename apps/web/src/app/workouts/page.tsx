@@ -4,7 +4,7 @@ import { getCurrentUser } from "../../features/auth/server-auth";
 import { HistoryScreen } from "../../features/history/history-screen";
 import { AppShell } from "../../features/shell/app-shell";
 
-export const metadata = { title: "History" };
+export const metadata = { title: "Workout history" };
 
 export default async function WorkoutsPage(): Promise<ReactNode> {
   const user = await getCurrentUser();

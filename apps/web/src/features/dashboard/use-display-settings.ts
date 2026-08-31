@@ -4,19 +4,20 @@ import { useCallback, useEffect, useState } from "react";
 import { scopedStorageKey, useDevicePrivacy } from "../privacy/device-privacy";
 
 /**
- * Cockpit display preferences (device-local, like biometrics/favorite lifts):
- * dashboard avatar motion plus the preferred Volume body-map renderer.
+ * Device-local display preferences, stored like biometrics and favourite lifts.
+ *
+ * The Volume screen used to offer a flat front/back map here as an alternative
+ * to the 3D body. That choice is gone — the 3D body is the only renderer — so
+ * any `volumeBodyMap` value left in a browser's storage is simply ignored.
  */
 export interface DisplaySettings {
   autoSpin: boolean;
-  volumeBodyMap: "3d" | "2d";
 }
 
 const STORAGE_KEY = "body-cockpit.display.v1";
 
 export const defaultDisplaySettings: DisplaySettings = {
-  autoSpin: true,
-  volumeBodyMap: "3d"
+  autoSpin: true
 };
 
 export function useDisplaySettings(): {
@@ -40,8 +41,7 @@ export function useDisplaySettings(): {
           autoSpin:
             typeof stored.autoSpin === "boolean"
               ? stored.autoSpin
-              : defaultDisplaySettings.autoSpin,
-          volumeBodyMap: stored.volumeBodyMap === "2d" ? "2d" : "3d"
+              : defaultDisplaySettings.autoSpin
         });
       } else if (!functionalStorageEnabled) {
         setSettings(defaultDisplaySettings);

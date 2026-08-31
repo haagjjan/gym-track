@@ -165,16 +165,16 @@ function PreviousPerformance({ exercise }: { exercise: SessionExercise }): React
   return (
     <section className="mt-3 rounded-lg border border-outline-dim/60 bg-surface-low/30 p-3" aria-label="Previous performance">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
+        <div className="min-w-0">
           <p className="label-caps text-outline">Previous best set</p>
-          <p className="mt-0.5 text-[10px] text-fg-muted">
+          <p className="mt-0.5 break-words text-[10px] text-fg-muted">
             {previous
               ? `${previous.workoutTitle ?? "Previous workout"} · ${formatDateTime(previous.workoutStartedAt)}`
               : "No earlier completed working set"}
           </p>
         </div>
         {previous ? (
-          <span className="rounded-sm border border-lavender/50 bg-lavender/5 px-2 py-1 font-mono text-xs text-lavender">
+          <span className="shrink-0 rounded-sm border border-lavender/50 bg-lavender/5 px-2 py-1 font-mono text-xs text-lavender">
             {formatKgValue(previous.bestSet.weightKg)} kg × {previous.bestSet.reps}
           </span>
         ) : null}

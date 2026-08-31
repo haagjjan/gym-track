@@ -4,10 +4,10 @@ import dynamic from "next/dynamic";
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { EmptyState, ErrorState, Metric, Panel, Skeleton } from "../../shared/ui/ui";
 import { BayAmbience } from "../avatar/bay-ambience";
-import { useDisplaySettings } from "../dashboard/use-display-settings";
+/*import { useDisplaySettings } from "../dashboard/use-display-settings";*/
 import { errorMessage } from "../../shared/api/client";
 import { useUserPreferences, useWeeklyVolume } from "../../shared/api/hooks";
-import { BodyMap2D } from "./body-map-2d";
+/*import { BodyMap2D } from "./body-map-2d";*/
 import {
   HEAT_MAX_WEEKLY_SETS,
   type RegionSlug
@@ -27,7 +27,7 @@ const VolumeBodyMap = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex h-full items-center justify-center">
-        <p className="label-caps animate-pulse-slow text-cyan-dim">CALIBRATING_BODY_SCAN</p>
+        <p className="label-caps animate-pulse-slow text-cyan-dim">Loading the body map</p>
       </div>
     )
   }
@@ -36,8 +36,8 @@ const VolumeBodyMap = dynamic(
 import { aggregateVolume } from "./volume-aggregation";
 
 /**
- * Muscle volume intelligence with one exact five-stage heat scale shared by
- * the 3D body, 2D body, legend, and distribution matrix.
+ * Muscle volume with one exact five-stage heat scale shared by the 3D body,
+ * the legend, and the distribution matrix.
  */
 export function VolumeScreen(): ReactNode {
   const [windowDays, setWindowDays] = useState<VolumeWindowDays>(7);
@@ -45,8 +45,8 @@ export function VolumeScreen(): ReactNode {
   const preferences = useUserPreferences();
   const heatCeiling = preferences.data?.volumeHeatCeiling ?? HEAT_MAX_WEEKLY_SETS;
   const [selectedSlug, setSelectedSlug] = useState<RegionSlug | null>(null);
-  const { settings: displaySettings, isLoaded: displaySettingsLoaded } =
-    useDisplaySettings();
+  /*const { settings: displaySettings, isLoaded: displaySettingsLoaded } =
+  useDisplaySettings();*/
   const [debugRegions] = useState(
     () => typeof window !== "undefined" && window.location.search.includes("debugRegions")
   );
@@ -93,7 +93,7 @@ export function VolumeScreen(): ReactNode {
       <div className="relative z-10 mx-auto max-w-6xl space-y-4 p-4 lg:p-6">
         <header>
           <div>
-            <p className="label-caps text-outline">BODY_RECONSTRUCTION</p>
+            {/* <p className="label-caps text-outline">BODY_RECONSTRUCTION</p> */}
             <h1 className="font-display text-2xl font-bold tracking-tight text-fg">
               Muscle volume
             </h1>
@@ -110,13 +110,13 @@ export function VolumeScreen(): ReactNode {
         <div className="hidden grid-cols-2 gap-3 lg:grid">
           <Panel accent="none">
             <Metric
-              label="ACTIVE_MUSCLES"
+              label="Muscles trained"
               value={volume.isLoading ? "…" : String(activeMuscles)}
             />
           </Panel>
           <Panel accent="lavender">
             <Metric
-              label="LATEST_WEEK"
+              label="This week"
               tone="lavender"
               value={volume.isLoading ? "…" : String(latestWeekTotal)}
               detail="working sets"
@@ -129,31 +129,16 @@ export function VolumeScreen(): ReactNode {
           <div className="relative mb-4 lg:mb-0">
             <div className="h-[52dvh] min-h-80 lg:h-[560px]">
               <WindowControls onChange={setWindowDays} value={windowDays} />
-              {!displaySettingsLoaded ? (
-                <div className="flex h-full items-center justify-center">
-                  <p className="label-caps animate-pulse-slow text-cyan-dim">
-                    CALIBRATING_BODY_SCAN
-                  </p>
-                </div>
-              ) : displaySettings.volumeBodyMap === "3d" ? (
-                <VolumeBodyMap
-                  debugRegions={debugRegions}
-                  heatCeiling={heatCeiling}
-                  onSelect={handleSelect}
-                  selectedSlug={selectedSlug}
-                  weeklySetsBySlug={weeklySetsBySlug}
-                />
-              ) : (
-                <BodyMap2D
-                  heatCeiling={heatCeiling}
-                  onSelect={handleSelect}
-                  selectedSlug={selectedSlug}
-                  weeklySetsBySlug={weeklySetsBySlug}
-                />
-              )}
+              <VolumeBodyMap
+                debugRegions={debugRegions}
+                heatCeiling={heatCeiling}
+                onSelect={handleSelect}
+                selectedSlug={selectedSlug}
+                weeklySetsBySlug={weeklySetsBySlug}
+              />
             </div>
 
-            <Panel accent="cyan" className="glass-cyan mt-3" eyebrow="WORKING_SET_HEATMAP">
+            <Panel accent="cyan" className="glass-cyan mt-3" eyebrow="Heat scale">
               <HeatLegend heatCeiling={heatCeiling} />
 
               {!volume.isLoading && windowTotal === 0 ? (
@@ -166,14 +151,14 @@ export function VolumeScreen(): ReactNode {
             <div className="mt-3 grid grid-cols-2 gap-3 lg:hidden">
               <Panel accent="none">
                 <Metric
-                  label="ACTIVE_MUSCLES"
+                  label="Muscles trained"
                   value={volume.isLoading ? "…" : String(activeMuscles)}
                 />
               </Panel>
               <Panel accent="lavender">
                 <Metric
                   detail="working sets"
-                  label="LATEST_WEEK"
+                  label="This week"
                   tone="lavender"
                   value={volume.isLoading ? "…" : String(latestWeekTotal)}
                 />
@@ -183,7 +168,7 @@ export function VolumeScreen(): ReactNode {
 
           {/* ===== Side stack ===== */}
           <div className="space-y-4">
-            <Panel accent="lavender" eyebrow="MUSCLE_INTEL">
+            <Panel accent="lavender" eyebrow="Selected muscle">
               {volume.isLoading ? (
                 <Skeleton className="h-40" />
               ) : selected ? (
@@ -194,13 +179,13 @@ export function VolumeScreen(): ReactNode {
                 />
               ) : (
                 <EmptyState
-                  message="Tap a muscle on the body or a row below to inspect it."
-                  title="NO_MUSCLE_SELECTED"
+                  message="Tap a muscle on the body, or a row below, to see its detail."
+                  title="Nothing selected"
                 />
               )}
             </Panel>
 
-            <Panel accent="cyan" eyebrow="DISTRIBUTION_MATRIX">
+            <Panel accent="cyan" eyebrow="All muscles">
               {volume.isLoading ? (
                 <div className="space-y-2">
                   <Skeleton className="h-8" />
@@ -216,7 +201,7 @@ export function VolumeScreen(): ReactNode {
                 />
               )}
               <div className="mt-3 flex items-baseline justify-between border-t border-outline-dim/60 pt-3">
-                <span className="label-caps text-outline">TOTAL_WORKING_SETS</span>
+                <span className="label-caps text-outline">Total working sets</span>
                 <span className="font-mono text-sm text-fg">
                   {volume.isLoading ? "…" : windowTotal}{" "}
                   <span className="text-outline">{"// "}{windowLabel}</span>

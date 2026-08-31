@@ -18,7 +18,7 @@ export function DeletionSupportPanel(): ReactNode {
     setUsers(result.items.filter((user) => user.role === "USER" && user.status === "DELETION_PENDING"));
   }
   useEffect(() => {
-    void load().catch((error) => setState(errorMessage(error, "Pending deletions could not be loaded.")));
+    void load().catch((error) => setState(errorMessage(error, "Scheduled deletions could not be loaded.")));
   }, []);
 
   async function cancel(): Promise<void> {
@@ -30,15 +30,15 @@ export function DeletionSupportPanel(): ReactNode {
       });
       await load();
       setState(result.notificationStatus === "SENT"
-        ? "Deletion cancelled, account reactivated, and confirmation email accepted."
-        : "Deletion cancelled and account reactivated, but the confirmation email failed. No retry is required for the cancellation.");
+        ? "Deletion stopped, the account is active again, and the confirmation email was accepted."
+        : "Deletion stopped and the account is active again, but the confirmation email did not go out. The cancellation itself needs no retry.");
       setSelected(null);
     } catch (error) {
-      setState(errorMessage(error, "Deletion cancellation failed."));
+      setState(errorMessage(error, "The deletion could not be stopped."));
     } finally {
       setIsPending(false);
     }
   }
 
-  return <><Panel accent="red" eyebrow="SUPPORT_DELETION_CANCELLATION"><p className="mb-3 text-xs text-fg-muted">Use only after authenticating an urgent support request before the deadline. Every action is audited.</p>{users.map((user) => <div className="flex flex-wrap items-center justify-between gap-2 border-t border-outline-dim/50 py-2" key={user.id}><span className="text-sm text-fg">{user.username} · {user.email}</span><button className="min-h-11 rounded border border-red/50 px-3 text-xs text-red" onClick={() => setSelected(user)} type="button">CANCEL DELETION</button></div>)}{users.length === 0 ? <p className="text-sm text-outline">No accounts are pending deletion.</p> : null}{state ? <p className="mt-2 text-xs text-outline" role="status">{state}</p> : null}</Panel><ConfirmDialog confirmLabel="CANCEL DELETION" isOpen={selected !== null} isPending={isPending} message={selected ? `Cancel deletion for ${selected.username} (${selected.email})? The account becomes active, but no session is created. This action is audited.` : ""} onCancel={() => { if (!isPending) setSelected(null); }} onConfirm={() => void cancel()} pendingLabel="CANCELLING…" title="Cancel scheduled deletion?" tone="warning" /></>;
+  return <><Panel accent="red" eyebrow="Scheduled deletions"><p className="mb-3 text-xs leading-5 text-fg-muted">Stop a scheduled deletion only after you have verified an urgent support request, and only before the deadline. Every action is recorded in the audit log.</p>{users.map((user) => <div className="flex flex-wrap items-center justify-between gap-2 border-t border-outline-dim/50 py-2" key={user.id}><span className="min-w-0 flex-1 break-all text-sm text-fg">{user.username} · {user.email}</span><button className="min-h-11 shrink-0 rounded border border-red/50 px-3 text-xs text-red" onClick={() => setSelected(user)} type="button">STOP DELETION</button></div>)}{users.length === 0 ? <p className="text-sm text-outline">No account is scheduled for deletion.</p> : null}{state ? <p className="mt-2 text-xs text-outline" role="status">{state}</p> : null}</Panel><ConfirmDialog confirmLabel="STOP DELETION" isOpen={selected !== null} isPending={isPending} message={selected ? `Stop the scheduled deletion for ${selected.username} (${selected.email})? The account becomes active again, but they are not signed in. This action is recorded in the audit log.` : ""} onCancel={() => { if (!isPending) setSelected(null); }} onConfirm={() => void cancel()} pendingLabel="STOPPING…" title="Stop this scheduled deletion?" tone="warning" /></>;
 }

@@ -4,7 +4,7 @@ import { getCurrentUser } from "../../features/auth/server-auth";
 import { AppShell } from "../../features/shell/app-shell";
 import { VolumeScreen } from "../../features/volume/volume-screen";
 
-export const metadata = { title: "Volume" };
+export const metadata = { title: "Muscle volume" };
 
 export default async function WeeklyVolumePage(): Promise<ReactNode> {
   const user = await getCurrentUser();

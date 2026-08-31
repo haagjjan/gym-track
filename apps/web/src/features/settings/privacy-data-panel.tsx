@@ -47,18 +47,18 @@ export function PrivacyDataPanel(): ReactNode {
 
   return (
     <div className="space-y-3">
-      <Panel accent="cyan" eyebrow="PRIVACY_CONTROLS">
+      <Panel accent="cyan" eyebrow="Privacy controls">
         <PreferenceSwitch checked={preferences?.functionalStorageEnabled ?? false} label="Functional device storage" note="Remember body profile, favorite lifts, and display choices on this device." onChange={(value) => void update({ functionalStorageEnabled: value })} />
         <PreferenceSwitch checked={preferences?.analyticsEnabled ?? false} label="Product analytics" note="Opt in to account-linked, first-party usage events retained for 90 days." onChange={(value) => void update({ analyticsEnabled: value })} />
         <PreferenceSwitch checked={preferences?.feedbackPromptsEnabled ?? true} label="Feedback prompts" note="Allow optional encouragement, rating, and feedback prompts." onChange={(value) => void update({ feedbackPromptsEnabled: value })} />
         <HudButton className="mt-3 w-full" onClick={() => { clearUserDeviceData(userId); setState("Data stored for this account on this device was cleared."); }} variant="outline">CLEAR DATA ON THIS DEVICE</HudButton>
       </Panel>
-      <Panel accent="lavender" eyebrow="EXPORT_ACCOUNT_DATA">
+      <Panel accent="lavender" eyebrow="Export your data">
         <p className="text-xs leading-relaxed text-fg-muted">Download your server-held account data as JSON. Workout CSV export remains available in History. Enter your current password to authorize the export.</p>
         <PasswordField onChange={setPassword} value={password} />
         <HudButton className="mt-3 w-full" disabled={!password} onClick={() => void exportAccount()} variant="outline">DOWNLOAD ACCOUNT EXPORT</HudButton>
       </Panel>
-      <Panel accent="red" eyebrow="DELETE_ACCOUNT_AND_DATA">
+      <Panel accent="red" eyebrow="Delete your account and data">
         <p className="text-xs leading-relaxed text-fg-muted">Deletion revokes access immediately and permanently removes live account and workout data after a seven-day grace period. Export first. You can cancel from the emailed link or by contacting support before the deadline.</p>
         {!showDelete ? <HudButton className="mt-3 w-full" onClick={() => setShowDelete(true)} variant="danger">REVIEW ACCOUNT DELETION</HudButton> : (
           <div className="mt-3 rounded border border-red/50 bg-red/5 p-3">

@@ -143,7 +143,7 @@ export function EmptyState({
 export function ErrorState({
   message,
   retry,
-  title = "SIGNAL_LOST"
+  title = "Something went wrong"
 }: {
   message: string;
   retry?: () => void;

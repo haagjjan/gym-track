@@ -69,15 +69,15 @@ export function MessageCenter({ inline = false }: { inline?: boolean }): ReactNo
   const content = (
     <article className="w-full max-w-lg rounded border border-cyan/40 bg-surface p-5 shadow-2xl">
       <div className="flex items-start justify-between gap-4">
-        <div><p className="label-caps text-cyan">{message.essential ? "SERVICE_NOTICE" : "FOUNDING_BETA_MESSAGE"}</p><h2 className="mt-2 font-display text-xl font-bold text-fg">{message.title}</h2></div>
-        <button aria-label="Dismiss message" className="min-h-11 px-3 text-outline hover:text-fg" data-modal-initial-focus disabled={busy} onClick={() => void dismiss()} type="button">Close</button>
+        <div className="min-w-0"><p className="label-caps text-cyan">{message.essential ? "Service notice" : "Founding Beta message"}</p><h2 className="mt-2 break-words font-display text-xl font-bold text-fg">{message.title}</h2></div>
+        <button aria-label="Dismiss message" className="min-h-11 shrink-0 px-3 text-outline hover:text-fg" data-modal-initial-focus disabled={busy} onClick={() => void dismiss()} type="button">Close</button>
       </div>
-      <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-fg-muted">{message.body}</p>
-      {message.actionUrl ? <a className="mt-3 inline-flex min-h-11 items-center text-cyan underline" href={message.actionUrl} rel="noreferrer" target="_blank">Open related link ↗</a> : null}
+      <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-6 text-fg-muted">{message.body}</p>
+      {message.actionUrl ? <a className="mt-3 inline-flex min-h-11 items-center break-all text-cyan underline" href={message.actionUrl} rel="noreferrer" target="_blank">Open related link ↗</a> : null}
       <form className="mt-5 space-y-3" onSubmit={(event) => void respond(event)}>
         <ResponseInput message={message} choice={choice} rating={rating} setChoice={setChoice} setRating={setRating} setText={setText} text={text} />
         {error ? <p className="text-sm text-red" role="alert">{error}</p> : null}
-        <p className="text-xs text-outline">Responding is optional. Closing dismisses this message permanently.</p>
+        <p className="text-xs leading-5 text-outline">Answering is optional. Closing puts this message away for good.</p>
         <button className="min-h-11 rounded border border-cyan/60 px-4 font-display text-xs font-bold uppercase tracking-wider text-cyan disabled:opacity-50" disabled={busy} type="submit">{busy ? "SAVING…" : responseLabel(message.responseType)}</button>
       </form>
     </article>
@@ -89,9 +89,9 @@ export function MessageCenter({ inline = false }: { inline?: boolean }): ReactNo
 function ResponseInput(props: { message: UserMessage; choice: string; rating: number; text: string; setChoice(value: string): void; setRating(value: number): void; setText(value: string): void }): ReactNode {
   const { message } = props;
   if (message.responseType === "ACKNOWLEDGEMENT") return <p className="text-sm text-fg">Select acknowledge to confirm you saw this message.</p>;
-  if (message.responseType === "RATING") return <fieldset><legend className="label-caps text-outline">RATING</legend><div className="mt-2 flex gap-2">{[1, 2, 3, 4, 5].map((value) => <button aria-pressed={props.rating === value} className={`size-11 rounded border ${props.rating === value ? "border-cyan bg-cyan/10 text-cyan" : "border-outline-dim text-fg"}`} key={value} onClick={() => props.setRating(value)} type="button">{value}</button>)}</div></fieldset>;
-  if (message.responseType === "SINGLE_CHOICE") return <fieldset><legend className="label-caps text-outline">YOUR_RESPONSE</legend><div className="mt-2 grid gap-2">{message.responseOptions.map((option) => <label className="flex min-h-11 items-center gap-3 rounded border border-outline-dim px-3 text-sm text-fg" key={option}><input checked={props.choice === option} name={`choice-${message.id}`} onChange={() => props.setChoice(option)} type="radio" />{option}</label>)}</div></fieldset>;
-  return <label className="block"><span className="label-caps text-outline">OPTIONAL_FEEDBACK</span><textarea className="mt-2 min-h-28 w-full rounded border border-outline-dim bg-surface-low p-3 text-fg" maxLength={1_000} onChange={(event) => props.setText(event.currentTarget.value)} value={props.text} /><span className="text-xs text-outline">{props.text.length}/1000</span></label>;
+  if (message.responseType === "RATING") return <fieldset><legend className="label-caps text-outline">Your rating</legend><div className="mt-2 flex gap-2">{[1, 2, 3, 4, 5].map((value) => <button aria-pressed={props.rating === value} className={`size-11 rounded border ${props.rating === value ? "border-cyan bg-cyan/10 text-cyan" : "border-outline-dim text-fg"}`} key={value} onClick={() => props.setRating(value)} type="button">{value}</button>)}</div></fieldset>;
+  if (message.responseType === "SINGLE_CHOICE") return <fieldset><legend className="label-caps text-outline">Your answer</legend><div className="mt-2 grid gap-2">{message.responseOptions.map((option) => <label className="flex min-h-11 items-center gap-3 rounded border border-outline-dim px-3 text-sm text-fg" key={option}><input checked={props.choice === option} name={`choice-${message.id}`} onChange={() => props.setChoice(option)} type="radio" /><span className="min-w-0 break-words">{option}</span></label>)}</div></fieldset>;
+  return <label className="block"><span className="label-caps text-outline">Your feedback (optional)</span><textarea className="mt-2 min-h-28 w-full rounded border border-outline-dim bg-surface-low p-3 text-fg" maxLength={1_000} onChange={(event) => props.setText(event.currentTarget.value)} value={props.text} /><span className="text-xs text-outline">{props.text.length}/1000</span></label>;
 }
 
 function buildResponse(type: UserMessage["responseType"], value: { choice: string; rating: number; text: string }): Record<string, unknown> | null {
@@ -102,5 +102,5 @@ function buildResponse(type: UserMessage["responseType"], value: { choice: strin
 }
 
 function responseLabel(type: UserMessage["responseType"]): string {
-  return type === "ACKNOWLEDGEMENT" ? "Acknowledge" : "Send optional response";
+  return type === "ACKNOWLEDGEMENT" ? "Acknowledge" : "Send answer";
 }

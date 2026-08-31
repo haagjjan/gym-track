@@ -4,6 +4,8 @@ export interface WebSecurityConfig {
   canonicalHostname: string;
   canonicalOrigin: string;
   hstsEnabled: boolean;
+  /** Hostnames answered with a permanent redirect to the canonical origin. */
+  redirectHosts: ReadonlySet<string>;
 }
 
 export interface RequestSecurityInput {
@@ -44,9 +46,15 @@ export function readWebSecurityConfig(
   const hstsEnabled = parseBoolean("HSTS_ENABLED", source.HSTS_ENABLED, false);
   const allowedHosts = new Set([canonicalHostname]);
   const allowedOrigins = new Set([canonicalOrigin]);
+  const redirectHosts = new Set(
+    source.APP_REDIRECT_HOSTS === undefined
+      ? defaultRedirectHosts(canonicalHostname)
+      : commaSeparated(source.APP_REDIRECT_HOSTS)
+          .map((host) => parseHostname("APP_REDIRECT_HOSTS", host))
+  );
 
   for (const host of commaSeparated(source.APP_ALLOWED_HOSTS)) {
-    allowedHosts.add(parseHostname(host));
+    allowedHosts.add(parseHostname("APP_ALLOWED_HOSTS", host));
   }
 
   for (const origin of commaSeparated(source.APP_ALLOWED_ORIGINS)) {
@@ -60,13 +68,63 @@ export function readWebSecurityConfig(
     }
   }
 
+  // A host that is served directly — the canonical one included — must never
+  // also be bounced, or it would redirect to itself forever.
+  for (const host of allowedHosts) {
+    redirectHosts.delete(host);
+  }
+
   return {
     allowedHosts,
     allowedOrigins,
     canonicalHostname,
     canonicalOrigin,
-    hstsEnabled
+    hstsEnabled,
+    redirectHosts
   };
+}
+
+/**
+ * Bare-domain and `www.` variants of the canonical hostname.
+ *
+ * Visitors type `gymtrack.ch`, not `app.gymtrack.ch`, so those two hostnames
+ * are bounced to the canonical origin by default instead of being rejected as
+ * untrusted. The registrable domain is taken as the last two labels, which is
+ * correct for the deployed `.ch` domain but not for multi-part suffixes such as
+ * `.co.uk`; set `APP_REDIRECT_HOSTS` explicitly for those, or to an empty
+ * value to turn the redirect off entirely.
+ */
+function defaultRedirectHosts(canonicalHostname: string): string[] {
+  const labels = canonicalHostname.split(".");
+
+  if (labels.length < 2 || isIpAddress(canonicalHostname)) {
+    return [];
+  }
+
+  const registrable = labels.slice(-2).join(".");
+
+  return [registrable, `www.${registrable}`];
+}
+
+function isIpAddress(hostname: string): boolean {
+  return /^\d{1,3}(\.\d{1,3}){3}$/.test(hostname) || hostname.includes(":");
+}
+
+/**
+ * The canonical URL a request should be redirected to, or `null` when the
+ * request is already on a host that is served directly.
+ */
+export function canonicalRedirectTarget(
+  input: { host: string | null; pathAndQuery: string },
+  config: WebSecurityConfig
+): string | null {
+  const hostname = requestHostname(input.host);
+
+  if (!hostname || !config.redirectHosts.has(hostname)) {
+    return null;
+  }
+
+  return `${config.canonicalOrigin}${input.pathAndQuery}`;
 }
 
 export function evaluateRequestSecurity(
@@ -152,7 +210,7 @@ function parseBoolean(name: string, value: string | undefined, fallback: boolean
   throw new Error(`${name} must be true or false.`);
 }
 
-function parseHostname(value: string): string {
+function parseHostname(name: string, value: string): string {
   if (
     value.includes("@") ||
     value.includes("/") ||
@@ -162,13 +220,13 @@ function parseHostname(value: string): string {
     value.includes("#") ||
     /\s/.test(value)
   ) {
-    throw new Error(`APP_ALLOWED_HOSTS contains an invalid hostname: ${value}`);
+    throw new Error(`${name} contains an invalid hostname: ${value}`);
   }
 
   const hostname = new URL(`http://${value}`).hostname.toLowerCase();
 
   if (!hostname) {
-    throw new Error(`APP_ALLOWED_HOSTS contains an invalid hostname: ${value}`);
+    throw new Error(`${name} contains an invalid hostname: ${value}`);
   }
 
   return hostname;
