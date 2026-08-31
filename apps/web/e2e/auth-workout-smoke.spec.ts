@@ -88,6 +88,12 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   await expect(page.getByText("Email not confirmed")).toBeVisible();
   await expectNoSeriousAccessibilityViolations(page);
 
+  await page.getByRole("link", { name: "Contact support & service status" }).click();
+  await expect(page.getByRole("heading", { name: "Support & Service Status" })).toBeVisible();
+  await page.getByRole("link", { name: "Back to Settings" }).click();
+  await expect(page).toHaveURL(/\/settings$/);
+  await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+
   // The 3D body is the only Volume renderer, so Settings no longer offers a
   // renderer choice at all.
   await expect(page.getByRole("radiogroup", { name: "Volume body map" })).toHaveCount(0);
@@ -121,9 +127,10 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   // ---- Start a session from the launch screen ----
   await page.goto("/workout");
   await expect(page.getByRole("heading", { name: "Start a workout" })).toBeVisible();
-  await expect(page.getByText("Start from scratch", { exact: true })).toBeVisible();
+  const startFromScratch = page.getByRole("button", { name: "START", exact: true });
+  await expect(startFromScratch).toBeVisible();
   await expect(page.getByText("Use a template", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "START", exact: true }).click();
+  await startFromScratch.click();
   await expect(page).toHaveURL(/\/workouts\/[0-9a-f-]+\?focusName=1$/);
   const workoutId = page.url().match(/\/workouts\/([0-9a-f-]+)/)?.[1];
   expect(workoutId).toBeTruthy();
@@ -149,7 +156,8 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   await expect(initialPicker).toHaveCount(0);
   await expect(chooseExercises).toBeFocused();
   await chooseExercises.click();
-  await page.getByPlaceholder(/Scan catalog/).fill("Bench Press");
+  const exercisePicker = page.getByRole("dialog", { name: "Choose exercises" });
+  await exercisePicker.getByRole("searchbox", { name: "Search exercises" }).fill("Bench Press");
   await page
     .getByRole("button", { name: /^Bench Press\b/ })
     .first()
