@@ -133,3 +133,21 @@ export function IconCheck(props: SVGProps<SVGSVGElement>): ReactNode {
     </Icon>
   );
 }
+
+export function IconMail(props: SVGProps<SVGSVGElement>): ReactNode {
+  return (
+    <Icon {...props}>
+      <rect height="11" width="15" x="2.5" y="4.5" />
+      <path d="M2.5 5.5 10 11l7.5-5.5" />
+    </Icon>
+  );
+}
+
+export function IconShield(props: SVGProps<SVGSVGElement>): ReactNode {
+  return (
+    <Icon {...props}>
+      <path d="M10 2.5 16 5v4.5c0 3.6-2.4 6.6-6 8-3.6-1.4-6-4.4-6-8V5z" />
+      <path d="M7.5 10 9.5 12l3.5-3.5" />
+    </Icon>
+  );
+}
