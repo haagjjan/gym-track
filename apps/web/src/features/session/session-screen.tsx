@@ -129,7 +129,7 @@ export function SessionScreen({
 
       <main className={`mx-auto grid w-full max-w-5xl gap-4 px-4 pt-4 lg:grid-cols-[minmax(0,1fr)_260px] lg:gap-6 ${logging.restTimer ? "pb-32 lg:pb-8" : "pb-4 lg:pb-8"}`}>
         <div className="min-w-0 space-y-4">
-          {actionError ? <ErrorState message={actionError} title="ACTION_FAILED" /> : null}
+          {actionError ? <ErrorState message={actionError} title="That did not work" /> : null}
           <p aria-live="polite" className="sr-only">{status}</p>
 
           {!isOpen && workout.endedAt ? (
@@ -177,7 +177,7 @@ export function SessionScreen({
                 onEditSet={logging.setEditingSetId}
                 onError={setActionError}
                 onNewSetOpen={(open) => open ? logging.openNewSet() : logging.cancelNewSet()}
-                onRestAdjust={(seconds) => logging.setRestTimer((current) => current ? { ...current, seconds: current.seconds + seconds } : null)}
+                onRestAdjust={(seconds) => logging.setRestTimer((current) => current ? { ...current, seconds: Math.max(0, current.seconds + seconds) } : null)}
                 onRestDismiss={() => logging.setRestTimer(null)}
                 onSaveSet={() => { void logging.saveSet().then((saved) => { if (saved) void mark("logEditSet"); }); }}
                 restTimer={logging.restTimer}
