@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { sendValidationError } from "../../shared/http-validation.js";
 import { authenticateRequest } from "../auth/authenticate-request.js";
 import type { AuthService, PublicUser } from "../auth/auth.service.js";
+import { summariseCampaignResponses } from "./campaign-responses.js";
 import { campaignActionSchema, createCampaignSchema, messageResponseSchema } from "./message.schemas.js";
 import type { MessageRepository } from "./message.repository.js";
 
@@ -35,6 +36,14 @@ export async function registerMessageRoutes(server: FastifyInstance, options: {
   server.get("/api/v1/admin/campaigns", async (request, reply) => {
     if (!await requireAdmin(request, reply, options)) return;
     return reply.send({ data: { items: await options.repository.listCampaigns() } });
+  });
+  server.get("/api/v1/admin/campaigns/:campaignId/responses", async (request, reply) => {
+    if (!await requireAdmin(request, reply, options)) return;
+    const campaignId = (request.params as { campaignId: string }).campaignId;
+    const records = await options.repository.listCampaignResponses(campaignId);
+    return records
+      ? reply.send({ data: summariseCampaignResponses(records) })
+      : reply.status(404).send({ error: { code: "CAMPAIGN_NOT_FOUND", message: "The campaign was not found." } });
   });
   server.post("/api/v1/admin/campaigns", { config: { rateLimit: { max: 30, timeWindow: "1 hour" } } }, async (request, reply) => {
     const user = await requireAdmin(request, reply, options); if (!user) return;
