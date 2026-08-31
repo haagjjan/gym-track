@@ -31,7 +31,7 @@ export function HeatCeilingPanel(): ReactNode {
   }
 
   return (
-    <Panel accent="lavender" eyebrow="VOLUME_HEAT_SCALE">
+    <Panel accent="lavender" eyebrow="Muscle heat scale">
       <div className="flex items-start justify-between gap-4">
         <div><p className="text-sm text-fg">Full heat at weekly average</p><p className="mt-1 text-[11px] leading-relaxed text-fg-muted">Sets the top of the five-stage muscle heat scale. This follows your account.</p></div>
         <label className="shrink-0"><span className="sr-only">Volume heat ceiling</span><input className="min-h-11 w-20 rounded border border-outline-dim bg-surface-low px-2 text-center font-mono text-base text-fg focus:border-lavender focus:outline-none" inputMode="numeric" max={50} min={5} onChange={(event) => { const next = Number(event.currentTarget.value); dirtyRef.current = true; valueRef.current = next; setValue(next); }} type="number" value={value} /></label>

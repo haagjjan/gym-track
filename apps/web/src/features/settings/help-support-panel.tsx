@@ -10,7 +10,7 @@ import { Panel } from "../../shared/ui/ui";
  */
 export function HelpSupportPanel({ supportUrl }: { supportUrl?: string | undefined }): ReactNode {
   return (
-    <Panel accent="cyan" eyebrow="HELP_SUPPORT_AND_POLICIES">
+    <Panel accent="cyan" eyebrow="Help, support, and policies">
       <nav className="grid gap-2 text-sm">
         <SettingsLink href="/help">Help, tutorial & practice workout</SettingsLink>
         <SettingsLink href="/support">Contact support & service status</SettingsLink>
