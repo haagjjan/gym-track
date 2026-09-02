@@ -438,6 +438,26 @@ from this change.
 The cAdvisor restart panel is a best-effort signal. Confirm suspected restarts with
 `docker compose ps` and container logs before taking action.
 
+### External public status
+
+Better Stack is the external observer for the public status page; the private Prometheus stack is
+not exposed for this purpose. Keep three HTTPS monitors on a three-minute cadence using the exact
+public names `Web application`, `API and database`, and `Independent status page`. Their targets and
+one-time status-page configuration are documented in `ops/status/README.md`.
+
+Set the Better Stack-hosted public page URL—not a token and not `status.gymtrack.ch`—as the GitHub
+repository variable `BETTER_STACK_STATUS_URL`. After a green main workflow, confirm:
+
+1. `status.gymtrack.ch` names all three components and shows a recent feed timestamp;
+2. `https://app.gymtrack.ch/api/public-status` returns only aggregate accounts/workouts and
+   `Cache-Control: no-store`;
+3. the verified commit links to the SHA that passed the full repository workflow; and
+4. an announced Better Stack test incident appears and resolves without editing repository HTML.
+
+If the provider feed fails, the public page must say `Live status unavailable`. Do not replace that
+state with a manual green value. Publish incident text through Better Stack and keep personal data,
+credentials, internal hostnames, and exploit detail out of every update.
+
 ---
 
 ## 9. Public-beta lifecycle cleanup and email alerts

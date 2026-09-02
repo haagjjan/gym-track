@@ -344,6 +344,26 @@ The performance workloads and ceilings are recorded in `docs/Usability_Audit/per
 
 Status: implemented without endpoint, database, public response-shape, or storage-key changes.
 
+## Public Status Evidence Slice
+
+The recruiter-facing status page remains outside the product application while using existing
+feature boundaries for its small live-data surface:
+
+- `status` is an API feature with a route, service, and repository. The repository performs a
+  filtered active-account count and a deliberately unfiltered workout-session row count; the
+  service owns the below-five disclosure rule.
+- The public Next.js BFF route forwards no cookies, preserves the API boundary, rejects browser
+  origins other than `status.gymtrack.ch`, and disables caching.
+- `ops/status/public` is plain HTML, CSS, and one local ES module. Parsing and failure-state logic
+  remain testable without a browser or status provider.
+- Better Stack owns externally observed availability and incidents. GitHub Actions owns attributable
+  `c8 --all` coverage and latest-verified-commit evidence.
+- No database migration, public analytics event, counter table, trigger, or scheduled recount is
+  introduced. Every live request obtains a fresh database count.
+
+Status: implemented for the repository/API/BFF/static-page foundation. Better Stack monitor and
+repository-variable setup remain owner-operated external configuration.
+
 ## Current Size-Limit Exceptions
 
 The following source files remain above the normal review targets after cleanup:

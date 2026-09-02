@@ -63,7 +63,8 @@ This file is the map for where things live in the Gym Progress Tracker repo. Kee
 │   ├── logging
 │   │   └── scripts
 │   ├── status
-│   │   └── public
+│   │   ├── public
+│   │   └── scripts
 │   └── monitoring
 │       ├── alertmanager
 │       ├── grafana
@@ -87,6 +88,8 @@ This file is the map for where things live in the Gym Progress Tracker repo. Kee
 - `render.yaml` owns Render Blueprint configuration for the small-batch deployment target.
 - Root TypeScript, ESLint, Playwright, package, and pnpm files own shared tooling.
 - `.github/workflows/repo-checks.yml` owns project CI checks, sequential performance regression tests, API database integration tests, and web smoke tests.
+- `.github/workflows/status-page.yml` publishes the independently hosted page after a successful
+  main workflow, generating coverage/build evidence and non-secret Better Stack runtime config.
 
 ## Applications
 
@@ -110,6 +113,7 @@ apps/
 |       |   |-- health/
 |       |   |-- lifecycle/
 |       |   |-- messages/
+|       |   |-- status/
 |       |   |-- templates/
 |       |   |-- users/
 |       |   `-- workouts/
@@ -135,6 +139,7 @@ apps/
         |   |-- progress/
         |   |-- session/
         |   |-- settings/
+        |   |-- status/
         |   |-- templates/
         |   |-- volume/
         |   `-- workouts/

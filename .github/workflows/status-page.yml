@@ -1,13 +1,16 @@
 name: Status page
 
-# The status page must survive the outage it reports on, so it is published to
-# GitHub Pages rather than to the Mac mini or anything behind its tunnel.
-# Publication remains manual even though Pages is live: every deployment is a
-# reviewed operational claim, and an unrelated application push must not
-# republish stale status. The workflow still checks out the selected main SHA,
-# so the deployed page remains attributable to a specific commit.
+# GitHub Pages remains independent of the production host. A successful main
+# workflow refreshes recruiter-facing build evidence; live operational state
+# is still read at runtime from Better Stack and is never inferred from CI.
 on:
-  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - repo-checks
+    branches:
+      - main
+    types:
+      - completed
 
 permissions:
   contents: read
@@ -20,28 +23,62 @@ concurrency:
 
 jobs:
   publish:
-    name: Publish status page
+    name: Publish verified status page
+    if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
-      - name: Check out repository
+      - name: Check out verified revision
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
-      - name: Verify the published directory carries no build step
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify status data behavior
+        run: pnpm test:status
+
+      - name: Generate all-source coverage
+        run: pnpm test:coverage
+
+      - name: Generate verified build evidence
+        env:
+          STATUS_QUALITY_COMMIT: ${{ github.event.workflow_run.head_sha }}
+        run: node ops/status/scripts/build-quality-summary.mjs
+
+      - name: Generate public monitoring configuration
+        env:
+          BETTER_STACK_STATUS_URL: ${{ vars.BETTER_STACK_STATUS_URL }}
+        run: node ops/status/scripts/build-runtime-config.mjs
+
+      - name: Verify independent static assets
         run: |
           set -euo pipefail
 
-          # The page is deliberately dependency-free: no script may run on a
-          # host that is supposed to stay available when everything else is not.
-          if grep -rqiE '<script|onerror=|onload=' ops/status/public; then
-            printf 'ERROR: the status page must remain script-free\n' >&2
+          test -f ops/status/public/index.html
+          test -f ops/status/public/status.css
+          test -f ops/status/public/status.js
+          test -f ops/status/public/config.json
+          test -f ops/status/public/quality.json
+          test "$(cat ops/status/public/CNAME)" = "status.gymtrack.ch"
+          test "$(grep -Fc '<script type="module" src="./status.js"></script>' ops/status/public/index.html)" = "1"
+
+          if grep -rqiE 'onerror=|onload=|style=' ops/status/public; then
+            printf 'ERROR: status assets must not contain inline handlers or styles\n' >&2
             exit 1
           fi
-
-          test -f ops/status/public/index.html
-          test "$(cat ops/status/public/CNAME)" = "status.gymtrack.ch"
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

@@ -96,8 +96,8 @@ durable schema source of truth.
 | API | Fastify 5, Zod, Kysely, Argon2, Papa Parse, `prom-client` |
 | Data | PostgreSQL 17, `node-pg-migrate`, SQL constraints and indexes |
 | Tooling | TypeScript 5.9, pnpm 10 workspaces, ESLint, Docker Compose |
-| Verification | Node test runner, PostgreSQL integration tests, Playwright, axe |
-| Operations | Caddy, Cloudflare Tunnel, Prometheus, Grafana, Alertmanager, Restic, systemd |
+| Verification | Node test runner, PostgreSQL integration tests, Playwright, axe, c8 line coverage |
+| Operations | Caddy, Cloudflare Tunnel, Better Stack, Prometheus, Grafana, Alertmanager, Restic, systemd |
 
 For the deeper boundary and dependency rules, read [ARCHITECTURE.md](ARCHITECTURE.md). For a
 current code, hardware and deployment assessment, read
@@ -115,7 +115,7 @@ ops/
   monitoring/          Prometheus, Grafana, Alertmanager and exporters
   logging/             bounded log review, audit and retention tooling
   backup/              encrypted backup, restore tests, timers and Mac destination setup
-  status/              dependency-free external status page
+  status/              independent live status and build-evidence page
 docs/
   decisions/           architecture decision records
   beta-process/        requirements, risks, launch gates and execution evidence
@@ -190,8 +190,9 @@ pnpm smoke:web          # Playwright member workflow, responsive and accessibili
 
 GitHub Actions runs Project checks, API database integration and Web smoke as separate jobs for
 every pull request and push to `main`. CI also verifies fresh staging PostgreSQL initialization,
-the hardened offline runtime and production/staging Compose invariants. A separate manually
-dispatched workflow validates and publishes the reviewed status-page bundle.
+the hardened offline runtime and production/staging Compose invariants. After a fully successful
+main workflow, the status workflow collects all-source API/web coverage, creates attributable build
+evidence, validates the static boundary and publishes the independent GitHub Pages bundle.
 
 The performance suites are generous regression ceilings, not browser Core Web Vitals or a claim of
 large-scale capacity. Production-shaped staging separately passed the Founding Beta target of 20
@@ -204,7 +205,7 @@ concurrent active loggers and a 40-logger 2x probe.
 | Local Compose | feature development and tests | localhost | disposable developer data |
 | Staging | exact-SHA, production-shaped acceptance | owner-only Cloudflare Access | synthetic only |
 | Production | invitation-only Founding Beta | `app.gymtrack.ch` through Cloudflare Tunnel | real member data |
-| Status | independent incident communication | public GitHub Pages | no application data |
+| Status | independent incident communication and aggregate build evidence | public GitHub Pages | no personal data |
 
 Production is self-hosted on a 2018 Intel Mac mini running Ubuntu 26.04 with a T2-compatible
 kernel. The application, database, ingress and monitoring services run as a hardened Docker Compose
