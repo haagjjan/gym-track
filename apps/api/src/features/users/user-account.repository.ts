@@ -158,16 +158,27 @@ export function createUserAccountRepository(db: Kysely<AppDatabase>): UserAccoun
     },
     async cancelDeletion(tokenHash, now) {
       return db.transaction().execute(async (trx) => {
-        const token = await trx.selectFrom("account_deletion_tokens").innerJoin("users", "users.id", "account_deletion_tokens.user_id")
-          .select(["account_deletion_tokens.id", "users.id as userId", "users.email"])
+        const candidate = await trx.selectFrom("account_deletion_tokens")
+          .select(["id", "user_id as userId"])
           .where("token_hash", "=", tokenHash).where("used_at", "is", null).where("expires_at", ">", now)
-          .where("users.account_status", "=", "DELETION_PENDING").forUpdate().executeTakeFirst();
-        if (!token) return null;
-        await trx.updateTable("account_deletion_tokens").set({ used_at: now }).where("id", "=", token.id).execute();
+          .executeTakeFirst();
+        if (!candidate) return null;
+
+        // Every deletion path locks the user before its token rows. A joined
+        // FOR UPDATE leaves row-lock order to the query planner and can
+        // deadlock against finalization, which already holds the user row.
+        const user = await trx.selectFrom("users").select(["id", "email"])
+          .where("id", "=", candidate.userId).where("account_status", "=", "DELETION_PENDING")
+          .forUpdate().executeTakeFirst();
+        if (!user) return null;
+        const consumed = await trx.updateTable("account_deletion_tokens").set({ used_at: now })
+          .where("id", "=", candidate.id).where("user_id", "=", user.id)
+          .where("used_at", "is", null).where("expires_at", ">", now).returning("id").executeTakeFirst();
+        if (!consumed) return null;
         await trx.updateTable("users").set({
           account_status: "ACTIVE", deletion_requested_at: null, deletion_due_at: null, updated_at: now
-        }).where("id", "=", token.userId).execute();
-        return { email: token.email };
+        }).where("id", "=", user.id).execute();
+        return { email: user.email };
       });
     },
     async cancelDeletionByAdmin(userId, adminUserId, now) {
