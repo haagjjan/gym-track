@@ -1707,6 +1707,42 @@ Returns recent administrator audit events in descending creation order. `limit` 
 
 Only the allowlisted bounded detail fields `previousStatus`, `newStatus`, and `revokedSessions` are exposed. A malformed cursor or limit above 100 returns `422 VALIDATION_ERROR`.
 
+## Public Status Metrics
+
+### `GET /api/v1/status-metrics`
+
+Internal aggregate endpoint used by the public web BFF. It requires no user session, remains behind
+the production BFF attribution boundary, sends `Cache-Control: no-store`, and returns no personal
+fields.
+
+```json
+{
+  "data": {
+    "generatedAt": "2026-09-01T12:00:00.000Z",
+    "activeBetaAccounts": {
+      "kind": "exact",
+      "value": 12
+    },
+    "workoutRecordsProcessed": 456
+  }
+}
+```
+
+`activeBetaAccounts` counts `USER` rows whose account status is `ACTIVE`. Below five, the response
+is `{ "kind": "below_threshold", "threshold": 5 }` and does not expose the exact number.
+
+`workoutRecordsProcessed` is an exact, unfiltered `COUNT(*)` over `workout_sessions`. It includes
+administrator-owned, imported, historical, open, completed, and soft-deleted records. It does not
+retain counts for workout rows physically removed by account erasure.
+
+### `GET /api/public-status`
+
+Public Next.js BFF route for the independent status page and originless uptime probes. It forwards
+no cookies, calls `GET /api/v1/status-metrics` with `cache: no-store`, and returns the upstream JSON
+and status. Browser responses grant `Access-Control-Allow-Origin` only to
+`https://status.gymtrack.ch`; an explicit different origin receives `403 CORS_NOT_ALLOWED`.
+Unavailable upstream service returns `502 API_UNAVAILABLE` without cached data.
+
 ### API-process lifecycle behavior
 
 The single API process owns a single-flight lifecycle runner. It runs once during startup and hourly thereafter. Auth-token cleanup, invitation expiry, due deletions, retention cleanup, and completion notifications are isolated phases: one failure does not stop later phases, later due accounts, or the next scheduled run. The runner processes the entire due-deletion list under the 50-account beta cap and reports bounded metrics described under `GET /api/v1/metrics`.

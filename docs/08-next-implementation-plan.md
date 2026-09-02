@@ -60,8 +60,10 @@ restore scripts and recovery runbook are installed, captured in a new backup and
 live production fingerprint was unchanged and no disposable restore resources remained.
 Provider/legal values are recorded and reaffirmed, the production Resend key is protected on the
 host, the production BFF secret is protected on the host, and a reviewed non-secret production
-Compose/Caddy definition plus CI invariants now replace the host-only setup gap. Independent
-status, production black-box checks and physical-device QA remain open. Later policy/configuration
+Compose/Caddy definition plus CI invariants now replace the host-only setup gap. The independent
+status page, aggregate metrics boundary, and verified-build publication workflow are implemented;
+Better Stack setup and deployed status-domain verification remain open alongside production
+black-box checks and physical-device QA. Later policy/configuration
 changes do not reopen unchanged application evidence, but the final commit needs green CI and a
 focused rendered-policy staging pass. See
 `docs/beta-process/public-beta/goal-4/goal-4-production-verification.md`.
