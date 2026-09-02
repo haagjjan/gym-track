@@ -17,6 +17,7 @@
     "start": "node dist/main.js",
     "test:capacity": "node --import tsx scripts/beta-capacity.ts",
     "test": "node --import tsx --test \"src/**/*.test.ts\"",
+    "test:coverage": "c8 --all --src src --extension .ts --exclude \"**/*.test.ts\" --exclude \"**/*.integration-test.ts\" --exclude \"**/*.performance-test.ts\" --reporter json-summary --reporter text --reports-dir ../../coverage/api node --import tsx --test \"src/**/*.test.ts\"",
     "test:performance": "node --import tsx --test --test-concurrency=1 \"src/**/*.performance-test.ts\"",
     "test:integration": "node --import tsx --test \"src/**/*.integration-test.ts\"",
     "type-check": "tsc --noEmit --project tsconfig.json --pretty false"
