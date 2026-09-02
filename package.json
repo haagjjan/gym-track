@@ -27,9 +27,11 @@
     "start": "docker compose up --build",
     "stop": "docker compose down",
     "smoke:web": "playwright test",
-    "test": "pnpm -r --if-present test",
+    "test": "pnpm -r --if-present test && pnpm test:status",
+    "test:coverage": "pnpm --filter @gym-progress-tracker/api test:coverage && pnpm --filter @gym-progress-tracker/web test:coverage",
     "test:integration": "pnpm --filter @gym-progress-tracker/api test:integration",
     "test:performance": "pnpm --filter @gym-progress-tracker/api test:performance && pnpm --filter @gym-progress-tracker/web test:performance",
+    "test:status": "node --test ops/status/status-data.test.mjs ops/status/quality-summary.test.mjs",
     "type-check": "pnpm -r --if-present type-check"
   },
   "devDependencies": {
@@ -37,6 +39,7 @@
     "@eslint/eslintrc": "^3.3.5",
     "@eslint/js": "^9.39.4",
     "@playwright/test": "^1.61.0",
+    "c8": "^12.0.0",
     "eslint": "^9.39.4",
     "eslint-config-next": "^15.5.21",
     "typescript": "^5.9.3",
