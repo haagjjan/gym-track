@@ -8,6 +8,7 @@
     "lint": "eslint . --no-error-on-unmatched-pattern --max-warnings=0",
     "start": "next start --hostname ${WEB_HOST:-0.0.0.0} --port ${WEB_PORT:-3000}",
     "test": "node --import tsx --test \"src/**/*.test.ts\"",
+    "test:coverage": "c8 --all --src src --extension .ts --extension .tsx --exclude \"**/*.test.ts\" --exclude \"**/*.performance-test.ts\" --reporter json-summary --reporter text --reports-dir ../../coverage/web node --import tsx --test \"src/**/*.test.ts\"",
     "test:performance": "node --import tsx --test --test-concurrency=1 \"src/**/*.performance-test.ts\"",
     "type-check": "tsc --noEmit --project tsconfig.json --pretty false"
   },
