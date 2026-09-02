@@ -23,6 +23,9 @@ import { createExerciseRepository } from "./features/exercises/exercise.reposito
 import { registerExerciseRoutes } from "./features/exercises/exercise.routes.js";
 import { createExerciseService } from "./features/exercises/exercise.service.js";
 import { registerHealthRoutes } from "./features/health/health.routes.js";
+import { createStatusRepository } from "./features/status/status.repository.js";
+import { registerStatusRoutes } from "./features/status/status.routes.js";
+import { createStatusService } from "./features/status/status.service.js";
 import { createTemplateRepository } from "./features/templates/template.repository.js";
 import { registerTemplateRoutes } from "./features/templates/template.routes.js";
 import { createTemplateService } from "./features/templates/template.service.js";
@@ -126,6 +129,9 @@ export async function buildServer(
       ? createMailerFromEnv(extras.mailerEnv, server.log, operationalMetrics)
       : undefined);
   const databaseHealth = createDatabaseHealthCheck(db);
+  const statusService = createStatusService({
+    repository: createStatusRepository(db)
+  });
   const authService = createAuthService({
     repository: createAuthRepository(db),
     passwordHasher: argon2PasswordHasher,
@@ -189,6 +195,7 @@ export async function buildServer(
   });
   await server.register(cookie);
   await registerHealthRoutes(server, databaseHealth);
+  await registerStatusRoutes(server, statusService);
   await registerAuthRoutes(server, {
     service: authService,
     events,
