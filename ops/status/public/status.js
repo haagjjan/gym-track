@@ -9,7 +9,7 @@ const STATUS_PRIORITY = new Map([
 const STATUS_LABELS = {
   operational: "Operational", maintenance: "Maintenance",
   degraded: "Degraded", downtime: "Disruption",
-  unknown: "Unavailable"
+  unknown: "Not verified"
 };
 const QUALITY_STALE_AFTER_MS = 14 * 24 * 60 * 60 * 1_000;
 
@@ -202,13 +202,21 @@ async function fetchJson(url) {
 }
 
 async function refreshMonitoring() {
+  let sourceUrl;
+
   try {
     const config = record(await fetchJson(STATUS_CONFIG_URL));
-    const sourceUrl = parseBetterStackStatusUrl(config.betterStackStatusUrl);
+    sourceUrl = parseBetterStackStatusUrl(config.betterStackStatusUrl);
+  } catch {
+    renderMonitoringUnavailable("No external observer is configured for this page yet.", "Not configured");
+    return;
+  }
+
+  try {
     const feed = await fetchJson(`${sourceUrl}/index.json`);
     renderMonitoring(parseMonitoringFeed(feed, sourceUrl));
   } catch {
-    renderMonitoringUnavailable();
+    renderMonitoringUnavailable("The external monitor could not be reached, so its verdict cannot be shown.", "Unreachable");
   }
 }
 
@@ -216,12 +224,13 @@ async function refreshMetrics() {
   try {
     renderMetrics(parsePublicMetrics(await fetchJson(METRICS_URL)));
   } catch {
-    setText("accounts-value", "Unavailable");
-    setText("workouts-value", "Unavailable");
+    setValue("accounts-value", "No data", true);
+    setValue("workouts-value", "No data", true);
     setState("accounts-dot", "unavailable");
     setState("workouts-dot", "unavailable");
     setText("accounts-note", "The live aggregate endpoint could not be reached");
-    setText("metrics-updated", "Live project metrics unavailable");
+    setText("workouts-note", "The live aggregate endpoint could not be reached");
+    setText("metrics-updated", "Live production metrics could not be recounted");
   }
 }
 
@@ -229,87 +238,116 @@ async function refreshQuality() {
   try {
     renderQuality(parseQualitySummary(await fetchJson(QUALITY_URL)));
   } catch {
-    setText("api-coverage", "Unavailable");
-    setText("web-coverage", "Unavailable");
+    setValue("api-coverage", "No data", true);
+    setValue("web-coverage", "No data", true);
     setText("coverage-note", "No verified coverage artifact is available");
-    setState("coverage-dot", "unavailable");
-    setState("build-state", "unavailable");
-    document.querySelector("#build-state strong").textContent = "Evidence unavailable";
+    setText("web-coverage-note", "No verified coverage artifact is available");
+    setText("build-note", "No verified build evidence is available");
+    renderCommit(null);
+    setState("api-coverage-dot", "unavailable");
+    setState("web-coverage-dot", "unavailable");
+    setState("build-dot", "unavailable");
   }
 }
 
 function renderMonitoring(view) {
-  setState("overall-card", view.overallState);
-  setText("overall-title", overallTitle(view.overallState));
-  setText("overall-summary", overallSummary(view.overallState));
-  setText("monitor-updated", formatDate(view.updatedAt));
+  renderOverall(view.overallState, overallSummary(view.overallState));
+  setText("monitor-updated", freshness(view.updatedAt));
+  document.getElementById("monitor-updated").title = formatDate(view.updatedAt);
+
   for (const component of view.components) renderComponent(component);
-  renderIncidents("active-incidents", view.activeIncidents, "No active incidents reported.");
+
+  renderIncidents("active-incidents", view.activeIncidents, "Nothing is broken that the monitors can see.");
   renderIncidents("resolved-incidents", view.resolvedIncidents, "No resolved incidents in the public feed.");
   setText("active-incident-count", String(view.activeIncidents.length));
+
   const source = document.getElementById("monitor-source");
   source.href = view.sourceUrl;
   source.hidden = false;
   document.getElementById("monitor-source-missing").hidden = true;
 
   if (view.uptime === null) {
-    setText("uptime-value", "Unavailable");
+    setValue("uptime-value", "No data", true);
     setText("uptime-note", "The complete 90-day monitor history is unavailable");
     setState("uptime-dot", "unavailable");
   } else {
-    setText("uptime-value", `${view.uptime.toFixed(2)}%`);
-    setText("uptime-note", "Lowest availability among all required monitors");
+    setValue("uptime-value", `${view.uptime.toFixed(2)}%`, false);
+    setText("uptime-note", "Lowest availability among all three probes");
     setState("uptime-dot", "operational");
   }
 }
 
-function renderMonitoringUnavailable() {
-  setState("overall-card", "unknown");
-  setText("overall-title", "Live status unavailable");
-  setText("overall-summary", "The independent monitoring feed could not be verified. No operational claim is being made.");
-  setText("monitor-updated", "Unavailable");
-  setText("uptime-value", "Unavailable");
-  setText("uptime-note", "Better Stack configuration or feed unavailable");
+function renderMonitoringUnavailable(summary, observerLabel) {
+  renderOverall("unknown", summary);
+  setText("monitor-updated", "No data");
+  setValue("uptime-value", "No data", true);
+  setText("uptime-note", "No external monitor verdict is available");
   setText("active-incident-count", "—");
   setState("uptime-dot", "unavailable");
+
+  const source = document.getElementById("monitor-source");
+  const missing = document.getElementById("monitor-source-missing");
+  source.hidden = true;
+  missing.hidden = false;
+  missing.textContent = observerLabel;
+
   for (const key of REQUIRED_COMPONENTS) renderComponent({ key, state: "unknown" });
-  renderIncidents("active-incidents", [], "Live incident feed unavailable.");
-  renderIncidents("resolved-incidents", [], "Incident history unavailable.");
+  renderIncidents("active-incidents", [], "The live incident feed is unavailable.");
+  renderIncidents("resolved-incidents", [], "Incident history is unavailable.");
+}
+
+function renderOverall(state, summary) {
+  setState("overall-band", state);
+  setState("topbar-state", state);
+  setText("overall-title", overallTitle(state));
+  setText("overall-summary", summary);
+  setText("topbar-state-label", STATUS_LABELS[state] ?? STATUS_LABELS.unknown);
 }
 
 function renderComponent(component) {
-  const row = document.querySelector(`[data-component="${component.key}"]`);
-  if (!row) return;
-  const state = row.querySelector(".service-state");
-  state.dataset.state = component.state;
-  state.lastChild.textContent = ` ${STATUS_LABELS[component.state] ?? STATUS_LABELS.unknown}`;
+  const label = STATUS_LABELS[component.state] ?? STATUS_LABELS.unknown;
+
+  for (const element of document.querySelectorAll(`[data-component="${component.key}"]`)) {
+    element.dataset.state = component.state;
+    const monitorState = element.querySelector(".monitor-state span");
+    if (monitorState) monitorState.textContent = label;
+    const probeState = element.querySelector(".probe-state");
+    if (probeState) probeState.textContent = label;
+  }
 }
 
 function renderIncidents(targetId, incidents, emptyMessage) {
   const target = document.getElementById(targetId);
   target.replaceChildren();
+
   if (incidents.length === 0) {
     const empty = document.createElement("p");
-    empty.className = "empty-state";
+    empty.className = "empty";
     empty.textContent = emptyMessage;
     target.append(empty);
     return;
   }
+
   for (const incident of incidents) target.append(incidentElement(incident));
 }
 
 function incidentElement(incident) {
   const article = document.createElement("article");
-  article.className = "incident-item";
+  article.className = incident.endsAt ? "incident" : "incident incident-active";
+  article.dataset.state = incident.state;
+
   const title = document.createElement("strong");
   title.textContent = incident.title;
+
   const message = document.createElement("p");
   message.textContent = incident.message;
+
   const time = document.createElement("time");
   time.dateTime = incident.endsAt ?? incident.startsAt;
   time.textContent = incident.endsAt
     ? `Resolved ${formatDate(incident.endsAt)}`
     : `Started ${formatDate(incident.startsAt)}`;
+
   article.append(title, message, time);
   return article;
 }
@@ -317,54 +355,84 @@ function incidentElement(incident) {
 function renderMetrics(metrics) {
   const accounts = metrics.activeAccounts.kind === "exact"
     ? number(metrics.activeAccounts.value)
-    : `Fewer than ${metrics.activeAccounts.threshold}`;
-  setText("accounts-value", accounts);
-  setText("workouts-value", number(metrics.workoutRecordsProcessed));
-  setText("accounts-note", `Fresh aggregate generated ${formatDate(metrics.generatedAt)}`);
-  setText("metrics-updated", `Live metrics recounted ${formatDate(metrics.generatedAt)}`);
+    : `Under ${metrics.activeAccounts.threshold}`;
+
+  setValue("accounts-value", accounts, false);
+  setValue("workouts-value", number(metrics.workoutRecordsProcessed), false);
+  setText("accounts-note", `Recounted ${freshness(metrics.generatedAt)}`);
+  setText("workouts-note", "Erased rows are gone, so this count can fall");
+  setText("metrics-updated", `Live production metrics recounted ${freshness(metrics.generatedAt)}`);
   setState("accounts-dot", "operational");
   setState("workouts-dot", "operational");
 }
 
 function renderQuality(quality) {
-  const freshness = qualityFreshness(quality.verifiedAt);
+  const state = qualityFreshness(quality.verifiedAt);
   const shortSha = quality.commitSha.slice(0, 7);
-  setText("api-coverage", `${quality.apiLines.toFixed(1)}%`);
-  setText("web-coverage", `${quality.webLines.toFixed(1)}%`);
-  setText("coverage-note", `${freshness === "verified" ? "Verified" : "Stale"} at commit ${shortSha}`);
-  setState("coverage-dot", freshness === "verified" ? "operational" : "stale");
-  setState("build-state", freshness);
-  document.querySelector("#build-state strong").textContent = freshness === "verified"
-    ? "All repository checks passed"
-    : "Verification is older than 14 days";
+  const dotState = state === "verified" ? "operational" : "stale";
+
+  setValue("api-coverage", `${quality.apiLines.toFixed(1)}%`, false);
+  setValue("web-coverage", `${quality.webLines.toFixed(1)}%`, false);
+  setText("coverage-note", `Measured on ${shortSha}`);
+  setText("web-coverage-note", "Same commit as the row above");
+  setState("api-coverage-dot", dotState);
+  setState("web-coverage-dot", dotState);
+  setState("build-dot", dotState);
+  setText("build-note", state === "verified"
+    ? `All checks passed ${freshness(quality.verifiedAt)}`
+    : `Older than 14 days — last passed ${formatDate(quality.verifiedAt)}`);
+
+  renderCommit(quality.commitSha);
+}
+
+function renderCommit(commitSha) {
   const link = document.getElementById("commit-link");
-  link.textContent = shortSha;
-  link.href = `${REPOSITORY_URL}/commit/${quality.commitSha}`;
-  setText("build-verified", formatDate(quality.verifiedAt));
+  const holder = link.parentElement;
+
+  if (commitSha === null) {
+    link.textContent = "No data";
+    link.removeAttribute("href");
+    holder.classList.add("is-empty");
+    return;
+  }
+
+  link.textContent = commitSha.slice(0, 7);
+  link.href = `${REPOSITORY_URL}/commit/${commitSha}`;
+  holder.classList.remove("is-empty");
 }
 
 function overallTitle(state) {
   return {
-    operational: "All monitored systems operational",
-    degraded: "Some systems are degraded",
-    downtime: "Service disruption detected",
-    maintenance: "Scheduled maintenance underway",
-    unknown: "Live status unavailable"
+    operational: "Everything the monitors watch is up",
+    degraded: "Something is degraded",
+    downtime: "Service disruption",
+    maintenance: "Planned maintenance",
+    unknown: "Not verified right now"
   }[state];
 }
 
 function overallSummary(state) {
   return {
-    operational: "The web app, API/database path, and independent status host are responding normally.",
-    degraded: "At least one monitored surface is responding with reduced reliability.",
-    downtime: "At least one monitored surface is unavailable. See the incident log for updates.",
-    maintenance: "Planned maintenance is affecting at least one monitored surface.",
-    unknown: "The monitoring feed is incomplete or unavailable. No operational claim is being made."
+    operational: "The login surface, the path from the public API through to a live database read, and this page are all responding.",
+    degraded: "At least one probe is seeing reduced reliability. The incident log below has the detail.",
+    downtime: "At least one probe cannot reach the service. The incident log below has the detail.",
+    maintenance: "Planned maintenance is affecting at least one probed surface.",
+    unknown: "No operational claim is being made."
   }[state];
 }
 
+function freshness(value) {
+  const seconds = Math.round((Date.now() - Date.parse(value)) / 1000);
+
+  if (!Number.isFinite(seconds) || seconds < 0) return formatDate(value);
+  if (seconds < 90) return "just now";
+  if (seconds < 3600) return `${Math.round(seconds / 60)} min ago`;
+  if (seconds < 86_400) return `${Math.round(seconds / 3600)} h ago`;
+  return formatDate(value);
+}
+
 function formatDate(value) {
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat("en-GB", {
     dateStyle: "medium",
     timeStyle: "short",
     timeZone: "UTC"
@@ -381,6 +449,12 @@ function setText(id, value) {
 
 function setState(id, value) {
   document.getElementById(id).dataset.state = value;
+}
+
+function setValue(id, text, isEmpty) {
+  const element = document.getElementById(id);
+  element.textContent = text;
+  element.classList.toggle("is-empty", isEmpty);
 }
 
 function start() {
