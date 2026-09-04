@@ -4,166 +4,369 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <meta name="theme-color" content="#080b12">
+  <meta name="theme-color" content="#06080b">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self' https://app.gymtrack.ch https://uptime.betterstack.com https://*.betteruptime.com https://*.betterstack.com; img-src 'self' data:; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
-  <meta name="description" content="Live service health and independently verifiable engineering evidence for GymTrack.">
-  <title>GymTrack — Live status &amp; build evidence</title>
+  <meta name="description" content="Live service state for GymTrack, the evidence behind it, and an explicit account of what this page can and cannot prove.">
+  <title>GymTrack service status</title>
   <link rel="stylesheet" href="./status.css">
   <script type="module" src="./status.js"></script>
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to status</a>
-  <div class="ambient ambient-cyan" aria-hidden="true"></div>
-  <div class="ambient ambient-violet" aria-hidden="true"></div>
 
-  <header class="site-header shell">
-    <a class="brand" href="https://app.gymtrack.ch" aria-label="Open GymTrack">
-      <span class="brand-mark" aria-hidden="true">GT</span>
-      <span>GymTrack</span>
-    </a>
-    <nav aria-label="Quick links">
-      <a href="#evidence">Build evidence</a>
-      <a class="nav-cta" href="https://app.gymtrack.ch/login">Open app <span aria-hidden="true">↗</span></a>
-    </nav>
+  <header class="topbar">
+    <div class="topbar-inner shell">
+      <p class="brand">
+        <a class="brand-link" href="https://app.gymtrack.ch">
+          <span class="brand-mark" aria-hidden="true">GT</span>
+          <span class="brand-name">GymTrack</span>
+        </a>
+        <span class="brand-sep" aria-hidden="true">/</span>
+        <span class="brand-scope">status</span>
+      </p>
+      <div class="topbar-right">
+        <p class="topbar-state" id="topbar-state" data-state="loading">
+          <span class="beacon" aria-hidden="true"></span>
+          <span id="topbar-state-label">Checking</span>
+        </p>
+        <nav aria-label="Elsewhere">
+          <a href="https://github.com/haagjjan/gym-track">Source</a>
+          <a class="topbar-cta" href="https://app.gymtrack.ch">Open app <span aria-hidden="true">↗</span></a>
+        </nav>
+      </div>
+    </div>
   </header>
 
-  <main class="shell" id="main-content">
-    <section class="hero" aria-labelledby="page-title">
-      <div class="hero-copy">
-        <p class="eyebrow"><span class="eyebrow-line" aria-hidden="true"></span> OPERATIONS / BUILD EVIDENCE</p>
-        <h1 id="page-title">A live product.<br><span>With the receipts.</span></h1>
-        <p class="lede">GymTrack is an invitation-only fitness product designed, built, deployed, and operated as a real production system. This page shows what is live—and the evidence behind it.</p>
-        <div class="hero-tags" aria-label="Project stage">
-          <span>Live Founding Beta</span>
-          <span>Independently monitored</span>
-          <span>Built in public</span>
+  <main id="main-content">
+    <section class="masthead shell" aria-labelledby="page-title">
+      <p class="kicker">Independent status · status.gymtrack.ch</p>
+
+      <div class="masthead-top">
+        <h1 id="page-title">This page is hosted somewhere else, on purpose.</h1>
+        <div class="masthead-side">
+          <p class="lede">GymTrack is a strength-training log, and it runs on a single 2018 Mac mini
+            that I administer myself. A status page on that machine would fail in exactly the moment
+            you need it, so this one is served from GitHub Pages on unproxied DNS and takes its
+            verdict from an external monitor rather than from me.</p>
+          <noscript>
+            <p class="notice">JavaScript is disabled, so nothing on this page has been verified. No
+              operational claim is being made.</p>
+          </noscript>
         </div>
       </div>
 
-      <aside class="live-card" data-state="loading" id="overall-card" aria-labelledby="overall-title">
-        <div class="radar" aria-hidden="true"><span class="radar-arm"></span><i class="radar-pivot"></i></div>
-        <p class="card-label">CURRENT SYSTEM STATE</p>
-        <div class="overall-status" role="status" aria-live="polite">
-          <span class="status-beacon" aria-hidden="true"></span>
-          <h2 id="overall-title">Checking live monitors</h2>
-        </div>
-        <p class="status-summary" id="overall-summary">Requesting the independent Better Stack status feed.</p>
-        <dl class="status-meta">
-          <div><dt>Feed updated</dt><dd id="monitor-updated">Waiting…</dd></div>
-          <div><dt>Monitor cadence</dt><dd>Every 3 minutes</dd></div>
-        </dl>
-      </aside>
-    </section>
-
-    <noscript>
-      <p class="notice">JavaScript is disabled, so live monitoring and project evidence cannot be verified. No operational claim is being made.</p>
-    </noscript>
-
-    <section class="section" aria-labelledby="services-title">
-      <div class="section-heading">
-        <div><p class="eyebrow">LIVE OPERATIONS</p><h2 id="services-title">Service health</h2></div>
-        <p>Only externally checked surfaces appear here. Authentication, email, and writes are not presented as independently monitored components.</p>
-      </div>
-      <div class="service-panel">
-        <div class="service-row" data-component="web-application">
-          <div><span class="service-icon" aria-hidden="true">W</span><span><strong>Web application</strong><small>Login surface and web delivery</small></span></div>
-          <span class="service-state" data-state="loading"><i aria-hidden="true"></i> Checking</span>
-        </div>
-        <div class="service-row" data-component="api-and-database">
-          <div><span class="service-icon violet" aria-hidden="true">A</span><span><strong>API and database</strong><small>Public BFF through to a live database read</small></span></div>
-          <span class="service-state" data-state="loading"><i aria-hidden="true"></i> Checking</span>
-        </div>
-        <div class="service-row" data-component="independent-status-page">
-          <div><span class="service-icon green" aria-hidden="true">S</span><span><strong>Independent status page</strong><small>GitHub Pages, outside the application stack</small></span></div>
-          <span class="service-state" data-state="loading"><i aria-hidden="true"></i> Checking</span>
-        </div>
-      </div>
-      <p class="source-line">Operational source: <a href="#" id="monitor-source" hidden>Better Stack public status feed <span aria-hidden="true">↗</span></a><span id="monitor-source-missing">configuration pending</span></p>
-    </section>
-
-    <section class="section" id="evidence" aria-labelledby="evidence-title">
-      <div class="section-heading">
-        <div><p class="eyebrow">PROJECT EVIDENCE</p><h2 id="evidence-title">Measured, not hand-waved</h2></div>
-        <p>Every number includes its definition and source. Small-beta limitations remain visible instead of being dressed up as commercial scale.</p>
-      </div>
-      <div class="metric-grid">
-        <article class="metric-card metric-primary">
-          <div class="metric-top"><span class="metric-code">UPTIME_90D</span><span class="metric-dot" data-state="loading" id="uptime-dot"></span></div>
-          <p class="metric-value" id="uptime-value">—</p>
-          <h3>90-day uptime</h3>
-          <p>Lowest availability across the three public monitors—not a best-case average.</p>
-          <small id="uptime-note">Waiting for Better Stack</small>
-        </article>
-        <article class="metric-card">
-          <div class="metric-top"><span class="metric-code">TEST_COVERAGE</span><span class="metric-dot" data-state="loading" id="coverage-dot"></span></div>
-          <div class="coverage-values">
-            <p><strong id="api-coverage">—</strong><span>API lines</span></p>
-            <p><strong id="web-coverage">—</strong><span>Web lines</span></p>
+      <div class="readout" id="overall-band" data-state="loading">
+        <div class="readout-main">
+          <p class="readout-label">Current verdict</p>
+          <div role="status" aria-live="polite">
+            <div class="readout-state">
+              <span class="beacon beacon-lg" aria-hidden="true"></span>
+              <h2 id="overall-title">Checking live monitors</h2>
+            </div>
+            <p class="readout-summary" id="overall-summary">Requesting the independent Better Stack status feed.</p>
           </div>
-          <h3>Test coverage</h3>
-          <p>Generated with <code>c8 --all</code>, so untouched source files cannot disappear from the denominator.</p>
-          <small id="coverage-note">Waiting for verified build evidence</small>
-        </article>
-        <article class="metric-card">
-          <div class="metric-top"><span class="metric-code">ACTIVE_ACCOUNTS</span><span class="metric-dot" data-state="loading" id="accounts-dot"></span></div>
-          <p class="metric-value" id="accounts-value">—</p>
-          <h3>Active beta accounts</h3>
-          <p>Non-admin accounts currently marked active. Counts below five stay private.</p>
-          <small id="accounts-note">Waiting for a live database recount</small>
-        </article>
-        <article class="metric-card">
-          <div class="metric-top"><span class="metric-code">RECORDS_PROCESSED</span><span class="metric-dot" data-state="loading" id="workouts-dot"></span></div>
-          <p class="metric-value" id="workouts-value">—</p>
-          <h3>Workout records processed</h3>
-          <p>Includes imported records, owner/admin workouts, open workouts, completed workouts, and soft-deleted workout history.</p>
-          <small id="workouts-note">Fresh unfiltered database count; hard-erased rows are not retained</small>
-        </article>
-      </div>
-    </section>
-
-    <section class="section proof-grid" aria-label="Verification and incidents">
-      <article class="proof-card" aria-labelledby="build-title">
-        <p class="eyebrow">LATEST VERIFIED BUILD</p>
-        <h2 id="build-title">Repository checks</h2>
-        <div class="build-state" data-state="loading" id="build-state"><span aria-hidden="true"></span><strong>Loading evidence</strong></div>
-        <dl class="build-meta">
-          <div><dt>Commit</dt><dd><a href="https://github.com/haagjjan/gym-track" id="commit-link">Unavailable</a></dd></div>
-          <div><dt>Verified</dt><dd id="build-verified">Unavailable</dd></div>
-          <div><dt>Evidence</dt><dd>Type-check · lint · tests · build</dd></div>
+        </div>
+        <dl class="readout-meta">
+          <div>
+            <dt>Feed updated</dt>
+            <dd id="monitor-updated">Waiting…</dd>
+          </div>
+          <div>
+            <dt>Probe interval</dt>
+            <dd>Every 3 minutes</dd>
+          </div>
+          <div>
+            <dt>Observer</dt>
+            <dd>
+              <a href="#" id="monitor-source" hidden>Better Stack <span aria-hidden="true">↗</span></a>
+              <span id="monitor-source-missing">Not configured</span>
+            </dd>
+          </div>
         </dl>
-        <p class="fine-print">This is the last main-branch revision whose complete repository workflow succeeded. It is not an SLA.</p>
-      </article>
-
-      <article class="incident-card" aria-labelledby="incidents-title">
-        <div class="incident-heading"><div><p class="eyebrow">INCIDENT LOG</p><h2 id="incidents-title">What changed</h2></div><span class="count-badge" id="active-incident-count">—</span></div>
-        <div class="incident-group">
-          <h3>Active</h3>
-          <div id="active-incidents"><p class="empty-state">Checking the live incident feed…</p></div>
-        </div>
-        <div class="incident-group resolved-group">
-          <h3>Recently resolved</h3>
-          <div id="resolved-incidents"><p class="empty-state">Checking incident history…</p></div>
-        </div>
-      </article>
+      </div>
     </section>
 
-    <section class="support-card" aria-labelledby="support-title">
-      <div>
-        <p class="eyebrow">SUPPORT THE PROJECT</p>
-        <h2 id="support-title">Useful feedback beats a donation.</h2>
-        <p>Put the product through a real workout, tell me where it breaks, or inspect the engineering decisions behind it.</p>
+    <section class="section shell" aria-labelledby="path-title">
+      <div class="section-head">
+        <p class="section-index">01 — Scope</p>
+        <h2 id="path-title">What is actually being probed</h2>
+        <p class="section-note">Three HTTPS checks run from outside this system. They are drawn onto the
+          real request path so it stays obvious which hops they cover — and which they do not.</p>
       </div>
-      <div class="support-actions">
-        <a class="button button-primary" href="https://app.gymtrack.ch/beta">Request beta access <span aria-hidden="true">↗</span></a>
-        <a class="button" href="https://app.gymtrack.ch/support">Send feedback</a>
-        <a class="button" href="https://github.com/haagjjan/gym-track">Source &amp; engineering decisions</a>
+
+      <figure class="path" aria-labelledby="path-figure-title">
+        <figcaption id="path-figure-title" class="sr-only">Request path, in order: browser, Cloudflare
+          edge and Tunnel, Caddy ingress, Next.js BFF, Fastify API, PostgreSQL 17. The last four run on
+          one host — a 2018 Mac mini with a 6-core i5 and 32 GB of memory, on Ubuntu 26.04 under Docker
+          Compose, with no public database or API port. Probe 1 requests /login and covers Cloudflare
+          through the BFF. Probe 2 requests /api/public-status and covers the BFF through PostgreSQL.
+          Probe 3 requests this status page, which runs outside all of it. Current probe states are
+          listed after the diagram.</figcaption>
+
+        <div class="path-grid" aria-hidden="true">
+          <p class="probe probe-a" data-component="web-application">
+            <span class="probe-dot"></span>
+            <span class="probe-name">Probe 1 · GET /login</span>
+            <span class="probe-state">Checking</span>
+          </p>
+          <p class="probe probe-b" data-component="api-and-database">
+            <span class="probe-dot"></span>
+            <span class="probe-name">Probe 2 · GET /api/public-status</span>
+            <span class="probe-state">Checking</span>
+          </p>
+
+          <div class="node node-a">
+            <span class="node-kind">Client</span>
+            <strong>Browser</strong>
+            <span class="node-note">Phone at the rack</span>
+          </div>
+          <div class="node node-b">
+            <span class="node-kind">Edge</span>
+            <strong>Cloudflare</strong>
+            <span class="node-note">Edge and Tunnel</span>
+          </div>
+          <div class="node node-c">
+            <span class="node-kind">Ingress</span>
+            <strong>Caddy</strong>
+            <span class="node-note">Only way in</span>
+          </div>
+          <div class="node node-d">
+            <span class="node-kind">Web</span>
+            <strong>Next.js BFF</strong>
+            <span class="node-note">Host and Origin checks</span>
+          </div>
+          <div class="node node-e">
+            <span class="node-kind">API</span>
+            <strong>Fastify</strong>
+            <span class="node-note">Auth, rules, transactions</span>
+          </div>
+          <div class="node node-f">
+            <span class="node-kind">Data</span>
+            <strong>PostgreSQL 17</strong>
+            <span class="node-note">Durable state</span>
+          </div>
+
+          <p class="boundary">One host · 2018 Mac mini, 6-core i5, 32 GB · Ubuntu 26.04 · Docker Compose · no public database or API port</p>
+        </div>
+
+        <p class="probe probe-c" data-component="independent-status-page" aria-hidden="true">
+          <span class="probe-dot" aria-hidden="true"></span>
+          <span class="probe-name">Probe 3 · GET status.gymtrack.ch</span>
+          <span class="probe-state">Checking</span>
+        </p>
+      </figure>
+
+      <ul class="monitors">
+        <li class="monitor" data-component="web-application">
+          <div class="monitor-name">
+            <strong>Web application</strong>
+            <small>Login surface and web delivery</small>
+          </div>
+          <p class="monitor-check">GET app.gymtrack.ch/login</p>
+          <span class="monitor-state"><i aria-hidden="true"></i><span>Checking</span></span>
+        </li>
+        <li class="monitor" data-component="api-and-database">
+          <div class="monitor-name">
+            <strong>API and database</strong>
+            <small>Public path through to a live database read</small>
+          </div>
+          <p class="monitor-check">GET app.gymtrack.ch/api/public-status</p>
+          <span class="monitor-state"><i aria-hidden="true"></i><span>Checking</span></span>
+        </li>
+        <li class="monitor" data-component="independent-status-page">
+          <div class="monitor-name">
+            <strong>Independent status page</strong>
+            <small>GitHub Pages, outside every box above</small>
+          </div>
+          <p class="monitor-check">GET status.gymtrack.ch</p>
+          <span class="monitor-state"><i aria-hidden="true"></i><span>Checking</span></span>
+        </li>
+      </ul>
+
+      <p class="unprobed">
+        <span class="unprobed-tag">Deliberately unmonitored</span>
+        <span>Email delivery, authenticated writes and background jobs are covered by tests and by me,
+          not by an outside observer. Presenting them as monitored components would make this page
+          prettier and less true.</span>
+      </p>
+    </section>
+
+    <section class="section shell" id="evidence" aria-labelledby="evidence-title">
+      <div class="section-head">
+        <p class="section-index">02 — Evidence</p>
+        <h2 id="evidence-title">Numbers, with their definitions attached</h2>
+        <p class="section-note">Each row states what was counted, where the number came from and how
+          fresh it is. The small-beta limits stay visible rather than being rounded into something
+          more impressive.</p>
+      </div>
+
+      <div class="ledger">
+        <p class="ledger-group">Recounted live from production</p>
+
+        <div class="row">
+          <p class="row-key"><span class="dot" id="uptime-dot" data-state="loading"></span>90-day uptime</p>
+          <p class="row-value" id="uptime-value">—</p>
+          <p class="row-def">The <em>lowest</em> availability of the three probes above, not an average
+            and not a best case. One bad monitor sets this number.</p>
+          <p class="row-src" id="uptime-note">Waiting for Better Stack</p>
+        </div>
+
+        <div class="row">
+          <p class="row-key"><span class="dot" id="accounts-dot" data-state="loading"></span>Active beta accounts</p>
+          <p class="row-value" id="accounts-value">—</p>
+          <p class="row-def">Non-administrator accounts currently marked active. Below five it is
+            published as a range, because an exact tiny number is personal data.</p>
+          <p class="row-src" id="accounts-note">Waiting for a live database recount</p>
+        </div>
+
+        <div class="row">
+          <p class="row-key"><span class="dot" id="workouts-dot" data-state="loading"></span>Workout records processed</p>
+          <p class="row-value" id="workouts-value">—</p>
+          <p class="row-def">An unfiltered lifetime <code>COUNT(*)</code> over workout sessions:
+            imports, my own sessions, open, finished and soft-deleted rows included. It is
+            record-processing volume, not adoption.</p>
+          <p class="row-src" id="workouts-note">Erased rows are gone, so this count can fall</p>
+        </div>
+
+        <p class="ledger-group">From the last fully verified build</p>
+
+        <div class="row">
+          <p class="row-key"><span class="dot" id="build-dot" data-state="loading"></span>Verified revision</p>
+          <p class="row-value"><a href="https://github.com/haagjjan/gym-track" id="commit-link">—</a></p>
+          <p class="row-def">The most recent <code>main</code> commit whose entire workflow passed:
+            type-check, lint, unit, integration, performance, browser and accessibility checks, then
+            build. A failing run cannot replace it.</p>
+          <p class="row-src" id="build-note">Loading verified build evidence</p>
+        </div>
+
+        <div class="row">
+          <p class="row-key"><span class="dot" id="api-coverage-dot" data-state="loading"></span>API line coverage</p>
+          <p class="row-value" id="api-coverage">—</p>
+          <p class="row-def">Measured with <code>c8 --all</code>, so files without a single test still
+            count against the denominator. Business rules and repositories are the covered part.</p>
+          <p class="row-src" id="coverage-note">Waiting for verified build evidence</p>
+        </div>
+
+        <div class="row">
+          <p class="row-key"><span class="dot" id="web-coverage-dot" data-state="loading"></span>Web line coverage</p>
+          <p class="row-value" id="web-coverage">—</p>
+          <p class="row-def">Low, and left visible. The browser layer is verified by Playwright and axe
+            against a running stack rather than by unit tests over React views and 3D scene modules.</p>
+          <p class="row-src" id="web-coverage-note">Same commit as the row above</p>
+        </div>
+
+        <div class="row">
+          <p class="row-key"><span class="dot" data-state="static"></span>Checks behind that revision</p>
+          <p class="row-value row-value-sm">3 jobs</p>
+          <p class="row-def">Project checks (whitespace, required documents, type-check, lint, unit
+            tests, production build, performance regressions, and verification of the hardened
+            container plus the staging and production definitions), API tests against a real
+            PostgreSQL, and a Playwright smoke run with axe accessibility assertions in both Chromium
+            and Firefox. The page only republishes when all three pass.</p>
+          <p class="row-src"><a href="https://github.com/haagjjan/gym-track/actions/workflows/repo-checks.yml">Workflow runs <span aria-hidden="true">↗</span></a></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section shell" aria-labelledby="incidents-title">
+      <div class="section-head">
+        <p class="section-index">03 — History</p>
+        <h2 id="incidents-title">Incidents</h2>
+        <p class="section-note">Written during the incident, not tidied up afterwards. Each entry names
+          the affected component, the user-visible impact and when the next update is due.</p>
+      </div>
+
+      <div class="incidents">
+        <div class="incident-col">
+          <h3 class="incident-head">Active <span class="count" id="active-incident-count">—</span></h3>
+          <div id="active-incidents"><p class="empty">Checking the live incident feed…</p></div>
+        </div>
+        <div class="incident-col">
+          <h3 class="incident-head">Recently resolved</h3>
+          <div id="resolved-incidents"><p class="empty">Checking incident history…</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section shell" aria-labelledby="documented-title">
+      <div class="section-head">
+        <p class="section-index">04 — Limits</p>
+        <h2 id="documented-title">What this page cannot prove</h2>
+        <p class="section-note">The rest of the operating model is real but is not externally observable
+          from here. It is written down and reviewable, which is a weaker claim than a live probe, so it
+          is labelled as one.</p>
+      </div>
+
+      <ul class="documented">
+        <li>
+          <p class="doc-tag">Monitoring</p>
+          <p class="doc-body">Six Prometheus targets scraped every 15 seconds with 30-day retention, and
+            31 alert rules covering service loss, latency, host and container pressure, PostgreSQL and
+            backup freshness. Alerts reach one private Telegram destination.</p>
+          <p class="doc-src"><a href="https://github.com/haagjjan/gym-track/tree/main/ops/monitoring">ops/monitoring</a></p>
+        </li>
+        <li>
+          <p class="doc-tag">Backup and recovery</p>
+          <p class="doc-body">Restic-encrypted snapshots leave the host four times a day to a restricted
+            off-machine destination. Targets are a 24-hour RPO and a four-hour RTO, with 30-day snapshot
+            retention. Restores are rehearsed into isolated environments, including replaying the
+            erasure ledger over an older database.</p>
+          <p class="doc-src"><a href="https://github.com/haagjjan/gym-track/tree/main/ops/backup">ops/backup</a></p>
+        </li>
+        <li>
+          <p class="doc-tag">Admission and identity</p>
+          <p class="doc-body">Registration is invitation-only and capped at 50 accounts, enforced in the
+            API rather than in the interface. Argon2id password hashing, opaque database-backed
+            sessions, login lockout, and account export, deletion grace and hard erasure are
+            implemented in the data flows.</p>
+          <p class="doc-src"><a href="https://github.com/haagjjan/gym-track/blob/main/SECURITY.md">SECURITY.md</a></p>
+        </li>
+        <li>
+          <p class="doc-tag">Capacity</p>
+          <p class="doc-body">Production-shaped staging passed 20 concurrent active loggers and a
+            40-logger double probe without failures. That is enough for an invitation-only beta on one
+            machine. It is not evidence for large or hostile traffic, and it is not presented as such.</p>
+          <p class="doc-src"><a href="https://github.com/haagjjan/gym-track/blob/main/docs/current-system-analysis.md">System analysis</a></p>
+        </li>
+        <li>
+          <p class="doc-tag">Known weak points</p>
+          <p class="doc-body">One host, one operator, no automatic failover. Staging shares that
+            hardware. The off-machine backup destination depends on a laptop being reachable during one
+            of the daily windows — a scheduled run has already failed that way, and the recovery is
+            recorded rather than quietly dropped.</p>
+          <p class="doc-src"><a href="https://github.com/haagjjan/gym-track/blob/main/docs/current-system-analysis.md">Constraints and risks</a></p>
+        </li>
+        <li>
+          <p class="doc-tag">Decisions</p>
+          <p class="doc-body">Nineteen architecture decision records explain why the stack, the auth
+            model, the deployment target, the observability topology, the backup design and this very
+            page look the way they do — including the options that were rejected.</p>
+          <p class="doc-src"><a href="https://github.com/haagjjan/gym-track/tree/main/docs/decisions">docs/decisions</a></p>
+        </li>
+      </ul>
+    </section>
+
+    <section class="section shell closing" aria-labelledby="closing-title">
+      <div>
+        <h2 id="closing-title">Break it, then tell me how.</h2>
+        <p>GymTrack is invitation-only while the beta is small. If you want to look at the engineering
+          instead, the whole repository is public — including the operations runbooks and the checks
+          that produced the numbers above.</p>
+      </div>
+      <div class="actions">
+        <a class="action action-primary" href="https://app.gymtrack.ch/beta">Request beta access <span aria-hidden="true">↗</span></a>
+        <a class="action" href="https://github.com/haagjjan/gym-track">Read the source <span aria-hidden="true">↗</span></a>
+        <a class="action" href="https://app.gymtrack.ch/support">Send feedback <span aria-hidden="true">↗</span></a>
       </div>
     </section>
   </main>
 
-  <footer class="site-footer shell">
-    <p><strong>GymTrack</strong> · Designed, built, deployed, and operated as an independent software project.</p>
-    <p><span id="metrics-updated">Live metrics not yet loaded</span> · <a href="https://app.gymtrack.ch/support">Report a service problem</a></p>
+  <footer class="footer">
+    <div class="footer-inner shell">
+      <p>GymTrack · designed, built, deployed and operated by one person.</p>
+      <p>Application unreachable? <a href="https://github.com/haagjjan/gym-track/issues">Open an issue</a> — GitHub is not part of this system.</p>
+      <p><span id="metrics-updated">Live metrics not yet loaded</span></p>
+    </div>
   </footer>
 </body>
 </html>
