@@ -13,6 +13,12 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@gym-progress-tracker/api", "dev"],
       "port": 4000
+    },
+    {
+      "name": "status",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "4310", "--directory", "ops/status/public"],
+      "port": 4310
     }
   ]
 }
