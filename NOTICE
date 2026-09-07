@@ -48,6 +48,19 @@ apps/web/public/volume/muscle-regions-side.svg
 
 See `apps/web/public/volume/README.md` for provenance.
 
+## Typeface
+
+```
+ops/status/public/source-serif-4-latin.woff2
+```
+
+Source Serif 4 (Adobe), Latin variable subset, served self-hosted by the independent status page
+so that page depends on no third-party origin at runtime.
+
+- Licence: [SIL Open Font License 1.1](https://openfontlicense.org/)
+- Upstream: <https://github.com/adobe-fonts/source-serif>
+- Subset as published by Google Fonts (`unicode-range` U+0000-00FF and related Latin ranges)
+
 ## Dependencies
 
 Runtime and build dependencies retain their own licences, declared in their
