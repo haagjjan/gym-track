@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
+import { readFile, readdir } from "node:fs/promises";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import {
+  COUNTERFACTUALS,
   parseBetterStackStatusUrl,
   parseMonitoringFeed,
   parsePublicMetrics,
@@ -126,3 +130,26 @@ function report(id, title, endsAt, updateIds) {
     }
   };
 }
+
+describe("counterfactual machine", () => {
+  it("names only decisions that exist, and quotes them verbatim", async () => {
+    const decisions = fileURLToPath(new URL("../../docs/decisions/", import.meta.url));
+    const files = await readdir(decisions);
+    const html = await readFile(new URL("./public/index.html", import.meta.url), "utf8");
+    const inMarkup = [...html.matchAll(/data-adr="(\d{4})"/g)].map((match) => match[1]).sort();
+
+    assert.deepEqual(inMarkup, Object.keys(COUNTERFACTUALS).sort(),
+      "every switch in the markup must have consequence copy, and vice versa");
+
+    for (const [id, entry] of Object.entries(COUNTERFACTUALS)) {
+      const name = files.find((file) => file.startsWith(`${id}-`) && file.endsWith(".md"));
+      assert.ok(name, `adr ${id} has no record in docs/decisions/`);
+      assert.equal(entry.cite, `docs/decisions/${name}`, `adr ${id} cites the wrong file`);
+
+      const flatten = (value) => value.replace(/\s+/g, " ").trim();
+      const source = flatten(await readFile(join(decisions, name), "utf8"));
+      assert.ok(source.includes(flatten(entry.quote)),
+        `adr ${id} quotation is not verbatim in ${name}`);
+    }
+  });
+});
