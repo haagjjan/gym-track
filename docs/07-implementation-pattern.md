@@ -354,10 +354,18 @@ feature boundaries for its small live-data surface:
   service owns the below-five disclosure rule.
 - The public Next.js BFF route forwards no cookies, preserves the API boundary, rejects browser
   origins other than `status.gymtrack.ch`, and disables caching.
-- `ops/status/public` is plain HTML, CSS, and one local ES module. Parsing and failure-state logic
-  remain testable without a browser or status provider.
+- `ops/status/public` is plain HTML, CSS, and one local ES module entry with same-origin parser,
+  state-controller, and renderer helpers. Parsing and failure-state logic remain testable without
+  a browser or status provider. Local browser fixtures live outside the published directory.
 - Better Stack owns externally observed availability and incidents. GitHub Actions owns attributable
   `c8 --all` coverage and latest-verified-commit evidence.
+- Monitoring confirmation expires five minutes after the browser's last validated retrieval;
+  provider `updated_at` is not a probe time. Tab visibility and polling re-evaluate freshness, and
+  independent request generations prevent older responses from replacing newer channel state.
+- Daily history uses only valid returned dates and states; scalar availability has no asserted
+  period. Incident parsing failures do not discard valid component states.
+- Project activity expires 15 minutes after `generatedAt`. Build evidence is qualified as one
+  historical record after 14 days; future timestamps are invalid. Neither channel determines health.
 - No database migration, public analytics event, counter table, trigger, or scheduled recount is
   introduced. Every live request obtains a fresh database count.
 

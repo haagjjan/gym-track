@@ -303,6 +303,12 @@ These files may exist locally but should not be committed:
 - Playwright reports and test results
 
 `ops/status/public/` is committed static source intended for an independently hosted `status.gymtrack.ch`; it is not generated runtime output.
+Its `status.js` entry owns fetch/poll lifecycle, `status-data.js` owns validation and history parsing,
+`status-state.js` owns independent evidence state and request generations, and `status-view.js` owns
+safe DOM rendering. `ops/status/*.test.mjs` and `status-fixtures.mjs` own isolated status tests.
+`ops/status/scripts/preview.mjs` serves local browser fixtures; it and its fixtures remain outside
+the published `public/` directory. Generated `config.json`, `quality.json`, and browser screenshots
+are local or CI artifacts, not committed source.
 
 Use `.env.example` for shared environment variable documentation. Do not commit secrets, cookie jars, database dumps, or generated build output.
 

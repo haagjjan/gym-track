@@ -19,12 +19,13 @@ build runner with an external availability probe.
 ## Decision
 
 - Keep `status.gymtrack.ch` on GitHub Pages, outside the application host and Cloudflare Tunnel.
-- Use Better Stack as the authoritative public source for current state, 90-day monitor history,
+- Use Better Stack as the authoritative public source for current state, returned monitor history,
   and incident updates. Its separately hosted public status URL is a non-secret repository
   variable; the custom page reads the provider's public `/index.json` feed.
 - Monitor the web login page, the public status-metrics BFF path, and the independent status page
   every three minutes. Publish only these externally checked components.
-- Allow one local dependency-free browser module on the GitHub Pages bundle. It may read the
+- Allow one local dependency-free browser entry module, with same-origin helpers, on the GitHub
+  Pages bundle. It may read the
   Better Stack feed, the public aggregate metrics BFF, and a same-origin verified-build artifact.
   Missing or invalid data produces an unavailable state, never a retained green claim.
 - Publish a successful main revision automatically after the complete repository workflow passes.
@@ -35,6 +36,20 @@ build runner with an external availability probe.
   Do not add a counter table, trigger, or reconciliation job.
 - Publish active non-administrator accounts only at five or above. No personal fields enter the
   public response or static bundle.
+
+### Evidence clarification (2026-09-12)
+
+The compact status-document redesign keeps these hosting and data boundaries. Monitoring evidence
+expires five minutes after a successful validated browser retrieval; this is not a provider probe
+timestamp. Project metrics expire 15 minutes after generation, independently of monitoring. Build
+evidence retains its 14-day qualification across the entire attributable record. Future timestamps
+are invalid evidence, not old evidence.
+
+The provider's scalar `availability` does not establish a reporting period. The page therefore
+withholds period-specific uptime percentages and derives history ranges only from valid returned
+`status_history` dates. Same-origin helpers separate parsing, asynchronous state, and plain-text
+rendering while retaining a single script entry and the existing CSP. No framework or service is
+introduced.
 
 ## Consequences
 
