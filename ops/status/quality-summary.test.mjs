@@ -32,6 +32,16 @@ describe("status quality summary", () => {
       verifiedAt: "2026-09-01T12:00:00.000Z"
     }));
   });
+
+  it("rejects non-finite coverage instead of serializing it as null", () => {
+    for (const value of [NaN, Infinity]) {
+      assert.throws(() => buildQualitySummary({
+        apiSummary: coverage(value), webSummary: coverage(70),
+        commitSha: "1234567890abcdef1234567890abcdef12345678",
+        verifiedAt: "2026-09-01T12:00:00.000Z"
+      }));
+    }
+  });
 });
 
 describe("status runtime configuration", () => {

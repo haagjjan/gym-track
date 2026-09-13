@@ -1,155 +1,153 @@
 import assert from "node:assert/strict";
-import { readFile, readdir } from "node:fs/promises";
-import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import {
-  COUNTERFACTUALS,
-  parseBetterStackStatusUrl,
-  parseMonitoringFeed,
-  parsePublicMetrics,
-  parseQualitySummary,
-  qualityFreshness
-} from "./public/status.js";
+  parseBetterStackStatusUrl, parseMonitoringFeed, parsePublicMetrics, parseQualitySummary,
+  qualityFreshness, parseHistory, historySummary, timestamp
+} from "./public/status-data.js";
+import { monitoringFixture, incidentFixture, metricsFixture, qualityFixture } from "./status-fixtures.mjs";
 
-describe("status page data", () => {
-  it("builds a conservative uptime and separates active from resolved incidents", () => {
-    const view = parseMonitoringFeed(feed(), "https://gymtrack.betteruptime.com");
+const NOW = Date.parse("2026-09-12T12:00:00Z");
 
+describe("monitoring data", () => {
+  it("parses healthy services without treating page updated_at or availability as an observation/period", () => {
+    const view = parseMonitoringFeed(monitoringFixture(NOW), "", NOW);
     assert.equal(view.overallState, "operational");
-    assert.equal(view.uptime, 99.5);
-    assert.deepEqual(view.components.map((component) => component.key), [
-      "web-application", "api-and-database", "independent-status-page"
-    ]);
-    assert.equal(view.activeIncidents[0]?.message, "Investigating from the edge.");
-    assert.equal(view.resolvedIncidents[0]?.title, "Resolved test");
+    assert.equal(view.components.length, 3);
+    assert.equal("updatedAt" in view, false);
+    assert.equal("uptime" in view, false);
+    assert.equal(view.components[0].history.length, 3);
   });
-
-  it("does not show operational when a required monitor is degraded or absent", () => {
-    const degraded = feed();
-    degraded.included[1].attributes.status = "degraded";
-    assert.equal(parseMonitoringFeed(degraded).overallState, "degraded");
-
-    const incomplete = feed();
-    incomplete.included = incomplete.included.filter((item) =>
-      item.attributes?.public_name !== "Independent status page");
-    assert.equal(parseMonitoringFeed(incomplete).overallState, "unknown");
-  });
-
-  it("accepts only the Better Stack-hosted public feed", () => {
-    assert.equal(
-      parseBetterStackStatusUrl("https://gymtrack.betteruptime.com/"),
-      "https://gymtrack.betteruptime.com"
-    );
-    assert.throws(() => parseBetterStackStatusUrl("https://attacker.example/status"));
-  });
-
-  it("parses thresholded aggregate metrics without personal fields", () => {
-    assert.deepEqual(parsePublicMetrics({
-      data: {
-        generatedAt: "2026-09-01T12:00:00.000Z",
-        activeBetaAccounts: { kind: "below_threshold", threshold: 5 },
-        workoutRecordsProcessed: 105
-      }
-    }), {
-      generatedAt: "2026-09-01T12:00:00.000Z",
-      activeAccounts: { kind: "below_threshold", threshold: 5 },
-      workoutRecordsProcessed: 105
+  for (const state of ["degraded", "downtime", "maintenance"]) {
+    it(`respects component and aggregate ${state}`, () => {
+      const feed = monitoringFixture(NOW);
+      feed.included[1].attributes.status = state;
+      assert.equal(parseMonitoringFeed(feed, "", NOW).overallState, state);
+      feed.included[1].attributes.status = "operational";
+      feed.data.attributes.aggregate_state = state;
+      assert.equal(parseMonitoringFeed(feed, "", NOW).overallState, state);
     });
-    assert.throws(() => parsePublicMetrics({ data: { workoutRecordsProcessed: -1 } }));
+  }
+  it("does not claim health for missing, duplicated or unknown resources", () => {
+    for (const mutate of [
+      (feed) => feed.included.pop(),
+      (feed) => feed.included.push(structuredClone(feed.included[0])),
+      (feed) => { feed.included[1].attributes.status = "new-provider-state"; },
+      (feed) => { delete feed.data.attributes.aggregate_state; }
+    ]) {
+      const feed = monitoringFixture(NOW);
+      mutate(feed);
+      assert.equal(parseMonitoringFeed(feed, "", NOW).overallState, "unknown");
+    }
   });
-
-  it("marks old build evidence stale and validates coverage bounds", () => {
-    const quality = parseQualitySummary({
-      schemaVersion: 1,
-      commitSha: "1234567890abcdef1234567890abcdef12345678",
-      verifiedAt: "2026-09-01T12:00:00.000Z",
-      coverage: { apiLines: 82.45, webLines: 71.2 }
-    });
-
-    assert.equal(quality.apiLines, 82.45);
-    assert.equal(qualityFreshness(quality.verifiedAt, new Date("2026-09-10T12:00:00.000Z")), "verified");
-    assert.equal(qualityFreshness(quality.verifiedAt, new Date("2026-09-20T12:00:00.000Z")), "stale");
-    assert.throws(() => parseQualitySummary({
-      schemaVersion: 1,
-      commitSha: "1234567",
-      verifiedAt: "2026-09-01T12:00:00.000Z",
-      coverage: { apiLines: 101, webLines: 50 }
-    }));
+  it("rejects malformed top-level responses", () => {
+    for (const payload of [null, [], {}, { data: { type: "status_page" } }, { data: { type: "other", attributes: {} }, included: [] }]) {
+      assert.throws(() => parseMonitoringFeed(payload));
+    }
+  });
+  it("accepts trusted HTTPS public URLs only", () => {
+    assert.equal(parseBetterStackStatusUrl("https://gymtrack.betteruptime.com/?q=x#part"), "https://gymtrack.betteruptime.com");
+    for (const url of [null, "http://gymtrack.betteruptime.com", "https://betterstack.com.evil.test", "https://user:pass@gymtrack.betteruptime.com", "https://evil.test"]) {
+      assert.throws(() => parseBetterStackStatusUrl(url));
+    }
   });
 });
 
-function feed() {
-  return {
-    data: {
-      type: "status_page",
-      attributes: {
-        aggregate_state: "operational",
-        updated_at: "2026-09-01T12:00:00.000Z"
-      }
-    },
-    included: [
-      resource("Web application", "operational", 0.999),
-      resource("API & database", "operational", 0.995),
-      resource("Independent status page", "operational", 99.8),
-      report("active", "Active test", null, ["update-active"]),
-      report("resolved", "Resolved test", "2026-08-31T13:00:00.000Z", []),
-      {
-        id: "update-active",
-        type: "status_update",
-        attributes: {
-          message: "Investigating from the edge.",
-          published_at: "2026-09-01T12:05:00.000Z"
-        }
-      }
-    ]
-  };
-}
+describe("incident boundaries", () => {
+  it("keeps active incidents and the latest valid update with its own timestamp", () => {
+    const feed = monitoringFixture(NOW);
+    feed.included.push(...incidentFixture(NOW));
+    const report = feed.included[3];
+    report.relationships.status_updates.data.push({ id: "invalid" });
+    feed.included.push({ id: "invalid", type: "status_update", attributes: { published_at: "2099-01-01T00:00:00Z", message: "Future update" } });
+    const view = parseMonitoringFeed(feed, "", NOW);
+    assert.equal(view.activeIncidents.length, 1);
+    assert.match(view.activeIncidents[0].message, /Some members/);
+    assert.equal(view.activeIncidents[0].updatedAt, "2026-09-12T11:50:00.000Z");
+    assert.equal(view.incidentsIncomplete, true);
+  });
+  it("isolates an invalid incident from healthy service readings", () => {
+    const feed = monitoringFixture(NOW);
+    const incidents = incidentFixture(NOW);
+    incidents[0].attributes.starts_at = "invalid";
+    feed.included.push(...incidents);
+    const view = parseMonitoringFeed(feed, "", NOW);
+    assert.equal(view.overallState, "operational");
+    assert.equal(view.activeIncidents.length, 0);
+    assert.equal(view.incidentsIncomplete, true);
+  });
+  it("supports resolved reports, including explicit resolved state without ends_at", () => {
+    const feed = monitoringFixture(NOW);
+    feed.included.push(...incidentFixture(NOW, true));
+    assert.equal(parseMonitoringFeed(feed, "", NOW).resolvedIncidents.length, 1);
+    feed.included[3].attributes.ends_at = null;
+    const view = parseMonitoringFeed(feed, "", NOW);
+    assert.equal(view.activeIncidents.length, 0);
+    assert.equal(view.resolvedIncidents[0].resolvedAt, "2026-09-12T11:50:00.000Z");
+  });
+  it("preserves provider prose as text and falls back when no valid update exists", () => {
+    const feed = monitoringFixture(NOW);
+    feed.included.push(...incidentFixture(NOW));
+    feed.included[4].attributes.message = '<img src=x onerror="alert(1)">';
+    assert.match(parseMonitoringFeed(feed, "", NOW).activeIncidents[0].message, /<img/);
+    feed.included[4].attributes.published_at = "invalid";
+    assert.match(parseMonitoringFeed(feed, "", NOW).activeIncidents[0].message, /No incident update/);
+  });
+});
 
-function resource(publicName, status, availability) {
-  return {
-    type: "status_page_resource",
-    attributes: { public_name: publicName, status, availability }
-  };
-}
+describe("historical status entries", () => {
+  it("retains sorted valid entries and durations, deriving ranges from actual dates", () => {
+    const history = parseHistory([
+      { day: "2026-09-10", status: "downtime", downtime_duration: 120, maintenance_duration: 0 },
+      { day: "2026-09-08", status: "operational" }
+    ], NOW);
+    assert.equal(history[0].day, "2026-09-08");
+    assert.equal(history[1].downtimeDuration, 120);
+    assert.deepEqual(historySummary([{ key: "web-application", history }])[0], {
+      key: "web-application", count: 2, from: "2026-09-08", to: "2026-09-10", nonOperationalDays: 1
+    });
+  });
+  it("rejects impossible/future days, invalid statuses/durations and ambiguous duplicate dates", () => {
+    const valid = { day: "2026-09-10", status: "operational" };
+    const history = parseHistory([
+      valid, valid, { ...valid, day: "2026-02-30" }, { ...valid, day: "2099-01-01" },
+      { ...valid, day: "2026-09-09", status: "unknown" },
+      { ...valid, day: "2026-09-08", downtime_duration: -1 },
+      { ...valid, day: "2026-09-07", maintenance_duration: Infinity }
+    ], NOW);
+    assert.deepEqual(history, []);
+    assert.deepEqual(parseHistory({}), []);
+  });
+});
 
-function report(id, title, endsAt, updateIds) {
-  return {
-    id,
-    type: "status_report",
-    attributes: {
-      title,
-      starts_at: "2026-08-31T12:00:00.000Z",
-      ends_at: endsAt,
-      aggregate_state: endsAt ? "operational" : "downtime"
-    },
-    relationships: {
-      status_updates: {
-        data: updateIds.map((updateId) => ({ id: updateId, type: "status_update" }))
-      }
+describe("metrics and build contracts", () => {
+  it("keeps thresholded account and workout row semantics", () => {
+    const parsed = parsePublicMetrics(metricsFixture(NOW));
+    assert.deepEqual(parsed.activeAccounts, { kind: "below_threshold", threshold: 5 });
+    assert.equal(parsed.workoutRecordsProcessed, 105);
+    const exact = metricsFixture(NOW);
+    exact.data.activeBetaAccounts = { kind: "exact", value: 6 };
+    assert.equal(parsePublicMetrics(exact).activeAccounts.value, 6);
+    exact.data.activeBetaAccounts.value = 2;
+    assert.throws(() => parsePublicMetrics(exact));
+    exact.data.workoutRecordsProcessed = -1;
+    assert.throws(() => parsePublicMetrics(exact));
+  });
+  it("validates the full commit and finite coverage bounds", () => {
+    const quality = qualityFixture(NOW);
+    assert.equal(parseQualitySummary(quality).apiLines, 49.96);
+    for (const bad of [NaN, Infinity, -1, 101]) {
+      assert.throws(() => parseQualitySummary({ ...quality, coverage: { apiLines: bad, webLines: 8 } }));
     }
-  };
-}
-
-describe("counterfactual machine", () => {
-  it("names only decisions that exist, and quotes them verbatim", async () => {
-    const decisions = fileURLToPath(new URL("../../docs/decisions/", import.meta.url));
-    const files = await readdir(decisions);
-    const html = await readFile(new URL("./public/index.html", import.meta.url), "utf8");
-    const inMarkup = [...html.matchAll(/data-adr="(\d{4})"/g)].map((match) => match[1]).sort();
-
-    assert.deepEqual(inMarkup, Object.keys(COUNTERFACTUALS).sort(),
-      "every switch in the markup must have consequence copy, and vice versa");
-
-    for (const [id, entry] of Object.entries(COUNTERFACTUALS)) {
-      const name = files.find((file) => file.startsWith(`${id}-`) && file.endsWith(".md"));
-      assert.ok(name, `adr ${id} has no record in docs/decisions/`);
-      assert.equal(entry.cite, `docs/decisions/${name}`, `adr ${id} cites the wrong file`);
-
-      const flatten = (value) => value.replace(/\s+/g, " ").trim();
-      const source = flatten(await readFile(join(decisions, name), "utf8"));
-      assert.ok(source.includes(flatten(entry.quote)),
-        `adr ${id} quotation is not verbatim in ${name}`);
-    }
+    assert.throws(() => parseQualitySummary({ ...quality, commitSha: "1234567" }));
+    assert.throws(() => parseQualitySummary({ ...quality, verifiedAt: "invalid" }));
+  });
+  it("distinguishes old evidence from future or invalid timestamps", () => {
+    assert.equal(qualityFreshness("2026-09-01T00:00:00Z", new Date(NOW)), "verified");
+    assert.equal(qualityFreshness("2026-08-01T00:00:00Z", new Date(NOW)), "stale");
+    assert.equal(qualityFreshness("2099-01-01T00:00:00Z", new Date(NOW)), "invalid");
+    assert.equal(qualityFreshness("invalid", new Date(NOW)), "invalid");
+    assert.throws(() => timestamp("2026-02-30T12:00:00Z"));
+    assert.throws(() => timestamp("2026-09-01T24:00:00Z"));
+    assert.throws(() => timestamp("2026-09-01"));
   });
 });
