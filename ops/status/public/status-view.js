@@ -128,7 +128,7 @@ export function createStatusRenderer(document) {
     show("history-details", summaries.length > 0);
     replace("history-records", summaries, () => summaries.map((summary) => {
       const row = document.createElement("div");
-      row.append(element("dt", "", SERVICE_NAMES[summary.key]), element("dd", "", 
+      row.append(element("dt", "", SERVICE_NAMES[summary.key]), element("dd", "",
         `${summary.from}–${summary.to}: ${summary.count} daily entries; ${summary.nonOperationalDays} reported non-operational.`));
       return row;
     }));
