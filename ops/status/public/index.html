@@ -4,340 +4,125 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <meta name="theme-color" content="#e9e4d8">
+  <meta name="theme-color" content="#faf9f6">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; connect-src 'self' https://app.gymtrack.ch https://uptime.betterstack.com https://*.betteruptime.com https://*.betterstack.com; img-src 'self' data:; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
-  <meta name="description" content="Live service state for GymTrack, the evidence behind it, and five architecture decisions you can flip to the road not taken.">
+  <meta name="description" content="GymTrack service status, incident updates and verified build evidence. Independently hosted on GitHub Pages.">
   <title>GymTrack service status</title>
   <link rel="preload" href="./source-serif-4-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="./status.css">
   <script type="module" src="./status.js"></script>
 </head>
 <body>
-  <a class="skip-link" href="#sheet">skip to status</a>
-
-  <header class="topbar">
-    <div class="topbar-in">
-      <p class="topbar-id"><a href="https://app.gymtrack.ch">gymtrack</a> <span aria-hidden="true">/</span> status</p>
-      <p class="topbar-state" id="topbar-state" data-state="unknown">
-        <span class="topbar-fraction" id="topbar-fraction">&mdash;</span>
-        <span class="sq" aria-hidden="true"></span>
-      </p>
-      <nav class="topbar-nav" aria-label="Elsewhere">
-        <a href="https://github.com/haagjjan/gym-track">source</a>
-        <a href="https://app.gymtrack.ch">open app</a>
-      </nav>
-    </div>
+  <a class="skip-link" href="#main">Skip to status</a>
+  <header class="page-header document">
+    <a class="identity" href="https://app.gymtrack.ch">GymTrack <span>/ Status</span></a>
+    <nav aria-label="Primary">
+      <a href="https://app.gymtrack.ch">Open app</a>
+      <a class="desktop-source" href="https://github.com/haagjjan/gym-track">Source</a>
+    </nav>
   </header>
-
-  <main id="sheet">
-
-    <!-- ── sheet head ─────────────────────────────────────────────── -->
-    <section class="band head" id="overall-band" data-state="unknown" aria-labelledby="verdict-fraction">
-      <div class="verdict">
-        <i class="verdict-rule" aria-hidden="true"></i>
-        <h1 class="verdict-fraction" id="verdict-fraction">no reading</h1>
-        <i class="verdict-rule" aria-hidden="true"></i>
+  <main class="document" id="main" tabindex="-1">
+    <section class="overall" id="overall" data-state="unavailable" aria-labelledby="overall-title">
+      <h1 id="overall-title">Live status unavailable</h1>
+      <p id="overall-description">Current service health has not been retrieved.</p>
+      <div class="retrieval metadata">
+        <p id="retrieval" hidden><span id="retrieval-age"></span><time id="retrieval-time"></time></p>
+        <a data-monitoring-source hidden>Better Stack</a>
       </div>
+      <noscript><p class="notice">JavaScript is required to retrieve service status, incidents, project activity and build evidence. No operational claim is being made.</p></noscript>
+    </section>
+    <div class="sr-only" id="status-announcement" role="status" aria-live="polite" aria-atomic="true"></div>
 
-      <div class="sheet">
-        <p class="r rail" id="verdict-rail">better stack</p>
-        <p class="m polling" id="polling-line">waiting for the independent monitor<span class="caret" aria-hidden="true"></span></p>
-      </div>
-
-      <div class="sheet paper">
-        <p class="m lede">GymTrack is a strength-training log. It runs on a single 2018 Mac mini in
-          my flat that I administer myself. A status page on that machine would fail in exactly the
-          moment you need it, so this one is served from GitHub Pages on unproxied DNS. The reading
-          above comes from an external monitor. I do not get a vote.</p>
-      </div>
-
-      <noscript>
-        <div class="sheet">
-          <p class="m notice">JavaScript is disabled, so nothing on this page has been verified. No
-            operational claim is being made. The decisions below are static and still readable.</p>
-        </div>
-      </noscript>
+    <section class="active-incidents" id="active-incidents" aria-label="Incident information" hidden>
+      <h2 id="active-title">Active incidents</h2>
+      <p id="incident-notice" class="notice" hidden></p>
+      <div id="active-list"></div>
     </section>
 
-    <!-- ── 01 what is probed ──────────────────────────────────────── -->
-    <section class="band" aria-labelledby="probes-title">
-      <div class="sheet">
-        <p class="r rail">better stack &middot; 3 monitors</p>
-        <div class="m">
-          <h2 id="probes-title">What is actually probed</h2>
+    <section class="services" aria-labelledby="services-title">
+      <h2 id="services-title">Services</h2>
+      <dl class="service-list">
+        <div data-component="web-application" data-state="unavailable">
+          <dt>Web application<span class="scope">Login page</span></dt>
+          <dd class="service-state">Unavailable</dd>
         </div>
-
-        <ol class="w probes">
-          <li class="probe" data-component="web-application">
-            <span class="probe-n">probe 1</span>
-            <span class="probe-url">GET app.gymtrack.ch/login</span>
-            <span class="probe-state">no reading</span>
-            <span class="probe-covers">covers cloudflare &rarr; bff</span>
-          </li>
-          <li class="probe" data-component="api-and-database">
-            <span class="probe-n">probe 2</span>
-            <span class="probe-url">GET app.gymtrack.ch/api/public-status</span>
-            <span class="probe-state">no reading</span>
-            <span class="probe-covers">covers bff &rarr; postgresql</span>
-          </li>
-          <li class="probe" data-component="independent-status-page">
-            <span class="probe-n">probe 3</span>
-            <span class="probe-url">GET status.gymtrack.ch</span>
-            <span class="probe-state">no reading</span>
-            <span class="probe-covers">covers this page only</span>
-          </li>
-        </ol>
-
-        <p class="m unprobed">Email delivery, authenticated writes and background jobs are checked by
-          tests and by me, not by an outside observer. They are not on this list because nothing
-          outside the system watches them.</p>
-      </div>
-    </section>
-
-    <!-- ── 02 the ledger ──────────────────────────────────────────── -->
-    <section class="band" id="evidence" aria-labelledby="ledger-title">
-      <div class="sheet">
-        <p class="r rail">recounted every 5 min</p>
-        <div class="m">
-          <h2 id="ledger-title">Numbers, and what was counted</h2>
+        <div data-component="api-and-database" data-state="unavailable">
+          <dt>API and database<span class="scope">Public aggregate read</span></dt>
+          <dd class="service-state">Unavailable</dd>
         </div>
-      </div>
-
-      <div class="sheet ledger">
-        <div class="row">
-          <p class="r rail" id="uptime-note">better stack</p>
-          <p class="val" id="uptime-value">&mdash;</p>
-          <p class="m def">Ninety-day uptime. The <em>lowest</em> of the three probes above, not an
-            average of them. One bad monitor sets this number.</p>
-        </div>
-        <div class="row">
-          <p class="r rail" id="accounts-note">app.gymtrack.ch</p>
-          <p class="val" id="accounts-value">&mdash;</p>
-          <p class="m def">Active beta accounts. Non-administrator accounts marked active. Under five
-            it is published as a range, because an exact tiny number identifies people.</p>
-        </div>
-        <div class="row">
-          <p class="r rail" id="workouts-note">app.gymtrack.ch</p>
-          <p class="val" id="workouts-value">&mdash;</p>
-          <p class="m def">Workout records processed. An unfiltered lifetime <code>COUNT(*)</code>
-            over workout sessions. Includes imports, my own sessions, open and soft-deleted rows.
-            It can go down: erasure removes rows.</p>
-        </div>
-        <div class="row">
-          <p class="r rail" id="build-note">github actions</p>
-          <p class="val"><a href="https://github.com/haagjjan/gym-track" id="commit-link">&mdash;</a></p>
-          <p class="m def">Verified revision. The most recent <code>main</code> commit whose entire
-            workflow passed. Three jobs: project checks, API tests against a real PostgreSQL, and a
-            Playwright run with axe assertions in Chromium and Firefox.</p>
-        </div>
-        <div class="row">
-          <p class="r rail" id="coverage-note">c8 --all</p>
-          <p class="val" id="api-coverage">&mdash;</p>
-          <p class="m def">API line coverage. Measured with <code>c8 --all</code>, so files without a
-            single test still count against the denominator.</p>
-        </div>
-        <div class="row">
-          <p class="r rail" id="web-coverage-note">c8 --all</p>
-          <p class="val" id="web-coverage">&mdash;</p>
-          <p class="m def">Web line coverage. Low, and left visible. The browser layer is verified by
-            Playwright and axe against a running stack, not by unit tests over React views and 3D
-            scene modules.</p>
-        </div>
-        <div class="row">
-          <p class="r rail">ops/monitoring</p>
-          <p class="val">31</p>
-          <p class="m def">Alert rules loaded in Prometheus, scraping six targets every fifteen
-            seconds. They reach one private Telegram destination and nothing else.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── 03 the counterfactual machine ──────────────────────────── -->
-    <section class="band cf" data-cf-root aria-labelledby="cf-title">
-      <div class="sheet">
-        <p class="r rail">docs/decisions/ &middot; 19 files &middot; quotes asserted in ci</p>
-        <div class="m">
-          <h2 id="cf-title">Five decisions, and what the other road cost</h2>
-          <p class="cf-intro">Every switch below is a real record in <code>docs/decisions/</code>.
-            Flip one and this page rewrites itself into the system that decision rejected &mdash;
-            including striking out the evidence that would no longer exist.</p>
-        </div>
-      </div>
-
-      <div class="sheet">
-        <ol class="w cf-chain" aria-label="Request path, as drawn">
-          <li class="cf-node" data-node="browser" data-domain="client">browser</li>
-          <li class="cf-node" data-node="cloudflare" data-domain="edge" data-fade="0009">cloudflare</li>
-          <li class="cf-host" data-drop="0009">
-            <ol class="cf-host-nodes">
-              <li class="cf-node" data-node="caddy" data-domain="host">caddy</li>
-              <li class="cf-node" data-node="web" data-domain="host" data-drop="0011">next.js bff</li>
-              <li class="cf-node" data-node="api" data-domain="host">fastify</li>
-              <li class="cf-node" data-node="db" data-domain="host">postgresql 17</li>
-              <li class="cf-node cf-alt cf-node-page" data-node="statuspage-in" data-domain="host" data-add="0019">this page</li>
-            </ol>
-            <p class="cf-brace">one host &middot; 2018 mac mini &middot; 6-core i5 &middot; 32 gb &middot; ubuntu 26.04</p>
-          </li>
-          <li class="cf-node cf-alt" data-node="render-web" data-domain="paas" data-add="0009">render web</li>
-          <li class="cf-node cf-alt" data-node="render-api" data-domain="paas" data-add="0009">render api</li>
-          <li class="cf-node cf-alt" data-node="render-db" data-domain="paas" data-add="0009">render postgres</li>
-          <li class="cf-node cf-alt" data-node="staging-sep" data-domain="host2" data-add="0015">separate staging host</li>
-        </ol>
-        <p class="w cf-detached" data-drop="0019"><span class="cf-node cf-node-out cf-node-page" data-node="statuspage" data-domain="pages">this page &middot; github pages</span><span class="cf-detached-note">drawn outside the box on purpose</span></p>
-      </div>
-
-      <div class="sheet">
-        <div class="w cf-switches" role="group" aria-labelledby="cf-title">
-          <button type="button" class="cf-toggle" data-adr="0009" aria-pressed="false" aria-describedby="cf-out">
-            <span class="cf-id">adr 0009</span>
-            <span class="cf-q">where it runs</span>
-            <span class="cf-a"><span class="cf-on">one mac mini, in a flat</span><span class="cf-off">render, managed paas</span></span>
-          </button>
-          <button type="button" class="cf-toggle" data-adr="0011" aria-pressed="false" aria-describedby="cf-out">
-            <span class="cf-id">adr 0011</span>
-            <span class="cf-q">where the api edge is</span>
-            <span class="cf-a"><span class="cf-on">fastify never public</span><span class="cf-off">fastify is the public api</span></span>
-          </button>
-          <button type="button" class="cf-toggle" data-adr="0015" aria-pressed="false" aria-describedby="cf-out">
-            <span class="cf-id">adr 0015</span>
-            <span class="cf-q">where staging runs</span>
-            <span class="cf-a"><span class="cf-on">beside production</span><span class="cf-off">separate hardware</span></span>
-          </button>
-          <button type="button" class="cf-toggle" data-adr="0018" aria-pressed="false" aria-describedby="cf-out">
-            <span class="cf-id">adr 0018</span>
-            <span class="cf-q">where backups go</span>
-            <span class="cf-a"><span class="cf-on">a laptop, over a reverse tunnel</span><span class="cf-off">immutable object storage</span></span>
-          </button>
-          <button type="button" class="cf-toggle" data-adr="0019" aria-pressed="false" aria-describedby="cf-out">
-            <span class="cf-id">adr 0019</span>
-            <span class="cf-q">where this page lives</span>
-            <span class="cf-a"><span class="cf-on">outside the system</span><span class="cf-off">inside the application</span></span>
-          </button>
-        </div>
-      </div>
-
-      <div class="sheet">
-        <div class="w cf-meter" aria-hidden="true">
-          <div><p class="cf-meter-v" id="cf-hops">6</p><p class="cf-meter-k">hops browser to data</p></div>
-          <div><p class="cf-meter-v" id="cf-domains">4</p><p class="cf-meter-k">failure domains</p></div>
-          <div><p class="cf-meter-v" id="cf-flipped">0</p><p class="cf-meter-k">switches flipped</p></div>
-          <div><p class="cf-meter-v" id="cf-struck">0</p><p class="cf-meter-k">evidence blocks struck</p></div>
-        </div>
-
-        <output class="w cf-out" id="cf-out" role="status">
-          <p class="cf-out-empty">As drawn. Flip a switch to read what the rejected road would have
-            cost, quoted from the record.</p>
-        </output>
-      </div>
-
-      <div class="sheet">
-        <p class="m"><button type="button" class="cf-reset" data-adr-reset>restore as drawn</button></p>
-      </div>
-    </section>
-
-    <!-- ── 04 incidents ───────────────────────────────────────────── -->
-    <section class="band" aria-labelledby="incidents-title">
-      <div class="sheet">
-        <p class="r rail">better stack feed</p>
-        <div class="m">
-          <h2 id="incidents-title">Incidents</h2>
-        </div>
-        <div class="m" id="incidents">
-          <p class="empty">waiting for the incident feed.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── 05 what this page cannot prove ─────────────────────────── -->
-    <section class="band" aria-labelledby="limits-title">
-      <div class="sheet">
-        <p class="r rail">documented, not probed</p>
-        <div class="m">
-          <h2 id="limits-title">What this page cannot prove</h2>
-        </div>
-      </div>
-
-      <dl class="sheet limits">
-        <div class="row" data-requires="0009">
-          <dt class="r rail">ops/monitoring</dt>
-          <dd class="m">Six Prometheus targets scraped every fifteen seconds, thirty-day retention,
-            thirty-one alert rules covering service loss, latency, host and container pressure,
-            PostgreSQL and backup freshness. Grafana binds to loopback only.
-            <span class="cf-void">not reachable under adr 0005 &mdash; a platform had already answered this</span></dd>
-        </div>
-        <div class="row" data-requires="0009 0018">
-          <dt class="r rail">ops/backup</dt>
-          <dd class="m">Restic-encrypted snapshots leave the host four times a day to a chrooted
-            account on my laptop. Twenty-four hour RPO, four hour RTO, thirty-day retention.
-            Restores are rehearsed into isolated environments, including replaying the erasure
-            ledger over an older database.
-            <span class="cf-void">not reachable under the rejected road &mdash; see consequences above</span></dd>
-        </div>
-        <div class="row">
-          <dt class="r rail">SECURITY.md</dt>
-          <dd class="m">Registration is invitation-only and capped at fifty seats. The cap lives in
-            the API, so hiding the button would not have been enough. Argon2id hashes, opaque
-            database-backed sessions, and account export, deletion grace and hard erasure are
-            implemented in the data flows.</dd>
-        </div>
-        <div class="row" data-requires="0009">
-          <dt class="r rail">staging</dt>
-          <dd class="m">Production-shaped staging passed twenty concurrent loggers and a forty-logger
-            double probe without failures. Enough for an invitation-only beta on one machine. Not
-            evidence for large or hostile traffic.
-            <span class="cf-void">not reachable under adr 0005 &mdash; a platform had already answered this</span></dd>
-        </div>
-        <div class="row">
-          <dt class="r rail">docs/decisions</dt>
-          <dd class="m">Nineteen architecture decision records explain why the stack, the auth model,
-            the deployment target, the backup design and this page look the way they do &mdash;
-            including the options that were rejected.</dd>
+        <div data-component="independent-status-page" data-state="unavailable">
+          <dt>Independent status page<span class="scope">Public page reachability</span></dt>
+          <dd class="service-state">Unavailable</dd>
         </div>
       </dl>
-
-      <div class="sheet">
-        <p class="f weak" data-requires="0009">One host, one operator, no automatic failover. Staging
-          shares that hardware. The off-machine backup destination depends on a laptop being
-          reachable during one of the daily windows. One run has already failed that way, on
-          2026-08-27. The snapshot completed on the next attempt, and the failure is in the record
-          instead of being quietly dropped.
-          <span class="cf-void">not reachable under adr 0005 &mdash; none of this hardware would be mine</span></p>
-      </div>
     </section>
 
-    <!-- ── 06 closing ─────────────────────────────────────────────── -->
-    <section class="band" aria-labelledby="closing-title">
-      <div class="sheet">
-        <div class="m">
-          <h2 id="closing-title" class="closing-h">Break it, then tell me how.</h2>
-          <p>GymTrack is invitation-only while the beta is small. If you would rather read the
-            engineering, the repository is public, runbooks included.</p>
-          <p class="actions">
-            <a class="action-fill" href="https://app.gymtrack.ch/beta">request beta access</a>
-            <a href="https://github.com/haagjjan/gym-track">read the source</a>
-            <a href="https://app.gymtrack.ch/support">send feedback</a>
-          </p>
-        </div>
-      </div>
+    <section class="section" aria-labelledby="reliability-title">
+      <h2 id="reliability-title">Reliability and recent history</h2>
+      <p id="history-summary">Reliability information has not been retrieved.</p>
+      <details id="history-details" hidden>
+        <summary>Daily history from the provider</summary>
+        <dl id="history-records" class="history-records"></dl>
+        <p class="secondary">Date ranges describe returned entries, not uninterrupted coverage. Missing dates are not counted as healthy. Daily states are not uptime percentages.</p>
+      </details>
+      <h3 id="resolved-title" hidden>Recently resolved</h3>
+      <p id="resolved-empty" class="secondary">Incident history has not been retrieved.</p>
+      <div id="resolved-list"></div>
+    </section>
+
+    <section class="section" id="build-evidence" aria-labelledby="build-title">
+      <h2 id="build-title">Verified build evidence</h2>
+      <p class="notice" id="build-notice">Build evidence has not been retrieved.</p>
+      <dl class="evidence-record" id="build-record" hidden>
+        <div><dt>Revision</dt><dd><a id="commit-link">—</a></dd></div>
+        <div><dt>Evidence generated</dt><dd><time id="build-time"></time></dd></div>
+        <div><dt>Unit-test line coverage</dt><dd class="coverage-values"><span>API <span id="api-coverage">—</span></span><span>Web <span id="web-coverage">—</span></span></dd></div>
+      </dl>
+      <p id="verification-scope" hidden>Repository checks, PostgreSQL integration tests and browser smoke tests passed for this revision.</p>
+      <p class="secondary">The evidence revision may differ from the revision currently deployed to production.</p>
+      <details id="coverage-method" hidden>
+        <summary>Coverage method</summary>
+        <p>Line coverage is generated in CI using <code>c8 --all</code> for the unit-test run. Untested source files are included. Integration and browser tests are separate checks.</p>
+      </details>
+    </section>
+
+    <section class="section activity" aria-labelledby="activity-title">
+      <h2 id="activity-title">Project activity</h2>
+      <p class="notice" id="activity-notice">Project activity has not been retrieved.</p>
+      <dl class="activity-record">
+        <div><dt>Active beta accounts</dt><dd id="accounts-value">—</dd></div>
+        <div><dt>Workout records</dt><dd id="workouts-value">—</dd></div>
+      </dl>
+      <time class="metadata" id="activity-time" hidden></time>
+      <details>
+        <summary>What these counts mean</summary>
+        <p><strong>Active beta accounts:</strong> non-administrator accounts marked active. This describes account status, not recent usage. Counts below five are shown as “under 5”.</p>
+        <p><strong>Workout records:</strong> current workout-session rows, including imports, administrator sessions, open sessions and soft-deleted rows. Account erasure can reduce this count.</p>
+      </details>
     </section>
   </main>
 
-  <footer class="title-block">
-    <div class="sheet">
-      <table class="w tb">
-        <tbody>
-          <tr>
-            <th scope="row">drawn by</th><td>jan haag, alone</td>
-            <th scope="row">revision</th><td id="tb-revision">no verified build artifact</td>
-          </tr>
-          <tr>
-            <th scope="row">sheet</th><td>status.gymtrack.ch</td>
-            <th scope="row">issued</th><td id="tb-issued">&mdash;</td>
-          </tr>
-        </tbody>
-      </table>
-      <p class="w tb-note">application unreachable? <a href="https://github.com/haagjjan/gym-track/issues">open an issue</a> &mdash; github is not part of this system.</p>
-    </div>
+  <footer class="document page-footer">
+    <p>This page is hosted independently on GitHub Pages. Service status is provided by Better Stack.</p>
+    <p class="secondary">Checks cover the paths listed above. They do not verify authenticated writes, email delivery or background jobs.</p>
+    <details>
+      <summary>Monitoring scope and freshness</summary>
+      <p>“Retrieved” is when this browser last received and validated the monitoring response, not when a monitor ran. The page retrieves status every minute and on return to the tab; readings expire after five minutes. The intended monitor cadence is three minutes.</p>
+      <ul class="probe-addresses">
+        <li><code>https://app.gymtrack.ch/login</code></li>
+        <li><code>https://app.gymtrack.ch/api/public-status</code></li>
+        <li><code>https://status.gymtrack.ch</code></li>
+      </ul>
+      <p>Availability percentages are withheld because the scalar supplied by the provider does not establish a reporting period. Project activity is retrieved every five minutes and expires 15 minutes after generation. Build evidence is qualified as out of date after 14 days.</p>
+    </details>
+    <nav aria-label="Resources">
+      <a data-monitoring-source hidden>Monitoring source</a>
+      <a href="https://github.com/haagjjan/gym-track">Source repository</a>
+      <a href="https://app.gymtrack.ch">Open app</a>
+      <a href="https://app.gymtrack.ch/support">Support</a>
+      <a href="https://github.com/haagjjan/gym-track/issues">Report an issue</a>
+    </nav>
+    <p class="secondary">If the application is unreachable, report an issue on GitHub.</p>
   </footer>
 </body>
 </html>
