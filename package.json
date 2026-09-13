@@ -31,7 +31,7 @@
     "test:coverage": "pnpm --filter @gym-progress-tracker/api test:coverage && pnpm --filter @gym-progress-tracker/web test:coverage",
     "test:integration": "pnpm --filter @gym-progress-tracker/api test:integration",
     "test:performance": "pnpm --filter @gym-progress-tracker/api test:performance && pnpm --filter @gym-progress-tracker/web test:performance",
-    "test:status": "node --test ops/status/status-data.test.mjs ops/status/quality-summary.test.mjs",
+    "test:status": "node --test ops/status/*.test.mjs",
     "type-check": "pnpm -r --if-present type-check"
   },
   "devDependencies": {
