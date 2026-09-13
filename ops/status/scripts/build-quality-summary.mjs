@@ -42,7 +42,7 @@ async function main() {
 function linePercentage(summary, label) {
   const percentage = summary?.total?.lines?.pct;
 
-  if (typeof percentage !== "number" || percentage < 0 || percentage > 100) {
+  if (typeof percentage !== "number" || !Number.isFinite(percentage) || percentage < 0 || percentage > 100) {
     throw new Error(`${label} coverage summary has no valid total line percentage.`);
   }
 
