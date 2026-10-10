@@ -36,10 +36,9 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   await expect(page.getByRole("heading", { name: new RegExp(username, "i") })).toBeVisible();
   await waitForIdleClient(page);
 
-  const onboarding = page.getByRole("dialog", { name: "Welcome, Founding Member" });
-  await expect(onboarding).toBeFocused();
-  await expectModalContract(page, onboarding);
-  await page.keyboard.press("Escape");
+  const onboarding = page.getByRole("region", { name: "Try the example" });
+  await expect(onboarding).toBeVisible();
+  await onboarding.getByRole("button", { name: "Skip", exact: true }).click();
   await expect(onboarding).toHaveCount(0);
   const storageChoice = page.getByRole("dialog", { name: "Device storage choice" });
   await storageChoice.getByRole("button", { name: "ALLOW FUNCTIONAL" }).click();
@@ -176,6 +175,16 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   await expect(newSetDialog).toBeVisible();
   await expect(newSetDialog).toBeFocused();
   await expectModalContract(page, newSetDialog);
+  // Informational popovers remain non-modal and return focus to their trigger.
+  const infoTrigger = page.getByRole("button", { name: "Information about reps in reserve" });
+  await infoTrigger.click();
+  const infoPopover = page.getByRole("dialog", { name: "Information about reps in reserve" });
+  await expect(infoPopover).toHaveAttribute("aria-modal", "false");
+  await page.keyboard.press("Tab");
+  await expect(infoPopover.getByRole("button", { name: "Close" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(infoPopover).toHaveCount(0);
+  await expect(infoTrigger).toBeFocused();
   await expect.poll(() => newSetDialog.evaluate((element) => getComputedStyle(element).position)).toBe("fixed");
   const weightInput = page.locator('input[inputmode="decimal"]').first();
   await expect(weightInput).not.toBeFocused();
@@ -323,17 +332,9 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   await page.goto("/workout");
   await expect(page.getByRole("button", { name: "START", exact: true })).toBeEnabled();
 
-  // Informational popovers remain non-modal and return focus to their trigger.
   await page.goto("/help");
-  const infoTrigger = page.getByRole("button", { name: "Information about set types" });
-  await infoTrigger.click();
-  const infoPopover = page.getByRole("dialog", { name: "Information about set types" });
-  await expect(infoPopover).toHaveAttribute("aria-modal", "false");
-  await page.keyboard.press("Tab");
-  await expect(infoPopover.getByRole("button", { name: "Close" })).toBeFocused();
-  await page.keyboard.press("Escape");
-  await expect(infoPopover).toHaveCount(0);
-  await expect(infoTrigger).toBeFocused();
+  await expect(page.getByRole("link", { name: "Try the example", exact: true })).toBeVisible();
+  await expect(page.getByText("Working and warmup sets", { exact: true })).toBeVisible();
   await expectNoSeriousAccessibilityViolations(page);
 
   await page.setViewportSize({ width: 320, height: 568 });

@@ -16,9 +16,9 @@ test("creates, filters, edits, and launches a workout template", async ({ page }
   await page.getByLabel(/^Password \(at least 10 characters\)$/i).fill("template-passphrase-1");
   await page.getByRole("button", { name: "CREATE ACCOUNT" }).click();
   await expect(page.getByRole("heading", { name: new RegExp(username, "i") })).toBeVisible();
-  const onboarding = page.getByRole("dialog", { name: "Welcome, Founding Member" });
-  await expect(onboarding).toBeFocused();
-  await page.keyboard.press("Escape");
+  const onboarding = page.getByRole("region", { name: "Try the example" });
+  await expect(onboarding).toBeVisible();
+  await onboarding.getByRole("button", { name: "Skip", exact: true }).click();
   await expect(onboarding).toHaveCount(0);
   const storageChoice = page.getByRole("dialog", { name: "Device storage choice" });
   await storageChoice.getByRole("button", { name: "ALLOW FUNCTIONAL" }).click();
