@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { getCurrentUser } from "../../../features/auth/server-auth";
+import { OnboardingProvider } from "../../../features/onboarding/onboarding-provider";
 import { SessionScreen } from "../../../features/session/session-screen";
 
 export const metadata = { title: "Workout" };
@@ -21,5 +22,5 @@ export default async function SessionPage({ params, searchParams }: SessionPageP
   const { workoutId } = await params;
   const query = await searchParams;
 
-  return <SessionScreen focusName={query.focusName === "1"} userId={user.id} workoutId={workoutId} />;
+  return <OnboardingProvider userId={user.id}><SessionScreen focusName={query.focusName === "1"} userId={user.id} workoutId={workoutId} /></OnboardingProvider>;
 }
