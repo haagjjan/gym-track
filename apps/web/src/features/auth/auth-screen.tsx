@@ -83,9 +83,7 @@ export function AuthScreen({
 
     try {
       await apiFetch(`/api/auth/${mode}`, { method: "POST", body });
-      // Signup opens the onboarding modal on arrival, so let that modal own
-      // initial focus instead of racing Next.js route focus management.
-      router.push("/", { scroll: mode !== "signup" });
+      router.push("/");
       router.refresh();
     } catch (error) {
       setIsPending(false);
