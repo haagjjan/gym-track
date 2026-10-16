@@ -10,6 +10,7 @@ import { IconChevronRight } from "../shell/icons";
 
 export function HistoryRow({
   detail,
+  detailHref,
   isExpanded,
   onDelete,
   onToggle,
@@ -17,7 +18,8 @@ export function HistoryRow({
 }: {
   detail: WorkoutDetail | undefined;
   isExpanded: boolean;
-  onDelete: () => void;
+  onDelete?: (() => void) | undefined;
+  detailHref?: string;
   onToggle: () => void;
   workout: WorkoutSummary;
 }): ReactNode {
@@ -53,8 +55,8 @@ export function HistoryRow({
             </div>
           )}
           <div className="mt-3 flex items-center justify-between gap-2 border-t border-outline-dim/40 pt-3">
-            <Link className="inline-flex min-h-11 items-center gap-1 text-xs font-semibold text-cyan hover:text-cyan-bright" href={`/workouts/${workout.id}`}>Open full log <IconChevronRight /></Link>
-            <HudButton onClick={onDelete} size="sm" variant="danger">{workout.isOpen ? "Discard" : "Delete"}</HudButton>
+            <Link className="inline-flex min-h-11 items-center gap-1 text-xs font-semibold text-cyan hover:text-cyan-bright" href={detailHref ?? `/workouts/${workout.id}`}>Open full log <IconChevronRight /></Link>
+            {onDelete ? <HudButton onClick={onDelete} size="sm" variant="danger">{workout.isOpen ? "Discard" : "Delete"}</HudButton> : null}
           </div>
         </div>
       ) : null}
