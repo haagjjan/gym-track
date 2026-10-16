@@ -79,34 +79,8 @@ export function LaunchScreen(): ReactNode {
           title={activeWorkout.title ?? activeWorkout.workoutType}
         />
       ) : (
-        <>
-          <Panel accent="cyan" className="glass-cyan" eyebrow="Start from scratch">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="font-display text-base font-bold text-fg">Start from scratch</p>
-                <p className="mt-1 text-xs leading-relaxed text-fg-muted">
-                  Open an untitled workout and add exercises as you train.
-                </p>
-              </div>
-              <HudButton
-                disabled={pendingChoice !== null}
-                onClick={() => void startFromScratch()}
-                size="lg"
-              >
-                <IconPlus /> {pendingChoice === "scratch" ? "STARTING…" : "START"}
-              </HudButton>
-            </div>
-          </Panel>
-
-          <TemplateChoice
-            error={templates.error}
-            isLoading={templates.isLoading}
-            onRetry={() => void templates.refetch()}
-            onStart={(templateId) => void startFromTemplate(templateId)}
-            pendingChoice={pendingChoice}
-            templates={templates.data ?? []}
-          />
-        </>
+        <WorkoutLaunchChoices error={templates.error} isLoading={templates.isLoading} onRetry={() => void templates.refetch()}
+          onScratch={() => void startFromScratch()} onStart={(id) => void startFromTemplate(id)} pendingChoice={pendingChoice} templates={templates.data ?? []} />
       )}
 
       {launchError ? <ErrorState message={launchError} title="Could not start a workout" /> : null}
@@ -147,6 +121,7 @@ function ResumeWorkout({
 }
 
 function TemplateChoice({
+  templatesHref,
   error,
   isLoading,
   onRetry,
@@ -154,6 +129,7 @@ function TemplateChoice({
   pendingChoice,
   templates
 }: {
+  templatesHref: string | null;
   error: Error | null;
   isLoading: boolean;
   onRetry: () => void;
@@ -165,7 +141,7 @@ function TemplateChoice({
     <Panel
       accent="lavender"
       eyebrow="Use a template"
-      right={<Link className="label-caps text-cyan-dim" href="/workouts/templates">View templates →</Link>}
+      right={templatesHref ? <Link className="label-caps text-cyan-dim" href={templatesHref}>View templates →</Link> : null}
     >
       {isLoading ? (
         <div className="space-y-2"><Skeleton className="h-16" /><Skeleton className="h-16" /></div>
@@ -173,7 +149,7 @@ function TemplateChoice({
         <ErrorState message={errorMessage(error, "Templates could not be loaded.")} retry={onRetry} />
       ) : templates.length === 0 ? (
         <EmptyState
-          action={<Link className="label-caps text-cyan-dim" href="/workouts/templates">Create a template →</Link>}
+          action={templatesHref ? <Link className="label-caps text-cyan-dim" href={templatesHref}>Create a template →</Link> : undefined}
           message="Save a repeatable exercise list to start it in one tap."
           title="No templates yet"
         />
@@ -208,4 +184,41 @@ function TemplateChoice({
 
 function LaunchSkeleton(): ReactNode {
   return <div className="mx-auto max-w-3xl space-y-4 p-4 lg:p-6"><Skeleton className="h-16" /><Skeleton className="h-28" /><Skeleton className="h-48" /></div>;
+}
+
+export function WorkoutLaunchChoices({ error, isLoading, onRetry, onScratch, onStart, pendingChoice, templates, templatesHref = "/workouts/templates" }: {
+  error: Error | null; isLoading: boolean; onRetry: () => void; onScratch: () => void;
+  onStart: (id: string) => void; pendingChoice: string | null; templates: WorkoutTemplate[]; templatesHref?: string | null;
+}): ReactNode {
+  return (
+        <>
+          <Panel accent="cyan" className="glass-cyan" eyebrow="Start from scratch">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-display text-base font-bold text-fg">Start from scratch</p>
+                <p className="mt-1 text-xs leading-relaxed text-fg-muted">
+                  Open an untitled workout and add exercises as you train.
+                </p>
+              </div>
+              <HudButton
+                disabled={pendingChoice !== null}
+                onClick={() => void onScratch()}
+                size="lg"
+              >
+                <IconPlus /> {pendingChoice === "scratch" ? "STARTING…" : "START"}
+              </HudButton>
+            </div>
+          </Panel>
+
+          <TemplateChoice
+            templatesHref={templatesHref}
+            error={error}
+            isLoading={isLoading}
+            onRetry={onRetry}
+            onStart={onStart}
+            pendingChoice={pendingChoice}
+            templates={templates}
+          />
+        </>
+  );
 }
