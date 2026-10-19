@@ -8,6 +8,7 @@ import { ExerciseOption } from "./progress-panels";
 
 interface ProgressExerciseSelectorProps {
   exercises: CompletedExercise[];
+  autoCollapse?: boolean;
   isLoading: boolean;
   onSelect: (exerciseId: string) => void;
   selectedId: string | null;
@@ -20,11 +21,11 @@ export function ProgressExerciseSelector(props: ProgressExerciseSelectorProps): 
   const hasAutoCollapsed = useRef(false);
 
   useEffect(() => {
-    if (props.selectedId !== null && !hasAutoCollapsed.current) {
+    if (props.autoCollapse !== false && props.selectedId !== null && !hasAutoCollapsed.current) {
       hasAutoCollapsed.current = true;
       setIsExpanded(false);
     }
-  }, [props.selectedId]);
+  }, [props.selectedId, props.autoCollapse]);
 
   const muscleGroups = useMemo(() => {
     const seen = new Map<string, string>();

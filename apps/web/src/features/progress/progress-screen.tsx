@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction, type ReactNode } from "react";
+import type { CompletedExercise, ExerciseProgressItem, ExerciseSummaryPayload } from "../../shared/api/types";
+import type { ProgressViewPreferences } from "./progress-preferences";
 import { EmptyState, ErrorState, Panel, Skeleton } from "../../shared/ui/ui";
 import { errorMessage } from "../../shared/api/client";
 import {
@@ -34,7 +36,7 @@ export function ProgressScreen(): ReactNode {
   const completedExercises = useCompletedExercises();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [view, setView] = useState(initialProgressViewPreferences);
-  const { window, mode: chartMode, showWeight, showReps } = view;
+  const { window } = view;
 
   const exercises = useMemo(
     () =>
@@ -51,11 +53,25 @@ export function ProgressScreen(): ReactNode {
     }
   }, [exercises, selectedId]);
 
-  const selected = exercises.find((exercise) => exercise.id === selectedId) ?? null;
   const progress = useExerciseProgress(selectedId);
   const summaryRange = useMemo(() => progressSummaryRange(window), [window]);
   const allTimeSummary = useExerciseSummary(selectedId);
   const rangeSummary = useExerciseSummary(selectedId, summaryRange);
+
+  return <ProgressView completedExercises={completedExercises} exercises={exercises} selectedId={selectedId} onSelect={setSelectedId}
+    progress={progress} allTimeSummary={allTimeSummary} rangeSummary={rangeSummary} view={view} setView={setView} />;
+}
+
+interface ViewQuery<T> { data: T | undefined; isLoading: boolean; isError: boolean; error: Error | null; refetch: () => unknown; }
+export function ProgressView({ completedExercises, exercises, selectedId, onSelect, progress, allTimeSummary, rangeSummary, view, setView, onInspectPoint, autoCollapseSelector = true }: {
+  autoCollapseSelector?: boolean;
+  completedExercises: ViewQuery<CompletedExercise[]>; exercises: CompletedExercise[]; selectedId: string | null;
+  onSelect: (id: string) => void; progress: ViewQuery<ExerciseProgressItem[]>;
+  allTimeSummary: Pick<ViewQuery<ExerciseSummaryPayload>, "data" | "isLoading">; rangeSummary: Pick<ViewQuery<ExerciseSummaryPayload>, "data" | "isLoading">;
+  view: ProgressViewPreferences; setView: Dispatch<SetStateAction<ProgressViewPreferences>>; onInspectPoint?: (date: string) => void;
+}): ReactNode {
+  const selected = exercises.find((exercise) => exercise.id === selectedId) ?? null;
+  const { window, mode: chartMode, showWeight, showReps } = view;
 
   return (
     <div className="mx-auto max-w-5xl space-y-4 p-4 lg:p-6">
@@ -77,7 +93,7 @@ export function ProgressScreen(): ReactNode {
       ) : null}
 
       <div className="lg:grid lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start lg:gap-4">
-        <ProgressExerciseSelector exercises={exercises} isLoading={completedExercises.isLoading} onSelect={setSelectedId} selectedId={selectedId} />
+        <ProgressExerciseSelector autoCollapse={autoCollapseSelector} exercises={exercises} isLoading={completedExercises.isLoading} onSelect={onSelect} selectedId={selectedId} />
 
         {/* ===== Analysis stack ===== */}
         <div className="space-y-4">
@@ -90,7 +106,7 @@ export function ProgressScreen(): ReactNode {
                 {timeWindows.map((item) => (
                   <button
                     aria-checked={window === item.value}
-                    className={`min-h-8 cursor-pointer rounded border px-2.5 font-display text-[10px] font-bold tracking-[0.08em] transition-colors ${
+                    className={`min-h-11 cursor-pointer rounded border px-2.5 font-display text-[10px] font-bold tracking-[0.08em] transition-colors ${
                       window === item.value
                         ? "border-cyan bg-cyan/15 text-cyan"
                         : "border-outline-dim text-outline"
@@ -134,6 +150,7 @@ export function ProgressScreen(): ReactNode {
                 />
               ) : (
                 <ProgressChart
+                  onInspectPoint={onInspectPoint}
                   items={progress.data ?? []}
                   mode={chartMode}
                   onModeChange={(mode) =>

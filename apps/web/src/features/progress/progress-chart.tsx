@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   CartesianGrid,
   Line,
@@ -53,6 +53,7 @@ const DRAW_IN_MS = 900;
  */
 export function ProgressChart({
   items,
+  onInspectPoint,
   mode,
   onModeChange,
   onShowRepsChange,
@@ -62,6 +63,7 @@ export function ProgressChart({
   window
 }: {
   items: ExerciseProgressItem[];
+  onInspectPoint?: ((date: string) => void) | undefined;
   mode: ChartMode;
   onModeChange: (mode: ChartMode) => void;
   onShowRepsChange: (show: boolean) => void;
@@ -70,6 +72,7 @@ export function ProgressChart({
   showWeight: boolean;
   window: ChartWindow;
 }): ReactNode {
+  const [inspectedDate, setInspectedDate] = useState("");
   const { gestureActive, reducedMotion, reset, scrollerRef, zoom } =
     useProgressChartZoom(window);
   const rows = useMemo(() => toChartRows(items, window, mode), [items, mode, window]);
@@ -94,6 +97,8 @@ export function ProgressChart({
     );
   }
 
+  const inspected = rows.find((row) => row.date === inspectedDate);
+  function inspect(date: string): void { setInspectedDate(date); onInspectPoint?.(date); }
   const innerWidth = Math.round(
     Math.max(rows.length, MIN_VISIBLE_POINTS) * POINT_WIDTH_PX * zoom
   );
@@ -153,7 +158,7 @@ export function ProgressChart({
         >
           <div dir="ltr" style={{ minWidth: "100%", width: innerWidth }}>
             <ResponsiveContainer height={CHART_HEIGHT} width="100%">
-              <LineChart data={rows} margin={{ top: 8, right: 12, bottom: 4, left: -8 }}>
+              <LineChart data={rows} onClick={(state) => { if (state.activeIndex == null) return; const row = rows[Number(state.activeIndex)]; if (row) inspect(row.date); }} margin={{ top: 8, right: 12, bottom: 4, left: -8 }}>
                 <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
                 {yearBoundaries.map((boundaryTime) => (
                   <ReferenceLine
@@ -277,6 +282,13 @@ export function ProgressChart({
           </div>
         </div>
       </div>
+      <label className="mt-3 block text-xs text-fg-muted">Inspect plotted day
+        <select aria-label="Inspect plotted day" className="mt-1 min-h-11 w-full rounded border border-outline-dim bg-surface px-3 text-sm text-fg" onChange={(event) => { if (event.target.value) inspect(event.target.value); }} value={inspected?.date ?? ""}>
+          <option value="">Choose a plotted day</option>
+          {rows.map((row) => <option key={row.date} value={row.date}>{row.label} · {row.weight} kg × {row.reps}</option>)}
+        </select>
+      </label>
+      <p aria-live="polite" className="mt-2 text-sm text-fg">{inspected ? `${inspected.label}: ${inspected.weight} kg × ${inspected.reps} reps · estimated 1RM ${inspected.est1rm} kg` : "Select a chart point or choose a day to inspect its values."}</p>
     </div>
   );
 }
