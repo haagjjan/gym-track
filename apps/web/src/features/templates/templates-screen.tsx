@@ -2,9 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ConfirmDialog } from "../../shared/ui/confirm-dialog";
 import { EmptyState, ErrorState, HudButton, Panel, Skeleton } from "../../shared/ui/ui";
-import { errorMessage } from "../../shared/api/client";
+import { apiFetch, errorMessage } from "../../shared/api/client";
 import { useTemplateMutations, useTemplates } from "../../shared/api/hooks";
 import type { WorkoutTemplate } from "../../shared/api/types";
 import { IconPlus } from "../shell/icons";
@@ -20,7 +21,7 @@ const sortOptions = [
 ];
 const sortValues = ["lastUsed", "name", "lastEdited"] as const;
 
-export function TemplatesScreen({ userId }: { userId: string }): ReactNode {
+export function TemplatesScreen({ userId, initialTemplateId }: { userId: string; initialTemplateId?: string | undefined }): ReactNode {
   const router = useRouter();
   const mutations = useTemplateMutations();
   const [searchInput, setSearchInput] = useState("");
@@ -35,6 +36,15 @@ export function TemplatesScreen({ userId }: { userId: string }): ReactNode {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const templates = useTemplates({ search, ...filters, sort });
+  const [openedLink, setOpenedLink] = useState(false);
+  const linkedTemplate = useQuery({
+    queryKey: ["linked-template", userId, initialTemplateId],
+    enabled: Boolean(initialTemplateId) && !openedLink,
+    queryFn: async ({ signal }) => (await apiFetch<{ template: WorkoutTemplate }>(`/api/workout-templates/${initialTemplateId}`, { signal })).template
+  });
+  useEffect(() => {
+    if (!openedLink && linkedTemplate.data) { setEditing(linkedTemplate.data); setOpenedLink(true); }
+  }, [linkedTemplate.data, openedLink]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setSearch(searchInput.trim()), 250);
@@ -84,6 +94,7 @@ export function TemplatesScreen({ userId }: { userId: string }): ReactNode {
       <FacetFilters filters={filters} onChange={setFilters} onClear={clear} onSortChange={(value) => setSort(value as typeof sort)} sort={sort} sortOptions={sortOptions} />
 
       {actionError ? <ErrorState message={actionError} title="That did not work" /> : null}
+      {linkedTemplate.isError && !openedLink ? <ErrorState message={errorMessage(linkedTemplate.error, "The linked template could not be loaded.")} retry={() => void linkedTemplate.refetch()} /> : null}
       {templates.isLoading ? <TemplateSkeleton /> : templates.isError ? (
         <ErrorState message={errorMessage(templates.error, "Templates could not be loaded.")} retry={() => void templates.refetch()} />
       ) : (templates.data ?? []).length === 0 ? (
