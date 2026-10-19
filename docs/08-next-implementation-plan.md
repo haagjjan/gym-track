@@ -221,3 +221,44 @@ Before handoff:
 - list only observed remaining V1 risks
 - do not commit or push; I will do that myself
 ```
+
+## Hands-on onboarding follow-up (2026-09-30)
+
+The text-card tour and canned practice have been replaced by an optional Dashboard invitation,
+six replayable hands-on lessons, free example exploration and an explicit exercise-list template
+copy. Existing accounts use Help; only post-migration accounts see the invitation automatically.
+Apply the standard migrations before deploying this code. See ADR 0020 and the version-2
+onboarding contract. No deployment is part of this change.
+
+Demo state belongs to the `/help/demo` layout and resets on exit/reload. Lesson state persists
+through the existing onboarding endpoint; optimistic unsynced flags are memory-only and retry
+from Help. The example never seeds the personal query cache or workout database.
+
+Size review: the demo session controller and screen contain more than 50 lines because they
+coordinate one bounded view with the existing session components. Forms, analytics, sample
+fixtures and state transitions are separate focused modules; neither file exceeds 150 lines.
+The reused Progress chart/view and Volume view retain their cohesive existing render pipelines;
+the onboarding work does not introduce a new rendering abstraction for these components.
+
+Verification (2026-09-30):
+
+- `pnpm check` passed: type-check, lint, unit tests and production build.
+- Database integration passed all 25 tests against a disposable local PostgreSQL database,
+  including migration eligibility, flag preservation and account isolation.
+- Performance checks passed all four regression budgets.
+- Chromium and Firefox browser batches passed all 13 applicable tests. The two optional
+  anatomy-spike runs and the Chromium-only gesture test's Firefox run remain intentionally
+  skipped. CI now includes the onboarding suite as its own rate-limited batch.
+- Browser checks exercise the complete example, actual set editing, chart inspection, the
+  accessible muscle list, reload/back navigation, reduced motion, focus trapping, account
+  switching, sync retry, unavailable catalog records, template-create failure and active real
+  workout resumption. Network/storage assertions verify isolation; the explicit copy creates
+  only the ordered exercise list and its success link opens that saved template.
+- Rendered review covered 390px, 430px and 1440px. Before/after captures and local check logs
+  are ignored artifacts under `.cache/onboarding-review/`; physical-device keyboard testing
+  remains outside this desktop-browser verification.
+- `git diff --check` passed. No commit, push or production deployment was performed.
+
+Run browser tests with the same per-browser batches and API restarts as
+`.github/workflows/repo-checks.yml`. One combined localhost run shares the BFF's client key
+and exceeds the real rate limit; production limits were not weakened for these tests.
