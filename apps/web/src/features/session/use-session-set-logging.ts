@@ -12,6 +12,7 @@ import {
   type ActiveSetDraft,
   type SetDraft
 } from "./set-draft-storage";
+import { validateSetDraft } from "./validate-set-draft";
 import { readRestSeconds } from "./use-rest-preferences";
 
 interface SessionSetLoggingOptions {
@@ -85,13 +86,9 @@ export function useSessionSetLogging(options: SessionSetLoggingOptions) {
       exercise
     );
     const draft = activeDraft.draft;
-    const weight = Number(draft.weightKg);
-    const reps = Number(draft.reps);
-    const rir = Number(draft.rir);
-    if (!Number.isFinite(weight) || weight <= 0 || !Number.isInteger(reps) || reps < 1) {
-      options.onError("Weight must be positive and reps must be a whole number of at least one.");
-      return false;
-    }
+    const parsed = validateSetDraft(draft);
+    if (parsed.error) { options.onError(parsed.error); return false; }
+    if (!parsed.input) return false;
 
     writeSetDraft(options.userId, options.workoutId, exercise.id, activeDraft);
     const now = Date.now();
@@ -101,12 +98,8 @@ export function useSessionSetLogging(options: SessionSetLoggingOptions) {
         clientMutationId: activeDraft.clientMutationId,
         sessionExerciseId: exercise.id,
         input: {
-          setType: draft.setType,
-          weightKg: draft.weightKg,
-          reps,
-          rir: Number.isFinite(rir) ? rir : 2,
-          restTimeSeconds: elapsed !== null && elapsed < 1_200 ? Math.round(elapsed) : null,
-          note: draft.note.trim() || null
+          ...parsed.input,
+          restTimeSeconds: elapsed !== null && elapsed < 1_200 ? Math.round(elapsed) : null
         }
       });
       lastSaveAt.current = now;
