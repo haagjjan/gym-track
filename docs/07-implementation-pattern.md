@@ -381,3 +381,20 @@ The following source files remain above the normal review targets after cleanup:
 - `apps/api/src/features/exercises/exercise-name-catalog.ts` exceeds 400 lines because it is a static, curated name and blocked-term catalog rather than orchestration logic.
 
 Other files between 250 and 400 lines remain visible review triggers under `ENGINEERING.md`; this cleanup does not grant them a permanent exception.
+
+## Hands-on onboarding slice
+
+ADR 0020 records the isolated demo route layout and explicit presentation/action boundary.
+Live set creation and example set creation share `validateSetDraft`; live and demo edits share
+`SetEditor`. Launch choices, history rows, completion presentation, Progress and Volume views
+accept data/actions without introducing a switch in the global API client. Volume history links
+and session back links accept explicit destinations to keep example navigation inside the demo.
+
+Onboarding state is account-scoped and sends delta patches. Demo data is in-memory only and
+analytics are derived from its logs. Catalog records are checked again before an explicit
+personal template copy. The example does not mount live session hooks, draft storage, privacy
+preference writers or campaign prompts.
+
+The copy-success link opens `/workouts/templates?template=<id>`. The live template container
+loads that account-owned record through the existing detail endpoint and opens the shared
+editor once, independent of saved list filters. Viewing it performs no template mutation.
