@@ -333,3 +333,9 @@ Migration `20260806120000000_add_workout_mutation_safety.sql` adds nullable pare
 `beta_settings` is the locked singleton for immediate waitlist/invitation/campaign controls, account cap and rolling approval limit. `beta_access_requests` stores policy/age evidence, state, hashed invitation and joined account. `admin_audit_events` records privileged actions. `account_deletion_tokens` and `erasure_tombstones` support reversible grace and restore-safe hard erasure.
 
 `campaigns`, `campaign_targets` and `message_deliveries` store immutable published content/audience, bounded trigger/response design and exactly-once per-user state. All ownership FKs cascade on user erasure unless a retained shared definition explicitly nulls creator identity. The processing and retention rules are in `docs/beta-process/public-beta/data-processing-inventory.md`.
+
+Migration `20260929120000000_onboarding_demo_invitation.sql` merges
+`demoInvitationHandled: true` into all existing users' onboarding steps, preserves their other
+flags, and raises their version to at least 2. New accounts default to version 2 with empty
+steps and receive the invitation. Rollback restores the version default only; it preserves
+recorded user choices. No example workout rows or new tables are introduced.
