@@ -82,10 +82,12 @@ export function HeatLegend({ heatCeiling }: { heatCeiling: number }): ReactNode 
 }
 
 export function MuscleIntel({
+  workoutHref,
   aggregate,
   heatCeiling,
   windowLabel
 }: {
+  workoutHref?: ((id: string) => string) | undefined;
   aggregate: MuscleAggregate;
   heatCeiling: number;
   windowLabel: string;
@@ -99,12 +101,12 @@ export function MuscleIntel({
         <IntelRow label={`${windowLabel} total`} value={`${aggregate.totalSets} sets`} />
         <IntelRow label="This week" value={`${aggregate.latestWeekSets} sets`} />
       </dl>
-      <ContributionList aggregate={aggregate} />
+      <ContributionList aggregate={aggregate} workoutHref={workoutHref} />
     </div>
   );
 }
 
-function ContributionList({ aggregate }: { aggregate: MuscleAggregate }): ReactNode {
+function ContributionList({ aggregate, workoutHref }: { aggregate: MuscleAggregate; workoutHref?: ((id: string) => string) | undefined }): ReactNode {
   return (
     <>
       {aggregate.exercises.length > 0 ? (
@@ -126,7 +128,7 @@ function ContributionList({ aggregate }: { aggregate: MuscleAggregate }): ReactN
           <ul className="mt-1.5 space-y-1">
             {aggregate.sessions.slice(0, 4).map((session) => (
               <li key={`${session.workoutId}-${session.date}`}>
-                <Link className="flex items-baseline justify-between gap-2 rounded px-1 py-0.5 transition-colors hover:bg-surface-low" href={`/workouts/${session.workoutId}`}>
+                <Link className="flex items-baseline justify-between gap-2 rounded px-1 py-0.5 transition-colors hover:bg-surface-low" href={workoutHref?.(session.workoutId) ?? `/workouts/${session.workoutId}`}>
                   <span className="font-mono text-[11px] uppercase text-fg-muted">{shortDate(session.date)}</span>
                   <span className="font-mono text-[11px] text-fg">{session.sets} sets</span>
                 </Link>

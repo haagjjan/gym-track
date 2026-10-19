@@ -1,7 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useMemo, useState, type Dispatch, type SetStateAction, type ReactNode } from "react";
+import type { WeeklyVolumePayload } from "../../shared/api/types";
 import { EmptyState, ErrorState, Metric, Panel, Skeleton } from "../../shared/ui/ui";
 import { BayAmbience } from "../avatar/bay-ambience";
 /*import { useDisplaySettings } from "../dashboard/use-display-settings";*/
@@ -44,6 +45,14 @@ export function VolumeScreen(): ReactNode {
   const volume = useWeeklyVolume(windowDays);
   const preferences = useUserPreferences();
   const heatCeiling = preferences.data?.volumeHeatCeiling ?? HEAT_MAX_WEEKLY_SETS;
+  return <VolumeView volume={volume} heatCeiling={heatCeiling} windowDays={windowDays} setWindowDays={setWindowDays} />;
+}
+
+export function VolumeView({ volume, heatCeiling = HEAT_MAX_WEEKLY_SETS, windowDays, setWindowDays, onSelectMuscle, workoutHref }: {
+  volume: { data: WeeklyVolumePayload | undefined; isLoading: boolean; isError: boolean; error: Error | null; refetch: () => unknown };
+  heatCeiling?: number; windowDays: VolumeWindowDays; setWindowDays: Dispatch<SetStateAction<VolumeWindowDays>>;
+  onSelectMuscle?: (slug: RegionSlug) => void; workoutHref?: (id: string) => string;
+}): ReactNode {
   const [selectedSlug, setSelectedSlug] = useState<RegionSlug | null>(null);
   /*const { settings: displaySettings, isLoaded: displaySettingsLoaded } =
   useDisplaySettings();*/
@@ -68,8 +77,9 @@ export function VolumeScreen(): ReactNode {
   }, [aggregates]);
 
   const handleSelect = useCallback((slug: RegionSlug | null): void => {
+    if (slug !== null) onSelectMuscle?.(slug);
     setSelectedSlug((current) => (slug !== null && current === slug ? null : slug));
-  }, []);
+  }, [onSelectMuscle]);
 
   const selected = selectedSlug ? aggregates.get(selectedSlug) ?? null : null;
   const windowTotal = [...aggregates.values()].reduce(
@@ -173,6 +183,7 @@ export function VolumeScreen(): ReactNode {
                 <Skeleton className="h-40" />
               ) : selected ? (
                 <MuscleIntel
+                  workoutHref={workoutHref}
                   aggregate={selected}
                   heatCeiling={heatCeiling}
                   windowLabel={windowLabel}
