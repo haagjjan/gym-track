@@ -1748,3 +1748,20 @@ Unavailable upstream service returns `502 API_UNAVAILABLE` without cached data.
 The single API process owns a single-flight lifecycle runner. It runs once during startup and hourly thereafter. Auth-token cleanup, invitation expiry, due deletions, retention cleanup, and completion notifications are isolated phases: one failure does not stop later phases, later due accounts, or the next scheduled run. The runner processes the entire due-deletion list under the 50-account beta cap and reports bounded metrics described under `GET /api/v1/metrics`.
 
 All public/auth/export/deletion/feedback/admin mutation groups have endpoint-specific limits. Production client attribution accepts only a valid BFF HMAC; browser-supplied forwarding headers are not trusted by the API.
+
+### Onboarding version 2: hands-on example
+
+`GET|PATCH /api/v1/users/me/onboarding` retains `{ version, steps }`. PATCH merges only the
+supplied boolean flags; the client sends deltas, never a previously read full snapshot.
+The existing maximum of 20 flags applies to each PATCH payload. Version never decreases.
+
+- `demoInvitationHandled`: invitation accepted/skipped, or account existed at migration time.
+- `demo_{lesson}_completed` and `demo_{lesson}_skipped`, where lesson is one of `start`, `log`,
+  `finish`, `history`, `progress`, `volume`. Replay preserves these flags and real milestones.
+- Existing `tour`, `practice`, navigation and real-workout flags remain readable. They no
+  longer decide whether to display the tutorial. No page visit automatically completes a lesson.
+
+The web client uses account-scoped query/pending caches, optimistic flags and explicit retry
+from Help. Pending evidence is memory-only; a full reload can lose an unsynced flag, but never
+writes practice to real history. No demo workout/analytics API is introduced. Explicit template
+copy uses `POST /api/v1/workout-templates` with a name and resolved catalog exercise IDs only.
