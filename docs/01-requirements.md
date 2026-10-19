@@ -716,3 +716,23 @@ Deferred from MVP.
 - First-run help is dismissible, resumable and repeatable; practice data is never persisted. Guidance never interrupts an active workout.
 - In-app campaigns are owner-to-user only, plain text, optional-response, dismissible, one at a time and suppressed during active editing. Users may opt out of non-essential prompts.
 - The service identifies the cohort honestly and permanently as Founding Beta. There are no fake counters, advertising trackers, user-to-user messaging, marketing email or access benefits for voluntary support.
+
+## Hands-on onboarding (version 2)
+
+New accounts receive a non-modal Dashboard invitation to try an isolated example, or skip.
+Existing accounts are excluded by the invitation migration and can enter from Help.
+Six replayable lessons teach starting a template, logging a set, editing and finishing,
+opening History, inspecting Progress, and selecting a muscle in Volume. Successful actions,
+not page visits, complete lessons; skipped and completed flags are distinct. Guidance never
+blocks normal workout use and sync failures remain retryable from Help.
+
+Authenticated `/help/demo` routes reuse production controls with an in-memory controller.
+One catalog-backed exercise-list template and eight relative-date sample workouts populate
+History, Progress and Volume. Practice changes stay in the demo until exit/reload. Examples
+never enter personal workouts, analytics, drafts, preferences or domain counters. An explicit
+copy action resolves the current system catalog and creates only a personal exercise-list
+template through the existing API. It never copies sets or creates catalog entries.
+
+The demo supports keyboard controls, an accessible plotted-day selector, the muscle list as
+an alternative to 3D interaction, and mobile set-editor sheets. Required account/privacy
+choices remain in the normal application; unsolicited campaigns are not mounted in the demo.
