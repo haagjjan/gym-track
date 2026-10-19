@@ -505,6 +505,13 @@ jobs:
               apps/web/e2e/workout-templates.spec.ts \
               --project="${project}" \
               --workers=1
+
+            restart_api
+
+            pnpm exec playwright test \
+              apps/web/e2e/onboarding-demo.spec.ts \
+              --project="${project}" \
+              --workers=1
           }
 
           run_project chromium
