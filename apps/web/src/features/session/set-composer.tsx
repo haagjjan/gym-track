@@ -8,6 +8,7 @@ import type { SetDraft } from "./set-draft-storage";
 
 interface SetComposerProps {
   draft: SetDraft;
+  guidance?: boolean;
   isSaving: boolean;
   onCancel: () => void;
   onChange: (patch: Partial<SetDraft>) => void;
@@ -61,6 +62,7 @@ export function SetComposer(props: SetComposerProps): ReactNode {
         />
       ) : null}
 
+      {props.guidance ? <p className="mb-2 text-xs text-fg-muted">Weight is the load in kilograms. Reps is how many times you lifted it. These are example values, not a training recommendation.</p> : null}
       <div className="grid grid-cols-2 gap-2">
         <Stepper
           decimals
@@ -82,6 +84,7 @@ export function SetComposer(props: SetComposerProps): ReactNode {
 
       <div className="mt-3">
         <p className="label-caps mb-1.5 text-outline">RIR <InfoPopover label="reps in reserve">How many clean repetitions you estimate remained. 0 means none; 2 means roughly two.</InfoPopover></p>
+        {props.guidance ? <p className="mb-2 text-xs text-fg-muted">Choose 2 if you estimate two more clean repetitions were possible.</p> : null}
         <RirChips onChange={(rir) => props.onChange({ rir })} value={props.draft.rir} />
       </div>
 
