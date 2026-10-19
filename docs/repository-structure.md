@@ -318,3 +318,15 @@ Use `.env.example` for shared environment variable documentation. Do not commit 
 - Add new `apps/api/src/features/<feature>` folders only for implemented API behavior.
 - Add `packages/shared` only after at least two real consumers need shared contracts or utilities.
 - Do not create empty app, package, feature, or infrastructure folders.
+
+## Hands-on example ownership
+
+- `apps/web/src/features/onboarding` owns invitations, versioned lesson flags, the in-memory
+  example controller, catalog-backed sample data, demo analytics, and explicit template copy.
+- `apps/web/src/app/help/demo` owns the authenticated persistent demo layout and bounded
+  route family. A new layout mount starts fresh; no demo drafts are stored on the device.
+- Existing session, launch, History, Progress and Volume feature folders continue to own
+  their reusable presentation controls. Live API hooks stay in live containers.
+- `apps/web/e2e/onboarding-demo.spec.ts` covers the complete example and its isolation boundary.
+  Captures, traces and disposable local verification data remain ignored in `test-results/`
+  and `.cache/onboarding-review/`.
