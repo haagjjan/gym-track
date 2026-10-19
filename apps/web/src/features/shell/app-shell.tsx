@@ -18,7 +18,8 @@ import {
   IconVolume
 } from "./icons";
 import { DevicePrivacyProvider } from "../privacy/device-privacy";
-import { OnboardingOverlay } from "../onboarding/onboarding-overlay";
+import { OnboardingProvider } from "../onboarding/onboarding-provider";
+import { OnboardingInvitation } from "../onboarding/onboarding-invitation";
 import { MessageCenter } from "../messages/message-center";
 
 interface NavItem {
@@ -63,27 +64,36 @@ const navItems: NavItem[] = [
 
 export function AppShell({
   children,
-  user
+  user,
+  demo = false
 }: {
   children: ReactNode;
   user: AuthUser;
+  demo?: boolean;
 }): ReactNode {
   const pathname = usePathname();
 
-  return (
-    <DevicePrivacyProvider userId={user.id}><div className="flex min-h-dvh bg-void">
-      <DesktopSidebar pathname={pathname} user={user} />
+  const content = <div className="flex min-h-dvh bg-void">
+    <DesktopSidebar demo={demo} pathname={pathname} user={user} />
+    <div className="flex min-w-0 flex-1 flex-col">
+      {demo ? <header className="border-b border-outline-dim/40 px-4 py-3 text-sm text-fg lg:hidden">Gym Progress Tracker · Example</header> : <MobileTopBar user={user} />}
+      <main className="flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-0">
+        {!demo && pathname === "/" ? <OnboardingInvitation /> : null}
+        {children}
+      </main>
+    </div>
+    <MobileTabBar demo={demo} pathname={pathname} />
+    {!demo && canPrompt(pathname) ? <MessageCenter /> : null}
+  </div>;
+  return <OnboardingProvider userId={user.id}>{demo ? content : <DevicePrivacyProvider userId={user.id}>{content}</DevicePrivacyProvider>}</OnboardingProvider>;
+}
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <MobileTopBar user={user} />
-        <main className="flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-0">{children}</main>
-      </div>
-
-      <MobileTabBar pathname={pathname} />
-      <OnboardingOverlay pathname={pathname} />
-      {canPrompt(pathname) ? <MessageCenter /> : null}
-    </div></DevicePrivacyProvider>
-  );
+function navigationItems(demo: boolean): NavItem[] {
+  if (!demo) return navItems;
+  return navItems.filter((item) => item.href !== "/settings").map((item) => {
+    const href = item.href === "/" ? "/help/demo" : item.href === "/workouts" ? "/help/demo/history" : item.href === "/weekly-volume" ? "/help/demo/volume" : `/help/demo${item.href}`;
+    return { ...item, href, isActive: (path: string) => path === href };
+  });
 }
 
 function canPrompt(pathname: string): boolean {
@@ -93,7 +103,7 @@ function canPrompt(pathname: string): boolean {
     && !/^\/workouts\/[^/]+$/.test(pathname);
 }
 
-function DesktopSidebar({ pathname, user }: { pathname: string; user: AuthUser }): ReactNode {
+function DesktopSidebar({ pathname, user, demo }: { pathname: string; user: AuthUser; demo: boolean }): ReactNode {
   const router = useRouter();
   const { start, isPending } = useStartSession();
 
@@ -126,7 +136,7 @@ function DesktopSidebar({ pathname, user }: { pathname: string; user: AuthUser }
       </div>
 
       <nav aria-label="Primary" className="flex-1 space-y-1 px-3 py-4">
-        {navItems.map((item) => {
+        {navigationItems(demo).map((item) => {
           const active = item.isActive(pathname);
           const showPendingBadge = item.href === "/settings" && !user.emailVerified;
 
@@ -159,14 +169,14 @@ function DesktopSidebar({ pathname, user }: { pathname: string; user: AuthUser }
 
       <div className="space-y-2 border-t border-outline-dim/40 p-4">
         <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider text-outline">
-          <Link className="min-h-11 px-2 py-3 hover:text-cyan" href="/messages">Messages</Link>
+          {!demo ? <Link className="min-h-11 px-2 py-3 hover:text-cyan" href="/messages">Messages</Link> : null}
           <Link className="min-h-11 px-2 py-3 hover:text-cyan" href="/help">Help</Link>
-          {user.role === "ADMIN" ? <Link className="min-h-11 px-2 py-3 hover:text-lavender" href="/admin">Admin</Link> : null}
+          {!demo && user.role === "ADMIN" ? <Link className="min-h-11 px-2 py-3 hover:text-lavender" href="/admin">Admin</Link> : null}
         </div>
         <button
           className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded border border-cyan/50 font-display text-xs font-bold uppercase tracking-[0.12em] text-cyan transition-all hover:bg-cyan/10 hover:shadow-glow-cyan disabled:cursor-wait disabled:opacity-60"
           disabled={isPending}
-          onClick={() => void start()}
+          onClick={() => demo ? router.push("/help/demo/workout") : void start()}
           type="button"
         >
           <IconBarbell />
@@ -174,11 +184,11 @@ function DesktopSidebar({ pathname, user }: { pathname: string; user: AuthUser }
         </button>
         <button
           className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded font-display text-[11px] font-bold uppercase tracking-[0.12em] text-outline transition-colors hover:text-red"
-          onClick={() => void handleLogout()}
+          onClick={() => demo ? router.push("/") : void handleLogout()}
           type="button"
         >
           <IconLogout />
-          Sign out
+          {demo ? "Exit example" : "Sign out"}
         </button>
       </div>
     </aside>
@@ -226,10 +236,12 @@ function MobileTopBar({ user }: { user: AuthUser }): ReactNode {
   );
 }
 
-function MobileTabBar({ pathname }: { pathname: string }): ReactNode {
+function MobileTabBar({ pathname, demo }: { pathname: string; demo: boolean }): ReactNode {
   const { start, isPending } = useStartSession();
-  const left = navItems.slice(0, 2);
-  const right = navItems.slice(2, 4);
+  const router = useRouter();
+  const items = navigationItems(demo);
+  const left = items.slice(0, 2);
+  const right = items.slice(2, 4);
 
   return (
     <nav
@@ -244,9 +256,9 @@ function MobileTabBar({ pathname }: { pathname: string }): ReactNode {
         <div className="flex justify-center">
           <button
             aria-label="Start workout session"
-            className="relative -top-4 flex size-14 cursor-pointer items-center justify-center rounded-full border border-cyan bg-surface text-cyan shadow-glow-cyan transition-transform active:scale-95 disabled:opacity-60"
+            className={`relative -top-4 flex size-14 cursor-pointer items-center justify-center rounded-full border border-cyan bg-surface text-cyan shadow-glow-cyan transition-transform active:scale-95 disabled:opacity-60 ${demo && pathname === "/help/demo" ? "ring-4 ring-cyan/40 ring-offset-2 ring-offset-void" : ""}`}
             disabled={isPending}
-            onClick={() => void start()}
+            onClick={() => demo ? router.push("/help/demo/workout") : void start()}
             type="button"
           >
             <IconBarbell height="24" width="24" />
