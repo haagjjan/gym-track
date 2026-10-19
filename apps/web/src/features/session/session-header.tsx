@@ -9,6 +9,8 @@ import { useConfirmTap } from "./use-confirm-tap";
 
 interface SessionHeaderProps {
   focusName: boolean;
+  backHref?: string;
+  backLabel?: string;
   isEnding: boolean;
   isOpen: boolean;
   isRenaming: boolean;
@@ -47,9 +49,9 @@ export function SessionHeader(props: SessionHeaderProps): ReactNode {
     <header className="sticky top-0 z-30 border-b border-outline-dim/40 bg-void/90 backdrop-blur-md">
       <div className="mx-auto flex max-w-5xl items-center gap-2 px-3 py-2 sm:px-4">
         <Link
-          aria-label={props.isOpen ? "Back to dashboard" : "Back to workout history"}
+          aria-label={props.backLabel ?? (props.isOpen ? "Back to dashboard" : "Back to workout history")}
           className="flex size-11 shrink-0 items-center justify-center rounded border border-outline-dim text-fg-muted transition-colors hover:border-cyan hover:text-cyan"
-          href={props.isOpen ? "/" : "/workouts"}
+          href={props.backHref ?? (props.isOpen ? "/" : "/workouts")}
         >
           <IconClose />
         </Link>

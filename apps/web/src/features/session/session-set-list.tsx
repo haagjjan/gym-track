@@ -3,12 +3,13 @@
 import { useState, type ReactNode } from "react";
 import { HudButton } from "../../shared/ui/ui";
 import { errorMessage } from "../../shared/api/client";
-import { useSessionMutations } from "../../shared/api/hooks";
-import type { WorkoutSet } from "../../shared/api/types";
+import type { useSessionMutations } from "../../shared/api/hooks";
+import type { SetInput, WorkoutSet } from "../../shared/api/types";
 import { formatKgValue } from "../../shared/format";
 import { isRetroactivelyEdited } from "../../shared/workout-edits";
 import { RirChips } from "./set-composer";
 import { Stepper } from "./stepper";
+import { validateSetDraft } from "./validate-set-draft";
 import { useConfirmTap } from "./use-confirm-tap";
 
 export function SessionSetRow({
@@ -52,6 +53,17 @@ export function SessionSetEditor({
   onSaved?: () => void;
   set: WorkoutSet;
 }): ReactNode {
+  return <SetEditor isHistorical={isHistorical} onClose={onClose} onError={onError} onSaved={onSaved} set={set}
+    isSaving={mutations.updateSet.isPending} isDeleting={mutations.deleteSet.isPending}
+    onSave={(input) => mutations.updateSet.mutateAsync({ setId: set.id, input })}
+    onDelete={() => mutations.deleteSet.mutateAsync({ setId: set.id })} />;
+}
+
+export function SetEditor({ isHistorical, isSaving, isDeleting, onSave, onDelete, onClose, onError, onSaved, set }: {
+  isHistorical: boolean; isSaving: boolean; isDeleting: boolean;
+  onSave: (input: SetInput) => Promise<unknown>; onDelete: () => Promise<unknown>;
+  onClose: () => void; onError: (message: string | null) => void; onSaved?: (() => void) | undefined; set: WorkoutSet;
+}): ReactNode {
   const [weightKg, setWeightKg] = useState(formatKgValue(set.weightKg));
   const [reps, setReps] = useState(String(set.reps));
   const [rir, setRir] = useState(String(set.rir));
@@ -61,41 +73,17 @@ export function SessionSetEditor({
   const confirmSave = useConfirmTap(save);
 
   function remove(): void {
-    mutations.deleteSet.mutate(
-      { setId: set.id },
-      {
-        onSuccess: onClose,
-        onError: (caught) => onError(errorMessage(caught, "The set could not be deleted."))
-      }
-    );
+    void onDelete().then(onClose).catch((caught) => onError(errorMessage(caught, "The set could not be deleted.")));
   }
 
   function save(): void {
-    const repsValue = Number(reps);
-    const rirValue = Number(rir);
-
-    if (!Number.isFinite(Number(weightKg)) || !Number.isInteger(repsValue) || repsValue < 1) {
-      onError("Weight and reps need valid values.");
-      return;
-    }
-
+    const result = validateSetDraft({ weightKg, reps, rir, setType, note });
+    if (result.error) { onError(result.error); return; }
+    if (!result.input) return;
     onError(null);
-    mutations.updateSet.mutate(
-      {
-        setId: set.id,
-        input: {
-          setType,
-          weightKg,
-          reps: repsValue,
-          rir: Number.isFinite(rirValue) ? rirValue : set.rir,
-          note: note.trim() || null
-        }
-      },
-      {
-        onSuccess: () => { onSaved?.(); onClose(); },
-        onError: (caught) => onError(errorMessage(caught, "The set could not be updated."))
-      }
-    );
+    void onSave({ ...result.input, restTimeSeconds: set.restTimeSeconds })
+      .then(() => { onSaved?.(); onClose(); })
+      .catch((caught) => onError(errorMessage(caught, "The set could not be updated.")));
   }
 
   return (
@@ -149,12 +137,12 @@ export function SessionSetEditor({
       <div className="mt-3 flex flex-wrap gap-2">
         <HudButton
           className="flex-1"
-          disabled={mutations.updateSet.isPending}
+          disabled={isSaving}
           onClick={isHistorical ? confirmSave.trigger : save}
           size="sm"
           variant={isHistorical && confirmSave.isArmed ? "success" : "primary"}
         >
-          {mutations.updateSet.isPending
+          {isSaving
             ? "SAVING…"
             : isHistorical && !confirmSave.isArmed
               ? "SAVE HISTORICAL EDIT"
@@ -163,7 +151,7 @@ export function SessionSetEditor({
                 : "SAVE"}
         </HudButton>
         <HudButton onClick={onClose} size="sm" variant="ghost">Cancel</HudButton>
-        <HudButton disabled={mutations.deleteSet.isPending} onClick={confirmDelete.trigger} size="sm" variant="danger">
+        <HudButton disabled={isDeleting} onClick={confirmDelete.trigger} size="sm" variant="danger">
           {confirmDelete.isArmed ? "CONFIRM" : "DELETE"}
         </HudButton>
       </div>

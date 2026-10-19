@@ -24,35 +24,7 @@ export function SessionCompletionSummary({
 }): ReactNode {
   const { mark } = useOnboarding();
   useEffect(() => { void mark("finishWorkout"); }, [mark]);
-  return (<>
-    <section
-      aria-labelledby="workout-complete-title"
-      className="rounded-xl border border-green/45 bg-green/5 p-4"
-    >
-      <p className="label-caps text-green">WORKOUT_COMPLETE</p>
-      <h2 className="mt-1 font-display text-2xl font-bold text-fg" id="workout-complete-title">
-        Session saved successfully
-      </h2>
-      <p className="mt-1 text-xs text-fg-muted">
-        Your sets are in History and your analytics have been updated.
-      </p>
-
-      <div className="mt-4 grid grid-cols-2 gap-3 rounded-lg border border-outline-dim/50 bg-void/35 p-3 sm:grid-cols-4">
-        <Metric label="DURATION" tone="green" value={formatDuration(workout.startedAt, workout.endedAt)} />
-        <Metric label="EXERCISES" value={workout.exercises.length} />
-        <Metric label="SETS" tone="lavender" value={totals.sets} />
-        <Metric detail="kg total" label="TONNAGE" value={formatNumber(totals.volume)} />
-      </div>
-
-      <div className="mt-4 grid gap-2 sm:grid-cols-2">
-        <Link className="flex min-h-11 items-center justify-center rounded bg-cyan px-4 font-display text-xs font-bold uppercase tracking-[0.1em] text-on-cyan" href="/workouts">
-          View History
-        </Link>
-        <Link className="flex min-h-11 items-center justify-center rounded border border-cyan/50 px-4 font-display text-xs font-bold uppercase tracking-[0.1em] text-cyan" href="/">
-          Dashboard
-        </Link>
-      </div>
-
+  return <><CompletedWorkoutSummary totals={totals} workout={workout}>
       <details className="mt-4 rounded-lg border border-outline-dim/60 bg-surface-low/30">
         <summary className="flex min-h-11 cursor-pointer items-center px-3 font-display text-xs font-bold uppercase tracking-[0.1em] text-fg-muted">
           Secondary post-workout actions
@@ -67,8 +39,43 @@ export function SessionCompletionSummary({
           />
         </div>
       </details>
+  </CompletedWorkoutSummary><MessageCenter /></>;
+}
+
+export function CompletedWorkoutSummary({ totals, workout, children, example = false }: {
+  totals: SessionTotals; workout: WorkoutDetail & { endedAt: string }; children?: ReactNode; example?: boolean;
+}): ReactNode {
+  return (
+    <section
+      aria-labelledby="workout-complete-title"
+      className="rounded-xl border border-green/45 bg-green/5 p-4"
+    >
+      <p className="label-caps text-green">WORKOUT_COMPLETE</p>
+      <h2 className="mt-1 font-display text-2xl font-bold text-fg" id="workout-complete-title">
+        {example ? "Example workout complete" : "Session saved successfully"}
+      </h2>
+      <p className="mt-1 text-xs text-fg-muted">
+        {example ? "Your example History, Progress and Volume now include this practice. Your account is unchanged." : "Your sets are in History and your analytics have been updated."}
+      </p>
+
+      <div className="mt-4 grid grid-cols-2 gap-3 rounded-lg border border-outline-dim/50 bg-void/35 p-3 sm:grid-cols-4">
+        <Metric label="DURATION" tone="green" value={formatDuration(workout.startedAt, workout.endedAt)} />
+        <Metric label="EXERCISES" value={workout.exercises.length} />
+        <Metric label="SETS" tone="lavender" value={totals.sets} />
+        <Metric detail="kg total" label="TONNAGE" value={formatNumber(totals.volume)} />
+      </div>
+
+      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        <Link className="flex min-h-11 items-center justify-center rounded bg-cyan px-4 font-display text-xs font-bold uppercase tracking-[0.1em] text-on-cyan" href={example ? "/help/demo/history" : "/workouts"}>
+          View History
+        </Link>
+        <Link className="flex min-h-11 items-center justify-center rounded border border-cyan/50 px-4 font-display text-xs font-bold uppercase tracking-[0.1em] text-cyan" href={example ? "/help/demo" : "/"}>
+          Dashboard
+        </Link>
+      </div>
+
+      {children}
+
     </section>
-    <MessageCenter />
-  </>
   );
 }
