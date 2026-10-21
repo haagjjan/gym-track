@@ -6,7 +6,7 @@ import { SCENARIOS, PROVIDER, scenarioFixture } from "../status-fixtures.mjs";
 
 const root = fileURLToPath(new URL("../public/", import.meta.url));
 const port = Number(process.env.STATUS_PREVIEW_PORT ?? 4173);
-const types = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".woff2": "font/woff2" };
+const types = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".woff2": "font/woff2", ".webp": "image/webp" };
 
 createServer(async (request, response) => {
   const url = new URL(request.url, "http://localhost");
