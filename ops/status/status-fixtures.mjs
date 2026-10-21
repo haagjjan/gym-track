@@ -1,7 +1,7 @@
 // Test-only examples. Never copied into public/ or used as a production fallback.
 export const FIXTURE_SHA = "1234567890abcdef1234567890abcdef12345678";
 export const PROVIDER = "https://gymtrack.betteruptime.com";
-export const SCENARIOS = ["healthy", "incident", "degraded", "outage", "maintenance", "unavailable", "unconfigured", "malformed", "incomplete", "stale", "metrics-unavailable", "metrics-stale", "build-stale", "build-missing", "build-future"];
+export const SCENARIOS = ["healthy", "incident", "degraded", "outage", "maintenance", "unavailable", "unconfigured", "malformed", "incomplete", "stale", "metrics-unavailable", "metrics-stale", "build-stale", "build-missing", "build-future", "metrics-legacy", "metrics-empty", "metrics-malformed"];
 
 export function resource(publicName, status = "operational") {
   return { type: "status_page_resource", attributes: { public_name: publicName, status, availability: 1 } };
@@ -57,6 +57,18 @@ export function scenarioFixture(scenario, now = Date.now()) {
   }));
   if (scenario === "incomplete") monitoring.included.pop();
   const metrics = metricsFixture(scenario === "metrics-stale" ? now - 16 * 60_000 : now);
+  if (scenario !== "metrics-legacy") {
+    const monday = new Date(metrics.data.generatedAt);
+    monday.setUTCHours(0, 0, 0, 0);
+    monday.setUTCDate(monday.getUTCDate() - (monday.getUTCDay() + 6) % 7 - 49);
+    metrics.data.activeAccounts = { kind: "exact", value: 8 };
+    metrics.data.completedWorkoutsLast30Days = scenario === "metrics-empty" ? 0 : 23;
+    metrics.data.completedWorkoutsByWeek = [2, 4, 3, 7, 5, 8, 6, 4].map((count, index) => ({
+      weekStart: new Date(monday.getTime() + index * 7 * 86_400_000).toISOString().slice(0, 10),
+      count: scenario === "metrics-empty" ? 0 : count
+    }));
+    if (scenario === "metrics-malformed") metrics.data.completedWorkoutsByWeek[2].count = -1;
+  }
   const quality = qualityFixture(now);
   if (scenario === "build-stale") quality.verifiedAt = new Date(now - 15 * 86_400_000).toISOString();
   if (scenario === "build-future") quality.verifiedAt = new Date(now + 86_400_000).toISOString();

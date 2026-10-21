@@ -1,3 +1,5 @@
+import { parseMetrics } from "./status-metrics.js";
+
 export const REQUIRED_COMPONENTS = ["web-application", "api-and-database", "independent-status-page"];
 export const STATUS_LABELS = {
   operational: "Operational", degraded: "Degraded", downtime: "Down", maintenance: "Maintenance",
@@ -82,18 +84,7 @@ function componentKey(value) {
 
 export function parsePublicMetrics(payload) {
   const data = record(record(payload).data);
-  const accounts = record(data.activeBetaAccounts);
-  const generatedAt = timestamp(data.generatedAt);
-  const workoutRecordsProcessed = count(data.workoutRecordsProcessed);
-  let activeAccounts;
-  if (accounts.kind === "below_threshold" && accounts.threshold === 5) {
-    activeAccounts = { kind: "below_threshold", threshold: 5 };
-  } else if (accounts.kind === "exact" && count(accounts.value) >= 5) {
-    activeAccounts = { kind: "exact", value: accounts.value };
-  } else {
-    throw new Error("Invalid account disclosure");
-  }
-  return { generatedAt, activeAccounts, workoutRecordsProcessed };
+  return parseMetrics(data, timestamp(data.generatedAt));
 }
 
 export function parseQualitySummary(payload) {
@@ -113,10 +104,6 @@ function percentage(value) {
   return value;
 }
 
-function count(value) {
-  if (!Number.isSafeInteger(value) || value < 0) throw new Error("Invalid count");
-  return value;
-}
 
 export function parseHistory(value, now = Date.now()) {
   if (!Array.isArray(value)) return [];

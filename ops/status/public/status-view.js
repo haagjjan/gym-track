@@ -1,5 +1,6 @@
+import { createActivityRenderer } from "./status-activity.js";
 import { STATUS_LABELS, historySummary } from "./status-data.js";
-import { monitoringPresentation, activityPresentation, qualityPresentation, REPOSITORY_URL } from "./status-state.js";
+import { monitoringPresentation, qualityPresentation, REPOSITORY_URL } from "./status-state.js";
 
 const SERVICE_NAMES = {
   "web-application": "Web application", "api-and-database": "API and database",
@@ -27,6 +28,7 @@ export function createStatusRenderer(document) {
   const show = (id, visible) => { byId(id).hidden = !visible; };
   const signatures = new Map();
   let announced = "";
+  const renderActivity = createActivityRenderer(document);
 
   function render(state, now) {
     const monitoring = monitoringPresentation(state.monitoring, now);
@@ -43,6 +45,7 @@ export function createStatusRenderer(document) {
     renderIncidents(state.monitoring, monitoring);
     renderHistory(state.monitoring, monitoring);
     renderActivity(state.metrics, now);
+    renderActivityTime(state.metrics, now);
     renderQuality(state.quality, now);
     for (const link of document.querySelectorAll("[data-monitoring-source]")) {
       link.hidden = !state.monitoring.sourceUrl;
@@ -141,17 +144,11 @@ export function createStatusRenderer(document) {
       resolved.map((incident) => incidentElement(incident, channel.sourceUrl, !confirmed)));
   }
 
-  function renderActivity(channel, now) {
-    const presentation = activityPresentation(channel, now);
-    const current = presentation.state === "fresh";
+  function renderActivityTime(channel, now) {
     const data = channel.data;
-    text("activity-notice", presentation.message);
-    show("activity-notice", Boolean(presentation.message));
-    text("accounts-value", current ? data.activeAccounts.kind === "exact"
-      ? number(data.activeAccounts.value) : `under ${data.activeAccounts.threshold}` : "—");
-    text("workouts-value", current ? number(data.workoutRecordsProcessed) : "—");
-    show("activity-time", Boolean(data) && presentation.state !== "invalid");
-    if (data && presentation.state !== "invalid") {
+    const valid = data && Date.parse(data.generatedAt) <= now;
+    show("activity-time", Boolean(valid));
+    if (valid) {
       text("activity-time", `Generated ${relativeTime(data.generatedAt, now)} · ${absoluteTime(data.generatedAt)}`);
       byId("activity-time").dateTime = data.generatedAt;
     }
@@ -185,5 +182,3 @@ export function createStatusRenderer(document) {
   }
   return render;
 }
-
-function number(value) { return new Intl.NumberFormat("en").format(value); }

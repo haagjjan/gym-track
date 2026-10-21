@@ -122,11 +122,11 @@ describe("historical status entries", () => {
 describe("metrics and build contracts", () => {
   it("keeps thresholded account and workout row semantics", () => {
     const parsed = parsePublicMetrics(metricsFixture(NOW));
-    assert.deepEqual(parsed.activeAccounts, { kind: "below_threshold", threshold: 5 });
+    assert.deepEqual(parsed.activeBetaAccounts, { kind: "below_threshold", threshold: 5 });
     assert.equal(parsed.workoutRecordsProcessed, 105);
     const exact = metricsFixture(NOW);
     exact.data.activeBetaAccounts = { kind: "exact", value: 6 };
-    assert.equal(parsePublicMetrics(exact).activeAccounts.value, 6);
+    assert.equal(parsePublicMetrics(exact).activeBetaAccounts.value, 6);
     exact.data.activeBetaAccounts.value = 2;
     assert.throws(() => parsePublicMetrics(exact));
     exact.data.workoutRecordsProcessed = -1;
