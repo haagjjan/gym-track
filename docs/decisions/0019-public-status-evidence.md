@@ -63,3 +63,31 @@ owner. GitHub Pages still ignores `_headers`, so the page also carries an enforc
 The workout count is a broad record-processing number rather than user-adoption or completion
 evidence. A hard account erasure physically removes rows and can reduce that count; no historical
 counter is retained after legal deletion.
+
+### Project showcase and activity extension (2026-10-21)
+
+The independent page also introduces the product and displays three real, locally captured
+sample-data screenshots. These static assets remain available when the application is down.
+They are clearly labeled examples and never substitute for live operational or usage evidence.
+The existing light editorial presentation and dependency-free bundle remain in place.
+
+The existing `activeBetaAccounts` field retains its non-administrator semantics. An additive
+`activeAccounts` field counts all `ACTIVE` accounts, including administrators, with the same
+five-account disclosure threshold. The page calls this **Enabled accounts** and states that it
+includes the owner/admin; it makes no claim about recent sign-ins. An older API response retains
+its non-administrator label rather than being presented as the new total.
+
+Recent activity adds a rolling 30-day completed-workout count and eight Monday-based UTC weekly
+buckets, including the current partial week. These count non-deleted sessions with an `ended_at`
+inside the reporting window, strictly before the single `generatedAt` cutoff. Administrator and
+retained suspended/deletion-pending account sessions are included. Historical imports use their
+original completion dates. Empty weeks are zero-filled; unavailable or malformed data is never
+zero-filled in the browser. These workout aggregates retain the existing exact-count publication
+policy, without per-account breakdowns, names, identifiers or event telemetry. Erasure can reduce
+both recent activity and retained row totals. No counter store or schema migration is introduced.
+
+The workflow now requires a valid `BETTER_STACK_STATUS_URL` before publication. Local previews
+can still use an unconfigured state; the browser retains fail-closed behavior. This supersedes the
+original publication behavior that allowed a new unconfigured production bundle to be deployed.
+Coverage values and their unchanged `c8 --all` method remain available in a native disclosure;
+verified checks, source revision and generation time remain visible independently of service health.

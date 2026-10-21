@@ -193,3 +193,23 @@ Goal 1 workout mutation rows keep nullable mutation IDs so historical data remai
 ### C2. Cardio history
 - Filter: user_id, date range
 - Output: distance, duration, pace
+
+## Public project activity aggregates
+
+The status feature computes these queries directly from PostgreSQL; no historical public counter
+or new telemetry collection is involved:
+
+- Count all `users` with `account_status = 'ACTIVE'`, and retain the existing filtered `USER`
+  count separately. Both public account counts use the five-account disclosure threshold.
+- Retain the unfiltered `COUNT(*)` of `workout_sessions` as the broad current record total.
+- Count sessions with `deleted_at IS NULL`, non-null `ended_at`, and
+  `generatedAt - 30 days <= ended_at < generatedAt`.
+- Group the same eligible completed sessions by Monday-based UTC completion week, from the
+  earliest of eight week starts through the exclusive generation cutoff. Zero-fill missing
+  weeks in the status service and identify the current week as partial in the page.
+
+Recent workout queries include administrators and retained sessions regardless of account status.
+Imported sessions use `ended_at`, never import/creation time. All windows share one captured clock
+value. Existing indexes and direct aggregate scans are sufficient for the small beta; no migration
+or speculative aggregate index is introduced. Query-boundary and database tests cover UTC weeks,
+rolling boundaries, imports, deleted/open/future sessions, account status and physical erasure.

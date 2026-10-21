@@ -1735,6 +1735,27 @@ is `{ "kind": "below_threshold", "threshold": 5 }` and does not expose the exact
 administrator-owned, imported, historical, open, completed, and soft-deleted records. It does not
 retain counts for workout rows physically removed by account erasure.
 
+The additive project-activity fields are:
+
+- `activeAccounts`: the same thresholded shape as `activeBetaAccounts`, counting all `ACTIVE`
+  accounts including administrators. The old field continues to count only non-administrator
+  `USER` accounts. The public page labels the new field “Enabled accounts,” explicitly including
+  the owner/admin. Neither field measures recent usage.
+- `completedWorkoutsLast30Days`: exact non-negative count of completed, non-deleted sessions
+  whose `ended_at` is in `[generatedAt - 30 days, generatedAt)`.
+- `completedWorkoutsByWeek`: exactly eight ascending `{ "weekStart": "YYYY-MM-DD", "count": 0 }`
+  records. Weeks start Monday at 00:00 UTC; the final entry is the current partial week.
+  Missing database groups become zero counts. Dates and counts are computed, not persisted.
+
+Both recent activity fields include administrator workouts and retained sessions from accounts
+that are no longer active. Imports use original completion dates. Open, soft-deleted and future
+sessions are excluded. Physical erasure can reduce the counts. One clock value defines all windows
+and `generatedAt`. No user identifiers or per-account breakdowns are published.
+
+Clients may encounter legacy responses during rollout: existing totals remain usable, with their
+original account labels, while missing recent-activity fields are explicitly unavailable.
+Malformed optional activity breakdowns are withheld without erasing valid existing totals.
+
 ### `GET /api/public-status`
 
 Public Next.js BFF route for the independent status page and originless uptime probes. It forwards

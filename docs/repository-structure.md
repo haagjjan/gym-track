@@ -305,10 +305,17 @@ These files may exist locally but should not be committed:
 `ops/status/public/` is committed static source intended for an independently hosted `status.gymtrack.ch`; it is not generated runtime output.
 Its `status.js` entry owns fetch/poll lifecycle, `status-data.js` owns validation and history parsing,
 `status-state.js` owns independent evidence state and request generations, and `status-view.js` owns
-safe DOM rendering. `ops/status/*.test.mjs` and `status-fixtures.mjs` own isolated status tests.
+safe DOM rendering. `status-metrics.js` validates additive aggregate activity independently of
+legacy totals, and `status-activity.js` renders the metrics, weekly chart and accessible table.
+`ops/status/public/images/` owns the three committed sample-data WebP screenshots; capture provenance
+and recapture steps live in `ops/status/showcase-captures.md`. `ops/status/playwright.config.ts` and
+`status.browser.spec.ts` own independent browser checks, invoked with `pnpm test:status:browser`.
+The API status feature's `status-window.ts` owns the shared UTC reporting-window calculation.
+`ops/status/*.test.mjs` and `status-fixtures.mjs` own isolated status tests.
 `ops/status/scripts/preview.mjs` serves local browser fixtures; it and its fixtures remain outside
-the published `public/` directory. Generated `config.json`, `quality.json`, and browser screenshots
-are local or CI artifacts, not committed source.
+the published `public/` directory. Generated `config.json`, `quality.json`, and raw review screenshots
+are local or CI artifacts, not committed source. The three curated example captures under
+`public/images/` are intentional committed product assets, with provenance recorded above.
 
 Use `.env.example` for shared environment variable documentation. Do not commit secrets, cookie jars, database dumps, or generated build output.
 
