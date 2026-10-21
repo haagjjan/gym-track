@@ -11,7 +11,7 @@ history, and incidents.
 | --- | --- | --- |
 | Overall/component state and incidents | Better Stack public `/index.json` feed | Unavailable, incomplete or stale; no retained green claim |
 | Daily history and recently resolved incidents | Valid entries returned by the same feed | No invented dates, period or uptime percentage |
-| Active beta accounts and workout records | `https://app.gymtrack.ch/api/public-status` | Activity alone becomes unavailable or out of date |
+| Enabled accounts, workout records and recent completed workouts | `https://app.gymtrack.ch/api/public-status` | Activity alone becomes unavailable or out of date |
 | Coverage and verified commit | Workflow-generated `quality.json` | Missing/invalid evidence is unavailable; the whole record is qualified after 14 days |
 
 Monitoring freshness is elapsed time since this browser successfully retrieved and validated a
@@ -139,7 +139,7 @@ Read-only checks on 2026-09-12 found two independent external problems:
 
 For the 404, the production operator should inspect the running web/API release SHAs, standalone
 route manifest, and reverse-proxy destination. Rebuild and deploy an approved revision containing
-the public web and API routes using the [deployment runbook](../../docs/deployment-runbook.md); ensure traffic reaches that
+the public web and API routes using the [production runbook](../production/README.md); ensure traffic reaches that
 web release. With the upstream API/database available, verify an originless request and a request
 with `Origin: https://status.gymtrack.ch` both return 200 JSON whose `data` contains `activeBetaAccounts`,
 `workoutRecordsProcessed`, and `generatedAt`, with `Cache-Control: no-store` and the expected CORS
@@ -159,3 +159,70 @@ Create and update incidents in Better Stack. Updates must name the affected publ
 impact, investigation state, and next-update time without exposing personal data, secrets, internal
 hostnames, or exploit details. Confirm the custom page reflects the report, then resolve it in
 Better Stack so it moves into recent history.
+
+## Product showcase and live activity
+
+The independently hosted page now puts a compact health summary and incidents first, followed by
+product context, live aggregate activity, three actual example-data product captures, service
+history and attributable build evidence. It retains the light editorial system and native
+links/disclosures. Screenshots and product content require neither the application nor JavaScript.
+Capture provenance and recapture instructions are in [showcase-captures.md](showcase-captures.md).
+
+The primary account metric is **Enabled accounts**, including administrators and subject to the
+existing five-account threshold. It is account status, not recent sign-ins. The legacy
+`activeBetaAccounts` contract remains unchanged. A legacy response is explicitly labeled
+**Enabled beta accounts**, excluding administrators; it never impersonates the new total.
+
+Recent activity uses non-deleted, completed sessions from every retained account, including admin,
+suspended and deletion-pending accounts. A rolling 30-day count and eight UTC Monday-start weeks
+share one generation cutoff. Completion dates determine placement, so importing historical data
+cannot create a spike at import time. The last week is partial; valid empty weeks are zero.
+Unavailable/stale/invalid data is withheld, not replaced by zero or example values. The broad
+workout-record total retains its existing inclusion rules. All counts can decrease after erasure.
+
+`status-metrics.js` validates optional additions without discarding valid legacy totals. A malformed
+or incomplete weekly series is withheld in full rather than patched with fictional zeroes.
+`status-activity.js` renders an SVG bar chart from the validated aggregates plus a native accessible
+table. The chart can scroll inside its own labeled region on small screens without page overflow.
+
+Run `pnpm test:status:browser` for independent Chromium/Firefox checks against the preview server.
+This needs no running application or database. It covers 390/768/1440px, chart/table agreement,
+actual screenshot assets, keyboard navigation, automated serious/critical accessibility findings,
+zero/legacy/malformed/stale/unavailable activity, monitoring failures, and static no-JavaScript
+content. CI runs it before starting the application smoke stack. Browser artifacts remain ignored
+under `test-results/status/`. The preview scenarios now also include `metrics-legacy`,
+`metrics-empty` and `metrics-malformed`.
+
+Production publication sets `STATUS_REQUIRE_MONITORING=true`. Missing/invalid
+`BETTER_STACK_STATUS_URL` fails before replacing the existing Pages deployment. This supersedes
+the permissive missing-configuration publication behavior described above; browser failure states
+and local unconfigured previews remain available.
+
+### Controlled rollout checklist
+
+1. Inspect the running production API/web exact SHA, web standalone app-route manifest and proxy
+   destination. `/api/public-status` already exists in source; diagnose the observed production
+   404 before changing application routing. Use `ops/production/README.md` for the active private
+   host; the Render runbook is a retained alternative.
+2. Pass checks for one clean, exact committed revision. Deploy that revision's API/web through
+   the existing staging/production procedure. Retain prior images/configuration for rollback.
+   No status-feature database migration is needed.
+3. Verify originless and `Origin: https://status.gymtrack.ch` requests to
+   `https://app.gymtrack.ch/api/public-status` return 200 JSON, `Cache-Control: no-store`, and
+   the correct CORS header for the allowed-origin request. An explicit other origin must fail.
+4. Compare public enabled-account disclosure against a read-only `ACTIVE` account aggregate,
+   including `ADMIN`. Never record names, emails, cookies, tokens or row-level training data in
+   public rollout evidence. Eight is an expected user report, not a hard-coded test of production.
+5. Inspect Better Stack and reuse its existing monitors/page before creating missing resources.
+   Check the three exact names and three-minute cadence above. Validate the real public
+   `/index.json` with `parseMonitoringFeed`; all three required resources must be recognized.
+6. Set the non-secret repository variable to that actual public page URL. Only then allow the
+   successful-main workflow to publish the updated static page. Retain the previous Pages bundle
+   for rollback; don't substitute a fixture URL or a guessed provider hostname.
+7. Verify the live page in a fresh browser: status, incidents/history, account count, 30-day count,
+   weekly dates/counts and all screenshots. Use controlled browser blocking to verify that failed
+   sources remove current confirmation while the static showcase remains available.
+8. Record deployed application SHA, Pages evidence SHA, public feed URL, verification time and
+   aggregate-only results in the rollout report. Local fixture checks do not establish production
+   readiness. If authentication or deployment gates prevent these checks, leave them explicitly
+   pending and retain the current production deployment.
