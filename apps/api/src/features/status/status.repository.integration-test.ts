@@ -16,7 +16,7 @@ describe("status metrics repository", {
   it("counts every workout row while restricting active beta accounts", async () => {
     await db.transaction().setIsolationLevel("repeatable read").execute(async (trx) => {
       const repository = createStatusRepository(trx);
-      const baseline = await repository.getMetricCounts();
+      const baseline = await repository.getMetricCounts(new Date("2026-09-01T12:00:00Z"));
       const users = accountFixtures();
       await trx.insertInto("users").values(users).execute();
 
@@ -24,14 +24,15 @@ describe("status metrics repository", {
       const representativeRows = workoutRows.slice(0, 5);
       const importedRows = workoutRows.slice(5);
       await trx.insertInto("workout_sessions").values(representativeRows).execute();
-      const beforeImport = await repository.getMetricCounts();
+      const beforeImport = await repository.getMetricCounts(new Date("2026-09-01T12:00:00Z"));
 
       assert.equal(beforeImport.workoutRecordsProcessed - baseline.workoutRecordsProcessed, 5);
 
       await trx.insertInto("workout_sessions").values(importedRows).execute();
-      const measured = await repository.getMetricCounts();
+      const measured = await repository.getMetricCounts(new Date("2026-09-01T12:00:00Z"));
 
       assert.equal(measured.activeBetaAccounts - baseline.activeBetaAccounts, 1);
+      assert.equal(measured.activeAccounts - baseline.activeAccounts, 2);
       assert.equal(measured.workoutRecordsProcessed - beforeImport.workoutRecordsProcessed, 100);
       assert.equal(
         measured.workoutRecordsProcessed - baseline.workoutRecordsProcessed,

@@ -1,4 +1,5 @@
-import type { StatusRepository } from "./status.repository.js";
+import { statusWindow } from "./status-window.js";
+import type { WeeklyWorkoutCount, StatusRepository } from "./status.repository.js";
 
 export const ACTIVE_ACCOUNT_PUBLIC_THRESHOLD = 5;
 
@@ -9,6 +10,9 @@ export type ThresholdedCount =
 export interface PublicStatusMetrics {
   generatedAt: string;
   activeBetaAccounts: ThresholdedCount;
+  activeAccounts: ThresholdedCount;
+  completedWorkoutsLast30Days: number;
+  completedWorkoutsByWeek: WeeklyWorkoutCount[];
   workoutRecordsProcessed: number;
 }
 
@@ -26,10 +30,15 @@ export function createStatusService(options: StatusServiceOptions): StatusServic
 
   return {
     async getPublicMetrics() {
-      const counts = await options.repository.getMetricCounts();
+      const at = now();
+      const counts = await options.repository.getMetricCounts(at);
+      const weeks = new Map(counts.completedWorkoutsByWeek.map((week) => [week.weekStart, week.count]));
 
       return {
-        generatedAt: now().toISOString(),
+        generatedAt: at.toISOString(),
+        activeAccounts: thresholdCount(counts.activeAccounts),
+        completedWorkoutsLast30Days: counts.completedWorkoutsLast30Days,
+        completedWorkoutsByWeek: statusWindow(at).weekStarts.map((weekStart) => ({ weekStart, count: weeks.get(weekStart) ?? 0 })),
         activeBetaAccounts: thresholdCount(counts.activeBetaAccounts),
         workoutRecordsProcessed: counts.workoutRecordsProcessed
       };

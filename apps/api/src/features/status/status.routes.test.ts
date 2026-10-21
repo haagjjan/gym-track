@@ -10,6 +10,9 @@ describe("status metrics route", () => {
       async getPublicMetrics() {
         return {
           generatedAt: "2026-09-01T12:00:00.000Z",
+          activeAccounts: { kind: "exact", value: 13 },
+          completedWorkoutsLast30Days: 0,
+          completedWorkoutsByWeek: [],
           activeBetaAccounts: { kind: "exact", value: 12 },
           workoutRecordsProcessed: 456
         };
@@ -22,6 +25,9 @@ describe("status metrics route", () => {
     assert.equal(response.headers["cache-control"], "no-store");
     assert.deepEqual(response.json(), {
       data: {
+        activeAccounts: { kind: "exact", value: 13 },
+        completedWorkoutsLast30Days: 0,
+        completedWorkoutsByWeek: [],
         generatedAt: "2026-09-01T12:00:00.000Z",
         activeBetaAccounts: { kind: "exact", value: 12 },
         workoutRecordsProcessed: 456
