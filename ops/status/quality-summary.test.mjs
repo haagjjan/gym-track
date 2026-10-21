@@ -45,6 +45,12 @@ describe("status quality summary", () => {
 });
 
 describe("status runtime configuration", () => {
+  it("blocks publication with missing or invalid required monitoring configuration", () => {
+    for (const value of [undefined, "", "https://attacker.example"]) {
+      assert.throws(() => buildRuntimeConfig(value, true), /BETTER_STACK_STATUS_URL/);
+    }
+    assert.equal(buildRuntimeConfig("https://gymtrack.betteruptime.com", true).betterStackStatusUrl, "https://gymtrack.betteruptime.com");
+  });
   it("keeps the public provider URL and fails closed for other hosts", () => {
     assert.deepEqual(buildRuntimeConfig("https://gymtrack.betteruptime.com/"), {
       betterStackStatusUrl: "https://gymtrack.betteruptime.com"
