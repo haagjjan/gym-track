@@ -447,6 +447,9 @@ jobs:
             verify_browsers
           fi
 
+      - name: Run independent status browser checks
+        run: pnpm test:status:browser
+
       - name: Start local app stack
         run: docker compose up --build -d
 
@@ -494,6 +497,7 @@ jobs:
             # quota instead of weakening or disabling rate limiting in CI.
             pnpm exec playwright test \
               apps/web/e2e/auth-workout-smoke.spec.ts \
+              apps/web/e2e/public-status.spec.ts \
               --project="${project}" \
               --workers=1
 

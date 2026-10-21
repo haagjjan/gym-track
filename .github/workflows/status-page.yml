@@ -60,6 +60,7 @@ jobs:
 
       - name: Generate public monitoring configuration
         env:
+          STATUS_REQUIRE_MONITORING: "true"
           BETTER_STACK_STATUS_URL: ${{ vars.BETTER_STACK_STATUS_URL }}
         run: node ops/status/scripts/build-runtime-config.mjs
 
