@@ -6,16 +6,16 @@
   <meta name="color-scheme" content="light">
   <meta name="theme-color" content="#faf9f6">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; connect-src 'self' https://app.gymtrack.ch https://uptime.betterstack.com https://*.betteruptime.com https://*.betterstack.com; img-src 'self' data:; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
-  <meta name="description" content="GymTrack service status, incident updates and verified build evidence. Independently hosted on GitHub Pages.">
-  <title>GymTrack service status</title>
+  <meta name="description" content="Explore GymTrack: workout logging, progress insights, real project activity and independently monitored service status.">
+  <title>GymTrack — project and service status</title>
   <link rel="preload" href="./source-serif-4-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="./status.css">
   <script type="module" src="./status.js"></script>
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to status</a>
+  <a class="skip-link" href="#main">Skip to content</a>
   <header class="page-header document">
-    <a class="identity" href="https://app.gymtrack.ch">GymTrack <span>/ Status</span></a>
+    <a class="identity" href="https://app.gymtrack.ch">GymTrack <span>/ Project &amp; status</span></a>
     <nav aria-label="Primary">
       <a href="https://app.gymtrack.ch">Open app</a>
       <a class="desktop-source" href="https://github.com/haagjjan/gym-track">Source</a>
@@ -23,7 +23,7 @@
   </header>
   <main class="document" id="main" tabindex="-1">
     <section class="overall" id="overall" data-state="unavailable" aria-labelledby="overall-title">
-      <h1 id="overall-title">Live status unavailable</h1>
+      <h2 id="overall-title">Live status unavailable</h2>
       <p id="overall-description">Current service health has not been retrieved.</p>
       <div class="retrieval metadata">
         <p id="retrieval" hidden><span id="retrieval-age"></span><time id="retrieval-time"></time></p>
@@ -37,6 +37,46 @@
       <h2 id="active-title">Active incidents</h2>
       <p id="incident-notice" class="notice" hidden></p>
       <div id="active-list"></div>
+    </section>
+
+    <section class="introduction" aria-labelledby="project-title">
+      <p class="eyebrow">An independently built workout tracker · small public beta</p>
+      <h1 id="project-title">Log the work.<br>See your progress.</h1>
+      <p class="project-description">GymTrack brings workout logging, lift progress and muscle-volume analysis into one app. Record your sets, follow your lifts over time, and see how your training is distributed across muscle groups.</p>
+      <div class="project-links"><a href="https://app.gymtrack.ch">Open app →</a><a href="https://github.com/haagjjan/gym-track">View source →</a></div>
+    </section>
+
+    <section class="section activity" aria-labelledby="activity-title">
+      <div class="section-heading"><h2 id="activity-title">A project in use</h2><span class="eyebrow">Live aggregates</span></div>
+      <p class="notice" id="activity-notice">Project activity has not been retrieved.</p>
+      <dl class="activity-record">
+        <div><dt id="accounts-label">Enabled accounts</dt><dd id="accounts-value">—</dd><dd class="metric-scope" id="accounts-scope">Includes the owner/admin account.</dd></div>
+        <div><dt>Workout records</dt><dd id="workouts-value">—</dd><dd class="metric-scope">Includes imported and retained records.</dd></div>
+        <div><dt>Completed in 30 days</dt><dd id="recent-value">—</dd><dd class="metric-scope">By workout completion date.</dd></div>
+      </dl>
+      <time class="metadata" id="activity-time" hidden></time>
+      <p id="activity-breakdown-notice" class="notice"></p>
+      <figure id="weekly-activity" hidden>
+        <figcaption id="weekly-summary">Completed workouts by week. The current week is partial.</figcaption>
+        <div id="weekly-chart" tabindex="0" role="region" aria-label="Weekly activity chart; scroll horizontally on small screens"></div>
+        <details><summary>Weekly counts and dates</summary><table class="weekly-table"><caption>Completed workouts · Monday-based UTC weeks</caption><thead><tr><th scope="col">Week starting</th><th scope="col">Workouts</th></tr></thead><tbody id="weekly-rows"></tbody></table></details>
+      </figure>
+      <details>
+        <summary>What these counts mean</summary>
+        <p><strong>Enabled accounts:</strong> accounts marked active, including the owner/admin. This describes account status, not recent usage. Counts below five are shown as “under 5”. Older API responses show non-administrator beta accounts with an explicit label instead.</p>
+        <p><strong>Workout records:</strong> current workout-session rows, including imports, administrator sessions, open sessions and soft-deleted rows. Account erasure can reduce this count.</p>
+        <p><strong>Recent activity:</strong> completed, non-deleted workouts, including administrator sessions and retained workouts from accounts that are no longer active. Imports use their original completion dates. The rolling 30 days and eight UTC weeks share the generation cutoff; the current week is partial.</p>
+      </details>
+    </section>
+
+    <section class="section showcase" aria-labelledby="showcase-title">
+      <div class="section-heading"><h2 id="showcase-title">From workout to insight</h2><span class="eyebrow">Example data</span></div>
+      <p class="secondary">Mobile screens from the app’s hands-on example. All training data shown here is sample data.</p>
+      <div class="showcase-grid">
+        <figure><a href="./images/workout.webp" aria-label="View full-size workout logging screenshot"><img src="./images/workout.webp" alt="Mobile GymTrack example workout with exercises, logged sets, weight, repetitions and reps in reserve." width="430" height="932" loading="lazy"></a><figcaption><h3>Log every set</h3><p>Track weight, repetitions and effort as you train.</p></figcaption></figure>
+        <figure><a href="./images/progress.webp" aria-label="View full-size progress screenshot"><img src="./images/progress.webp" alt="Mobile GymTrack Progress screen showing sample lift performance over time and training summaries." width="419" height="908" loading="lazy"></a><figcaption><h3>Follow your lifts</h3><p>Inspect performance over time with range-aware charts.</p></figcaption></figure>
+        <figure><a href="./images/volume.webp" aria-label="View full-size muscle volume screenshot"><img src="./images/volume.webp" alt="Mobile GymTrack Muscle Volume screen showing sample weekly working sets distributed across muscle groups." width="419" height="908" loading="lazy"></a><figcaption><h3>Understand your volume</h3><p>See where your weekly working sets are going.</p></figcaption></figure>
+      </div>
     </section>
 
     <section class="services" aria-labelledby="services-title">
@@ -71,35 +111,23 @@
     </section>
 
     <section class="section" id="build-evidence" aria-labelledby="build-title">
-      <h2 id="build-title">Verified build evidence</h2>
+      <h2 id="build-title">Built, tested and operated</h2>
+      <p class="engineering-context">Next.js and Fastify, backed by PostgreSQL. Versioned SQL migrations, database-backed sessions, automated checks, and an independently hosted status page keep the implementation inspectable in the source repository.</p>
       <p class="notice" id="build-notice">Build evidence has not been retrieved.</p>
       <dl class="evidence-record" id="build-record" hidden>
         <div><dt>Revision</dt><dd><a id="commit-link">—</a></dd></div>
         <div><dt>Evidence generated</dt><dd><time id="build-time"></time></dd></div>
-        <div><dt>Unit-test line coverage</dt><dd class="coverage-values"><span>API <span id="api-coverage">—</span></span><span>Web <span id="web-coverage">—</span></span></dd></div>
       </dl>
       <p id="verification-scope" hidden>Repository checks, PostgreSQL integration tests and browser smoke tests passed for this revision.</p>
       <p class="secondary">The evidence revision may differ from the revision currently deployed to production.</p>
       <details id="coverage-method" hidden>
-        <summary>Coverage method</summary>
+        <summary>Coverage figures and method</summary>
+        <p class="coverage-values">Unit-test line coverage: <span>API <span id="api-coverage">—</span></span><span>Web <span id="web-coverage">—</span></span></p>
         <p>Line coverage is generated in CI using <code>c8 --all</code> for the unit-test run. Untested source files are included. Integration and browser tests are separate checks.</p>
       </details>
     </section>
 
-    <section class="section activity" aria-labelledby="activity-title">
-      <h2 id="activity-title">Project activity</h2>
-      <p class="notice" id="activity-notice">Project activity has not been retrieved.</p>
-      <dl class="activity-record">
-        <div><dt>Active beta accounts</dt><dd id="accounts-value">—</dd></div>
-        <div><dt>Workout records</dt><dd id="workouts-value">—</dd></div>
-      </dl>
-      <time class="metadata" id="activity-time" hidden></time>
-      <details>
-        <summary>What these counts mean</summary>
-        <p><strong>Active beta accounts:</strong> non-administrator accounts marked active. This describes account status, not recent usage. Counts below five are shown as “under 5”.</p>
-        <p><strong>Workout records:</strong> current workout-session rows, including imports, administrator sessions, open sessions and soft-deleted rows. Account erasure can reduce this count.</p>
-      </details>
-    </section>
+
   </main>
 
   <footer class="document page-footer">

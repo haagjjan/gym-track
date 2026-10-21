@@ -49,12 +49,12 @@ p, dd, dt, h1, h3, a, code, time { overflow-wrap: anywhere; }
 #main:focus { outline: none; }
 
 .overall { padding-top: 32px; }
-.overall h1 { position: relative; padding-left: 24px; }
-.overall h1::before { content: ""; position: absolute; left: 0; top: 0.48em; width: 10px; height: 10px; background: var(--neutral); }
+.overall h2 { position: relative; padding-left: 24px; }
+.overall h2::before { content: ""; position: absolute; left: 0; top: 0.48em; width: 10px; height: 10px; background: var(--neutral); }
 [data-state="operational"] { --state-color: var(--healthy); }
 [data-state="degraded"], [data-state="maintenance"] { --state-color: var(--warning); }
 [data-state="downtime"] { --state-color: var(--failure); }
-.overall h1::before { background: var(--state-color, var(--neutral)); }
+.overall h2::before { background: var(--state-color, var(--neutral)); }
 #overall-description { margin-top: 12px; max-width: 70ch; }
 .retrieval { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px 24px; margin-top: 16px; }
 #retrieval { display: flex; flex-wrap: wrap; gap: 4px 16px; }
@@ -90,12 +90,8 @@ p, dd, dt, h1, h3, a, code, time { overflow-wrap: anywhere; }
 .evidence-record dd { font-size: 14px; line-height: 24px; }
 #commit-link { font-size: 16px; }
 .coverage-values { display: flex; flex-wrap: wrap; gap: 8px 32px; }
-.activity-record { max-width: 420px; }
-.activity-record > div { display: flex; justify-content: space-between; gap: 24px; padding-block: 4px; }
-.activity-record dd { font-size: 16px; }
-#activity-time { display: block; margin-top: 12px; }
 
-summary { cursor: pointer; font-size: 14px; line-height: 22px; padding-block: 10px; width: fit-content; text-decoration: underline; text-underline-offset: 3px; }
+summary { min-height: 44px; cursor: pointer; font-size: 14px; line-height: 22px; padding-block: 10px; width: fit-content; text-decoration: underline; text-underline-offset: 3px; }
 summary:hover { text-decoration-thickness: 2px; }
 details { margin-top: 8px; }
 details > p { max-width: 76ch; font-size: 14px; line-height: 21px; color: var(--secondary); margin-block: 8px; }
@@ -142,4 +138,56 @@ details > p { max-width: 76ch; font-size: 14px; line-height: 21px; color: var(--
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+
+/* The showcase extends the existing editorial system; live evidence keeps its own states. */
+figure { margin: 0; }
+.introduction { padding-block: 48px 8px; max-width: 790px; }
+.eyebrow { font: 400 12px/20px var(--mono); color: var(--secondary); }
+.introduction h1 { font-size: clamp(36px, 5.5vw, 64px); line-height: 1.06; margin-top: 16px; }
+.project-description { font-size: 19px; line-height: 1.65; margin-top: 24px; max-width: 65ch; }
+.project-links { display: flex; gap: 32px; flex-wrap: wrap; margin-top: 16px; }
+.project-links a { padding-block: 12px; font-size: 16px; }
+.overall { border-bottom: 1px solid var(--rule); padding-bottom: 20px; }
+.overall h2 { font-size: 20px; line-height: 28px; margin-bottom: 0; }
+#overall-description { font-size: 14px; margin-top: 6px; }
+.section-heading { display: flex; gap: 16px; justify-content: space-between; align-items: baseline; flex-wrap: wrap; margin-bottom: 16px; }
+.section-heading h2 { margin-bottom: 0; }
+.activity-record { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-block: 1px solid var(--rule); gap: 24px; padding-block: 20px; }
+.activity-record dt { font-size: 14px; color: var(--secondary); }
+.activity-record dd { font-size: 36px; line-height: 1.2; margin-block: 8px; }
+.activity-record .metric-scope { font: 400 13px/20px var(--serif); color: var(--secondary); margin: 0; }
+#activity-time { display: block; margin-top: 12px; }
+#activity-breakdown-notice:empty { display: none; }
+#weekly-activity { margin-top: 24px; }
+#weekly-summary { font-size: 14px; color: var(--secondary); }
+#weekly-chart svg { display: block; width: 100%; height: auto; margin-top: 12px; }
+.chart-bar { fill: var(--healthy); }
+.chart-partial { fill: var(--neutral); }
+.chart-baseline { stroke: var(--rule); }
+.chart-count { fill: var(--text); font: 18px var(--mono); }
+.chart-date { fill: var(--secondary); font: 16px var(--serif); }
+.weekly-table { border-collapse: collapse; width: 100%; max-width: 480px; font-size: 14px; }
+.weekly-table caption { text-align: left; color: var(--secondary); margin-block: 12px; }
+.weekly-table th, .weekly-table td { text-align: left; padding: 8px; border-bottom: 1px solid var(--rule); }
+.weekly-table tbody th { font-weight: 400; }
+.weekly-table td { font-family: var(--mono); }
+.showcase-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin-top: 24px; }
+.showcase-grid img { display: block; width: 100%; max-width: 320px; height: auto; margin-inline: auto; border-radius: 12px; border: 1px solid var(--rule); background: #0a0a0a; }
+.showcase-grid a { display: block; }
+.showcase-grid figcaption { max-width: 320px; margin: 16px auto 0; }
+.showcase-grid figcaption p { font-size: 14px; line-height: 21px; color: var(--secondary); margin-top: 6px; }
+.engineering-context { margin-bottom: 20px; }
+.services { border-top: 1px solid var(--rule); padding-top: 32px; }
+@media (max-width: 599px) {
+  .introduction { padding-top: 32px; }
+  .project-description { font-size: 17px; margin-top: 20px; }
+  .activity-record { gap: 20px; grid-template-columns: 1fr; }
+  .activity-record > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 16px; align-items: baseline; }
+  .activity-record dd { margin: 0; font-size: 28px; }
+  .activity-record .metric-scope { grid-column: 1 / -1; margin-top: 4px; }
+  .showcase-grid { grid-template-columns: 1fr; gap: 28px; }
+  .services { padding-top: 24px; }
+  #weekly-chart { overflow-x: auto; }
+  #weekly-chart svg { min-width: 640px; }
 }
