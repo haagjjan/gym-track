@@ -63,3 +63,15 @@ backups/
 *.key
 *.p12
 *.pfx
+
+# Local agent setup
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+.claudeignore
+.codexignore
+.geminiignore
+.agents/
+.claude/
+.codex/
+.gemini/
