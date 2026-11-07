@@ -53,6 +53,11 @@ The live PostgreSQL data directory, Docker images, container layers, Prometheus 
 
 ## Operator commands
 
+Production backup, erasure export, restore tests, and the post-reboot check pass
+`/srv/gym-tracker/deploy/env/production.env` explicitly to Compose. They must resolve the
+active production definition from any working directory, including systemd and a release build
+directory. Keep this file protected; do not print or source its values into shell commands.
+
 ```bash
 sudo systemctl start gym-tracker-backup.service
 sudo systemctl status gym-tracker-backup.service --no-pager
@@ -77,7 +82,30 @@ the older database to contain at least one ledger user, replays the newest ledge
 records only counts and checksums while proving no erased user or direct reference remains.
 The restore container has an internal-only Docker network and is always discarded.
 
-Do not run Restic repair, unlock, forget, or prune commands ad hoc. Preserve existing snapshots and follow the recovery runbooks if a check fails.
+Do not run Restic repair, unlock, forget, or prune commands ad hoc. Preserve existing snapshots
+and use the bounded stale-lock procedure below when a repository lock blocks a required backup.
+Other repository failures require investigation before changing repository state.
+
+### Stale repository lock recovery
+
+1. On the host named in the lock, record the lock ID, timestamp and owner PID. Check whether that
+   PID exists and whether any Restic process or backup/maintenance job is active. An old timestamp
+   alone does not establish that a lock is safe to remove.
+2. Acquire the existing `/run/lock/gym-tracker-backup.lock` with nonblocking `flock`, keeping it
+   held through inspection and repository verification so scheduled jobs cannot overlap.
+3. Load protected repository configuration through `backup-common.sh` and
+   `load_restic_environment`; do not print credential values. Inspect `run_restic list locks` and
+   `run_restic cat lock LOCK_ID`. Require the expected lock ID, same host, absent owner PID and
+   age over 30 minutes. Stop on any unexpected lock, running process or changed lock inventory.
+4. Use only `run_restic unlock`, which applies Restic's own stale-lock checks. Do not pass
+   `--remove-all`, bypass locking, manually delete lock files, or remove snapshots. Require an
+   empty lock inventory and successful `run_restic check` afterward.
+5. Release the operator lock before invoking the normal backup helper, which acquires it itself.
+   Require a new off-machine backup and successful isolated PostgreSQL restore/erasure replay
+   before proceeding with the application deployment.
+
+Restic documents default stale-lock removal and the separate force-removal option in its
+[unlock manual](https://github.com/restic/restic/blob/master/doc/man/restic-unlock.1).
 
 ## Source layout
 

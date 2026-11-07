@@ -31,11 +31,11 @@ systemctl is-active --quiet gym-tracker-backup.timer
 systemctl is-enabled --quiet gym-tracker-backup-maintenance.timer
 systemctl is-active --quiet gym-tracker-backup-maintenance.timer
 
-docker compose -p gym-tracker -f "${COMPOSE_FILE}" ps --status running --services \
+docker compose --env-file "${GYM_TRACKER_ROOT}/deploy/env/production.env" -p gym-tracker -f "${COMPOSE_FILE}" ps --status running --services \
   | grep -Fxq postgres
 grep -Eq '^gym_backup_last_run_success 1$' "${ROOT}/data/node-exporter-textfile/gym_backup.prom"
 
-prometheus_container="$(docker compose -p gym-tracker -f "${COMPOSE_FILE}" ps -q prometheus)"
+prometheus_container="$(docker compose --env-file "${GYM_TRACKER_ROOT}/deploy/env/production.env" -p gym-tracker -f "${COMPOSE_FILE}" ps -q prometheus)"
 docker exec "${prometheus_container}" wget -qO- \
   'http://127.0.0.1:9090/api/v1/query?query=gym_backup_last_run_success' \
   | grep -q '"value":\['
