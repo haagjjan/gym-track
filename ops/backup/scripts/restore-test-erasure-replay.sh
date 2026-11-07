@@ -126,7 +126,7 @@ earliest_finalized_epoch="$(date -d "${earliest_finalized}" +%s)"
   exit 1
 }
 
-production_container="$(docker compose -p gym-tracker -f "${GYM_TRACKER_ROOT}/deploy/compose/compose.yaml" ps -q postgres)"
+production_container="$(docker compose --env-file "${GYM_TRACKER_ROOT}/deploy/env/production.env" -p gym-tracker -f "${GYM_TRACKER_ROOT}/deploy/compose/compose.yaml" ps -q postgres)"
 [[ -n "${production_container}" ]] || {
   printf 'ERROR: production PostgreSQL container is unavailable\n' >&2
   exit 1

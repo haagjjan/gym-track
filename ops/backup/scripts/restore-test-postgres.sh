@@ -59,7 +59,7 @@ mapfile -t dump_files < <(find "${restore_root}" -type f -name 'gym_tracker-????
 dump_file="${dump_files[0]}"
 dump_checksum="$(sha256sum "${dump_file}" | awk '{print $1}')"
 
-production_container="$(docker compose -p gym-tracker -f "${GYM_TRACKER_ROOT}/deploy/compose/compose.yaml" ps -q postgres)"
+production_container="$(docker compose --env-file "${GYM_TRACKER_ROOT}/deploy/env/production.env" -p gym-tracker -f "${GYM_TRACKER_ROOT}/deploy/compose/compose.yaml" ps -q postgres)"
 [[ -n "${production_container}" ]] || {
   printf 'ERROR: production PostgreSQL container is unavailable\n' >&2
   exit 1
