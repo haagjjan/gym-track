@@ -3,7 +3,7 @@ import { STATUS_LABELS, historySummary } from "./status-data.js";
 import { monitoringPresentation, qualityPresentation, REPOSITORY_URL } from "./status-state.js";
 
 const SERVICE_NAMES = {
-  "web-application": "Web application", "api-and-database": "API and database",
+  "web-application": "Web application", "api-and-database": "Public metrics endpoint",
   "independent-status-page": "Independent status page"
 };
 
