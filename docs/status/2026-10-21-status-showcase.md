@@ -114,3 +114,50 @@ read-only runtime confirmation. The latest showcase/metric work remains uncommit
 in either environment. An upgrade must follow the exact-SHA staging, backup, migration and
 production verification gates; restarting the old production images cannot introduce missing
 routes. No production deployment or restart was performed during diagnosis.
+
+## Owner-assisted verification and staging upgrade (21–22 October)
+
+This follow-up supersedes the earlier deployment/access unknowns above. The owner committed and
+pushed the showcase. Both `repo-checks` and `Status page` passed for exact revision
+`89bf6530a14338a4d1b4c37b809e59ea1372f39d`; the static page now has its provider configuration.
+
+The owner ran read-only production diagnostics on 21 October. The application database is
+`gym_tracker`; its `public.schema_migrations` ledger contains the nine expected migrations through
+`20260806120000000_add_workout_mutation_safety`. A read-only aggregate verified **eight ACTIVE
+accounts including the administrator**. The production web route manifest contains no public
+status route, while staging's manifest contains `/api/public-status/route`. The initial diagnostic
+incorrectly queried the container's `postgres` maintenance database; no ledger was created or
+modified to address that diagnostic error.
+
+The staging build first stopped before migrations because the operator wrapper's restrictive
+umask produced a source `package.json` at mode `0640`. Docker preserved that mode and the
+migration UID `10001` could not read it. Recovery rebuilt from `git archive` of the exact revision,
+extracting with normal source permissions and verifying readability as the migration UID before
+running migrations. No container privilege expansion or secret permission changes were used.
+
+The owner subsequently supplied successful staging results for the exact revision above: API,
+web, proxy and PostgreSQL healthy; migration runner reported no pending migrations; the real
+public BFF endpoint returned the additional aggregates and eight weekly buckets. The staging dump
+and previous configuration/images were retained for rollback. Production remained unchanged.
+
+A public request on 22 October at 08:02 UTC still returned HTML 404 from
+`https://app.gymtrack.ch/api/public-status`. The production upgrade, current backup/restore gates,
+public JSON/CORS checks, independent monitoring recovery and final live-page verification remain
+outstanding. Static-page publication alone does not deploy application images. The metrics fetch
+runs on page load and every five minutes, so successful production deployment is required before
+these fields can appear.
+
+Production preparation subsequently passed the restricted-user image input check but stopped
+before cutover when `backup-postgres.sh` invoked Compose without the production environment file.
+Compose could not interpolate required `EMAIL_FROM`. The production-facing Compose calls in
+backup, erasure export, both database restore checks and the post-reboot helper now pass the
+explicit host-only environment path; they no longer depend on the caller's current directory.
+A guarded operator patch retains installed-script copies and verifies their hashes before changing
+only these arguments. Successful backup and restore results are still required before cutover.
+
+The next backup attempt reached Restic but failed on exclusive lock `e6150fea`, reported as
+created on 21 October by PID `2547380` on `gym-prod`. Read-only SSH inspection confirmed that
+PID absent, no Restic process running, and the backup and maintenance services in failed state.
+A bounded recovery helper was prepared to revalidate the exact repository lock under the
+existing operator lock, use default stale-lock removal, check integrity and retry preparation.
+Recovery and the required fresh backup/restore are not yet confirmed.
