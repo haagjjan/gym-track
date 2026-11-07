@@ -9,6 +9,7 @@ for (const width of [390, 768, 1440]) {
     await page.goto("/?fixture=healthy");
     await expect(page.locator("#overall-title")).toHaveText("GymTrack is operational");
     await expect(page.locator("#accounts-value")).toHaveText("8");
+    await expect(page.locator('[data-component="api-and-database"] dt')).toContainText("Public metrics endpoint");
     await expect(page.locator("#recent-value")).toHaveText("23");
     await expect(page.locator("#weekly-chart rect")).toHaveCount(8);
     await page.getByText("Weekly counts and dates", { exact: true }).click();

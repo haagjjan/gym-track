@@ -226,3 +226,12 @@ and local unconfigured previews remain available.
    aggregate-only results in the rollout report. Local fixture checks do not establish production
    readiness. If authentication or deployment gates prevent these checks, leave them explicitly
    pending and retain the current production deployment.
+
+
+### Public metrics component wording
+
+The custom page labels the aggregate check **Public metrics endpoint**, with scope
+**Aggregate API/database read**. A failed HTTP check establishes that the public path failed;
+it does not independently establish an API-process or PostgreSQL outage. Better Stack retains
+the existing `API and database` resource name and the parser's `api-and-database` key for feed
+compatibility. The label adjustment does not change the monitored URL or hide a failed check.
