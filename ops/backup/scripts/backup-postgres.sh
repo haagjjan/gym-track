@@ -32,7 +32,7 @@ install -d -o root -g gym-tracker -m 0750 "${CURRENT_DUMP_DIR}" "${MANIFEST_DIR}
   exit 1
 }
 
-container_id="$(docker compose -p gym-tracker -f "${COMPOSE_FILE}" ps -q postgres)"
+container_id="$(docker compose --env-file "${GYM_TRACKER_ROOT}/deploy/env/production.env" -p gym-tracker -f "${COMPOSE_FILE}" ps -q postgres)"
 [[ -n "${container_id}" ]] || {
   printf 'ERROR: PostgreSQL container is unavailable\n' >&2
   exit 1
