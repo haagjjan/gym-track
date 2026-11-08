@@ -9,9 +9,6 @@ import { createAnalyticsService } from "./features/analytics/analytics.service.j
 import { createAdminRepository } from "./features/admin/admin.repository.js";
 import { registerAdminRoutes } from "./features/admin/admin.routes.js";
 import { createAdminService } from "./features/admin/admin.service.js";
-import { createBetaRepository } from "./features/beta/beta.repository.js";
-import { registerBetaRoutes } from "./features/beta/beta.routes.js";
-import { createBetaService } from "./features/beta/beta.service.js";
 import { createAuthRepository } from "./features/auth/auth.repository.js";
 import { registerAuthRoutes } from "./features/auth/auth.routes.js";
 import { createAuthService } from "./features/auth/auth.service.js";
@@ -29,8 +26,6 @@ import { createStatusService } from "./features/status/status.service.js";
 import { createTemplateRepository } from "./features/templates/template.repository.js";
 import { registerTemplateRoutes } from "./features/templates/template.routes.js";
 import { createTemplateService } from "./features/templates/template.service.js";
-import { createMessageRepository } from "./features/messages/message.repository.js";
-import { registerMessageRoutes } from "./features/messages/message.routes.js";
 import { createWorkoutLoggingRepository } from "./features/workouts/workout-logging.repository.js";
 import { registerWorkoutLoggingRoutes } from "./features/workouts/workout-logging.routes.js";
 import { createWorkoutLoggingService } from "./features/workouts/workout-logging.service.js";
@@ -52,14 +47,15 @@ import type { ApiLogger } from "./shared/logger.js";
 import { registerApiMetrics, type ApiMetricsOptions } from "./shared/metrics.js";
 import { createRateLimitResponse } from "./shared/rate-limit-response.js";
 import { createRequestId, registerApiRequestLogging } from "./shared/request-logging.js";
-import { noopOperatorNotifier, type OperatorNotifier } from "./shared/operator-notifier.js";
 import { trustedClientKey, verifiedClientIp } from "./shared/client-attribution.js";
 import { registerLifecycleScheduler } from "./features/lifecycle/lifecycle-scheduler.js";
+import { createMessageRepository } from "./features/messages/message.repository.js";
+import { registerMessageRoutes } from "./features/messages/message.routes.js";
 
 export interface ServerAuthConfig {
   cookieName: string;
   cookieSecure: boolean;
-  registrationMode?: "ENABLED" | "INVITE_ONLY" | "DISABLED";
+  registrationMode?: "ENABLED" | "DISABLED";
   /** Backward-compatible test input; production uses registrationMode. */
   registrationEnabled?: boolean;
   sessionTtlDays: number;
@@ -85,7 +81,6 @@ export interface ServerExtras {
   trustProxy?: boolean;
   /** Internal Prometheus endpoint and bounded API request instrumentation. */
   metrics?: ApiMetricsOptions;
-  operatorNotifier?: OperatorNotifier;
   /** Shared only by the web BFF and API to authenticate edge-derived client IPs. */
   clientIpSecret?: string;
   supportEmail?: string;
@@ -163,13 +158,6 @@ export async function buildServer(
     repository: createUserPreferencesRepository(db)
   });
   const adminService = createAdminService({ repository: createAdminRepository(db) });
-  const betaService = createBetaService({
-    repository: createBetaRepository(db),
-    tokens: cryptoSessionTokenGenerator,
-    mailer,
-    notifier: extras.operatorNotifier ?? noopOperatorNotifier,
-    appBaseUrl: extras.appBaseUrl ?? "http://localhost:3000"
-  });
   const userAccountService = createUserAccountService({
     repository: createUserAccountRepository(db),
     passwordHasher: argon2PasswordHasher,
@@ -246,11 +234,6 @@ export async function buildServer(
     cookieName: authConfig.cookieName,
     service: userPreferencesService
   });
-  await registerBetaRoutes(server, {
-    authService,
-    betaService,
-    cookieName: authConfig.cookieName
-  });
   await registerAdminRoutes(server, {
     authService,
     cookieName: authConfig.cookieName,
@@ -273,7 +256,6 @@ export async function buildServer(
     metrics: operationalMetrics,
     tasks: {
       cleanupAuth: () => authService.cleanupExpiredAuthRecords(),
-      cleanupBeta: () => betaService.cleanup(),
       cleanupDeletions: () => userAccountService.cleanupDeletions(),
       cleanupRetention: () => userAccountService.cleanupRetention()
     }

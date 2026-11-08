@@ -109,10 +109,12 @@ export function createMessageRepository(db: Kysely<AppDatabase>): MessageReposit
           if (!settings.open) return false;
           await trx.updateTable("campaigns").set({ status: "PUBLISHED", published_at: now }).where("id", "=", campaignId).execute();
           let users = trx.selectFrom("users").select(["id", "login_count as loginCount", "completed_workout_count as workoutCount"])
-            .where("account_status", "=", "ACTIVE").where("beta_cohort", "is not", null);
+            // ADR 0022: campaigns reach every active account, not only the closed-beta cohort.
+            .where("account_status", "=", "ACTIVE");
           if (!campaign.essential) users = users.where("feedback_prompts_enabled", "=", true);
           if (campaign.audience_type === "SELECTED") users = users.where("id", "in", trx.selectFrom("campaign_targets").select("user_id").where("campaign_id", "=", campaignId));
-          const recipients = await users.execute();
+          // Lock recipients so a concurrent account erasure waits instead of failing the delivery insert.
+          const recipients = await users.forKeyShare().execute();
           if (recipients.length > 0) await trx.insertInto("message_deliveries").values(recipients.map((user) => ({
             campaign_id: campaignId,
             user_id: user.id,

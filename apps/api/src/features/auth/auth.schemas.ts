@@ -19,10 +19,10 @@ export const signupRequestSchema = z.object({
   email: emailSchema,
   username: usernameSchema,
   password: newPasswordSchema,
-  inviteToken: actionTokenSchema.optional(),
-  termsVersion: policyVersionSchema.optional(),
-  privacyVersion: policyVersionSchema.optional(),
-  adultAttested: z.literal(true).optional()
+  termsVersion: policyVersionSchema,
+  privacyVersion: policyVersionSchema,
+  // ADR 0016/0022: the signup checkbox attests age 18+ and Swiss residence.
+  adultAttested: z.literal(true)
 });
 
 export const loginRequestSchema = z.object({

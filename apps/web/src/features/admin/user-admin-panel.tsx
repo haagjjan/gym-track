@@ -33,7 +33,7 @@ export function UserAdminPanel(): ReactNode {
   const visible = useMemo(() => users.filter((user) =>
     (role === "ALL" || user.role === role)
     && (status === "ALL" || user.status === status)
-    && matchesSearch(search, user.username, user.email, user.cohort)
+    && matchesSearch(search, user.username, user.email)
   ), [role, search, status, users]);
 
   async function applyAction(): Promise<void> {
@@ -63,7 +63,7 @@ export function UserAdminPanel(): ReactNode {
         <p className="mb-3 text-xs leading-5 text-fg-muted">Suspending an account signs it out everywhere. Reactivating never signs the member back in and never changes their email verification. Administrator accounts cannot be changed here.</p>
 
         <FilterBar>
-          <SearchFilter label="Search" onChange={setSearch} placeholder="Username, email, or cohort" value={search} />
+          <SearchFilter label="Search" onChange={setSearch} placeholder="Username or email" value={search} />
           <SelectFilter label="Role" onChange={setRole} options={roles} value={role} />
           <SelectFilter label="Status" onChange={setStatus} options={statuses} value={status} />
           <ResultCount noun="account" shown={visible.length} total={users.length} />

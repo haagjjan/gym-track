@@ -49,7 +49,6 @@ describe("lifecycle scheduler", () => {
       intervalMs: 60_000,
       tasks: {
         async cleanupAuth() { startupRuns += 1; },
-        async cleanupBeta() {},
         async cleanupDeletions() {
           return { due: 0, finalized: 0, deletionFailures: 0, notificationFailures: 0 };
         },
@@ -80,7 +79,6 @@ describe("lifecycle scheduler", () => {
           runs += 1;
           if (runs === 2) resolveSecondRun();
         },
-        async cleanupBeta() {},
         async cleanupDeletions() {
           return { due: 0, finalized: 0, deletionFailures: 0, notificationFailures: 0 };
         },
@@ -109,7 +107,6 @@ describe("lifecycle scheduler", () => {
           authRuns += 1;
           await gate.promise;
         },
-        async cleanupBeta() {},
         async cleanupDeletions() {
           return { due: 0, finalized: 0, deletionFailures: 0, notificationFailures: 0 };
         },
@@ -140,7 +137,6 @@ describe("lifecycle scheduler", () => {
           calls.push("auth");
           throw new Error("auth unavailable");
         },
-        async cleanupBeta() { calls.push("beta"); },
         async cleanupDeletions() {
           calls.push("deletion");
           return { due: 4, finalized: 2, deletionFailures: 1, notificationFailures: 1 };
@@ -154,7 +150,7 @@ describe("lifecycle scheduler", () => {
 
     const result = await runner.run();
 
-    assert.deepEqual(calls, ["auth", "beta", "deletion", "retention"]);
+    assert.deepEqual(calls, ["auth", "deletion", "retention"]);
     assert.deepEqual(result, {
       deletionBacklog: 2,
       failedPhases: ["auth", "deletion", "notification", "retention"],

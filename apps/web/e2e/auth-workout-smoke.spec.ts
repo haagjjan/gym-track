@@ -32,6 +32,8 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   await page.getByLabel(/Email address/i).fill(`${username}@example.com`);
   await page.getByLabel(/^Username$/i).fill(username);
   await page.getByLabel(/^Password \(at least 10 characters\)$/i).fill(password);
+  await page.getByLabel(/at least 18 and live in Switzerland/i).check();
+  await page.getByLabel(/I accept the Terms/i).check();
   await page.getByRole("button", { name: "CREATE ACCOUNT" }).click();
   await expect(page.getByRole("heading", { name: new RegExp(username, "i") })).toBeVisible();
   await waitForIdleClient(page);
@@ -54,7 +56,7 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
         contentType: "application/json",
         body: JSON.stringify({ data: { items: messageDismissed ? [] : [{
             actionUrl: null,
-            body: "Keyboard-accessible beta message.",
+            body: "Keyboard-accessible message.",
             essential: false,
             id: "00000000-0000-4000-8000-000000000001",
             responseOptions: [],
@@ -73,7 +75,7 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   });
   await page.reload();
   await waitForIdleClient(page);
-  const messageDialog = page.getByRole("dialog", { name: "Beta message" });
+  const messageDialog = page.getByRole("dialog", { name: "Message" });
   await expect(messageDialog.getByRole("button", { name: "Dismiss message" })).toBeFocused();
   await expectModalContract(page, messageDialog);
   await page.keyboard.press("Escape");

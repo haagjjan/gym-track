@@ -91,7 +91,7 @@ describe("mailer logging", () => {
     };
     try {
       await createResendMailer("secret", "Gym Tracker <hello@example.test>", createCaptureLogger().logger, "support@example.test").send({
-        kind: "INVITATION", to: "person@example.test", subject: "Welcome <member>", text: "Open https://example.test\n\nNever share <tokens>."
+        kind: "EMAIL_VERIFICATION", to: "person@example.test", subject: "Welcome <member>", text: "Open https://example.test\n\nNever share <tokens>."
       });
       const delivered = submitted as Record<string, unknown> | null;
       assert.ok(delivered);

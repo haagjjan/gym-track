@@ -11,12 +11,12 @@ export interface AuthRouteOptions {
   service: AuthService;
   cookie: AuthCookieOptions;
   events?: EventTracker;
-  registrationMode?: "ENABLED" | "INVITE_ONLY" | "DISABLED";
+  registrationMode?: "ENABLED" | "DISABLED";
   /** Backward-compatible test input. */
   registrationEnabled?: boolean;
 }
 
-export function registrationMode(options: AuthRouteOptions): "ENABLED" | "INVITE_ONLY" | "DISABLED" {
+export function registrationMode(options: AuthRouteOptions): "ENABLED" | "DISABLED" {
   return options.registrationMode ?? (options.registrationEnabled === false ? "DISABLED" : "ENABLED");
 }
 

@@ -34,6 +34,22 @@ class FakeAdminService implements AdminService {
   }
   async revokeUserSessions() { return this.revocationResult; }
   async listAuditEvents() { return this.auditPage; }
+  public campaignsOpen = false;
+  public settingsCall: { adminId: string; open: boolean } | null = null;
+  async getOverview() {
+    return {
+      generatedAt: "2026-11-08T00:00:00.000Z", totalAccounts: 3, activeAccounts: 2, suspendedAccounts: 1,
+      deletionPendingAccounts: 0, unverifiedEmails: 1, signupsLast7Days: 1, signupsLast30Days: 2,
+      activeUsersLast7Days: 1, activeUsersLast30Days: 2, activeSessions: 2, workoutsCompletedTotal: 4,
+      workoutsCompletedLast7Days: 1, setsLoggedLast7Days: 12
+    };
+  }
+  async getSettings() { return { campaignsOpen: this.campaignsOpen, updatedAt: "2026-11-08T00:00:00.000Z" }; }
+  async setCampaignsOpen(adminId: string, open: boolean) {
+    this.settingsCall = { adminId, open };
+    this.campaignsOpen = open;
+    return this.getSettings();
+  }
 }
 
 function authService(role: "ADMIN" | "USER" | "NONE" = "ADMIN"): AuthService {
@@ -73,8 +89,9 @@ describe("administrator containment routes", () => {
     const service = new FakeAdminService();
     service.users = [{
       id: targetId, email: "member@example.test", username: "member", role: "USER",
-      status: "ACTIVE", cohort: "FOUNDING_BETA_2026",
-      createdAt: "2026-08-02T00:00:00.000Z", activeSessionCount: 1
+      status: "ACTIVE",
+      createdAt: "2026-08-02T00:00:00.000Z", activeSessionCount: 1,
+      emailVerified: true, lastActiveAt: null, completedWorkoutCount: 0, lastWorkoutAt: null
     }];
     const response = await (await buildAdminServer(service)).inject("/api/v1/admin/users");
     assert.equal(response.statusCode, 200);
@@ -118,6 +135,25 @@ describe("administrator containment routes", () => {
     });
     assert.equal(response.statusCode, 200);
     assert.equal(response.json().data.revokedSessions, 0);
+  });
+
+  it("returns exact overview counts to administrators only", async () => {
+    const server = await buildAdminServer(new FakeAdminService());
+    const response = await server.inject("/api/v1/admin/overview");
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.json().data.totalAccounts, 3);
+    assert.equal((await (await buildAdminServer(new FakeAdminService(), "USER")).inject("/api/v1/admin/overview")).statusCode, 403);
+  });
+
+  it("toggles the campaigns switch and validates the body", async () => {
+    const service = new FakeAdminService();
+    const server = await buildAdminServer(service);
+    const response = await server.inject({ method: "PATCH", url: "/api/v1/admin/settings", payload: { campaignsOpen: true } });
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.json().data.campaignsOpen, true);
+    assert.equal(service.settingsCall?.open, true);
+    const invalid = await server.inject({ method: "PATCH", url: "/api/v1/admin/settings", payload: { waitlistOpen: true } });
+    assert.equal(invalid.statusCode, 422);
   });
 
   it("paginates audit events and rejects malformed cursors", async () => {

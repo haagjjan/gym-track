@@ -77,7 +77,8 @@ describe("readEnv", () => {
     });
 
     assert.equal(env.REGISTRATION_MODE, "DISABLED");
-    assert.equal(readEnv({ DATABASE_URL: databaseUrl, REGISTRATION_MODE: "INVITE_ONLY" }).REGISTRATION_MODE, "INVITE_ONLY");
+    assert.equal(readEnv({ DATABASE_URL: databaseUrl, REGISTRATION_MODE: "ENABLED" }).REGISTRATION_MODE, "ENABLED");
+    assert.throws(() => readEnv({ DATABASE_URL: databaseUrl, REGISTRATION_MODE: "INVITE_ONLY" }));
   });
 
   it("rejects an unknown registration mode", () => {
@@ -253,16 +254,12 @@ describe("readEnv", () => {
       DATABASE_URL: databaseUrl,
       NODE_ENV: "production",
       RESEND_API_KEY: "",
-      SUPPORT_EMAIL: "",
-      TELEGRAM_BETA_BOT_TOKEN: "",
-      TELEGRAM_BETA_CHAT_ID: ""
+      SUPPORT_EMAIL: ""
     });
 
     assert.equal(env.BFF_CLIENT_IP_SECRET, undefined);
     assert.equal(env.RESEND_API_KEY, undefined);
     assert.equal(env.SUPPORT_EMAIL, undefined);
-    assert.equal(env.TELEGRAM_BETA_BOT_TOKEN, undefined);
-    assert.equal(env.TELEGRAM_BETA_CHAT_ID, undefined);
   });
 
   it("parses metrics and release settings", () => {

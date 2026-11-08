@@ -10,7 +10,10 @@ function repository(): AdminRepository {
     async listUsers() { return []; },
     async setUserStatus() { return { status: "not_found" }; },
     async revokeUserSessions() { return { status: "not_found" }; },
-    async listAuditEvents() { return []; }
+    async listAuditEvents() { return []; },
+    async getOverview() { throw new Error("not used"); },
+    async getSettings() { return { campaignsOpen: false, updatedAt: createdAt }; },
+    async setCampaignsOpen() { return { campaignsOpen: true, updatedAt: createdAt }; }
   };
 }
 

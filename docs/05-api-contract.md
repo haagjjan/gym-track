@@ -469,7 +469,7 @@ Successful reset marks the email verified, revokes all existing sessions, and cl
 ### Transactional-email behavior
 
 - Public production startup requires `RESEND_API_KEY`, a valid `EMAIL_FROM`, and the published `SUPPORT_EMAIL` used as reply-to. Log delivery is allowed only in development, test, and explicit local/private-LAN deployments.
-- Supported mail kinds are invitation, verification, password reset, deletion scheduled, deletion cancelled, deletion cancelled by support, and deletion completed.
+- Supported mail kinds are verification, password reset, deletion scheduled, deletion cancelled, deletion cancelled by support, and deletion completed.
 - Delivery is synchronous and either returns provider acceptance (with an optional provider message ID) or raises a typed delivery error. There is no mail outbox.
 - Logs and metrics may include only mail kind, outcome, provider status, provider message ID, and duration. They never include recipient, body, action link, or raw token.
 - Raw action tokens are never persisted outside their existing hashed domain-token records. A later explicit resend supersedes a failed or ambiguous attempt.
@@ -1534,42 +1534,17 @@ Merge responses additionally include `reassignedTemplateExercises` and `affected
 - Decide whether API docs should later be generated from Zod or OpenAPI.
 - The cookie name and secure flag remain environment-configured; document deployment values in the operations runbook rather than hard-coding them here.
 
-## Founding Beta Interfaces
+## Account, Privacy and Admin Interfaces
 
-- `POST /api/v1/beta/waitlist` is public, accepts `{ email, adultAttested: true, privacyVersion }`, and always returns the same accepted envelope for new, duplicate, account-linked, blocked, or paused intake.
-- `POST /api/v1/auth/signup` requires `inviteToken`, the published Terms/Privacy versions and `adultAttested: true` when registration is `INVITE_ONLY`. A valid invitation is single use, expires after seven days, reserves a seat, fixes the invited email, and creates an already email-verified account.
+- `POST /api/v1/auth/signup` requires `{ email, username, password, termsVersion, privacyVersion, adultAttested: true }` (ADR 0022). `adultAttested` confirms age 18+ and Swiss residence; a missing or false value returns `422 VALIDATION_ERROR`. New accounts start unverified and receive a verification email. `REGISTRATION_MODE=DISABLED` returns `403 REGISTRATION_DISABLED`.
 - `POST /api/v1/users/me/export` requires `{ password }` and downloads machine-readable JSON. It excludes credential/token hashes and unrelated security/audit records.
 - `POST /api/v1/users/me/deletion` requires `{ password }`, revokes sessions and returns `deletionDueAt` only after the cancellation email is accepted. `POST /api/v1/users/me/deletion/cancel` accepts the single-use raw token. Account erasure is the documented hard-delete exception to soft-delete defaults.
 - `GET|PATCH /api/v1/users/me/privacy-preferences` manages functional storage, account-linked analytics and feedback prompts. `GET|PATCH /api/v1/users/me/onboarding` manages versioned boolean steps.
 - `GET /api/v1/messages` returns eligible undismissed messages; only the first is marked shown. `POST /messages/:campaignId/dismiss` is final; `POST /respond` accepts the exact configured acknowledgement/rating/choice/free-text shape.
-- Owner-only beta routes list requests/settings and execute audited request/settings actions. Owner-only campaign routes create drafts, list campaigns and publish/pause/resume/end. `POST /admin/users/:userId/deletion/cancel` is the audited urgent-support cancellation path.
-
-### Invitation approval and reissue
-
-`POST /api/v1/admin/beta/requests/:requestId` accepts an administrator action. `APPROVE` and `RESEND` synchronously attempt provider acceptance after the invitation transaction.
-
-Request:
-
-```json
-{
-  "action": "APPROVE"
-}
-```
-
-Successful response `200`:
-
-```json
-{
-  "data": {
-    "updated": true,
-    "status": "approved",
-    "expiresAt": "2026-08-13T10:00:00.000Z",
-    "deliveryStatus": "SENT"
-  }
-}
-```
-
-`deliveryStatus` is `SENT` or `FAILED`. A delivery failure does not roll back the invitation: the request remains `INVITED`, an audit event is recorded, and the administrator UI presents the explicit `RESEND` action. Reissue rotates the unused invitation token; callers must not encourage a generic retry of the earlier action.
+- Owner-only campaign routes create drafts, list campaigns and publish/pause/resume/end. Publishing reaches every `ACTIVE` account (optional campaigns skip accounts with feedback prompts off) and requires the campaigns switch to be on.
+- `GET /api/v1/admin/overview` (admin only) returns exact counts: accounts by status, unverified emails, sign-ups and active users over 7/30 days, active sessions, finished workouts and sets logged. `GET /api/v1/admin/users` items also carry `emailVerified`, `lastActiveAt`, `completedWorkoutCount` and `lastWorkoutAt`.
+- `GET|PATCH /api/v1/admin/settings` reads and sets `{ campaignsOpen }`; each change writes a `CAMPAIGNS_OPENED` or `CAMPAIGNS_PAUSED` audit event.
+- `POST /admin/users/:userId/deletion/cancel` is the audited urgent-support cancellation path. The beta waitlist and invitation routes were removed in ADR 0022.
 
 ### Account deletion delivery results
 
@@ -1633,8 +1608,6 @@ Response `200`:
   }
 }
 ```
-
-`GET /api/v1/admin/beta/users` remains temporarily as a deprecated read-only alias. It sends `Deprecation: true` and `Link: </api/v1/admin/users>; rel="successor-version"`. New clients use the canonical endpoint; the alias gains no containment mutations.
 
 ### `PATCH /api/v1/admin/users/:userId/status`
 
@@ -1766,7 +1739,7 @@ Unavailable upstream service returns `502 API_UNAVAILABLE` without cached data.
 
 ### API-process lifecycle behavior
 
-The single API process owns a single-flight lifecycle runner. It runs once during startup and hourly thereafter. Auth-token cleanup, invitation expiry, due deletions, retention cleanup, and completion notifications are isolated phases: one failure does not stop later phases, later due accounts, or the next scheduled run. The runner processes the entire due-deletion list under the 50-account beta cap and reports bounded metrics described under `GET /api/v1/metrics`.
+The single API process owns a single-flight lifecycle runner. It runs once during startup and hourly thereafter. Auth-token cleanup, due deletions, retention cleanup, and completion notifications are isolated phases: one failure does not stop later phases, later due accounts, or the next scheduled run. The runner processes the entire due-deletion list and reports bounded metrics described under `GET /api/v1/metrics`.
 
 All public/auth/export/deletion/feedback/admin mutation groups have endpoint-specific limits. Production client attribution accepts only a valid BFF HMAC; browser-supplied forwarding headers are not trusted by the API.
 

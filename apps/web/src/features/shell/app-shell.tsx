@@ -130,7 +130,6 @@ function DesktopSidebar({ pathname, user, demo }: { pathname: string; user: Auth
             <p className="truncate font-display text-base font-semibold text-fg">
               {user.username}
             </p>
-            {user.betaCohort ? <p className="mt-0.5 text-[9px] font-bold uppercase tracking-wider text-lavender">Founding Beta</p> : null}
           </div>
         </div>
       </div>
@@ -199,7 +198,7 @@ function MobileTopBar({ user }: { user: AuthUser }): ReactNode {
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-outline-dim/40 bg-void/80 px-4 py-3 backdrop-blur-md lg:hidden">
       <p className="min-w-0 truncate font-display text-xs font-bold uppercase tracking-[0.08em] text-fg">
-        Gym Progress Tracker {user.betaCohort ? <span className="text-[9px] text-lavender">· Founding</span> : null}
+        Gym Progress Tracker
       </p>
       <div className="flex shrink-0 items-center">
         {user.role === "ADMIN" ? (

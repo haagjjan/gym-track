@@ -57,7 +57,6 @@ function AccountPanel({ user }: { user: AuthUser }): ReactNode {
     <Panel accent="cyan">
       <dl className="space-y-1.5 text-sm"><div className="flex justify-between gap-3"><dt className="shrink-0 text-fg-muted">Username</dt><dd className="min-w-0 break-words text-right font-mono text-fg">{user.username}</dd></div><div className="flex justify-between gap-3"><dt className="shrink-0 text-fg-muted">Email</dt><dd className="min-w-0 break-all text-right font-mono text-fg">{user.email}</dd></div></dl>
       {!user.emailVerified ? <EmailVerificationNotice /> : null}
-      {user.betaCohort ? <p className="mt-3 rounded border border-lavender/40 bg-lavender/5 px-3 py-2 text-xs leading-5 text-lavender">Founding Beta member. Your access has no scheduled end date.</p> : null}
     </Panel>
   );
 }

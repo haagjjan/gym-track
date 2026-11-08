@@ -13,7 +13,6 @@ export interface PublicUser {
   emailVerified: boolean;
   role?: "USER" | "ADMIN";
   accountStatus?: "ACTIVE" | "DELETION_PENDING" | "SUSPENDED";
-  betaCohort?: string | null;
   createdAt: string;
 }
 
@@ -29,7 +28,6 @@ export type AuthFailureReason =
   | "unauthorized"
   | "locked"
   | "invalid_token"
-  | "invalid_invitation"
   | "account_unavailable";
 
 type AuthResult<T> = { ok: true; value: T } | { ok: false; reason: AuthFailureReason };
@@ -103,22 +101,11 @@ export function createAuthService(options: AuthServiceOptions): AuthService {
         email: input.email,
         username: input.username,
         passwordHash,
-        ...(input.termsVersion ? { termsVersion: input.termsVersion } : {}),
-        ...(input.privacyVersion ? { privacyVersion: input.privacyVersion } : {}),
-        ...(input.adultAttested ? { adultAttestedAt: now() } : {})
+        termsVersion: input.termsVersion,
+        privacyVersion: input.privacyVersion,
+        adultAttestedAt: now()
       };
-      const result = input.inviteToken && options.repository.createInvitedUserWithSession
-        ? await options.repository.createInvitedUserWithSession(
-            user,
-            session,
-            options.sessionTokens.hash(input.inviteToken),
-            now()
-          )
-        : await options.repository.createUserWithSession(user, session);
-
-      if (result.status === "invalid_invitation") {
-        return { ok: false, reason: "invalid_invitation" };
-      }
+      const result = await options.repository.createUserWithSession(user, session);
 
       if (result.status === "conflict") {
         return { ok: false, reason: "conflict" };
@@ -252,7 +239,6 @@ function toPublicUser(user: AuthUserRecord): PublicUser {
     emailVerified: user.emailVerifiedAt !== null,
     role: user.role ?? "USER",
     accountStatus: user.accountStatus ?? "ACTIVE",
-    betaCohort: user.betaCohort ?? null,
     createdAt: user.createdAt.toISOString()
   };
 }

@@ -3,7 +3,6 @@ import { createDatabase } from "./db/database.js";
 import { readEnv } from "./shared/env.js";
 import { createApiLogger } from "./shared/logger.js";
 import { buildServer } from "./server.js";
-import { createTelegramOperatorNotifier } from "./shared/operator-notifier.js";
 
 const env = readEnv();
 const db = createDatabase(env.DATABASE_URL);
@@ -41,13 +40,7 @@ const server = await buildServer(
       EMAIL_RECIPIENT_ALLOWLIST: env.EMAIL_RECIPIENT_ALLOWLIST,
       EMAIL_REPLY_TO: env.SUPPORT_EMAIL,
       NODE_ENV: env.NODE_ENV
-    },
-    ...(env.TELEGRAM_BETA_BOT_TOKEN && env.TELEGRAM_BETA_CHAT_ID
-      ? { operatorNotifier: createTelegramOperatorNotifier({
-          botToken: env.TELEGRAM_BETA_BOT_TOKEN,
-          chatId: env.TELEGRAM_BETA_CHAT_ID
-        }) }
-      : {})
+    }
   }
 );
 

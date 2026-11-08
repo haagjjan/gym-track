@@ -142,7 +142,10 @@ describe("workout API database flow", { skip: databaseUrl ? false : "INTEGRATION
         payload: {
           email,
           username: `${userPrefix}${tag}`,
-          password: "integration-secret-1"
+          password: "integration-secret-1",
+          termsVersion: "terms-test",
+          privacyVersion: "privacy-test",
+          adultAttested: true
         }
       });
       const persisted = await db
@@ -155,6 +158,76 @@ describe("workout API database flow", { skip: databaseUrl ? false : "INTEGRATION
       assert.equal(response.json().error.code, "REGISTRATION_DISABLED");
       assert.equal(persisted, undefined);
     } finally {
+      await server.close();
+    }
+  });
+
+  /**
+   * ADR 0022: open signup records the signup attestation, and the closed-beta
+   * tables that stay until a later drop migration are still exported and erased.
+   */
+  it("records signup attestation and keeps retained beta data in export and erasure", async () => {
+    const mailer: Mailer = { async send() { return { provider: "log" }; } };
+    const server = await buildIntegrationServer(db, true, mailer);
+    const campaignId = randomUUID();
+
+    try {
+      const tag = `${Date.now()}_${process.pid}_v0`;
+      const member = await signup(server, tag);
+
+      const stored = await db.selectFrom("users")
+        .select(["terms_version", "privacy_version", "policy_accepted_at", "adult_attested_at", "email_verified_at"])
+        .where("id", "=", member.userId).executeTakeFirstOrThrow();
+      assert.equal(stored.terms_version, "terms-test");
+      assert.equal(stored.privacy_version, "privacy-test");
+      assert.ok(stored.policy_accepted_at);
+      assert.ok(stored.adult_attested_at);
+      assert.equal(stored.email_verified_at, null, "open signup must leave the email unverified");
+
+      const now = new Date();
+      await db.insertInto("beta_access_requests").values({
+        id: randomUUID(), email: `${userPrefix}${tag}@example.com`, status: "JOINED",
+        terms_version: "beta-terms", privacy_version: "beta-privacy",
+        policy_accepted_at: now, adult_attested_at: now, joined_user_id: member.userId
+      }).execute();
+      await db.insertInto("campaigns").values({
+        id: campaignId, title: `${tag} feedback`, body: "Legacy prompt", status: "ENDED",
+        audience_type: "ALL", trigger_type: "NEXT_LOGIN", response_type: "FREE_TEXT"
+      }).execute();
+      await db.insertInto("message_deliveries").values({
+        campaign_id: campaignId, user_id: member.userId, responded_at: now, response: JSON.stringify({ text: "legacy answer" })
+      }).execute();
+
+      const exported = await server.inject({
+        method: "POST",
+        url: "/api/v1/users/me/export",
+        cookies: authCookies(member.cookie),
+        payload: { password: "integration-secret-1" }
+      });
+      assert.equal(exported.statusCode, 200);
+      const archive = exported.json() as { betaAccess: { status: string }[]; messages: { title: string }[] };
+      assert.deepEqual(archive.betaAccess.map((entry) => entry.status), ["JOINED"]);
+      assert.deepEqual(archive.messages.map((entry) => entry.title), [`${tag} feedback`]);
+
+      const scheduled = await server.inject({
+        method: "POST",
+        url: "/api/v1/users/me/deletion",
+        cookies: authCookies(member.cookie),
+        payload: { password: "integration-secret-1" }
+      });
+      assert.equal(scheduled.statusCode, 200);
+      await db.updateTable("users").set({ deletion_due_at: new Date(Date.now() - 1_000) })
+        .where("id", "=", member.userId).execute();
+      assert.equal(await createUserAccountRepository(db).finalizeDeletion(member.userId, new Date()), true);
+
+      const leftoverRequest = await db.selectFrom("beta_access_requests").select("id")
+        .where("email", "=", `${userPrefix}${tag}@example.com`).executeTakeFirst();
+      const leftoverDelivery = await db.selectFrom("message_deliveries").select("campaign_id")
+        .where("campaign_id", "=", campaignId).executeTakeFirst();
+      assert.equal(leftoverRequest, undefined, "erasure must remove the linked waitlist record");
+      assert.equal(leftoverDelivery, undefined, "erasure must remove legacy prompt answers");
+    } finally {
+      await db.deleteFrom("campaigns").where("id", "=", campaignId).execute();
       await server.close();
     }
   });
@@ -1354,7 +1427,10 @@ async function signup(server: FastifyInstance, tag: string): Promise<{ cookie: s
     payload: {
       email: `${userPrefix}${tag}@example.com`,
       username: `${userPrefix}${tag}`,
-      password: "integration-secret-1"
+      password: "integration-secret-1",
+      termsVersion: "terms-test",
+      privacyVersion: "privacy-test",
+      adultAttested: true
     }
   });
 

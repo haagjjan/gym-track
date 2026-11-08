@@ -43,8 +43,10 @@ pnpm check   # type-check + lint + test + build, everything
 
 ## 2. Users — creating, verifying, resetting
 
-The administrator page now includes the Founding Beta queue/settings, ordinary-user
-containment, deletion support, campaigns, and recent audit events. Direct SQL remains an
+The administrator page has four tabs: Overview (exact account and usage counts, plus every
+account with last activity and workouts), Members (suspend, reactivate, sign out, deletion
+support), Campaigns (publishing switch, drafts, publish/pause/end, answers) and the Audit log. Since ADR 0022 there is no admission queue: signup
+is open while `REGISTRATION_MODE=ENABLED`. Direct SQL remains an
 emergency support escape hatch, not the routine user-management interface.
 
 Stage 1 production is single-owner and uses an existing account. It must run with
@@ -101,7 +103,7 @@ telemetry for diagnosis rather than changing that response.
 Development, test, and explicit local/private-LAN deployments may omit `RESEND_API_KEY`; links
 then appear only in server logs. Public production refuses to start without the provider key,
 a syntactically valid sender, and the existing support address used as reply-to. To send real
-invitation, verification, reset, deletion, and cancellation emails:
+verification, reset, deletion, and cancellation emails:
 
 1. Create a free account at resend.com, verify a sending domain (or use their `onboarding@resend.dev` test address for early testing).
 2. Set in `.env` (or your hosting provider's environment variables):
@@ -116,7 +118,7 @@ invitation, verification, reset, deletion, and cancellation emails:
    token must never be copied into production logs or metrics.
 
 Email is synchronous and has no durable outbox. If delivery is failed or ambiguous, the next
-explicit resend rotates the unused verification/reset/invitation token. Do not copy raw links
+explicit resend rotates the unused verification/reset token. Do not copy raw links
 into tickets, audit details, or retry payloads.
 
 ### Administrator user containment
@@ -138,10 +140,6 @@ Use the existing deletion-support cancellation action for a pending deletion. Th
 canonical read route is `GET /api/v1/admin/users`; `/api/v1/admin/beta/users` is a temporary,
 deprecated read-only alias whose response points to the successor route through `Deprecation`
 and `Link` headers.
-
-Invitation approval/reissue also waits for provider acceptance. `FAILED` leaves the request
-in `INVITED`, records an audit event, and exposes `RESEND`; do not tell the operator to repeat
-the generic approval action.
 
 ### Deletion email outcomes
 
@@ -315,7 +313,7 @@ template: `.env.example`.
 | `APP_ENV` | Deployment label and explicit local/private-LAN security exception | follows `NODE_ENV`; public production must not use an exception label |
 | `AUTH_COOKIE_SECURE` | HTTPS-only cookies | `true` in prod; explicit `false` is rejected in prod |
 | `AUTH_SESSION_TTL_DAYS` | How long a login lasts | 30 |
-| `REGISTRATION_MODE` | `ENABLED`, `INVITE_ONLY`, or `DISABLED` account creation | `DISABLED` in prod, `ENABLED` otherwise |
+| `REGISTRATION_MODE` | `ENABLED` or `DISABLED` account creation (`INVITE_ONLY` is rejected at startup) | `DISABLED` in prod when unset, `ENABLED` otherwise |
 | `API_TRUST_PROXY` | Whether Fastify trusts forwarding headers | `false`; keep false for the BFF topology |
 | `APP_BASE_URL` | Canonical origin used for absolute action links | required HTTPS origin in prod |
 | `APP_ALLOWED_HOSTS` | Extra comma-separated hostnames accepted by Next.js | none beyond `APP_BASE_URL` host in prod |
@@ -469,10 +467,9 @@ API replica without first replacing this assumption with coordinated scheduling.
 Each run isolates these phases so one error does not skip later work or the next run:
 
 1. expired authentication records;
-2. expired invitations;
-3. every account deletion due within the beta cap;
-4. deletion-completion notifications; and
-5. account/campaign retention cleanup.
+2. every account deletion that is due;
+3. deletion-completion notifications; and
+4. account retention cleanup, including campaign answers and the remaining closed-beta waitlist records.
 
 One completion-email failure does not stop later due deletions. The operational metrics are:
 

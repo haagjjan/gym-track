@@ -92,7 +92,10 @@ async function signup(index: number): Promise<CapacityUser> {
     body: JSON.stringify({
       email: `capacity-${tag}@example.com`,
       username: `capacity_${tag}`,
-      password: "capacity-only-passphrase"
+      password: "capacity-only-passphrase",
+      termsVersion: "capacity-test",
+      privacyVersion: "capacity-test",
+      adultAttested: true
     })
   }, 201);
   const cookie = result.setCookie?.split(";", 1)[0];

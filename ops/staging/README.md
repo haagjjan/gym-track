@@ -14,7 +14,7 @@ containers, networks, volumes, credentials, monitoring or backups.
 | Only host publication | `127.0.0.1:3100` → staging Caddy |
 | Database | `gym_tracker_staging`, synthetic data only |
 | Cloudflare origin | `http://127.0.0.1:3100` |
-| Registration default | `INVITE_ONLY` |
+| Registration default | `ENABLED` |
 
 The API, web and PostgreSQL services have no host ports. The API is the only service with
 outbound network access, which it needs for Resend. Staging is deliberately absent from the
@@ -98,7 +98,7 @@ user to the same group; the secrets are still mounted only into the services tha
 
 Copy `staging.env.example` to the server environment file and replace every `REQUIRED` marker.
 The five image variables must contain the same full `APP_RELEASE` SHA used as their immutable
-tag. `REGISTRATION_MODE` starts as `INVITE_ONLY`.
+tag. `REGISTRATION_MODE` starts as `ENABLED`.
 
 Create these one-line secret files directly on the server:
 
@@ -204,8 +204,7 @@ Never use `down --volumes` as an incident response command.
 
 - `/privacy`, `/terms`, `/cookies` and `/support` must show the approved controller values with
   no `PUBLICATION_BLOCKED` warning.
-- Set `REGISTRATION_MODE=ENABLED`, recreate API/web, register and verify the staging administrator,
-  restore `INVITE_ONLY`, recreate API/web and confirm open signup is closed.
+- With `REGISTRATION_MODE=ENABLED`, register and verify the staging administrator.
 - Run the packaged admin promotion CLI against the staging database. Enter the address only at
   its interactive prompt so it does not enter shell history:
 
@@ -220,9 +219,9 @@ Never use `down --volumes` as an incident response command.
   ```
 
   Then verify exactly one `ADMIN` user and one `ADMIN_BOOTSTRAPPED_BY_OPERATOR` audit event.
-- With the second allowlisted inbox, complete waitlist → approval → invitation delivery → signup
-  → automatic verification → first workout. Exercise token reuse, cap contention, the three
-  runtime switches and `REGISTRATION_MODE=DISABLED`.
+- With the second allowlisted inbox, complete signup (age/residence and policy checkboxes) →
+  verification email → first workout. Confirm signup without the checkboxes is rejected, and that
+  `REGISTRATION_MODE=DISABLED` blocks signup.
 
 Do not record addresses, tokens, message bodies or workout contents in the evidence report.
 

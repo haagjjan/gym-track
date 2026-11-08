@@ -2,18 +2,19 @@
 
 import { useState, type ReactNode } from "react";
 import { AuditAdminPanel } from "./audit-admin-panel";
-import { BetaAdminPanel } from "./beta-admin-panel";
 import { CampaignAdminPanel } from "./campaign-admin-panel";
+import { CampaignSwitch } from "./campaign-switch";
 import { DeletionSupportPanel } from "./deletion-support-panel";
+import { OverviewPanel } from "./overview-panel";
 import { UserAdminPanel } from "./user-admin-panel";
 
-type AdminSection = "admissions" | "members" | "campaigns" | "audit";
+type AdminSection = "overview" | "members" | "campaigns" | "audit";
 
 const sections: ReadonlyArray<{ id: AdminSection; label: string; description: string }> = [
   {
-    id: "admissions",
-    label: "Admissions",
-    description: "Open or pause the waitlist and work through access requests."
+    id: "overview",
+    label: "Overview",
+    description: "Exact account and usage numbers, and every account with its activity."
   },
   {
     id: "members",
@@ -23,7 +24,7 @@ const sections: ReadonlyArray<{ id: AdminSection; label: string; description: st
   {
     id: "campaigns",
     label: "Campaigns",
-    description: "Write in-app messages, publish them, and read what members answered."
+    description: "Write in-app messages, publish them, and read what people answered."
   },
   {
     id: "audit",
@@ -42,7 +43,7 @@ const sections: ReadonlyArray<{ id: AdminSection; label: string; description: st
  * viewport — the correct half renders on the first paint either way.
  */
 export function AdminScreen(): ReactNode {
-  const [section, setSection] = useState<AdminSection>("admissions");
+  const [section, setSection] = useState<AdminSection>("overview");
   const active = sections.find((item) => item.id === section) ?? sections[0];
 
   return (
@@ -62,8 +63,8 @@ export function AdminScreen(): ReactNode {
           <p className="label-caps text-lavender">Administrators only</p>
           <h1 className="mt-2 font-display text-3xl font-bold text-fg">Administration</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-fg-muted">
-            Approve and contain accounts here. Telegram alerts carry references only — never an
-            applicant&apos;s identity and never an action link.
+            See how the app is used, manage accounts, send in-app messages, and review every
+            privileged action.
           </p>
         </header>
 
@@ -87,14 +88,19 @@ export function AdminScreen(): ReactNode {
 
         <p className="text-sm text-fg-muted">{active?.description}</p>
 
-        {section === "admissions" ? <BetaAdminPanel /> : null}
+        {section === "overview" ? <OverviewPanel /> : null}
         {section === "members" ? (
           <>
             <UserAdminPanel />
             <DeletionSupportPanel />
           </>
         ) : null}
-        {section === "campaigns" ? <CampaignAdminPanel /> : null}
+        {section === "campaigns" ? (
+          <>
+            <CampaignSwitch />
+            <CampaignAdminPanel />
+          </>
+        ) : null}
         {section === "audit" ? <AuditAdminPanel /> : null}
       </div>
     </>

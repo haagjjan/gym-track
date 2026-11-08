@@ -5,6 +5,8 @@
 Accepted on 2026-08-07. Supersedes the worldwide framing in `docs/18-public-beta-handoff.md`
 and `docs/00-workflow.md`.
 
+Amended on 2026-11-08 by [ADR 0022](0022-open-public-registration.md). The Swiss-residents-only scope still applies to the public v0. The attestation moves from the waitlist request to signup and is stored in `users.adult_attested_at`.
+
 ## Context
 
 The Founding Beta was drafted as worldwide-targeted, English-only, 18+ and invitation-only.

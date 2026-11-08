@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { after, before, describe, it } from "node:test";
 import { createDatabase } from "../../db/database.js";
+import { createMessageRepository } from "../messages/message.repository.js";
 import { createAdminRepository } from "./admin.repository.js";
 
 const databaseUrl = process.env.INTEGRATION_DATABASE_URL;
@@ -78,6 +79,51 @@ describe("administrator containment repository", {
       id: randomUUID(), user_id: userId, session_token_hash: randomUUID(), expires_at: expiresAt
     }).execute();
   }
+  it("counts accounts exactly and reports per-account activity", async () => {
+    const now = new Date();
+    // Other integration files run in parallel against the same database and may
+    // create users at any moment, so bracket the overview between two counts.
+    const countUsers = async () => Number((await db.selectFrom("users")
+      .select((eb) => eb.fn.countAll<string>().as("count")).executeTakeFirstOrThrow()).count);
+    const before = await countUsers();
+    const overview = await repository.getOverview(now);
+    const after = await countUsers();
+    assert.ok(overview.totalAccounts >= before && overview.totalAccounts <= after,
+      `admin counts are exact, not thresholded (${before} <= ${overview.totalAccounts} <= ${after})`);
+    assert.ok(overview.unverifiedEmails >= 1, "the unverified test admin is counted");
+    const member = (await repository.listUsers(now)).find((user) => user.id === targetId);
+    assert.ok(member);
+    assert.equal(member.emailVerified, true);
+    assert.equal(typeof member.completedWorkoutCount, "number");
+  });
+
+  it("publishes campaigns to accounts without a beta cohort once the switch is on (ADR 0022)", async () => {
+    const now = new Date();
+    const before = await repository.getSettings();
+    const messages = createMessageRepository(db);
+    let campaignId: string | null = null;
+    try {
+      await repository.setCampaignsOpen(adminId, false, now);
+      const { id } = await messages.createCampaign(adminId, {
+        // SELECTED keeps this test away from users that parallel test files create and erase.
+        title: `${prefix}hello`, body: "Welcome", audienceType: "SELECTED", targetUserIds: [targetId],
+        triggerType: "NEXT_LOGIN", triggerThreshold: null, responseType: "ACKNOWLEDGEMENT",
+        responseOptions: [], actionUrl: null, essential: true, startsAt: null, endsAt: null, scheduledAt: null
+      }, now);
+      campaignId = id;
+      assert.equal(await messages.setCampaignStatus(adminId, id, "PUBLISH", now), false, "paused switch blocks publishing");
+      assert.equal((await repository.setCampaignsOpen(adminId, true, now)).campaignsOpen, true);
+      assert.equal((await latestAudit()).action, "CAMPAIGNS_OPENED");
+      assert.equal(await messages.setCampaignStatus(adminId, id, "PUBLISH", now), true);
+      const delivery = await db.selectFrom("message_deliveries").select("user_id")
+        .where("campaign_id", "=", id).where("user_id", "=", targetId).executeTakeFirst();
+      assert.ok(delivery, "an account without a beta cohort still receives the campaign");
+    } finally {
+      if (campaignId) await db.deleteFrom("campaigns").where("id", "=", campaignId).execute();
+      await db.updateTable("beta_settings").set({ campaigns_open: before.campaignsOpen }).where("singleton", "=", true).execute();
+    }
+  });
+
   async function latestAudit() {
     return db.selectFrom("admin_audit_events").select(["action", "details"])
       .where("admin_user_id", "=", adminId).orderBy("id", "desc").executeTakeFirstOrThrow();

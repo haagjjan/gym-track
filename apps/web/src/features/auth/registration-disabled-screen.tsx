@@ -13,23 +13,22 @@ export function RegistrationDisabledScreen(): ReactNode {
         aria-labelledby="registration-title"
         className="glass-cyan chamfer relative w-full max-w-md rounded-xl p-6 sm:p-8"
       >
-        <p className="label-caps text-outline">PRIVATE_ACCESS</p>
+        <p className="label-caps text-outline">Sign-ups paused</p>
         <h1
           className="mt-2 font-display text-2xl font-bold tracking-tight text-fg"
           id="registration-title"
         >
-          REGISTRATION_UNAVAILABLE
+          New accounts are paused
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-fg-muted">
-          Founding Beta registration is currently paused. Existing members can continue through the login screen.
+          We&apos;ve paused new sign-ups for now. If you already have an account, you can still log in.
         </p>
         <Link
           className="mt-6 inline-flex min-h-11 items-center justify-center rounded-lg border border-cyan/50 px-5 font-display text-sm font-bold tracking-[0.08em] text-cyan transition-colors hover:border-cyan hover:text-cyan-bright"
           href="/login"
         >
-          RETURN_TO_LOGIN
+          Go to login
         </Link>
-        <Link className="ml-3 mt-6 inline-flex min-h-11 items-center text-sm text-outline hover:text-cyan" href="/beta">BETA_INFO</Link>
       </section>
     </main>
   );

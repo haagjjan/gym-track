@@ -1,4 +1,4 @@
-export type RegistrationMode = "ENABLED" | "INVITE_ONLY" | "DISABLED";
+export type RegistrationMode = "ENABLED" | "DISABLED";
 type EnvironmentSource = Readonly<Record<string, string | undefined>>;
 
 export function readRegistrationMode(
@@ -6,12 +6,12 @@ export function readRegistrationMode(
 ): RegistrationMode {
   const configured = source.REGISTRATION_MODE;
 
-  if (configured === "ENABLED" || configured === "INVITE_ONLY" || configured === "DISABLED") {
+  if (configured === "ENABLED" || configured === "DISABLED") {
     return configured;
   }
 
   if (configured !== undefined) {
-    throw new Error("REGISTRATION_MODE must be ENABLED, INVITE_ONLY, or DISABLED.");
+    throw new Error("REGISTRATION_MODE must be ENABLED or DISABLED.");
   }
 
   return source.NODE_ENV === "production" ? "DISABLED" : "ENABLED";

@@ -92,8 +92,6 @@ services:
       NODE_ENV: production
       REGISTRATION_MODE: ${REGISTRATION_MODE:-DISABLED}
       SUPPORT_EMAIL: ${SUPPORT_EMAIL:?Set SUPPORT_EMAIL}
-      TELEGRAM_BETA_BOT_TOKEN: ""
-      TELEGRAM_BETA_CHAT_ID: ""
     command:
       - /bin/sh
       - -ec
