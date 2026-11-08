@@ -79,13 +79,33 @@ describe("auth routes", () => {
       payload: {
         email: "jan@example.com",
         username: "jan",
-        password: "long-enough-secret"
+        password: "long-enough-secret",
+        termsVersion: "terms-test",
+        privacyVersion: "privacy-test",
+        adultAttested: true
       }
     });
 
     assert.equal(response.statusCode, 201);
     assert.deepEqual(response.json(), { data: { user } });
     assert.match(response.headers["set-cookie"]?.toString() ?? "", /gym_progress_session=/);
+  });
+
+  it("rejects signup without the age, residence and policy attestation", async () => {
+    const server = await buildAuthServer(authService());
+    const response = await server.inject({
+      method: "POST",
+      url: "/api/v1/auth/signup",
+      payload: {
+        email: "jan@example.com",
+        username: "jan",
+        password: "long-enough-secret",
+        termsVersion: "terms-test",
+        privacyVersion: "privacy-test"
+      }
+    });
+
+    assert.equal(response.statusCode, 422);
   });
 
   it("returns validation errors for invalid signup payloads", async () => {

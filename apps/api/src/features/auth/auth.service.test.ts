@@ -174,7 +174,10 @@ describe("auth service", () => {
     const result = await service.signup({
       email: "jan@example.com",
       username: "jan",
-      password: "secret"
+      password: "secret",
+      termsVersion: "terms-test",
+      privacyVersion: "privacy-test",
+      adultAttested: true
     });
 
     assert.equal(result.ok, true);
@@ -201,7 +204,10 @@ describe("auth service", () => {
     const result = await service.signup({
       email: "jan@example.com",
       username: "jan",
-      password: "secret"
+      password: "secret",
+      termsVersion: "terms-test",
+      privacyVersion: "privacy-test",
+      adultAttested: true
     });
 
     assert.deepEqual(result, { ok: false, reason: "conflict" });
@@ -332,7 +338,10 @@ describe("auth service", () => {
     const result = await service.signup({
       email: "jan@example.com",
       username: "jan",
-      password: "long-enough-secret"
+      password: "long-enough-secret",
+      termsVersion: "terms-test",
+      privacyVersion: "privacy-test",
+      adultAttested: true
     });
 
     assert.equal(result.ok, true);

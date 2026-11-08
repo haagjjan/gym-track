@@ -38,26 +38,9 @@ export async function registerAuthRoutes(
         return sendValidationError(reply, parsed.error);
       }
 
-      if (mode === "INVITE_ONLY" && (
-        !parsed.data.inviteToken || !parsed.data.termsVersion ||
-        !parsed.data.privacyVersion || parsed.data.adultAttested !== true
-      )) {
-        return reply.status(403).send({
-          error: {
-            code: "INVITATION_REQUIRED",
-            message: "A valid Founding Beta invitation is required."
-          }
-        });
-      }
-
       const result = await options.service.signup(parsed.data);
 
       if (!result.ok) {
-        if (result.reason === "invalid_invitation") {
-          return reply.status(403).send({
-            error: { code: "INVALID_INVITATION", message: "This invitation is invalid or expired." }
-          });
-        }
         return reply.status(409).send({
           error: {
             code: "AUTH_CONFLICT",
