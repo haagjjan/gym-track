@@ -8,15 +8,14 @@ Gym Progress Tracker is a mobile-first strength-training log for recording worko
 reusing training templates, exploring exercise progress, and understanding weekly muscle volume.
 
 This repository contains the complete product and its operating model: the Next.js interface,
-Fastify API, PostgreSQL migrations, authentication and privacy workflows, beta administration,
+Fastify API, PostgreSQL migrations, authentication and privacy workflows, account administration,
 tests, hardened production/staging definitions, monitoring, alerting, encrypted backup and recovery
-procedures, and the evidence used to prepare the Founding Beta.
+procedures, and the evidence gathered during the closed Founding Beta.
 
-> **Current release stage:** Goal 5 of the Founding Beta process is complete. The production
-> service is invitation-only and capped at 50 accounts. Goal 6—the first observed cohort—requires
-> a separate go/no-go decision. The public service is not open self-signup.
+> **Current release stage:** public v0. After the closed Founding Beta, signup is open to adults
+> who live in Switzerland ([ADR 0022](docs/decisions/0022-open-public-registration.md)).
 
-[Request Founding Beta access](https://app.gymtrack.ch/beta) ·
+[Create an account](https://app.gymtrack.ch/signup) ·
 [Service status](https://status.gymtrack.ch) ·
 [Security policy](SECURITY.md) ·
 [Current system analysis](docs/current-system-analysis.md)
@@ -48,13 +47,14 @@ The core workflow is deliberately simple:
 
 - Argon2id passwords, opaque database-backed sessions, secure cookies, login lockout, email
   verification and password recovery.
-- Invitation-only production registration with hashed, expiring, single-use invitations.
+- Open registration with an age, residence and policy confirmation at signup, plus a `DISABLED` kill switch.
 - Account preferences, explicit device-storage choice, JSON export, deletion grace/cancellation and
   hard erasure with shared-exercise anonymization.
-- Administrator tools for beta requests, seat limits, approval pacing, runtime pauses, user status,
+- Administrator tools: usage overview with exact counts and per-account activity, user status,
   session revocation, deletion support, campaigns and audit history.
-- In-app member messaging with controlled publication, pause/end behavior and bounded responses.
-- Public Privacy, Terms, Cookie/Storage, Support and beta-limitations pages driven by runtime
+- In-app messages and campaigns for all members, with controlled publication, pause/end behavior
+  and bounded responses.
+- Public Privacy, Terms, Cookie/Storage, and Support pages driven by runtime
   configuration rather than values baked into the image.
 
 The project has no advertising SDK, social feed or third-party browser analytics. It is a training
@@ -204,7 +204,7 @@ concurrent active loggers and a 40-logger 2x probe.
 | --- | --- | --- | --- |
 | Local Compose | feature development and tests | localhost | disposable developer data |
 | Staging | exact-SHA, production-shaped acceptance | owner-only Cloudflare Access | synthetic only |
-| Production | invitation-only Founding Beta | `app.gymtrack.ch` through Cloudflare Tunnel | real member data |
+| Production | public v0 | `app.gymtrack.ch` through Cloudflare Tunnel | real member data |
 | Status | independent incident communication and aggregate build evidence | public GitHub Pages | no personal data |
 
 Production is self-hosted on a 2018 Intel Mac mini running Ubuntu 26.04 with a T2-compatible
@@ -233,20 +233,17 @@ active production platform.
 
 ## Project status and boundaries
 
-The Founding Beta is English-only, for adults resident in Switzerland, invitation-only and limited
-to 50 reserved/active seats. Every current launch gate is closed, including production security,
-data lifecycle, restore, capacity, real-device, email, incident and status-page rehearsals.
-
-The next step is a deliberate Goal 6 go/no-go decision followed by a maximum first cohort of ten
-invitations and a 72-hour observation period. This repository does not claim:
+The public v0 is English-only and open to adults who live in Switzerland. The closed Founding Beta
+before it closed every launch gate, including production security, data lifecycle, restore,
+capacity, real-device, email, incident and status-page rehearsals. This repository does not claim:
 
 - high availability or automatic failover;
 - readiness for arbitrary or hostile Internet scale;
 - independent penetration-test certification;
 - medical, legal or professional training advice;
-- complete assistive-technology coverage beyond the documented Founding Beta scope.
+- complete assistive-technology coverage beyond the documented scope.
 
-Current gate evidence and rollout stop rules are in
+The Founding Beta gate evidence and rollout stop rules are in
 [docs/beta-process/public-beta/goal-1/launch-gates.md](docs/beta-process/public-beta/goal-1/launch-gates.md).
 
 ## Documentation guide
@@ -261,7 +258,7 @@ Start here depending on the question:
 | Why were major choices made? | [Architecture decisions](docs/decisions/README.md) |
 | What does the data model support? | [Query list](docs/02-query-list.md), [data notes](docs/03-data-model-notes.md), [schema](docs/04-schema-draft.md) |
 | What does the API expose? | [API contract](docs/05-api-contract.md) |
-| Is the Founding Beta ready? | [Launch gates](docs/beta-process/public-beta/goal-1/launch-gates.md) and [Goal 5 closure](docs/beta-process/public-beta/goal-5/goal-5-scope.md) |
+| What did the Founding Beta prove? | [Launch gates](docs/beta-process/public-beta/goal-1/launch-gates.md) and [Goal 5 closure](docs/beta-process/public-beta/goal-5/goal-5-scope.md) |
 | How is the server operated or recovered? | [Server index](docs/server/SERVER-SETUP-INDEX.md) and [disaster recovery](docs/server/disaster-recovery.md) |
 | How should changes be made? | [Engineering rules](ENGINEERING.md) and [Contributing](CONTRIBUTING.md) |
 
