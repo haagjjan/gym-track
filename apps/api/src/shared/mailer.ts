@@ -7,7 +7,6 @@ export interface MailMessage {
 }
 
 export type MailKind =
-  | "INVITATION"
   | "EMAIL_VERIFICATION"
   | "PASSWORD_RESET"
   | "DELETION_SCHEDULED"
@@ -199,7 +198,7 @@ function renderBrandedHtml(subject: string, text: string): string {
   const paragraphs = text.split(/\n{2,}/).map((paragraph) =>
     `<p style="margin:0 0 16px;line-height:1.6">${escapeHtml(paragraph).replaceAll("\n", "<br>")}</p>`
   ).join("");
-  return `<!doctype html><html lang="en"><body style="margin:0;background:#090b10;color:#eef2f7;font-family:Arial,sans-serif"><div style="max-width:600px;margin:0 auto;padding:32px 20px"><p style="color:#67e8f9;font-size:12px;letter-spacing:.12em">GYM PROGRESS TRACKER</p><h1 style="font-size:24px">${escapeHtml(subject)}</h1><div style="color:#cbd5e1;font-size:15px">${paragraphs}</div><p style="margin-top:32px;color:#7c8799;font-size:12px">Founding Beta · invitation only · limited to 50 members</p></div></body></html>`;
+  return `<!doctype html><html lang="en"><body style="margin:0;background:#090b10;color:#eef2f7;font-family:Arial,sans-serif"><div style="max-width:600px;margin:0 auto;padding:32px 20px"><p style="color:#67e8f9;font-size:12px;letter-spacing:.12em">GYM PROGRESS TRACKER</p><h1 style="font-size:24px">${escapeHtml(subject)}</h1><div style="color:#cbd5e1;font-size:15px">${paragraphs}</div><p style="margin-top:32px;color:#7c8799;font-size:12px">Gym Progress Tracker · Switzerland</p></div></body></html>`;
 }
 
 function escapeHtml(value: string): string {
