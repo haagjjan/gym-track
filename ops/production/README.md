@@ -58,16 +58,15 @@ Compose references these existing host-only files:
 | monitoring/alerting secret files | their current services | unchanged current metadata |
 
 Never print, diff, copy into an environment file, or commit a secret value. Production must not
-set `EMAIL_RECIPIENT_ALLOWLIST`; that staging-only containment would prevent real beta mail.
-`TELEGRAM_BETA_*` stays explicitly empty so Telegram receives infrastructure alerts only.
+set `EMAIL_RECIPIENT_ALLOWLIST`; that staging-only containment would prevent real member mail. Telegram receives infrastructure
+alerts only.
 
 ## Email delivery owner
 
-Jan Haag is the production owner for Resend bounces, complaints and suppressions. For the first
-cohort, inspect the Resend dashboard before and after every invitation batch and at least daily
-during the 72-hour observation window. Pause invitation issuance immediately on an unexplained
-bounce, complaint, suppression or quota warning; resolve the address/provider cause before using
-the audited reissue action. Do not copy recipient addresses or message contents into committed
+Jan Haag is the production owner for Resend bounces, complaints and suppressions. Inspect the
+Resend dashboard daily for the first week after opening public signup. On an unexplained spike in
+bounces, complaints, suppressions or a quota warning, set `REGISTRATION_MODE=DISABLED` and
+resolve the address or provider cause before reopening signup. Do not copy recipient addresses or message contents into committed
 incident evidence.
 
 The production black-box must retain received-header evidence that SPF, DKIM and DMARC align for
@@ -105,7 +104,7 @@ Before changing the active Compose/Caddy copy:
 - the exact candidate CI and focused staging checks are green;
 - the current Compose/Caddy files and previous image tags are copied into a release-specific
   rollback directory;
-- registration, waitlist intake, invitation issuance and campaigns are paused;
+- registration is paused (`REGISTRATION_MODE=DISABLED`);
 - the installed database restore and erasure-ledger replay procedures still validate; and
 - the controller explicitly approves the cutover.
 
@@ -128,8 +127,9 @@ The cutover remains a joint production action, not a pre-commit setup step:
 6. Run the narrow production black-box: public legal/support rendering, hostile Host/Origin,
    unsigned/direct API rejection, forged forwarding headers, secure cookie/HSTS headers, and the
    controlled transactional email flows.
-7. Only after those checks pass, change both API and web to `REGISTRATION_MODE=INVITE_ONLY` and
-   confirm open signup remains impossible without an issued invitation.
+7. Only after those checks pass, change both API and web to `REGISTRATION_MODE=ENABLED`
+   (ADR 0022) and confirm a new account can sign up only after ticking the age/residence and
+   policy checkboxes.
 
 The selected external tester performs the broader real-user product confirmation. Goal 4 does
 not repeat the already green capacity and full staging suite unless application or database
