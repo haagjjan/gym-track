@@ -38,11 +38,9 @@ const rawEnvSchema = z.object({
   LOG_LEVEL: logLevelSchema.default("info"),
   METRICS_ENABLED: z.enum(["true", "false"]).optional(),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-  REGISTRATION_MODE: z.enum(["ENABLED", "INVITE_ONLY", "DISABLED"]).optional(),
+  REGISTRATION_MODE: z.enum(["ENABLED", "DISABLED"]).optional(),
   RESEND_API_KEY: optionalEnvironmentValue(z.string().min(1)),
-  SUPPORT_EMAIL: optionalEnvironmentValue(z.string().email()),
-  TELEGRAM_BETA_BOT_TOKEN: optionalEnvironmentValue(z.string().min(1)),
-  TELEGRAM_BETA_CHAT_ID: optionalEnvironmentValue(z.string().min(1))
+  SUPPORT_EMAIL: optionalEnvironmentValue(z.string().email())
 });
 
 const envSchema = rawEnvSchema

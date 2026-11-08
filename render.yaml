@@ -36,7 +36,7 @@ services:
       - key: AUTH_SESSION_TTL_DAYS
         value: "30"
       - key: REGISTRATION_MODE
-        value: INVITE_ONLY
+        value: ENABLED
       - key: BFF_CLIENT_IP_SECRET
         sync: false
       - key: EMAIL_FROM
@@ -44,10 +44,6 @@ services:
       - key: RESEND_API_KEY
         sync: false
       - key: SUPPORT_EMAIL
-        sync: false
-      - key: TELEGRAM_BETA_BOT_TOKEN
-        sync: false
-      - key: TELEGRAM_BETA_CHAT_ID
         sync: false
       - key: DATABASE_URL
         fromDatabase:
@@ -81,7 +77,7 @@ services:
       - key: HSTS_ENABLED
         value: "false"
       - key: REGISTRATION_MODE
-        value: INVITE_ONLY
+        value: ENABLED
       - key: BFF_CLIENT_IP_SECRET
         sync: false
       - key: CONTROLLER_NAME

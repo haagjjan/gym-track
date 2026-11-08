@@ -269,9 +269,6 @@ jobs:
               if (Object.hasOwn(api.environment, "EMAIL_RECIPIENT_ALLOWLIST")) {
                 throw new Error("Production must not inherit the staging recipient allowlist");
               }
-              if (api.environment.TELEGRAM_BETA_BOT_TOKEN !== "" || api.environment.TELEGRAM_BETA_CHAT_ID !== "") {
-                throw new Error("Production beta-request Telegram delivery must stay disabled");
-              }
               if (!apiSecrets.has("bff_client_ip_secret") || !apiSecrets.has("resend_api_key")) {
                 throw new Error("Production API is missing BFF or Resend secret wiring");
               }
