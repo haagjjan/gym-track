@@ -2,7 +2,9 @@ import type {
   AdminAuditCursor,
   AdminAuditRecord,
   AdminMutationResult,
+  AdminOverviewCounts,
   AdminRepository,
+  AdminSettingsRecord,
   AdminSessionRevocationResult,
   AdminUserRecord
 } from "./admin.repository.js";
@@ -14,9 +16,17 @@ export interface AdminUser {
   username: string;
   role: "USER" | "ADMIN";
   status: "ACTIVE" | "DELETION_PENDING" | "SUSPENDED";
-  cohort: string | null;
   createdAt: string;
   activeSessionCount: number;
+  emailVerified: boolean;
+  lastActiveAt: string | null;
+  completedWorkoutCount: number;
+  lastWorkoutAt: string | null;
+}
+
+export interface AdminSettings {
+  campaignsOpen: boolean;
+  updatedAt: string;
 }
 
 export interface AdminAuditEvent {
@@ -40,6 +50,9 @@ export interface AdminService {
   setUserStatus(adminUserId: string, userId: string, status: AdminAccountStatus): Promise<AdminMutationResult>;
   revokeUserSessions(adminUserId: string, userId: string): Promise<AdminSessionRevocationResult>;
   listAuditEvents(cursor: AdminAuditCursor | undefined, limit: number): Promise<AdminAuditPage>;
+  getOverview(): Promise<AdminOverviewCounts & { generatedAt: string }>;
+  getSettings(): Promise<AdminSettings>;
+  setCampaignsOpen(adminUserId: string, open: boolean): Promise<AdminSettings>;
 }
 
 export function createAdminService(options: {
@@ -66,12 +79,31 @@ export function createAdminService(options: {
         items: visible.map(toAuditEvent),
         nextCursor: hasMore && last ? encodeCursor(last) : null
       };
+    },
+    async getOverview() {
+      const generatedAt = now();
+      return { ...await options.repository.getOverview(generatedAt), generatedAt: generatedAt.toISOString() };
+    },
+    async getSettings() {
+      return toAdminSettings(await options.repository.getSettings());
+    },
+    async setCampaignsOpen(adminUserId, open) {
+      return toAdminSettings(await options.repository.setCampaignsOpen(adminUserId, open, now()));
     }
   };
 }
 
 function toAdminUser(record: AdminUserRecord): AdminUser {
-  return { ...record, createdAt: record.createdAt.toISOString() };
+  return {
+    ...record,
+    createdAt: record.createdAt.toISOString(),
+    lastActiveAt: record.lastActiveAt?.toISOString() ?? null,
+    lastWorkoutAt: record.lastWorkoutAt?.toISOString() ?? null
+  };
+}
+
+function toAdminSettings(record: AdminSettingsRecord): AdminSettings {
+  return { campaignsOpen: record.campaignsOpen, updatedAt: record.updatedAt.toISOString() };
 }
 
 function toAuditEvent(record: AdminAuditRecord): AdminAuditEvent {

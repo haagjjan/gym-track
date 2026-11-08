@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { sendValidationError } from "../../shared/http-validation.js";
 import { authenticateRequest } from "../auth/authenticate-request.js";
 import type { AuthService, PublicUser } from "../auth/auth.service.js";
-import { adminAuditQuerySchema, adminUserParamsSchema, adminUserStatusSchema } from "./admin.schemas.js";
+import { adminAuditQuerySchema, adminSettingsUpdateSchema, adminUserParamsSchema, adminUserStatusSchema } from "./admin.schemas.js";
 import type { AdminService } from "./admin.service.js";
 
 interface AdminRouteOptions {
@@ -39,6 +39,26 @@ export async function registerAdminRoutes(server: FastifyInstance, options: Admi
     if (!params.success) return sendValidationError(reply, params.error, "userId");
     const result = await options.service.revokeUserSessions(admin.id, params.data.userId);
     return sendMutationResult(reply, result);
+  });
+
+  server.get("/api/v1/admin/overview", async (request, reply) => {
+    if (!await requireAdmin(request, reply, options)) return;
+    return reply.send({ data: await options.service.getOverview() });
+  });
+
+  server.get("/api/v1/admin/settings", async (request, reply) => {
+    if (!await requireAdmin(request, reply, options)) return;
+    return reply.send({ data: await options.service.getSettings() });
+  });
+
+  server.patch("/api/v1/admin/settings", {
+    config: { rateLimit: { max: 30, timeWindow: "1 hour" } }
+  }, async (request, reply) => {
+    const admin = await requireAdmin(request, reply, options);
+    if (!admin) return;
+    const body = adminSettingsUpdateSchema.safeParse(request.body);
+    if (!body.success) return sendValidationError(reply, body.error);
+    return reply.send({ data: await options.service.setCampaignsOpen(admin.id, body.data.campaignsOpen) });
   });
 
   server.get("/api/v1/admin/audit-events", async (request, reply) => {

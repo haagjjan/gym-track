@@ -29,5 +29,9 @@ export const adminAuditQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50)
 });
 
+export const adminSettingsUpdateSchema = z.object({
+  campaignsOpen: z.boolean()
+}).strict();
+
 export type AdminAccountStatus = z.infer<typeof adminUserStatusSchema>["status"];
 export type AdminAuditQuery = z.infer<typeof adminAuditQuerySchema>;
