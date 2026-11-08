@@ -97,7 +97,7 @@ describe("administrator containment repository", {
     assert.equal(typeof member.completedWorkoutCount, "number");
   });
 
-  it("publishes campaigns to every active account once the switch is on (ADR 0022)", async () => {
+  it("publishes campaigns to accounts without a beta cohort once the switch is on (ADR 0022)", async () => {
     const now = new Date();
     const before = await repository.getSettings();
     const messages = createMessageRepository(db);
@@ -105,7 +105,8 @@ describe("administrator containment repository", {
     try {
       await repository.setCampaignsOpen(adminId, false, now);
       const { id } = await messages.createCampaign(adminId, {
-        title: `${prefix}hello`, body: "Welcome", audienceType: "ALL", targetUserIds: [],
+        // SELECTED keeps this test away from users that parallel test files create and erase.
+        title: `${prefix}hello`, body: "Welcome", audienceType: "SELECTED", targetUserIds: [targetId],
         triggerType: "NEXT_LOGIN", triggerThreshold: null, responseType: "ACKNOWLEDGEMENT",
         responseOptions: [], actionUrl: null, essential: true, startsAt: null, endsAt: null, scheduledAt: null
       }, now);
