@@ -7,11 +7,7 @@ import { getCurrentUser } from "../../features/auth/server-auth";
 
 export const metadata = { title: "Create account" };
 
-export default async function SignupPage({
-  searchParams
-}: {
-  searchParams: Promise<{ invite?: string; email?: string }>;
-}): Promise<ReactNode> {
+export default async function SignupPage(): Promise<ReactNode> {
   const user = await getCurrentUser();
 
   if (user) {
@@ -19,15 +15,10 @@ export default async function SignupPage({
   }
 
   const mode = readRegistrationMode();
-  const query = await searchParams;
 
   if (mode === "DISABLED") {
     return <RegistrationDisabledScreen />;
   }
 
-  if (mode === "INVITE_ONLY" && (!query.invite || !query.email)) {
-    redirect("/beta");
-  }
-
-  return <AuthScreen email={query.email} inviteToken={query.invite} mode="signup" />;
+  return <AuthScreen mode="signup" />;
 }

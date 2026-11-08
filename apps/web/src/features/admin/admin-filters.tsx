@@ -5,7 +5,7 @@ import { useId, type ReactNode } from "react";
 /**
  * Filter controls shared by every administration section.
  *
- * The console lists grow with the beta, so each section filters client-side
+ * The console lists grow with the user base, so each section filters client-side
  * over the rows it already holds. That keeps filtering instant and avoids
  * adding query parameters to endpoints that intentionally return a bounded
  * page of rows.
