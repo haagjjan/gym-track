@@ -11,7 +11,6 @@ export interface DeletionCleanupSummary {
 
 export interface LifecycleTasks {
   cleanupAuth(): Promise<void>;
-  cleanupBeta(): Promise<void>;
   cleanupDeletions(): Promise<DeletionCleanupSummary>;
   cleanupRetention(): Promise<void>;
 }
@@ -71,7 +70,6 @@ async function executeLifecycle(options: LifecycleRunnerOptions): Promise<Lifecy
   options.metrics.lifecycleStarted(startedAt);
 
   await runPhase("auth", options.tasks.cleanupAuth, options, failedPhases);
-  await runPhase("beta", options.tasks.cleanupBeta, options, failedPhases);
   try {
     const result = await options.tasks.cleanupDeletions();
     finalizedDeletions = result.finalized;

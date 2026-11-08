@@ -1,4 +1,5 @@
 import { expect, test, type Page, type APIRequestContext } from "@playwright/test";
+import { PUBLIC_PRIVACY_VERSION, PUBLIC_TERMS_VERSION } from "../src/shared/public-policy";
 import { expectModalContract, expectNoSeriousAccessibilityViolations } from "./accessibility-assertions";
 
 test.setTimeout(180_000);
@@ -13,7 +14,7 @@ async function account(request: APIRequestContext, separateAccount = false): Pro
     return;
   }
   const username = `demo_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
-  const signup = await request.post("/api/auth/signup", { headers: { origin }, data: { username, email: `${username}@example.com`, password: "example-test-passphrase" } });
+  const signup = await request.post("/api/auth/signup", { headers: { origin }, data: { username, email: `${username}@example.com`, password: "example-test-passphrase", termsVersion: PUBLIC_TERMS_VERSION, privacyVersion: PUBLIC_PRIVACY_VERSION, adultAttested: true } });
   expect(signup.status(), await signup.text()).toBe(201);
   if (!separateAccount) primaryUsername = username;
   const privacy = await request.patch("/api/users/me/privacy-preferences", { headers: { origin }, data: { functionalStorageEnabled: false } });

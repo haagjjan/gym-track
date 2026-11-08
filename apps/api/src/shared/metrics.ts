@@ -21,7 +21,7 @@ export interface ApiMetricsOptions {
   release: string;
 }
 
-export type LifecyclePhase = "auth" | "beta" | "deletion" | "notification" | "retention";
+export type LifecyclePhase = "auth" | "deletion" | "notification" | "retention";
 
 export interface OperationalMetrics extends MailDeliveryObserver {
   lifecycleFinished(durationSeconds: number, deletionBacklog: number, finalizedDeletions: number, succeeded: boolean): void;
