@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for implementation on 2026-08-05.
+Superseded on 2026-11-08 by [ADR 0022](0022-open-public-registration.md). Originally accepted for implementation on 2026-08-05.
 
 ## Context
 
