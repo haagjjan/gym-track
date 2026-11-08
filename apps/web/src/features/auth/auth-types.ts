@@ -5,7 +5,6 @@ export interface AuthUser {
   emailVerified: boolean;
   role?: "USER" | "ADMIN";
   accountStatus?: "ACTIVE" | "DELETION_PENDING" | "SUSPENDED";
-  betaCohort?: string | null;
   createdAt: string;
 }
 
@@ -31,7 +30,6 @@ export function isAuthUser(value: unknown): value is AuthUser {
     typeof candidate.emailVerified === "boolean" &&
     (candidate.role === undefined || candidate.role === "USER" || candidate.role === "ADMIN") &&
     (candidate.accountStatus === undefined || candidate.accountStatus === "ACTIVE" || candidate.accountStatus === "DELETION_PENDING" || candidate.accountStatus === "SUSPENDED") &&
-    (candidate.betaCohort === undefined || typeof candidate.betaCohort === "string" || candidate.betaCohort === null) &&
     typeof candidate.createdAt === "string"
   );
 }

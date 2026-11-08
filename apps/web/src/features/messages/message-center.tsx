@@ -69,7 +69,7 @@ export function MessageCenter({ inline = false }: { inline?: boolean }): ReactNo
   const content = (
     <article className="w-full max-w-lg rounded border border-cyan/40 bg-surface p-5 shadow-2xl">
       <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0"><p className="label-caps text-cyan">{message.essential ? "Service notice" : "Founding Beta message"}</p><h2 className="mt-2 break-words font-display text-xl font-bold text-fg">{message.title}</h2></div>
+        <div className="min-w-0"><p className="label-caps text-cyan">{message.essential ? "Service notice" : "Message"}</p><h2 className="mt-2 break-words font-display text-xl font-bold text-fg">{message.title}</h2></div>
         <button aria-label="Dismiss message" className="min-h-11 shrink-0 px-3 text-outline hover:text-fg" data-modal-initial-focus disabled={busy} onClick={() => void dismiss()} type="button">Close</button>
       </div>
       <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-6 text-fg-muted">{message.body}</p>
@@ -83,7 +83,7 @@ export function MessageCenter({ inline = false }: { inline?: boolean }): ReactNo
     </article>
   );
 
-  return inline ? content : <div aria-label="Beta message" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-void/80 p-4" ref={dialogRef} role="dialog" tabIndex={-1}>{content}</div>;
+  return inline ? content : <div aria-label="Message" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-void/80 p-4" ref={dialogRef} role="dialog" tabIndex={-1}>{content}</div>;
 }
 
 function ResponseInput(props: { message: UserMessage; choice: string; rating: number; text: string; setChoice(value: string): void; setRating(value: number): void; setText(value: string): void }): ReactNode {

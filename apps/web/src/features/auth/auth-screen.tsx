@@ -36,14 +36,10 @@ type FieldErrors = Partial<Record<"email" | "username" | "password", string>>;
 
 export function AuthScreen({
   mode,
-  registrationEnabled = true,
-  email,
-  inviteToken
+  registrationEnabled = true
 }: {
   mode: AuthMode;
   registrationEnabled?: boolean;
-  email?: string | undefined;
-  inviteToken?: string | undefined;
 }): ReactNode {
   const router = useRouter();
   const details = copy[mode];
@@ -71,12 +67,10 @@ export function AuthScreen({
 
     if (mode === "signup") {
       body.email = String(formData.get("email") ?? "").trim();
-      if (inviteToken) {
-        body.inviteToken = inviteToken;
-        body.termsVersion = PUBLIC_TERMS_VERSION;
-        body.privacyVersion = PUBLIC_PRIVACY_VERSION;
-        body.adultAttested = true;
-      }
+      // The form only submits once both required checkboxes are ticked.
+      body.termsVersion = PUBLIC_TERMS_VERSION;
+      body.privacyVersion = PUBLIC_PRIVACY_VERSION;
+      body.adultAttested = true;
     }
 
     setIsPending(true);
@@ -131,9 +125,7 @@ export function AuthScreen({
                 error={fieldErrors.email}
                 label="Email address"
                 name="email"
-                readOnly={Boolean(email)}
                 type="email"
-                value={email}
               />
             ) : null}
             <AuthField
@@ -144,9 +136,9 @@ export function AuthScreen({
               type="text"
             />
 
-            {mode === "signup" && inviteToken ? (
+            {mode === "signup" ? (
               <div className="space-y-3 rounded border border-outline-dim/60 bg-surface-low/40 p-3 text-xs text-fg-muted">
-                <label className="flex gap-3"><input className="mt-0.5 size-4" name="adult" required type="checkbox" /> <span>I confirm that I am at least 18 years old.</span></label>
+                <label className="flex gap-3"><input className="mt-0.5 size-4" name="adult" required type="checkbox" /> <span>I&apos;m at least 18 and live in Switzerland.</span></label>
                 <label className="flex gap-3"><input className="mt-0.5 size-4" name="policies" required type="checkbox" /> <span>I accept the <Link className="text-cyan" href="/terms" target="_blank">Terms</Link> and have read the <Link className="text-cyan" href="/privacy" target="_blank">Privacy Notice</Link>.</span></label>
               </div>
             ) : null}
