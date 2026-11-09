@@ -2,7 +2,9 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { ConfirmDialog } from "../../shared/ui/confirm-dialog";
-import { HudButton } from "../../shared/ui/ui";
+import { Button } from "../../shared/ui/button";
+import { fieldClass, labelClass } from "./field-classes";
+import { IconChevronDown } from "../../shared/ui/icons";
 import { ApiError } from "../../shared/api/client";
 import { useExerciseNameSuggestions, useExerciseOptions, useMuscleGroups } from "../../shared/api/hooks";
 import type { CreateExerciseInput, Exercise, ExerciseNameReviewDetails, MuscleGroup } from "../../shared/api/types";
@@ -51,7 +53,7 @@ export function ExerciseForm({
 
   async function submit(confirmNameWarning: boolean): Promise<void> {
     if (!name.trim() || primaryIds.length === 0) {
-      setError("Name and at least one primary muscle are required.");
+      setError("Add a name and choose at least one primary muscle.");
       return;
     }
 
@@ -75,7 +77,7 @@ export function ExerciseForm({
           return;
         }
       }
-      setError(caught instanceof ApiError ? caught.message : "Exercise could not be saved.");
+      setError(caught instanceof ApiError ? caught.message : "Couldn't save the exercise. Check your connection and try again.");
     }
   }
 
@@ -83,10 +85,10 @@ export function ExerciseForm({
     <div className="space-y-3">
       <div className="relative z-40">
         <label className="block">
-          <span className="label-caps text-outline">Name</span>
+          <span className={labelClass}>Name</span>
           <input
             autoComplete="off"
-            className="mt-1 min-h-11 w-full rounded border border-outline-dim bg-surface-low px-3 text-base text-fg focus:border-cyan focus:outline-none"
+            className={`mt-1.5 ${fieldClass}`}
             maxLength={120}
             onChange={(event) => {
               setName(event.currentTarget.value);
@@ -107,14 +109,14 @@ export function ExerciseForm({
         </label>
 
         {showSuggestions ? (
-          <section aria-label="Existing exercise suggestions" className="absolute left-0 right-0 top-[calc(100%+0.25rem)] max-h-56 overflow-y-auto rounded-lg border border-cyan/30 bg-surface p-2 shadow-xl">
+          <section aria-label="Existing exercise suggestions" className="absolute left-0 right-0 top-[calc(100%+0.25rem)] max-h-56 overflow-y-auto rounded-[var(--radius-card)] border border-line bg-surface p-2 shadow-lg">
             <div className="flex items-start justify-between gap-2 px-1">
               <div className="min-w-0">
-                <p className="label-caps text-cyan">Did you mean?</p>
-                <p className="text-xs text-fg-muted">Pick an existing exercise, or keep the name you typed.</p>
+                <p className="text-headline text-text">Did you mean?</p>
+                <p className="text-subhead text-text-secondary">Pick an existing exercise, or keep the name you typed.</p>
               </div>
               <button
-                className="min-h-11 shrink-0 rounded border border-outline-dim px-2 text-[11px] text-fg-muted hover:border-cyan hover:text-cyan"
+                className="min-h-11 shrink-0 rounded-[var(--radius-control)] px-2 text-subhead text-accent"
                 onClick={() => setSuggestionsDismissed(true)}
                 type="button"
               >
@@ -124,13 +126,13 @@ export function ExerciseForm({
             <div className="mt-1 space-y-1">
               {suggestions.data?.slice(0, 5).map((exercise) => (
                 <button
-                  className="flex min-h-11 w-full items-center justify-between gap-3 rounded px-2 text-left hover:bg-cyan/10"
+                  className="flex min-h-11 w-full items-center justify-between gap-3 rounded-[var(--radius-control)] px-2 text-left active:bg-surface-raised"
                   key={exercise.id}
                   onClick={() => void onSelectExisting?.(exercise)}
                   type="button"
                 >
-                  <span className="min-w-0 break-words text-sm text-fg">{exercise.name}</span>
-                  <span className="shrink-0 text-xs text-outline">{exercise.equipment ?? "Unspecified"}</span>
+                  <span className="min-w-0 break-words text-body text-text">{exercise.name}</span>
+                  <span className="shrink-0 text-footnote text-text-muted">{exercise.equipment ?? "Unspecified"}</span>
                 </button>
               ))}
             </div>
@@ -138,12 +140,12 @@ export function ExerciseForm({
         ) : null}
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2">
         <ClassificationSelect label="Equipment" onChange={setEquipment} options={options.data?.equipment ?? []} value={equipment} />
         <ClassificationSelect label="Type" onChange={setExerciseType} options={options.data?.exerciseTypes ?? []} value={exerciseType} />
       </div>
 
-      {groups.isError ? <p className="text-xs text-red">Muscle groups could not be loaded.</p> : (
+      {groups.isError ? <p className="text-subhead text-danger">Couldn&apos;t load muscle groups. Close and reopen this screen to try again.</p> : (
         <div className="space-y-2">
           <MuscleChoices
             groups={groups.data ?? []}
@@ -151,31 +153,29 @@ export function ExerciseForm({
             onChange={(id) => { setPrimaryIds(toggle(primaryIds, id)); setSecondaryIds(secondaryIds.filter((item) => item !== id)); }}
             required
             selected={primaryIds}
-            tone="cyan"
           />
           <MuscleChoices
             groups={groups.data ?? []}
             label="Secondary muscles"
             onChange={(id) => { setSecondaryIds(toggle(secondaryIds, id)); setPrimaryIds(primaryIds.filter((item) => item !== id)); }}
             selected={secondaryIds}
-            tone="lavender"
           />
         </div>
       )}
       {review?.blocked ? <BlockedNameReview review={review} /> : null}
-      {error ? <p className="text-xs text-red" role="alert">{error}</p> : null}
-      <div className="flex gap-2">
-        <HudButton className="flex-1" disabled={isSubmitting || groups.isLoading || options.isLoading} onClick={() => void submit(false)}>{isSubmitting ? "SAVING…" : submitLabel}</HudButton>
-        <HudButton onClick={onCancel} variant="ghost">Cancel</HudButton>
+      {error ? <p className="text-subhead text-danger" role="alert">{error}</p> : null}
+      <div className="grid gap-2">
+        <Button disabled={isSubmitting || groups.isLoading || options.isLoading} onClick={() => void submit(false)}>{isSubmitting ? "Saving…" : submitLabel}</Button>
+        <Button onClick={onCancel} variant="plain">Cancel</Button>
       </div>
       <ConfirmDialog
-        confirmLabel="SAVE EXERCISE"
+        confirmLabel="Save exercise"
         isOpen={Boolean(review && !review.blocked)}
         isPending={isSubmitting}
         message={review?.details.reasons.map((reason) => reason.message).join(" ") ?? "Review this exercise name before saving."}
         onCancel={() => setReview(null)}
         onConfirm={() => void submit(true)}
-        pendingLabel="SAVING…"
+        pendingLabel="Saving…"
         title="Save this exercise name?"
         tone="warning"
       />
@@ -184,26 +184,27 @@ export function ExerciseForm({
 }
 
 function ClassificationSelect({ label, onChange, options, value }: { label: string; onChange: (value: string) => void; options: string[]; value: string }): ReactNode {
-  return <label className="block"><span className="label-caps text-outline">{label}</span><select className="mt-1 min-h-11 w-full rounded border border-outline-dim bg-surface-low px-3 text-sm text-fg focus:border-cyan focus:outline-none" onChange={(event) => onChange(event.currentTarget.value)} value={value}><option value="">Unspecified</option>{options.map((option) => <option key={option} value={option}>{displayLabel(option)}</option>)}</select></label>;
+  return <label className="block"><span className={labelClass}>{label}</span><select className={`mt-1.5 ${fieldClass}`} onChange={(event) => onChange(event.currentTarget.value)} value={value}><option value="">Unspecified</option>{options.map((option) => <option key={option} value={option}>{displayLabel(option)}</option>)}</select></label>;
 }
 
-function MuscleChoices({ groups, label, onChange, required = false, selected, tone }: { groups: MuscleGroup[]; label: string; onChange: (id: string) => void; required?: boolean; selected: string[]; tone: "cyan" | "lavender" }): ReactNode {
+function MuscleChoices({ groups, label, onChange, required = false, selected }: { groups: MuscleGroup[]; label: string; onChange: (id: string) => void; required?: boolean; selected: string[] }): ReactNode {
   const [open, setOpen] = useState(false);
   const pickerId = `muscle-picker-${label.toLowerCase().replace(/\s+/g, "-")}`;
 
   return (
-    <div className="relative rounded border border-outline-dim/60">
-      <button aria-controls={pickerId} aria-expanded={open} className={`flex min-h-11 w-full items-center justify-between px-3 text-xs font-semibold ${tone === "cyan" ? "text-cyan" : "text-lavender"}`} onClick={() => setOpen((value) => !value)} type="button">
-        <span>{label}{required ? " *" : ""}</span><span>{selected.length} selected · ⌄</span>
+    <div className="relative rounded-[var(--radius-control)] border border-control-line bg-surface">
+      <button aria-controls={pickerId} aria-expanded={open} className="flex min-h-[3.125rem] w-full items-center justify-between gap-2 px-3 text-body text-text" onClick={() => setOpen((value) => !value)} type="button">
+        <span>{label}{required ? " (required)" : ""}</span>
+        <span className="flex items-center gap-1 text-subhead text-text-secondary"><span className="num">{selected.length}</span> selected <IconChevronDown className={open ? "rotate-180" : ""} /></span>
       </button>
-      {open ? <div className="absolute bottom-[calc(100%+0.25rem)] left-0 right-0 z-50 grid max-h-52 grid-cols-2 gap-1 overflow-y-auto rounded border border-outline-dim bg-surface p-2 shadow-xl" id={pickerId} role="group">
-        {groups.map((group) => <label className="flex min-h-11 items-center gap-2 text-xs text-fg-muted" key={group.id}><input checked={selected.includes(group.id)} className="size-4 accent-cyan" onChange={() => onChange(group.id)} type="checkbox" />{group.name}</label>)}
+      {open ? <div className="absolute bottom-[calc(100%+0.25rem)] left-0 right-0 z-50 grid max-h-52 grid-cols-2 gap-1 overflow-y-auto rounded-[var(--radius-card)] border border-line bg-surface-raised p-2 shadow-lg" id={pickerId} role="group">
+        {groups.map((group) => <label className="flex min-h-11 items-center gap-2 text-subhead text-text" key={group.id}><input checked={selected.includes(group.id)} className="size-5 accent-[var(--accent)]" onChange={() => onChange(group.id)} type="checkbox" />{group.name}</label>)}
       </div> : null}
     </div>
   );
 }
 
-function BlockedNameReview({ review }: { review: { details: ExerciseNameReviewDetails; blocked: boolean } }): ReactNode { return <div className="rounded border border-red/40 bg-red/5 p-3" role="alert"><p className="label-caps text-red">Name blocked</p>{review.details.reasons.map((reason) => <p className="text-xs text-fg-muted" key={reason.code}>{reason.message}</p>)}</div>; }
+function BlockedNameReview({ review }: { review: { details: ExerciseNameReviewDetails; blocked: boolean } }): ReactNode { return <div className="rounded-[var(--radius-card)] bg-surface p-3" role="alert"><p className="text-headline text-danger">Name not allowed</p>{review.details.reasons.map((reason) => <p className="text-subhead text-text-secondary" key={reason.code}>{reason.message}</p>)}</div>; }
 function toggle(ids: string[], id: string): string[] { return ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id]; }
 function displayLabel(value: string): string { return value.charAt(0).toUpperCase() + value.slice(1); }
 function isNameReviewError(code: string | undefined): boolean { return code === "EXERCISE_NAME_REVIEW_REQUIRED" || code === "EXERCISE_NAME_BLOCKED"; }
