@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { scopedStorageKey, useDevicePrivacy } from "../privacy/device-privacy";
+import { formatClock } from "../../shared/format";
+import { scopedStorageKey } from "../privacy/device-privacy";
+import { useScopedLocalStorage, type StorageCodec } from "../privacy/use-scoped-local-storage";
 
 /**
  * How long the rest countdown runs after a saved set.
@@ -26,9 +27,7 @@ export function normaliseRestSeconds(value: number): number {
 
 /** `120` → `2:00`, `0` → `Off`. */
 export function formatRestSeconds(value: number): string {
-  if (value <= 0) return "Off";
-  const minutes = Math.floor(value / 60);
-  return `${minutes}:${String(value % 60).padStart(2, "0")}`;
+  return value <= 0 ? "Off" : formatClock(value);
 }
 
 /**
@@ -53,39 +52,23 @@ export function readRestSeconds(userId: string): number {
   }
 }
 
+/** Stored as a plain number string, which `readRestSeconds` also reads. */
+const codec: StorageCodec<number> = {
+  decode: (raw) => normaliseRestSeconds(Number(raw)),
+  encode: (value) => String(value)
+};
+
 export function useRestPreference(): {
   restSeconds: number;
   save: (next: number) => void;
   isLoaded: boolean;
 } {
-  const { functionalStorageEnabled, userId } = useDevicePrivacy();
-  const storageKey = scopedStorageKey(STORAGE_KEY, userId);
-  const [restSeconds, setRestSeconds] = useState(DEFAULT_REST_SECONDS);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const { value, save, isLoaded } = useScopedLocalStorage(
+    STORAGE_KEY,
+    DEFAULT_REST_SECONDS,
+    codec,
+    normaliseRestSeconds
+  );
 
-  useEffect(() => {
-    try {
-      const raw = functionalStorageEnabled ? window.localStorage.getItem(storageKey) : null;
-
-      setRestSeconds(raw === null ? DEFAULT_REST_SECONDS : normaliseRestSeconds(Number(raw)));
-    } catch {
-      // Corrupt or unavailable storage falls back to the default.
-      setRestSeconds(DEFAULT_REST_SECONDS);
-    }
-
-    setIsLoaded(true);
-  }, [functionalStorageEnabled, storageKey]);
-
-  const save = useCallback((next: number): void => {
-    const bounded = normaliseRestSeconds(next);
-    setRestSeconds(bounded);
-
-    try {
-      if (functionalStorageEnabled) window.localStorage.setItem(storageKey, String(bounded));
-    } catch {
-      // Private-mode quota errors are non-fatal; the value stays for the session.
-    }
-  }, [functionalStorageEnabled, storageKey]);
-
-  return { restSeconds, save, isLoaded };
+  return { restSeconds: value, save, isLoaded };
 }
