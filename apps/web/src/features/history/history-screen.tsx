@@ -1,18 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { ConfirmDialog } from "../../shared/ui/confirm-dialog";
-import { EmptyState, ErrorState, HudButton, Metric, Panel, Skeleton } from "../../shared/ui/ui";
+import { Button, buttonClass } from "../../shared/ui/button";
+import { StatTile } from "../../shared/ui/stat-tile";
+import { ErrorState, Skeleton } from "../../shared/ui/ui";
 import { errorMessage } from "../../shared/api/client";
-import { useWorkoutDetails, useWorkoutMutations, useWorkoutsInfinite } from "../../shared/api/hooks";
+import { useWorkoutsInfinite } from "../../shared/api/hooks";
 import type { WorkoutSummary } from "../../shared/api/types";
 import { formatNumber } from "../../shared/format";
-import { IconPlus } from "../shell/icons";
 import { FacetFilters, type FacetFilterValue } from "../workouts/facet-filters";
 import { usePersistentFilters } from "../workouts/filter-persistence";
-import { WorkoutTabs } from "../workouts/workout-tabs";
 import { CsvPanel } from "./csv-panel";
 import { HistoryRow } from "./history-row";
 
@@ -24,7 +22,6 @@ const historySortOptions = [
 const historySortValues = ["newest", "oldest", "name"] as const;
 
 export function HistoryScreen({ userId }: { userId: string }): ReactNode {
-  const router = useRouter();
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const { clear, filters, setFilters, setSort, sort } = usePersistentFilters({
@@ -33,133 +30,110 @@ export function HistoryScreen({ userId }: { userId: string }): ReactNode {
     surface: "history",
     userId
   });
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState<WorkoutSummary | null>(null);
-  const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => new Set());
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [status, setStatus] = useState("");
   const workouts = useWorkoutsInfinite({ search, ...filters, sort });
-  const { deleteWorkout } = useWorkoutMutations();
 
   useEffect(() => {
     const timer = window.setTimeout(() => setSearch(searchInput.trim()), 300);
     return () => window.clearTimeout(timer);
   }, [searchInput]);
 
-  const items = useMemo(
-    () => (workouts.data?.pages.flatMap((page) => page.items) ?? []).filter((item) => !hiddenIds.has(item.id)),
-    [hiddenIds, workouts.data]
-  );
+  const items = useMemo(() => workouts.data?.pages.flatMap((page) => page.items) ?? [], [workouts.data]);
   const total = workouts.data?.pages[0]?.pagination.total ?? 0;
   const allTime = workouts.data?.pages[0]?.allTimeSummary;
-  const detailIds = expandedId && !hiddenIds.has(expandedId) ? [expandedId] : [];
-  const details = useWorkoutDetails(detailIds);
   const groups = useMemo(() => groupWorkouts(items, sort), [items, sort]);
-
-  function confirmDeletion(): void {
-    if (!deleting) return;
-    const target = deleting;
-    setDeleting(null);
-    setExpandedId(null);
-    setActionError(null);
-    setHiddenIds((current) => new Set(current).add(target.id));
-    deleteWorkout.mutate(target.id, {
-      onError: (caught) => {
-        setHiddenIds((current) => {
-          const next = new Set(current);
-          next.delete(target.id);
-          return next;
-        });
-        setActionError(errorMessage(caught, "The workout could not be deleted."));
-      },
-      onSuccess: () => {
-        setStatus(`${target.title ?? "Workout"} deleted.`);
-        void workouts.refetch();
-      }
-    });
-  }
+  const isFiltered = Boolean(search) || hasFilters(filters);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-4 p-4 lg:p-6">
-      <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div className="flex items-end justify-between gap-3 md:justify-start">
-          <div><p className="label-caps text-outline">WORKOUTS</p><h1 className="font-display text-2xl font-bold text-fg">Workout history</h1></div>
-          <HudButton onClick={() => router.push("/workout")}><IconPlus /> New Session</HudButton>
-        </div>
-        <div className="hidden md:block">
-          <SearchInput onChange={setSearchInput} value={searchInput} />
-        </div>
-      </header>
+    <div className="mx-auto max-w-3xl space-y-6 px-4 pb-8 pt-4">
+      <h1 className="text-large-title text-text">History</h1>
 
-      <WorkoutTabs active="history" />
-      <div className="md:hidden"><SearchInput onChange={setSearchInput} value={searchInput} /></div>
+      {workouts.isLoading ? (
+        <Skeleton className="h-[4.25rem] rounded-[var(--radius-card)]" />
+      ) : allTime ? (
+        <dl className="grid grid-cols-3 gap-3 rounded-[var(--radius-card)] bg-surface p-4">
+          <StatTile label="Workouts" value={String(allTime.totalSessions)} />
+          <StatTile label="Volume" unit="kg" value={formatNumber(Number(allTime.cumulativeTonnageKg))} />
+          <StatTile
+            label="Average"
+            unit={allTime.averageCompletedDurationSeconds != null ? "min" : undefined}
+            value={allTime.averageCompletedDurationSeconds != null ? String(Math.round(allTime.averageCompletedDurationSeconds / 60)) : "–"}
+          />
+        </dl>
+      ) : null}
 
-      <FacetFilters
-        filters={filters}
-        onChange={setFilters}
-        onClear={clear}
-        onSortChange={(value) => setSort(value as typeof sort)}
-        sort={sort}
-        sortOptions={historySortOptions}
-      />
-
-      {actionError ? <ErrorState message={actionError} title="Could not delete" /> : null}
-      <p aria-live="polite" className="sr-only">{status}</p>
-
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <SummaryMetric accent="cyan" label="TOTAL SESSIONS" loading={workouts.isLoading} value={allTime ? String(allTime.totalSessions) : "—"} />
-        <SummaryMetric accent="cyan" label="Tonnage" loading={workouts.isLoading} value={allTime ? `${formatNumber(Number(allTime.cumulativeTonnageKg))} kg` : "—"} />
-        <SummaryMetric accent="lavender" label="AVG DURATION" loading={workouts.isLoading} value={allTime?.averageCompletedDurationSeconds != null ? `${Math.round(allTime.averageCompletedDurationSeconds / 60)} min` : "—"} />
-        <SummaryMetric accent="cyan" label="Completion" loading={workouts.isLoading} value={allTime ? `${Math.round(allTime.completionRate * 100)}%` : "—"} />
+      <div className="space-y-3">
+        <SearchInput onChange={setSearchInput} value={searchInput} />
+        <FacetFilters
+          filters={filters}
+          onChange={setFilters}
+          onClear={clear}
+          onSortChange={(value) => setSort(value as typeof sort)}
+          sort={sort}
+          sortOptions={historySortOptions}
+        />
       </div>
 
-      {workouts.isError ? <ErrorState message={errorMessage(workouts.error, "Workout history could not be loaded.")} retry={() => void workouts.refetch()} /> : null}
-      {workouts.isLoading ? <HistorySkeleton /> : items.length === 0 ? (
-        <EmptyState action={<Link className="text-cyan" href="/workout">Start a workout →</Link>} message={search || hasFilters(filters) ? "No workout matches these filters." : "Completed workouts will appear here."} title={search || hasFilters(filters) ? "NO_MATCHES" : "NO_WORKOUTS"} />
+      {workouts.isError ? <ErrorState message={errorMessage(workouts.error, "Couldn't load your workouts. Check your connection and try again.")} retry={() => void workouts.refetch()} /> : null}
+      {workouts.isLoading ? <HistorySkeleton /> : items.length === 0 && !workouts.isError ? (
+        <div className="space-y-4 rounded-[var(--radius-card)] bg-surface p-4">
+          <p className="text-body text-text-secondary">
+            {isFiltered ? "No workouts match these filters." : "Finished workouts show up here."}
+          </p>
+          <Link className={`${buttonClass("primary")} w-full`} href="/workout">Start workout</Link>
+        </div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-6">
           {groups.map((group) => (
             <section key={group.label ?? "results"}>
-              {group.label ? <h2 className="mb-2 font-display text-sm font-bold text-outline">{group.label}</h2> : null}
-              <ul className="space-y-2">
-                {group.items.map((workout) => (
-                  <HistoryRow
-                    detail={details[workout.id]}
-                    isExpanded={expandedId === workout.id}
-                    key={workout.id}
-                    onDelete={() => setDeleting(workout)}
-                    onToggle={() => setExpandedId((current) => current === workout.id ? null : workout.id)}
-                    workout={workout}
-                  />
-                ))}
+              {group.label ? <h2 className="mb-2 px-4 text-subhead text-text-secondary">{group.label}</h2> : null}
+              <ul className="divide-y divide-line overflow-hidden rounded-[var(--radius-card)] bg-surface">
+                {group.items.map((workout) => <HistoryRow key={workout.id} workout={workout} />)}
               </ul>
             </section>
           ))}
         </div>
       )}
 
-      {workouts.hasNextPage ? <div className="flex justify-center"><HudButton disabled={workouts.isFetchingNextPage} onClick={() => void workouts.fetchNextPage()} variant="outline">{workouts.isFetchingNextPage ? "Loading…" : `Load more (${items.length}/${total})`}</HudButton></div> : null}
+      {workouts.hasNextPage ? (
+        <Button className="w-full" disabled={workouts.isFetchingNextPage} onClick={() => void workouts.fetchNextPage()} variant="secondary">
+          {workouts.isFetchingNextPage ? "Loading…" : `Show more (${items.length} of ${total})`}
+        </Button>
+      ) : null}
       <CsvPanel onImported={() => void workouts.refetch()} />
-      <ConfirmDialog
-        confirmLabel={deleting?.isOpen ? "DISCARD WORKOUT" : "DELETE LOG"}
-        isOpen={deleting !== null}
-        isPending={false}
-        message={deleting?.isOpen ? "This active workout and its sets will be removed." : "This workout will be removed from history and analytics."}
-        onCancel={() => setDeleting(null)}
-        onConfirm={confirmDeletion}
-        title={deleting?.isOpen ? "Discard this workout?" : "Delete this workout log?"}
-      />
     </div>
   );
 }
 
-function SearchInput({ onChange, value }: { onChange: (value: string) => void; value: string }): ReactNode { return <label className="block md:w-72"><span className="sr-only">Search workout history</span><input className="min-h-11 w-full rounded border border-outline-dim bg-surface-low/60 px-3 text-sm text-fg placeholder:text-outline focus:border-cyan focus:outline-none" onChange={(event) => onChange(event.currentTarget.value)} placeholder="Date, workout, exercise, muscle…" type="search" value={value} /></label>; }
-function SummaryMetric({ accent, label, loading, value }: { accent: "cyan" | "green" | "lavender"; label: string; loading: boolean; value: string }): ReactNode { return <Panel accent={accent}><Metric label={label} tone={accent} value={loading ? "…" : value} /></Panel>; }
-function HistorySkeleton(): ReactNode { return <div className="space-y-2"><Skeleton className="h-16" /><Skeleton className="h-16" /><Skeleton className="h-16" /></div>; }
-function hasFilters(filters: FacetFilterValue): boolean { return filters.muscleGroupIds.length > 0 || Boolean(filters.equipment || filters.exerciseType); }
+function SearchInput({ onChange, value }: { onChange: (value: string) => void; value: string }): ReactNode {
+  return (
+    <label className="block">
+      <span className="sr-only">Search workout history</span>
+      <input
+        className="min-h-[3.125rem] w-full rounded-[var(--radius-control)] border border-control-line bg-surface-raised px-3 text-body text-text placeholder:text-text-muted"
+        onChange={(event) => onChange(event.currentTarget.value)}
+        placeholder="Search by date, workout or exercise"
+        type="search"
+        value={value}
+      />
+    </label>
+  );
+}
+
+function HistorySkeleton(): ReactNode {
+  return <div className="space-y-px overflow-hidden rounded-[var(--radius-card)]"><Skeleton className="h-[3.75rem] rounded-none" /><Skeleton className="h-[3.75rem] rounded-none" /><Skeleton className="h-[3.75rem] rounded-none" /></div>;
+}
+
+function hasFilters(filters: FacetFilterValue): boolean {
+  return filters.muscleGroupIds.length > 0 || Boolean(filters.equipment || filters.exerciseType);
+}
+
 function groupWorkouts(items: WorkoutSummary[], sort: string): Array<{ label: string | null; items: WorkoutSummary[] }> {
   if (sort !== "newest") return [{ label: null, items }];
+  const format = new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" });
   const groups = new Map<string, WorkoutSummary[]>();
-  for (const item of items) { const label = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" }).format(new Date(item.startedAt)); groups.set(label, [...(groups.get(label) ?? []), item]); }
+  for (const item of items) {
+    const label = format.format(new Date(item.startedAt));
+    groups.set(label, [...(groups.get(label) ?? []), item]);
+  }
   return [...groups].map(([label, groupedItems]) => ({ label, items: groupedItems }));
 }

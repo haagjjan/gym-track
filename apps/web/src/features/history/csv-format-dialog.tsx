@@ -1,9 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { createPortal } from "react-dom";
-import { useModalBehavior } from "../../shared/ui/use-modal-behavior";
-import { HudButton } from "../../shared/ui/ui";
+import { Button, buttonClass } from "../../shared/ui/button";
+import { Sheet } from "../../shared/ui/sheet";
 
 const columns = [
   ["workout_started_at", "Required ISO 8601 timestamp with offset"],
@@ -12,11 +11,11 @@ const columns = [
   ["workout_title", "Optional, up to 120 characters"],
   ["workout_notes", "Optional workout note"],
   ["exercise_name", "Required exercise name"],
-  ["primary_muscle_group_slug", "Required seeded muscle slug"],
+  ["primary_muscle_group_slug", "Required muscle group, such as chest or back"],
   ["equipment", "Optional canonical equipment value"],
   ["exercise_type", "Optional canonical exercise type"],
-  ["exercise_position", "Required compact positive integer, starting at 1"],
-  ["set_order", "Required compact positive integer per exercise, starting at 1"],
+  ["exercise_position", "Required exercise order, starting at 1"],
+  ["set_order", "Required set order within the exercise, starting at 1"],
   ["set_type", "Required: working or warmup"],
   ["weight_kg", "Required: 0.01–9999.99, up to 2 decimals"],
   ["reps", "Required positive whole number"],
@@ -31,54 +30,44 @@ const sampleCsv = `${header}\n${example}\n`;
 
 const equipment = "barbell, dumbbell, kettlebell, cable, machine, plate-loaded machine, Smith machine, resistance band, bodyweight, other";
 const exerciseTypes = "compound, isolation, isometric, other";
-const muscleSlugs = "chest, back, shoulders, biceps, triceps, forearms, quads, hamstrings, glutes, calves, abs, traps";
+const muscleGroups = "chest, back, shoulders, biceps, triceps, forearms, quads, hamstrings, glutes, calves, abs, traps";
 
 export function CsvFormatDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }): ReactNode {
-  const dialogRef = useModalBehavior<HTMLElement>({ isOpen, onClose });
+  return (
+    <Sheet className="max-h-[92dvh] overflow-y-auto" isOpen={isOpen} labelledBy="csv-format-title" onClose={onClose} portal width="3xl">
+      <header className="flex items-center justify-between gap-3">
+        <h2 className="text-title-2 text-text" id="csv-format-title">Workout CSV guide</h2>
+        <button aria-label="Close CSV format guide" className="flex size-11 shrink-0 items-center justify-center rounded-full text-title-2 text-text-secondary active:opacity-70" data-modal-initial-focus onClick={onClose} type="button">×</button>
+      </header>
 
-  if (!isOpen) return null;
+      <div className="mt-4 space-y-4 text-subhead text-text-secondary">
+        <p>Use one row per set. Repeat the workout and exercise fields on every row, keep exercise positions and set orders in sequence, and save the file as UTF-8 CSV.</p>
+        <p>Exports escape spreadsheet-formula prefixes, so text you wrote opens as plain text, not as a formula.</p>
+        <GuideValues label="Muscle groups" value={muscleGroups} />
+        <GuideValues label="Equipment" value={equipment} />
+        <GuideValues label="Exercise types" value={exerciseTypes} />
 
-  return createPortal(
-    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-void/75 backdrop-blur-sm sm:items-center sm:p-4">
-      <section aria-labelledby="csv-format-title" aria-modal="true" className="glass max-h-[92dvh] w-full overflow-y-auto rounded-t-xl border border-lavender/30 p-4 pb-[max(env(safe-area-inset-bottom),1rem)] sm:max-w-3xl sm:rounded-xl" ref={dialogRef} role="dialog" tabIndex={-1}>
-        <header className="flex items-start justify-between gap-3">
-          <div>
-            <p className="label-caps text-lavender">IMPORT FORMAT</p>
-            <h2 className="font-display text-xl font-bold text-fg" id="csv-format-title">Workout CSV guide</h2>
-          </div>
-          <button aria-label="Close CSV format guide" className="flex size-11 shrink-0 items-center justify-center rounded border border-outline-dim text-xl text-fg-muted hover:border-cyan hover:text-cyan" data-modal-initial-focus onClick={onClose} type="button">×</button>
-        </header>
-
-        <div className="mt-4 space-y-4 text-xs leading-5 text-fg-muted">
-          <p>Use one row per set. Repeat workout and exercise fields on every row, keep exercise positions and set orders compact, and save the file as UTF-8 CSV.</p>
-          <p>Exports escape spreadsheet-formula prefixes so user-authored text opens as literal text, not an executable formula, in common spreadsheet software.</p>
-          <GuideValues label="Muscle slugs" value={muscleSlugs} />
-          <GuideValues label="Equipment" value={equipment} />
-          <GuideValues label="Exercise types" value={exerciseTypes} />
-
-          <div className="overflow-x-auto rounded border border-outline-dim/60">
-            <table className="w-full min-w-[620px] border-collapse text-left">
-              <thead className="bg-surface-low"><tr><th className="px-3 py-2 text-fg">Column</th><th className="px-3 py-2 text-fg">Expected value</th></tr></thead>
-              <tbody>{columns.map(([name, rule]) => <tr className="border-t border-outline-dim/40" key={name}><td className="whitespace-nowrap px-3 py-2 font-mono text-cyan-dim">{name}</td><td className="px-3 py-2">{rule}</td></tr>)}</tbody>
-            </table>
-          </div>
-
-          <div>
-            <p className="label-caps mb-1 text-outline">EXAMPLE</p>
-            <pre className="overflow-x-auto rounded border border-outline-dim/60 bg-surface-low p-3 text-[10px] leading-5 text-fg">{sampleCsv}</pre>
-          </div>
+        <div className="overflow-x-auto rounded-[var(--radius-control)] bg-surface">
+          <table className="w-full min-w-[620px] border-collapse text-left">
+            <thead><tr><th className="px-3 py-2 text-headline text-text">Column</th><th className="px-3 py-2 text-headline text-text">Expected value</th></tr></thead>
+            <tbody>{columns.map(([name, rule]) => <tr className="border-t border-line" key={name}><td className="whitespace-nowrap px-3 py-2 text-text">{name}</td><td className="px-3 py-2">{rule}</td></tr>)}</tbody>
+          </table>
         </div>
 
-        <div className="mt-4 grid gap-2 sm:grid-cols-2">
-          <a className="inline-flex min-h-11 items-center justify-center rounded border border-cyan/40 px-4 font-display text-xs font-bold uppercase tracking-[0.1em] text-cyan hover:border-cyan" download="gym-workouts-sample.csv" href={`data:text/csv;charset=utf-8,${encodeURIComponent(sampleCsv)}`}>Download sample CSV</a>
-          <HudButton onClick={onClose} variant="ghost">Close</HudButton>
+        <div>
+          <p className="mb-1 text-headline text-text">Example</p>
+          <pre className="overflow-x-auto rounded-[var(--radius-control)] bg-surface p-3 text-caption text-text">{sampleCsv}</pre>
         </div>
-      </section>
-    </div>,
-    document.body
+      </div>
+
+      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        <a className={buttonClass("secondary")} download="gym-workouts-sample.csv" href={`data:text/csv;charset=utf-8,${encodeURIComponent(sampleCsv)}`}>Download sample CSV</a>
+        <Button onClick={onClose} variant="primary">Close</Button>
+      </div>
+    </Sheet>
   );
 }
 
 function GuideValues({ label, value }: { label: string; value: string }): ReactNode {
-  return <p><strong className="text-fg">{label}:</strong> {value}. Leave optional classifications blank when unknown.</p>;
+  return <p><strong className="text-text">{label}:</strong> {value}. Leave optional fields blank when unknown.</p>;
 }

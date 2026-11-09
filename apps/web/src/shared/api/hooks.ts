@@ -3,7 +3,6 @@
 import {
   useInfiniteQuery,
   useMutation,
-  useQueries,
   useQuery,
   useQueryClient,
   type UseInfiniteQueryResult,
@@ -62,38 +61,6 @@ export function useWorkoutsInfinite(options: WorkoutListOptions = {}): UseInfini
  * Details for a set of workouts (expanded rows, tonnage, exercise-name search).
  * One query per workout so the cache is shared with the session screen.
  */
-export function useWorkoutDetails(
-  workoutIds: string[]
-): Record<string, WorkoutDetail | undefined> {
-  return useQueries({
-    queries: workoutIds.map((workoutId) => ({
-      queryKey: queryKeys.workout(workoutId),
-      staleTime: 60_000,
-      queryFn: async ({ signal }: { signal: AbortSignal }) => {
-        const payload = await apiFetch<{ workout: WorkoutDetail }>(
-          `/api/workouts/${workoutId}`,
-          { signal }
-        );
-
-        return sortWorkout(payload.workout);
-      }
-    })),
-    combine: (results) => {
-      const byId: Record<string, WorkoutDetail | undefined> = {};
-
-      results.forEach((result, index) => {
-        const id = workoutIds[index];
-
-        if (id) {
-          byId[id] = result.data;
-        }
-      });
-
-      return byId;
-    }
-  });
-}
-
 export function useExerciseProgress(
   exerciseId: string | null
 ): UseQueryResult<ExerciseProgressItem[]> {

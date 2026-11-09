@@ -2,7 +2,9 @@
 
 import { useState, type ReactNode } from "react";
 import { useModalBehavior } from "../../shared/ui/use-modal-behavior";
-import { HudButton } from "../../shared/ui/ui";
+import { Button } from "../../shared/ui/button";
+import { SheetGrabber, sheetPanelClass } from "../../shared/ui/sheet";
+import { IconChevronDown, IconClose } from "../../shared/ui/icons";
 import { useExerciseOptions, useMuscleGroups } from "../../shared/api/hooks";
 import { emptyStoredFacetFilters, type StoredFacetFilters } from "./filter-persistence";
 
@@ -48,9 +50,9 @@ export function FacetFilters(props: FacetFiltersProps): ReactNode {
     <>
       <div className="hidden items-end gap-2 md:flex">{fields}</div>
       <div className="flex gap-2 md:hidden">
-        <HudButton className="flex-1" onClick={() => setSheetOpen(true)} variant="outline">
+        <Button className="flex-1" onClick={() => setSheetOpen(true)} variant="secondary">
           Filters{activeCount > 0 ? ` (${activeCount})` : ""}
-        </HudButton>
+        </Button>
         <label className="min-w-36 flex-1">
           <span className="sr-only">Sort</span>
           <select className={selectClassName} onChange={(event) => props.onSortChange(event.currentTarget.value)} value={props.sort}>
@@ -60,16 +62,17 @@ export function FacetFilters(props: FacetFiltersProps): ReactNode {
       </div>
 
       {sheetOpen ? (
-        <div className="fixed inset-0 z-[65] flex items-end bg-void/75 backdrop-blur-sm md:hidden">
-          <section aria-labelledby="filter-sheet-title" aria-modal="true" className="max-h-[88dvh] w-full overflow-y-auto rounded-t-2xl border border-outline-dim bg-surface p-4 pb-[max(env(safe-area-inset-bottom),1rem)]" ref={sheetRef} role="dialog" tabIndex={-1}>
+        <div className="fixed inset-0 z-[65] flex items-end bg-black/50 md:hidden" onMouseDown={(event) => { if (event.target === event.currentTarget) setSheetOpen(false); }}>
+          <section aria-labelledby="filter-sheet-title" aria-modal="true" className={`${sheetPanelClass} max-h-[88dvh] overflow-y-auto`} ref={sheetRef} role="dialog" tabIndex={-1}>
+            <SheetGrabber />
             <div className="mb-4 flex items-center justify-between gap-3">
-              <h2 className="font-display text-lg font-bold text-fg" id="filter-sheet-title">Filter results</h2>
-              <button aria-label="Close filters" className="flex size-11 items-center justify-center rounded border border-outline-dim text-xl text-fg-muted" data-modal-initial-focus onClick={() => setSheetOpen(false)} type="button">×</button>
+              <h2 className="text-title-3 text-text" id="filter-sheet-title">Filter results</h2>
+              <button aria-label="Close filters" className="flex size-11 items-center justify-center rounded-full bg-surface text-text-secondary" data-modal-initial-focus onClick={() => setSheetOpen(false)} type="button"><IconClose /></button>
             </div>
             <div className="space-y-4">{fields}</div>
             <div className="mt-5 grid grid-cols-2 gap-2">
-              <HudButton onClick={() => clearFilters(props)} variant="ghost">Clear</HudButton>
-              <HudButton onClick={() => setSheetOpen(false)}>Show results</HudButton>
+              <Button onClick={() => clearFilters(props)} variant="secondary">Clear</Button>
+              <Button onClick={() => setSheetOpen(false)}>Show results</Button>
             </div>
           </section>
         </div>
@@ -95,15 +98,15 @@ function FilterFields({
   return (
     <>
       <details className="relative md:w-48">
-        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded border border-outline-dim bg-surface-low/50 px-3 text-xs text-fg-muted">
-          Muscles{filters.muscleGroupIds.length > 0 ? ` (${filters.muscleGroupIds.length})` : ""}<span>⌄</span>
+        <summary className={`${selectClassName} flex cursor-pointer list-none items-center justify-between`}>
+          Muscles{filters.muscleGroupIds.length > 0 ? ` (${filters.muscleGroupIds.length})` : ""}<IconChevronDown />
         </summary>
-        <div className="mt-2 space-y-1 rounded-lg border border-outline-dim bg-surface p-2 md:absolute md:z-20 md:max-h-72 md:w-64 md:overflow-y-auto md:shadow-2xl">
+        <div className="mt-2 space-y-1 rounded-[var(--radius-card)] border border-line bg-surface p-2 md:absolute md:z-20 md:max-h-72 md:w-64 md:overflow-y-auto md:bg-surface-raised md:shadow-lg">
           {muscleOptions.map((muscle) => (
-            <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded px-2 text-sm text-fg-muted hover:bg-surface-low" key={muscle.id}>
+            <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-[var(--radius-control)] px-2 text-body text-text" key={muscle.id}>
               <input
                 checked={filters.muscleGroupIds.includes(muscle.id)}
-                className="size-4 accent-cyan"
+                className="size-5 accent-[var(--accent)]"
                 onChange={() => onChange({ ...filters, muscleGroupIds: toggle(filters.muscleGroupIds, muscle.id) })}
                 type="checkbox"
               />
@@ -117,7 +120,7 @@ function FilterFields({
       <SelectFilter label="Type" onChange={(exerciseType) => onChange({ ...filters, exerciseType })} options={["compound", "isolation", "isometric", "other"]} value={filters.exerciseType} />
       {showEditability ? (
         <label className="block md:w-48">
-          <span className="label-caps mb-1 block text-outline">Editability</span>
+          <span className="mb-1 block text-subhead text-text-secondary">Editability</span>
           <select className={selectClassName} onChange={(event) => onChange({ ...filters, ownership: event.currentTarget.value as FacetFilterValue["ownership"] })} value={filters.ownership}>
             <option value="">All</option>
             <option value="editable">Editable by me</option>
@@ -126,12 +129,12 @@ function FilterFields({
         </label>
       ) : null}
       <label className="hidden md:block md:w-44">
-        <span className="label-caps mb-1 block text-outline">Sort</span>
+        <span className="mb-1 block text-subhead text-text-secondary">Sort</span>
         <select className={selectClassName} onChange={(event) => onSortChange(event.currentTarget.value)} value={sort}>
           {sortOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
         </select>
       </label>
-      <button className="hidden min-h-11 px-2 text-xs text-outline hover:text-cyan md:block" onClick={() => onClear ? onClear() : onChange(emptyFacetFilters())} type="button">Clear</button>
+      <button className="hidden min-h-11 px-2 text-subhead text-accent md:block" onClick={() => onClear ? onClear() : onChange(emptyFacetFilters())} type="button">Clear</button>
     </>
   );
 }
@@ -139,7 +142,7 @@ function FilterFields({
 function SelectFilter({ label, onChange, options, value }: { label: string; onChange: (value: string) => void; options: string[]; value: string }): ReactNode {
   return (
     <label className="block md:w-48">
-      <span className="label-caps mb-1 block text-outline">{label}</span>
+      <span className="mb-1 block text-subhead text-text-secondary">{label}</span>
       <select className={selectClassName} onChange={(event) => onChange(event.currentTarget.value)} value={value}>
         <option value="">All</option>
         <option value="unspecified">Unspecified</option>
@@ -166,4 +169,4 @@ function displayLabel(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-const selectClassName = "min-h-11 w-full rounded border border-outline-dim bg-surface-low/60 px-3 text-sm text-fg focus:border-cyan focus:outline-none";
+const selectClassName = "min-h-11 w-full rounded-[var(--radius-control)] border border-control-line bg-surface px-3 text-body text-text";
