@@ -3,17 +3,17 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, type ReactNode } from "react";
-import { EmptyState, ErrorState, HudButton, Panel, Skeleton } from "../../shared/ui/ui";
+import { Button, buttonClass } from "../../shared/ui/button";
+import { ErrorState, Skeleton } from "../../shared/ui/ui";
 import { apiFetch, errorMessage } from "../../shared/api/client";
 import {
   useTemplateMutations,
   useTemplates,
-  useWorkoutDetails,
   useWorkouts
 } from "../../shared/api/hooks";
 import type { WorkoutDetail, WorkoutTemplate } from "../../shared/api/types";
-import { cockpitLabel, formatDuration, shortDate } from "../../shared/format";
-import { IconBolt, IconPlus } from "../shell/icons";
+import { formatDayTime } from "../../shared/format";
+import { IconForward } from "../../shared/ui/icons";
 
 export function LaunchScreen(): ReactNode {
   const router = useRouter();
@@ -24,7 +24,6 @@ export function LaunchScreen(): ReactNode {
   const [launchError, setLaunchError] = useState<string | null>(null);
   const items = useMemo(() => workouts.data?.items ?? [], [workouts.data]);
   const activeWorkout = items.find((workout) => workout.isOpen) ?? null;
-  const activeDetails = useWorkoutDetails(activeWorkout ? [activeWorkout.id] : []);
 
   async function startFromScratch(): Promise<void> {
     setPendingChoice("scratch");
@@ -37,7 +36,7 @@ export function LaunchScreen(): ReactNode {
       });
       router.push(`/workouts/${payload.workout.id}?focusName=1`);
     } catch (caught) {
-      setLaunchError(errorMessage(caught, "The workout could not be started."));
+      setLaunchError(errorMessage(caught, "Couldn't start the workout. Check your connection and try again."));
       await workouts.refetch();
       setPendingChoice(null);
     }
@@ -51,7 +50,7 @@ export function LaunchScreen(): ReactNode {
       const result = await templateMutations.start.mutateAsync({ templateId });
       router.push(`/workouts/${result.workoutId}?focusName=1`);
     } catch (caught) {
-      setLaunchError(errorMessage(caught, "The template workout could not be started."));
+      setLaunchError(errorMessage(caught, "Couldn't start the workout from this template. Check your connection and try again."));
       await workouts.refetch();
       setPendingChoice(null);
     }
@@ -62,163 +61,150 @@ export function LaunchScreen(): ReactNode {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 p-4 lg:p-6">
-      <header>
-        <p className="label-caps text-outline">New workout</p>
-        <h1 className="font-display text-2xl font-bold tracking-tight text-fg">
-          Start a workout
-        </h1>
-        <p className="mt-1 text-sm text-fg-muted">Choose the fastest setup for today.</p>
-      </header>
+    <div className="mx-auto max-w-3xl space-y-6 px-4 pb-6 pt-4 lg:px-6">
+      <h1 className="text-large-title text-text">Workout</h1>
 
       {activeWorkout ? (
         <ResumeWorkout
-          detail={activeDetails[activeWorkout.id]}
           href={`/workouts/${activeWorkout.id}`}
           startedAt={activeWorkout.startedAt}
           title={activeWorkout.title ?? activeWorkout.workoutType}
         />
-      ) : (
-        <WorkoutLaunchChoices error={templates.error} isLoading={templates.isLoading} onRetry={() => void templates.refetch()}
-          onScratch={() => void startFromScratch()} onStart={(id) => void startFromTemplate(id)} pendingChoice={pendingChoice} templates={templates.data ?? []} />
-      )}
+      ) : null}
 
-      {launchError ? <ErrorState message={launchError} title="Could not start a workout" /> : null}
+      <WorkoutLaunchChoices error={templates.error} hasOpenWorkout={activeWorkout !== null} isLoading={templates.isLoading} onRetry={() => void templates.refetch()}
+        onScratch={() => void startFromScratch()} onStart={(id) => void startFromTemplate(id)} pendingChoice={pendingChoice} templates={templates.data ?? []} />
+
+      {launchError ? <ErrorState message={launchError} title="Couldn't start the workout" /> : null}
     </div>
   );
 }
 
 function ResumeWorkout({
-  detail,
   href,
   startedAt,
   title
 }: {
-  detail: WorkoutDetail | undefined;
   href: string;
   startedAt: string;
   title: string | null;
 }): ReactNode {
   return (
-    <Panel accent="green" className="glass-cyan" eyebrow="Workout in progress">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <p className="truncate font-display text-lg font-bold text-fg">
-            {title ? cockpitLabel(title) : `Workout ${shortDate(startedAt)}`}
-          </p>
-          <p className="text-xs text-outline">
-            {formatDuration(startedAt, null)} elapsed · {detail?.exercises.length ?? 0} exercises
-          </p>
-        </div>
-        <Link href={href}>
-          <HudButton size="lg" variant="success">
-            <IconBolt /> Resume workout
-          </HudButton>
-        </Link>
-      </div>
-    </Panel>
+    <section aria-label="Workout in progress" className="rounded-[var(--radius-card)] bg-surface p-4">
+      <p className="truncate text-title-3 text-text">{title || "Workout"}</p>
+      <p className="mt-1 text-subhead text-text-secondary">Started <span className="num">{formatDayTime(startedAt)}</span></p>
+      <Link className={`${buttonClass("primary")} mt-4 w-full`} href={href}>Resume workout</Link>
+    </section>
   );
 }
 
 function TemplateChoice({
-  templatesHref,
   error,
   isLoading,
   onRetry,
   onStart,
   pendingChoice,
-  templates
+  templates,
+  templatesHref
 }: {
-  templatesHref: string | null;
   error: Error | null;
   isLoading: boolean;
   onRetry: () => void;
   onStart: (templateId: string) => void;
   pendingChoice: string | null;
   templates: WorkoutTemplate[];
+  templatesHref: string | null;
 }): ReactNode {
   return (
-    <Panel
-      accent="lavender"
-      eyebrow="Use a template"
-      right={templatesHref ? <Link className="label-caps text-cyan-dim" href={templatesHref}>View templates →</Link> : null}
-    >
+    <section aria-labelledby="launch-templates-title">
+      <h2 className="mb-2 text-title-2 text-text" id="launch-templates-title">Your templates</h2>
       {isLoading ? (
         <div className="space-y-2"><Skeleton className="h-16" /><Skeleton className="h-16" /></div>
       ) : error ? (
-        <ErrorState message={errorMessage(error, "Templates could not be loaded.")} retry={onRetry} />
+        <ErrorState message={errorMessage(error, "Couldn't load your templates. Check your connection and try again.")} retry={onRetry} />
       ) : templates.length === 0 ? (
-        <EmptyState
-          action={templatesHref ? <Link className="label-caps text-cyan-dim" href={templatesHref}>Create a template →</Link> : undefined}
-          message="Save a repeatable exercise list to start it in one tap."
-          title="No templates yet"
-        />
+        <div className="rounded-[var(--radius-card)] bg-surface p-4">
+          <p className="text-subhead text-text-secondary">Save a repeatable exercise list as a template to start it in one tap.</p>
+          {templatesHref ? <Link className={`${buttonClass("secondary", "compact")} mt-3`} href={templatesHref}>Create a template</Link> : null}
+        </div>
       ) : (
-        <ul className="space-y-2">
+        <ul className="divide-y divide-line overflow-hidden rounded-[var(--radius-card)] bg-surface">
           {templates.map((template) => (
-            <li
-              className="flex min-h-16 items-center justify-between gap-3 rounded-lg border border-outline-dim/50 bg-surface-low/30 p-3"
-              key={template.id}
-            >
+            <li className="flex min-h-[3.75rem] items-center justify-between gap-3 px-4 py-2" key={template.id}>
               <div className="min-w-0">
-                <p className="truncate font-display text-sm font-bold text-fg">{template.name}</p>
-                <p className="mt-0.5 truncate text-xs text-outline">
-                  {template.exercises.length} exercises · {template.exercises.slice(0, 3).map((entry) => entry.exercise.name).join(" · ")}
+                <p className="truncate text-headline text-text">{template.name}</p>
+                <p className="mt-0.5 truncate text-subhead text-text-secondary">
+                  <span className="num">{template.exercises.length}</span> {template.exercises.length === 1 ? "exercise" : "exercises"}
+                  {template.exercises.length > 0 ? `, ${template.exercises.slice(0, 3).map((entry) => entry.exercise.name).join(", ")}` : ""}
                 </p>
               </div>
-              <HudButton
+              <Button
+                aria-label={`Start ${template.name}`}
                 className="shrink-0"
                 disabled={pendingChoice !== null}
                 onClick={() => onStart(template.id)}
-                variant="outline"
+                size="compact"
+                variant="secondary"
               >
-                {pendingChoice === template.id ? "STARTING…" : "USE"}
-              </HudButton>
+                {pendingChoice === template.id ? "Starting…" : "Start"}
+              </Button>
             </li>
           ))}
         </ul>
       )}
-    </Panel>
+    </section>
+  );
+}
+
+function NavRow({ href, label, detail }: { href: string; label: string; detail: string }): ReactNode {
+  return (
+    <li>
+      <Link className="flex min-h-[3.75rem] items-center justify-between gap-3 px-4 py-2 active:bg-surface-raised" href={href}>
+        <span className="min-w-0">
+          <span className="block text-headline text-text">{label}</span>
+          <span className="block truncate text-subhead text-text-secondary">{detail}</span>
+        </span>
+        <IconForward className="flex-none text-text-muted" />
+      </Link>
+    </li>
   );
 }
 
 function LaunchSkeleton(): ReactNode {
-  return <div className="mx-auto max-w-3xl space-y-4 p-4 lg:p-6"><Skeleton className="h-16" /><Skeleton className="h-28" /><Skeleton className="h-48" /></div>;
+  return <div className="mx-auto max-w-3xl space-y-4 px-4 pb-6 pt-4 lg:px-6"><Skeleton className="h-11 w-48" /><Skeleton className="h-[3.125rem]" /><Skeleton className="h-48" /></div>;
 }
 
-export function WorkoutLaunchChoices({ error, isLoading, onRetry, onScratch, onStart, pendingChoice, templates, templatesHref = "/workouts/templates" }: {
-  error: Error | null; isLoading: boolean; onRetry: () => void; onScratch: () => void;
+export function WorkoutLaunchChoices({ error, hasOpenWorkout = false, isLoading, onRetry, onScratch, onStart, pendingChoice, templates, templatesHref = "/workouts/templates" }: {
+  error: Error | null; hasOpenWorkout?: boolean; isLoading: boolean; onRetry: () => void; onScratch: () => void;
   onStart: (id: string) => void; pendingChoice: string | null; templates: WorkoutTemplate[]; templatesHref?: string | null;
 }): ReactNode {
   return (
-        <>
-          <Panel accent="cyan" className="glass-cyan" eyebrow="Start from scratch">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="font-display text-base font-bold text-fg">Start from scratch</p>
-                <p className="mt-1 text-xs leading-relaxed text-fg-muted">
-                  Open an untitled workout and add exercises as you train.
-                </p>
-              </div>
-              <HudButton
-                disabled={pendingChoice !== null}
-                onClick={() => void onScratch()}
-                size="lg"
-              >
-                <IconPlus /> {pendingChoice === "scratch" ? "STARTING…" : "START"}
-              </HudButton>
-            </div>
-          </Panel>
+    <>
+      <Button
+        className="w-full"
+        disabled={pendingChoice !== null}
+        onClick={() => void onScratch()}
+        variant={hasOpenWorkout ? "secondary" : "primary"}
+      >
+        {pendingChoice === "scratch" ? "Starting…" : "Start empty workout"}
+      </Button>
 
-          <TemplateChoice
-            templatesHref={templatesHref}
-            error={error}
-            isLoading={isLoading}
-            onRetry={onRetry}
-            onStart={onStart}
-            pendingChoice={pendingChoice}
-            templates={templates}
-          />
-        </>
+      <TemplateChoice
+        error={error}
+        isLoading={isLoading}
+        onRetry={onRetry}
+        onStart={onStart}
+        pendingChoice={pendingChoice}
+        templates={templates}
+        templatesHref={templatesHref}
+      />
+
+      {templatesHref ? (
+        <ul className="divide-y divide-line overflow-hidden rounded-[var(--radius-card)] bg-surface">
+          <NavRow detail="Create and edit your own" href={templatesHref} label="Templates" />
+          <NavRow detail="Browse and add exercises" href="/workouts/exercises" label="Exercise library" />
+        </ul>
+      ) : null}
+    </>
   );
 }
