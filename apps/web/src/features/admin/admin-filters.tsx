@@ -12,7 +12,7 @@ import { useId, type ReactNode } from "react";
  */
 export function FilterBar({ children }: { children: ReactNode }): ReactNode {
   return (
-    <div className="flex flex-wrap items-end gap-3 rounded-lg border border-outline-dim/50 bg-surface-low/30 p-3">
+    <div className="flex flex-wrap items-end gap-3 rounded-[var(--radius-card)] border border-line bg-surface-raised p-3">
       {children}
     </div>
   );
@@ -33,9 +33,9 @@ export function SearchFilter({
 
   return (
     <div className="min-w-0 flex-1 basis-56">
-      <label className="label-caps block text-outline" htmlFor={id}>{label}</label>
+      <label className="block text-subhead text-text-secondary" htmlFor={id}>{label}</label>
       <input
-        className="mt-1 min-h-11 w-full min-w-0 rounded border border-outline-dim bg-surface-low px-3 text-sm text-fg placeholder:text-outline focus:border-cyan focus:outline-none"
+        className="mt-1 min-h-11 w-full min-w-0 rounded-[var(--radius-control)] border border-control-line bg-surface-raised px-3 text-callout text-text placeholder:text-text-muted focus:border-accent focus:outline-none"
         id={id}
         onChange={(event) => onChange(event.currentTarget.value)}
         placeholder={placeholder}
@@ -61,9 +61,9 @@ export function SelectFilter({
 
   return (
     <div className="min-w-0 basis-40">
-      <label className="label-caps block text-outline" htmlFor={id}>{label}</label>
+      <label className="block text-subhead text-text-secondary" htmlFor={id}>{label}</label>
       <select
-        className="mt-1 min-h-11 w-full min-w-0 rounded border border-outline-dim bg-surface-low px-2 text-sm text-fg focus:border-cyan focus:outline-none"
+        className="mt-1 min-h-11 w-full min-w-0 rounded-[var(--radius-control)] border border-control-line bg-surface-raised px-2 text-callout text-text focus:border-accent focus:outline-none"
         id={id}
         onChange={(event) => onChange(event.currentTarget.value)}
         value={value}
@@ -79,7 +79,7 @@ export function SelectFilter({
 
 export function ResultCount({ shown, total, noun }: { shown: number; total: number; noun: string }): ReactNode {
   return (
-    <p className="basis-full text-[11px] text-outline">
+    <p className="basis-full text-footnote text-text-muted">
       Showing {shown} of {total} {noun}{total === 1 ? "" : "s"}.
     </p>
   );
@@ -96,4 +96,14 @@ export function matchesSearch(query: string, ...fields: Array<string | null | un
   const needle = query.trim().toLowerCase();
   if (needle.length === 0) return true;
   return fields.some((field) => field?.toLowerCase().includes(needle));
+}
+
+/** A titled block on the console: one surface level, no nested bordered cards. */
+export function AdminPanel({ children, title }: { children: ReactNode; title: string }): ReactNode {
+  return (
+    <section className="rounded-[var(--radius-card)] bg-surface p-4">
+      <h3 className="mb-3 text-headline text-text">{title}</h3>
+      {children}
+    </section>
+  );
 }

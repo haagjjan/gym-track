@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { apiFetch, errorMessage } from "../../shared/api/client";
+import { formatDate } from "../../shared/format";
 import { ConfirmDialog } from "../../shared/ui/confirm-dialog";
-import { HudButton, Panel } from "../../shared/ui/ui";
-import { FilterBar, ResultCount, SearchFilter, SelectFilter, humanise, matchesSearch } from "./admin-filters";
+import { Button } from "../../shared/ui/button";
+import { AdminPanel, FilterBar, ResultCount, SearchFilter, SelectFilter, humanise, matchesSearch } from "./admin-filters";
 import { CampaignResponsesPanel } from "./campaign-responses-panel";
 import type { AdminUser } from "./admin-types";
 
@@ -29,32 +30,32 @@ const responseTypes = ["ACKNOWLEDGEMENT", "RATING", "SINGLE_CHOICE", "FREE_TEXT"
  * Actions that change what members see and cannot be taken back are confirmed
  * before they run. Publishing in particular used to be a single click with no
  * pending state, which made a slow round trip look like a dead button and
- * invited a second click — and a second delivery sweep.
+ * invited a second click, and a second delivery sweep.
  */
 const confirmedActions: Record<CampaignAction, { title: string; message: string; confirmLabel: string; pendingLabel: string }> = {
   PUBLISH: {
     title: "Publish this campaign?",
     message: "Publishing delivers this message to every member in its audience. It cannot be unpublished — you can only pause or end it afterwards.",
-    confirmLabel: "PUBLISH",
-    pendingLabel: "PUBLISHING…"
+    confirmLabel: "Publish",
+    pendingLabel: "Publishing…"
   },
   END: {
     title: "End this campaign?",
     message: "Ending stops delivery for good. Members who have not answered yet will never see it, and the campaign cannot be published again.",
-    confirmLabel: "END",
-    pendingLabel: "ENDING…"
+    confirmLabel: "End",
+    pendingLabel: "Ending…"
   },
   PAUSE: {
     title: "Pause this campaign?",
     message: "Pausing hides the message until you resume it. Answers already given are kept.",
-    confirmLabel: "PAUSE",
-    pendingLabel: "PAUSING…"
+    confirmLabel: "Pause",
+    pendingLabel: "Pausing…"
   },
   RESUME: {
     title: "Resume this campaign?",
     message: "Members in the audience who have not answered or dismissed it will start seeing this message again.",
-    confirmLabel: "RESUME",
-    pendingLabel: "RESUMING…"
+    confirmLabel: "Resume",
+    pendingLabel: "Resuming…"
   }
 };
 
@@ -99,7 +100,7 @@ export function CampaignAdminPanel(): ReactNode {
       setState(`“${campaign.title}” — ${humanise(action).toLowerCase()} applied and recorded in the audit log.`);
       setPending(null);
     } catch (error) {
-      setState(errorMessage(error, "The campaign action failed."));
+      setState(errorMessage(error, "Couldn't apply the campaign action. Try again."));
       setPending(null);
     } finally {
       setRunningId(null);
@@ -108,7 +109,7 @@ export function CampaignAdminPanel(): ReactNode {
 
   return (
     <section className="space-y-4">
-      <h2 className="font-display text-xl font-bold text-fg">In-app campaigns</h2>
+      <h2 className=" text-title-2 text-text">In-app campaigns</h2>
 
       <CampaignDraftForm
         onCreated={async (message) => { await load(); setState(message); }}
@@ -116,7 +117,7 @@ export function CampaignAdminPanel(): ReactNode {
         users={users}
       />
 
-      <Panel accent="cyan" eyebrow="Campaigns">
+      <AdminPanel title="Campaigns">
         <FilterBar>
           <SearchFilter label="Search" onChange={setSearch} placeholder="Title, trigger, or response type" value={search} />
           <SelectFilter label="Status" onChange={setStatus} options={campaignStatuses} value={status} />
@@ -125,12 +126,12 @@ export function CampaignAdminPanel(): ReactNode {
 
         <div className="mt-3 space-y-2">
           {visible.map((campaign) => (
-            <article className="rounded border border-outline-dim/60 p-3" key={campaign.id}>
+            <article className="rounded-[var(--radius-control)] bg-surface-raised p-3" key={campaign.id}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0 flex-1 basis-64">
-                  <p className="break-words text-sm font-bold text-fg">{campaign.title}</p>
-                  <p className="break-words text-[11px] text-outline">
-                    {humanise(campaign.status)} · {humanise(campaign.triggerType)} · {humanise(campaign.responseType)} · created {new Date(campaign.createdAt).toLocaleDateString()}
+                  <p className="break-words text-headline text-text">{campaign.title}</p>
+                  <p className="break-words text-footnote text-text-muted">
+                    {humanise(campaign.status)}, {humanise(campaign.triggerType)}, {humanise(campaign.responseType)}, created {formatDate(campaign.createdAt)}
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-wrap gap-1">
@@ -155,21 +156,21 @@ export function CampaignAdminPanel(): ReactNode {
               {openResponsesId === campaign.id ? <CampaignResponsesPanel campaignId={campaign.id} /> : null}
             </article>
           ))}
-          {campaigns.length === 0 ? <p className="p-4 text-outline">No campaigns yet.</p> : null}
-          {campaigns.length > 0 && visible.length === 0 ? <p className="p-4 text-outline">No campaign matches these filters.</p> : null}
+          {campaigns.length === 0 ? <p className="p-4 text-text-muted">No campaigns yet.</p> : null}
+          {campaigns.length > 0 && visible.length === 0 ? <p className="p-4 text-text-muted">No campaign matches these filters.</p> : null}
         </div>
-      </Panel>
+      </AdminPanel>
 
-      {state ? <p className="text-sm text-outline" role="status">{state}</p> : null}
+      {state ? <p className="text-callout text-text-muted" role="status">{state}</p> : null}
 
       <ConfirmDialog
-        confirmLabel={pending ? confirmedActions[pending.action].confirmLabel : "CONFIRM"}
+        confirmLabel={pending ? confirmedActions[pending.action].confirmLabel : "Confirm"}
         isOpen={pending !== null}
         isPending={runningId !== null}
         message={pending ? `${confirmedActions[pending.action].message}\n\nCampaign: “${pending.campaign.title}”.` : ""}
         onCancel={() => { if (runningId === null) setPending(null); }}
         onConfirm={() => void runAction()}
-        pendingLabel={pending ? confirmedActions[pending.action].pendingLabel : "WORKING…"}
+        pendingLabel={pending ? confirmedActions[pending.action].pendingLabel : "Working…"}
         title={pending ? confirmedActions[pending.action].title : "Confirm action"}
         tone={pending?.action === "END" ? "danger" : "warning"}
       />
@@ -245,7 +246,7 @@ function CampaignDraftForm({
   }
 
   return (
-    <Panel accent="lavender" eyebrow="New draft">
+    <AdminPanel title="New draft">
       <form className="grid gap-3" onSubmit={(event) => { event.preventDefault(); void create(); }}>
         <Labelled label="Title">
           <input className={inputClass} maxLength={120} onChange={(event) => setTitle(event.currentTarget.value)} required value={title} />
@@ -298,7 +299,7 @@ function CampaignDraftForm({
 
         {audienceType === "SELECTED" ? (
           <fieldset>
-            <legend className="label-caps text-outline">Chosen members ({selected.length})</legend>
+            <legend className="text-subhead text-text-secondary">Chosen members ({selected.length})</legend>
             <input
               aria-label="Search members"
               className={`${inputClass} mb-2`}
@@ -307,42 +308,42 @@ function CampaignDraftForm({
               type="search"
               value={userSearch}
             />
-            <div className="grid max-h-48 gap-1 overflow-y-auto rounded border border-outline-dim p-2 sm:grid-cols-2">
+            <div className="grid max-h-48 gap-1 overflow-y-auto rounded-[var(--radius-control)] border border-control-line p-2 sm:grid-cols-2">
               {audienceUsers.map((user) => (
-                <label className="flex min-h-10 items-center gap-2 text-xs text-fg" key={user.id}>
+                <label className="flex min-h-11 items-center gap-2 text-footnote text-text" key={user.id}>
                   <input
                     checked={selected.includes(user.id)}
                     className="shrink-0"
                     onChange={() => setSelected((value) => value.includes(user.id) ? value.filter((id) => id !== user.id) : [...value, user.id])}
                     type="checkbox"
                   />
-                  <span className="min-w-0 break-all">{user.username} · {user.email}</span>
+                  <span className="min-w-0 break-all">{user.username}, {user.email}</span>
                 </label>
               ))}
-              {audienceUsers.length === 0 ? <p className="text-xs text-outline">No member matches that search.</p> : null}
+              {audienceUsers.length === 0 ? <p className="text-footnote text-text-muted">No member matches that search.</p> : null}
             </div>
           </fieldset>
         ) : null}
 
-        <label className="flex min-h-11 items-center gap-2 text-sm text-fg">
+        <label className="flex min-h-11 items-center gap-2 text-callout text-text">
           <input checked={essential} className="shrink-0" onChange={(event) => setEssential(event.currentTarget.checked)} type="checkbox" />
           <span>Service or security notice — reaches members who turned optional prompts off</span>
         </label>
 
-        <HudButton disabled={isSaving} type="submit">{isSaving ? "SAVING…" : "SAVE DRAFT"}</HudButton>
+        <Button disabled={isSaving} type="submit">{isSaving ? "Saving…" : "Save draft"}</Button>
       </form>
-    </Panel>
+    </AdminPanel>
   );
 }
 
-const inputClass = "mt-1 min-h-11 w-full min-w-0 rounded border border-outline-dim bg-surface-low px-3 py-2 text-sm text-fg";
+const inputClass = "mt-1 min-h-11 w-full min-w-0 rounded-[var(--radius-control)] border border-control-line bg-surface-raised px-3 py-2 text-callout text-text";
 
 function Labelled({ children, hint, label }: { children: ReactNode; hint?: string; label: string }): ReactNode {
   return (
     <label className="block min-w-0">
-      <span className="label-caps text-outline">{label}</span>
+      <span className="text-subhead text-text-secondary">{label}</span>
       {children}
-      {hint ? <span className="mt-1 block text-[11px] text-outline">{hint}</span> : null}
+      {hint ? <span className="mt-1 block text-footnote text-text-muted">{hint}</span> : null}
     </label>
   );
 }
@@ -350,12 +351,12 @@ function Labelled({ children, hint, label }: { children: ReactNode; hint?: strin
 function Action({ busy, label, onClick }: { busy: boolean; label: string; onClick(): void }): ReactNode {
   return (
     <button
-      className="min-h-10 rounded border border-cyan/50 px-2 text-[11px] text-cyan disabled:cursor-wait disabled:opacity-50"
+      className="min-h-11 rounded-[var(--radius-control)] bg-surface-raised px-3 text-callout text-accent disabled:cursor-wait disabled:opacity-50"
       disabled={busy}
       onClick={onClick}
       type="button"
     >
-      {busy ? "WORKING…" : label}
+      {busy ? "Working…" : label}
     </button>
   );
 }
