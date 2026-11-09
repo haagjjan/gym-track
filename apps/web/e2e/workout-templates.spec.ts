@@ -21,14 +21,13 @@ test("creates, filters, edits, and launches a workout template", async ({ page }
   await onboarding.getByRole("button", { name: "Skip", exact: true }).click();
   await expect(onboarding).toHaveCount(0);
   const storageChoice = page.getByRole("dialog", { name: "Device storage choice" });
-  await storageChoice.getByRole("button", { name: "ALLOW FUNCTIONAL" }).click();
+  await storageChoice.getByRole("button", { name: "Save settings on this device" }).click();
   await expect(storageChoice).toHaveCount(0);
 
   await page.goto("/workouts/templates");
-  const tabs = page.getByRole("navigation", { name: "Workout sections" });
-  await expect(tabs.getByRole("link", { name: "Workout History" })).toBeVisible();
-  await expect(tabs.getByRole("link", { name: "Workout Templates" })).toBeVisible();
-  await expect(tabs.getByRole("link", { name: "Exercise List" })).toBeVisible();
+  // Templates is a pushed screen under the Workout tab, not a History sub-tab.
+  await expect(page.getByRole("heading", { name: "Templates", level: 1 })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Workout sections" })).toHaveCount(0);
 
   await page.getByRole("button", { name: /New template/i }).click();
   await page.getByLabel("Template name").fill(templateName);
@@ -52,7 +51,7 @@ test("creates, filters, edits, and launches a workout template", async ({ page }
   await reopenedPicker.getByRole("searchbox").fill("Bench Press");
   await reopenedPicker.getByRole("button", { name: /^Bench Press\b/ }).first().click();
   await reopenedPicker.getByRole("button", { name: "Add selected exercises (1)" }).click();
-  await page.getByRole("button", { name: "SAVE TEMPLATE" }).click();
+  await page.getByRole("button", { name: "Save template" }).click();
   await expect(page.getByRole("heading", { name: templateName })).toBeVisible();
 
   await page.getByRole("searchbox", { name: "Search workout templates" }).fill(templateName);
@@ -87,15 +86,16 @@ test("creates, filters, edits, and launches a workout template", async ({ page }
   await expect(restoredFilters.getByLabel("Type")).toHaveValue("compound");
   await restoredFilters.getByRole("button", { name: "Show results" }).click();
 
-  await page.getByRole("button", { name: "Edit" }).click();
-  await expect(page.getByRole("heading", { name: "Edit Template" })).toBeVisible();
+  await page.getByRole("button", { name: `More actions for ${templateName}` }).click();
+  await page.getByRole("dialog", { name: templateName }).getByRole("button", { name: "Edit", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Edit template" })).toBeVisible();
   await page.getByLabel("Template name").fill(`${templateName} changed`);
   await page.getByRole("button", { name: "CANCEL" }).click();
   const discard = page.getByRole("alertdialog", {
-    name: "Discard unsaved template changes?"
+    name: "Discard changes?"
   });
   await expect(discard).toBeVisible();
-  await discard.getByRole("button", { name: "DISCARD CHANGES" }).click();
+  await discard.getByRole("button", { name: "Discard changes" }).click();
   await expect(page.getByRole("heading", { name: templateName })).toBeVisible();
 
   // Exercise editability is account-scoped and edit forms keep both muscle
@@ -121,7 +121,7 @@ test("creates, filters, edits, and launches a workout template", async ({ page }
   await expect(nameReview).toHaveCount(0);
   await expect(createExercise).toBeVisible();
   await createExercise.getByRole("button", { name: "Create exercise" }).click();
-  await nameReview.getByRole("button", { name: "SAVE EXERCISE" }).click();
+  await nameReview.getByRole("button", { name: "Save exercise" }).click();
   await page.getByRole("button", { name: /^Filters/ }).click();
   const exerciseFilters = page.getByRole("dialog", { name: "Filter results" });
   await exerciseFilters.getByLabel("Editability").selectOption("editable");
@@ -143,28 +143,27 @@ test("creates, filters, edits, and launches a workout template", async ({ page }
   const readOnlyFilters = page.getByRole("dialog", { name: "Filter results" });
   await readOnlyFilters.getByLabel("Editability").selectOption("readOnly");
   await readOnlyFilters.getByRole("button", { name: "Show results" }).click();
-  const readOnlyInfo = page.getByRole("button", { name: /Read only/ }).first();
-  await readOnlyInfo.click();
-  await expect(page.getByRole("tooltip")).toContainText(/system exercise|Another user created/);
+  // Exercises the user can't edit say why in plain text on the row.
+  await expect(page.getByText(/^(Built in|Shared)$/).first()).toBeVisible();
 
   await page.goto("/workouts/templates");
   await page
     .getByTestId("template-card")
-    .getByRole("button", { name: "Start workout", exact: true })
+    .getByRole("button", { name: `Start workout from ${templateName}`, exact: true })
     .click();
   await expect(page).toHaveURL(/\/workouts\/[0-9a-f-]+\?focusName=1$/);
   await expect(page.getByLabel("Workout name")).toHaveValue(templateName);
   const exerciseList = page.getByRole("list", { name: "Workout exercises" });
-  const benchPressRow = exerciseList.getByRole("button", { name: /Bench Press \d+ sets$/ });
+  const benchPressRow = exerciseList.getByRole("button", { name: /^Bench Press (No sets yet|\d+ sets?)$/ });
   await expect(benchPressRow).toHaveCount(1);
   await benchPressRow.click();
 
-  await page.getByRole("button", { name: "Remove" }).click();
+  await page.getByRole("button", { name: "Remove exercise", exact: true }).click();
   const remove = page.getByRole("alertdialog", { name: "Remove Bench Press?" });
   await expect(remove).toBeVisible();
-  await remove.getByRole("button", { name: "REMOVE EXERCISE" }).click();
+  await remove.getByRole("button", { name: "Remove exercise" }).click();
   await expect(page.getByRole("list", { name: "Workout exercises" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Choose exercises" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add exercises" })).toBeVisible();
 });
 
 function alphabeticTag(value: string): string {
