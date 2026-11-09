@@ -2,8 +2,8 @@
 
 ## Status
 
-Accepted on 2026-08-07. Supersedes the worldwide framing in `docs/18-public-beta-handoff.md`
-and `docs/00-workflow.md`.
+Accepted on 2026-08-07. Supersedes the worldwide framing in `docs/archive/18-public-beta-handoff.md`
+and `docs/archive/00-workflow.md`.
 
 Amended on 2026-11-08 by [ADR 0022](0022-open-public-registration.md). The Swiss-residents-only scope still applies to the public v0. The attestation moves from the waitlist request to signup and is stored in `users.adult_attested_at`.
 
@@ -62,7 +62,7 @@ but it should be described accurately in the DPIA rather than as a control.
 
 Every document describing the beta as worldwide must change in the same pass, or the rendered
 pages will contradict this record. The affected files are listed in
-`docs/beta-process/public-beta/goal-2/jurisdiction-scope-changes.md`.
+`docs/archive/beta-process/public-beta/goal-2/jurisdiction-scope-changes.md`.
 
 Widening scope later requires a new ADR, a re-screen under the DPIA's own change triggers, and
 counsel review before any non-Swiss applicant is approved.

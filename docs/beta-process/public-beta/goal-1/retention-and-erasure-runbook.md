@@ -1,8 +1,15 @@
 # Retention, Erasure and Restore Runbook
 
+> **Status after ADR 0022 (note added 2026-11-09, needs the controller's review).** This document
+> was written for the closed Founding Beta. Since public v0, signup is open to adults who live in
+> Switzerland, and there is no waitlist, approval, invitation or 50-seat cap. The beta tables
+> (`beta_access_requests`, `users.beta_cohort`) are no longer written but stay covered by export,
+> erasure and retention until a follow-up migration drops them. Statements below that rely on
+> manual admission or a small invited group have not been re-assessed for open signup.
+
 ## Scheduled lifecycle
 
-The API cleanup process expires invitations and finalizes due deletion requests idempotently. It removes identifiable events after 90 days, clears campaign response bodies after 180 days, removes pending waitlist records after 180 days, removes expired/joined invitation records after 30 days, and expires database tombstones after 30 days. Production must monitor cleanup failures; process uptime alone is insufficient evidence.
+The API cleanup process finalizes due deletion requests idempotently. It removes identifiable events after 90 days, clears campaign response bodies after 180 days, removes leftover waitlist records from the closed beta (pending after 180 days, reviewed after 30 days), and expires database tombstones after 30 days. Production must monitor cleanup failures; process uptime alone is insufficient evidence.
 
 The backup job exports current tombstones to `/srv/gym-tracker/state/erasure-ledger/current.csv` before staging the encrypted Restic snapshot. Local logical dumps expire after seven days. Weekly maintenance explicitly forgets snapshots older than 30 days relative to the current maintenance time, then prunes; it does not measure the window from an old latest snapshot.
 
