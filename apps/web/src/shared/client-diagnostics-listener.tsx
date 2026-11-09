@@ -6,7 +6,7 @@ import {
   logClientDiagnosticGroup,
   readClientDiagnostics,
   recordClientDiagnostic
-} from "../shared/client-diagnostics";
+} from "./client-diagnostics";
 
 export function ClientDiagnosticsListener(): ReactNode {
   useEffect(() => {

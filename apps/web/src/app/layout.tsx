@@ -1,32 +1,28 @@
 import type { Metadata, Viewport } from "next";
-import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import type { ReactNode } from "react";
 import { QueryProvider } from "../shared/query-provider";
-import { ClientDiagnosticsListener } from "./client-diagnostics-listener";
+import { NavigationTracker } from "../features/shell/app-history";
+import { THEME_BACKGROUND, themeBootstrapScript } from "../features/shell/theme";
+import { ClientDiagnosticsListener } from "../shared/client-diagnostics-listener";
 import "./globals.css";
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  variable: "--font-space-grotesk"
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-jetbrains"
-});
 
 export const metadata: Metadata = {
   title: {
-    default: "Gym Progress Tracker",
-    template: "%s | Gym Progress Tracker"
+    default: "GymTrack",
+    template: "%s | GymTrack"
   },
   description: "Log your workouts, track every lift, and see how your training load spreads across your body."
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0a",
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: THEME_BACKGROUND.dark },
+    { media: "(prefers-color-scheme: light)", color: THEME_BACKGROUND.light }
+  ],
   width: "device-width",
-  initialScale: 1
+  initialScale: 1,
+  // The app runs full screen inside Capacitor; fixed bars pad with env(safe-area-inset-*).
+  viewportFit: "cover"
 };
 
 interface RootLayoutProps {
@@ -35,9 +31,13 @@ interface RootLayoutProps {
 
 export default function RootLayout({ children }: RootLayoutProps): ReactNode {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
+    <html data-theme="dark" lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
+      </head>
       <body>
         <ClientDiagnosticsListener />
+        <NavigationTracker />
         <QueryProvider>{children}</QueryProvider>
       </body>
     </html>
