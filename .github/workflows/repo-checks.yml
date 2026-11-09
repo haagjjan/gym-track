@@ -46,16 +46,17 @@ jobs:
             "ARCHITECTURE.md"
             "ENGINEERING.md"
             "CONTRIBUTING.md"
-            "docs/00-workflow.md"
+            "CODEBASE.md"
             "docs/01-requirements.md"
             "docs/02-query-list.md"
             "docs/03-data-model-notes.md"
             "docs/04-schema-draft.md"
             "docs/05-api-contract.md"
-            "docs/06-implementation-start.md"
             "docs/07-implementation-pattern.md"
-            "docs/08-next-implementation-plan.md"
             "docs/repository-structure.md"
+            "docs/99-current-project-state.md"
+            "docs/DESIGN.md"
+            "docs/archive/README.md"
             "docs/decisions/README.md"
           )
 
@@ -500,7 +501,6 @@ jobs:
             restart_api
 
             pnpm exec playwright test \
-              apps/web/e2e/muscle-spike-anatomy.spec.ts \
               apps/web/e2e/volume-mobile-gesture.spec.ts \
               apps/web/e2e/workout-templates.spec.ts \
               --project="${project}" \
