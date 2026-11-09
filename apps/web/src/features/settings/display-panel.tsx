@@ -1,41 +1,71 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { Panel, Skeleton } from "../../shared/ui/ui";
+import { useEffect, useState, type ReactNode } from "react";
+import { radioGroupKeyDown } from "../../shared/ui/radio-group";
+import { Skeleton } from "../../shared/ui/ui";
 import { useDisplaySettings } from "../dashboard/use-display-settings";
+import {
+  DEFAULT_THEME_PREFERENCE,
+  THEME_STORAGE_KEY,
+  applyThemePreference,
+  parseThemePreference,
+  type ThemePreference
+} from "../shell/theme";
+import { Group, Row, SavedStatus, SwitchRow, useSavedFlash } from "./settings-ui";
 
-/** Device-local controls for the dashboard figure. */
+const THEME_OPTIONS: { label: string; value: ThemePreference }[] = [
+  { label: "System", value: "system" },
+  { label: "Dark", value: "dark" },
+  { label: "Light", value: "light" }
+];
+
+function readStoredTheme(): ThemePreference {
+  try {
+    return parseThemePreference(globalThis.localStorage.getItem(THEME_STORAGE_KEY));
+  } catch {
+    return DEFAULT_THEME_PREFERENCE;
+  }
+}
+
+/** Theme choice and the dashboard figure's idle spin. */
 export function DisplayPanel(): ReactNode {
   const { settings, save, isLoaded } = useDisplaySettings();
+  const [theme, setTheme] = useState<ThemePreference>(DEFAULT_THEME_PREFERENCE);
+  const { flash, saved } = useSavedFlash();
+
+  // Read after mount so server and client markup match.
+  useEffect(() => setTheme(readStoredTheme()), []);
+
+  function choose(next: ThemePreference): void {
+    setTheme(next);
+    applyThemePreference(next);
+    flash();
+  }
 
   return (
-    <Panel accent="cyan" eyebrow="Display">
-      {!isLoaded ? (
-        <Skeleton className="h-20" />
-      ) : (
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-sm text-fg">Dashboard figure auto-spin</p>
-            <p className="text-[11px] leading-relaxed text-fg-muted">
-              Slow idle rotation of the figure on your dashboard. Dragging to spin it
-              yourself always works. Stored on this device.
-            </p>
+    <div className="space-y-2">
+      <Group>
+        <Row>
+          <p className="text-body text-text" id="settings-theme-label">Theme</p>
+          <div aria-labelledby="settings-theme-label" className="mt-2 grid grid-cols-3 gap-1 rounded-full bg-bg p-1" onKeyDown={radioGroupKeyDown} role="radiogroup">
+            {THEME_OPTIONS.map((option) => (
+              <button aria-checked={theme === option.value} className={`min-h-11 rounded-full text-callout ${theme === option.value ? "bg-surface-raised font-semibold text-text" : "text-text-secondary"}`} key={option.value} onClick={() => choose(option.value)} role="radio"
+          tabIndex={(theme === option.value) ? 0 : -1} type="button">{option.label}</button>
+            ))}
           </div>
-          <button
-            aria-checked={settings.autoSpin}
-            className={`label-caps min-h-11 shrink-0 cursor-pointer rounded border px-4 transition-colors ${
-              settings.autoSpin
-                ? "border-cyan/60 bg-cyan/10 text-cyan"
-                : "border-outline-dim text-outline hover:border-outline"
-            }`}
-            onClick={() => save({ ...settings, autoSpin: !settings.autoSpin })}
-            role="switch"
-            type="button"
-          >
-            {settings.autoSpin ? "ON" : "OFF"}
-          </button>
-        </div>
-      )}
-    </Panel>
+        </Row>
+        {!isLoaded ? (
+          <Row><Skeleton className="h-11" /></Row>
+        ) : (
+          <SwitchRow
+            checked={settings.autoSpin}
+            label="Spin the figure"
+            note="Slowly rotates the figure on Home. Dragging it always works."
+            onChange={(autoSpin) => { save({ ...settings, autoSpin }); flash(); }}
+          />
+        )}
+      </Group>
+      <SavedStatus saved={saved} />
+    </div>
   );
 }
