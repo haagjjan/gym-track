@@ -73,6 +73,32 @@ ensure_shell() {
   write_shell_config
   [ -d "$CAP_SHELL_DIR/$1" ] || (cd "$CAP_SHELL_DIR" && npx cap add "$1" >"$LOG_DIR/cap-add-$1.log" 2>&1) \
     || die "cap add $1 failed, see $LOG_DIR/cap-add-$1.log"
+  [ "$1" = android ] && write_android_activity
+  return 0
+}
+
+# Capacitor SystemBars docs: with insetsHandling enabled, call EdgeToEdge.enable in the
+# activity, or env(safe-area-inset-bottom) stays 0 and fixed bars slide under the gesture bar.
+# It must run after super.onCreate, which applies the no-action-bar theme.
+write_android_activity() {
+  local file="$CAP_SHELL_DIR/android/app/src/main/java/${APP_ID//.//}/MainActivity.java"
+  grep -q "EdgeToEdge.enable" "$file" 2>/dev/null && return 0
+  cat > "$file" <<JAVA
+package $APP_ID;
+
+import android.os.Bundle;
+import androidx.activity.EdgeToEdge;
+import com.getcapacitor.BridgeActivity;
+
+public class MainActivity extends BridgeActivity {
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
+    }
+}
+JAVA
+  REBUILD=1
 }
 
 run_ios() {
@@ -131,9 +157,15 @@ run_android() {
   ensure_shell android
   if [ "$REBUILD" = 1 ] || ! "$ADB" -s "$serial" shell pm path "$APP_ID" >/dev/null 2>&1; then
     log "Android: building shell"
-    (cd "$CAP_SHELL_DIR" && JAVA_HOME=$(/usr/libexec/java_home -v 21) ANDROID_HOME="$ANDROID_HOME" \
-      npx cap run android --target "$serial" >"$LOG_DIR/cap-android.log" 2>&1) \
-      || die "Android build failed, see $LOG_DIR/cap-android.log"
+    # Build with Gradle and install with plain adb: `cap run android` restarts the adb
+    # server when the emulator is slow and then loses the device.
+    (cd "$CAP_SHELL_DIR" && npx cap sync android && cd android \
+      && JAVA_HOME=$(/usr/libexec/java_home -v 21) ANDROID_HOME="$ANDROID_HOME" ./gradlew assembleDebug) \
+      >"$LOG_DIR/cap-android.log" 2>&1 || die "Android build failed, see $LOG_DIR/cap-android.log"
+    "$ADB" -s "$serial" install -r "$CAP_SHELL_DIR/android/app/build/outputs/apk/debug/app-debug.apk" \
+      >>"$LOG_DIR/cap-android.log" 2>&1 || die "Android install failed, see $LOG_DIR/cap-android.log"
+    "$ADB" -s "$serial" shell am force-stop "$APP_ID"
+    "$ADB" -s "$serial" shell am start -n "$APP_ID/.MainActivity" >/dev/null
   else
     "$ADB" -s "$serial" shell am force-stop "$APP_ID"
     "$ADB" -s "$serial" shell am start -n "$APP_ID/.MainActivity" >/dev/null
