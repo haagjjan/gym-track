@@ -12,13 +12,13 @@ export interface VolumeOrbitPolicy {
 
 const COARSE_POLICY: VolumeOrbitPolicy = {
   enableZoom: false,
-  hint: "SWIPE SIDEWAYS TO ROTATE · SWIPE UP/DOWN TO SCROLL",
+  hint: "Swipe sideways to rotate the figure.",
   touchAction: "pan-y"
 };
 
 const FINE_POLICY: VolumeOrbitPolicy = {
   enableZoom: true,
-  hint: "DRAG TO ORBIT · SCROLL TO ZOOM",
+  hint: "Drag to rotate the figure. Scroll to zoom.",
   touchAction: "none"
 };
 

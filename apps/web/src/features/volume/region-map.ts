@@ -73,8 +73,6 @@ export interface RegionMaps {
   sideTexture: THREE.CanvasTexture;
   /** Pixel-exact lookup mirroring the shader's dominant-normal projection. */
   getRegionAt: (point: RegionProjectionPoint) => number;
-  /** Re-fetch + re-rasterize the SVGs in place (art iteration, spike only). */
-  reload: () => Promise<void>;
   /** Resolves after the initial rasterization; textures are blank before. */
   ready: Promise<void>;
 }
@@ -206,7 +204,7 @@ export function getRegionMaps(): RegionMaps {
   const back = createSide();
   const side = createSide();
 
-  const reload = async (): Promise<void> => {
+  const rasterizeAll = async (): Promise<void> => {
     await Promise.all([
       rasterize(front, FRONT_MAP_URL, true),
       rasterize(back, BACK_MAP_URL, true),
@@ -243,8 +241,7 @@ export function getRegionMaps(): RegionMaps {
 
       return shouldUseSideMap(nx, nz, sideCovered) ? sidePixel.region : baseRegion;
     },
-    reload,
-    ready: reload()
+    ready: rasterizeAll()
   };
 
   return singleton;

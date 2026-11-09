@@ -2,9 +2,7 @@
 
 These SVGs are the source of truth for Volume muscle-region ownership. The 3D shader and
 click-picking rasterize the same pixels, so a visible region and a selected region use the
-same projection decision. The optional 2D view intentionally continues to use only the front
-and back maps. The interactive 3D map is the default Volume experience; users can choose the
-lighter 2D front/back map for the current device under **Settings → Cockpit display**.
+same projection decision.
 
 - `muscle-regions-front.svg` — viewed from the front; image left is anatomical right
   (`world +z`).
@@ -19,40 +17,27 @@ feet line, and `x=330` is the center of the active projection.
 
 ## Runtime interaction and performance
 
-- Clicking an already-selected region deselects it in both 3D and 2D.
+- Clicking an already-selected region deselects it.
 - The 3D `FRONT` and `BACK` controls use the same damped camera path as muscle focus;
   reduced-motion preferences still apply the goal immediately.
 - The 3D canvas renders on demand instead of running continuously at the display refresh
   rate. Static views therefore use no ongoing render loop, and device pixel ratio is capped
   at `1.35` to bound fragment-shader cost on high-density phones.
 
-## Live authoring loop
+## Editing loop
 
-1. Start the web dev server and open `/muscle-spike`; the route is development-only and
-   needs no login.
-2. Use the `FRONT`, `BACK`, or `SIDE` authoring-template control for an exact orthographic
-   model view. The equivalent console hook is `__muscleSpikeTemplate('front')` (also
-   accepts `'back'`, `'side'`, or `null`).
-3. Switch to `DEBUG_REGIONS` to inspect ownership, or use `CLAY` with one selected region
-   to judge its boundary against the model's muscle relief.
-4. Edit the SVG and run `await __muscleSpikeReloadMaps()` to re-fetch and rasterize all
-   three files without rebuilding.
-5. Check front, back, both sides, and front/rear three-quarter views. Confirm bilateral
+1. Start the web dev server, sign in with an account that has logged sets, and open
+   `/weekly-volume?debugRegions=1`. Debug mode paints every region in its own hue so
+   ownership and seams are visible.
+2. Edit the SVG, then reload the page to re-rasterize the maps.
+3. Check front, back, both sides, and front/rear three-quarter views. Confirm bilateral
    symmetry, continuous seams, neighboring-region ownership, and neutral joints/fists/feet.
-   The `REVIEW_ORBIT` controls snap to those repeatable comparison angles without changing
-   the product camera behavior.
-6. Before handoff, compare the debug view and an isolated clay/highlight view, then verify
-   that clicking selects the same region that the shader displays.
+4. Before handoff, drop `?debugRegions=1` and confirm that tapping a region selects the same
+   region the shader highlights.
 
-Review tooling can query a projected pixel directly:
-
-```js
-__muscleSpikeRegionAt({ xn: 0.1, zn: 0.9, yn: 0.88, nx: 0, nz: 1 });
-```
-
-`xn` and `zn` are world position divided by the measured figure half-width; `yn` is the
-normalized height from feet (`0`) to head (`1`); `nx` and `nz` are the smooth world-normal
-components used by the shader.
+`xn` and `zn` below are world position divided by the measured figure half-width; `yn` is
+the normalized height from feet (`0`) to head (`1`); `nx` and `nz` are the smooth
+world-normal components used by the shader.
 
 ## Projection and side-override rules
 
@@ -93,4 +78,4 @@ components used by the shader.
   explicitly changes.
 
 The archived pre-rework front/back sources and their hashes live in
-`docs/design-refs/volume-regions-pre-anatomy-rework/`.
+`docs/archive/design-refs/volume-regions-pre-anatomy-rework/`.

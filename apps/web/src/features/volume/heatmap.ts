@@ -40,11 +40,11 @@ export const HEAT_MAX_WEEKLY_SETS = 20;
 export const TARGET_WEEKLY_SETS = 10;
 
 export const HEAT_STAGE_COLORS = [
-  "#E9D5FF",
-  "#D8B4FE",
-  "#C084FC",
-  "#9333EA",
-  "#581C87"
+  "#7048c0",
+  "#8a5ce6",
+  "#a47cff",
+  "#c2a6ff",
+  "#e2d6ff"
 ] as const;
 
 export function heatBucket(weeklySets: number, ceiling = HEAT_MAX_WEEKLY_SETS): number {
@@ -60,9 +60,9 @@ export function heatRangeLabel(bucket: number, ceiling = HEAT_MAX_WEEKLY_SETS): 
   const safeBucket = Math.min(Math.max(Math.round(bucket), 1), 5);
   const lower = ((safeBucket - 1) * ceiling) / 5;
   const upper = (safeBucket * ceiling) / 5;
-  if (safeBucket === 5) return `>${formatRangeValue(lower)} sets / WK (${formatRangeValue(ceiling)}+ stays at max heat)`;
-  const range = safeBucket === 1 ? `>0–${formatRangeValue(upper)}` : `>${formatRangeValue(lower)}–${formatRangeValue(upper)}`;
-  return `${range} sets / WK`;
+  if (safeBucket === 5) return `Over ${formatRangeValue(lower)} sets a week`;
+  if (safeBucket === 1) return `Up to ${formatRangeValue(upper)} sets a week`;
+  return `Over ${formatRangeValue(lower)} to ${formatRangeValue(upper)} sets a week`;
 }
 
 function formatRangeValue(value: number): string {
@@ -77,11 +77,6 @@ export function heatT(weeklySets: number, ceiling = HEAT_MAX_WEEKLY_SETS): numbe
 export function volumeRampCss(weeklySets: number, ceiling = HEAT_MAX_WEEKLY_SETS): string {
   const bucket = heatBucket(weeklySets, ceiling);
   return bucket === 0 ? "#2f353c" : HEAT_STAGE_COLORS[bucket - 1]!;
-}
-
-export function volumeRampRgb(weeklySets: number, ceiling = HEAT_MAX_WEEKLY_SETS): [number, number, number] {
-  const hex = volumeRampCss(weeklySets, ceiling).slice(1);
-  return [Number.parseInt(hex.slice(0, 2), 16), Number.parseInt(hex.slice(2, 4), 16), Number.parseInt(hex.slice(4, 6), 16)];
 }
 
 /**

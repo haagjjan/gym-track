@@ -81,15 +81,15 @@ export function createMuscleMaskMaterial(
     uCyan: { value: linear("#00f2ff") },
     uViolet: { value: linear("#a852ff") },
     uLavender: { value: linear("#d9b9ff") },
-    uStage1: { value: linear("#E9D5FF") },
-    uStage2: { value: linear("#D8B4FE") },
-    uStage3: { value: linear("#C084FC") },
-    uStage4: { value: linear("#9333EA") },
-    uStage5: { value: linear("#581C87") }
+    uStage1: { value: linear("#7048c0") },
+    uStage2: { value: linear("#8a5ce6") },
+    uStage3: { value: linear("#a47cff") },
+    uStage4: { value: linear("#c2a6ff") },
+    uStage5: { value: linear("#e2d6ff") }
   };
 
   const material = new THREE.MeshStandardMaterial({
-    color: new THREE.Color("#171a20"),
+    color: new THREE.Color("#2f353c"),
     metalness: 0.35,
     roughness: 0.5,
     // DoubleSide so the ankle-line discard shows solid dark interiors instead
@@ -126,7 +126,7 @@ export function createMuscleMaskMaterial(
       material.metalness = 0.0;
       material.roughness = 0.85;
     } else {
-      material.color.set("#171a20");
+      material.color.set("#2f353c");
       material.metalness = 0.35;
       material.roughness = 0.5;
     }

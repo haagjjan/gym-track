@@ -17,8 +17,8 @@ describe("volume heat buckets", () => {
   });
 
   it("describes the exact range behind each heat stage", () => {
-    assert.equal(heatRangeLabel(1, 20), ">0–4 sets / WK");
-    assert.equal(heatRangeLabel(5, 20), ">16 sets / WK (20+ stays at max heat)");
+    assert.equal(heatRangeLabel(1, 20), "Up to 4 sets a week");
+    assert.equal(heatRangeLabel(5, 20), "Over 16 sets a week");
   });
 
   it("maps each bucket to the exact required purple stage", () => {

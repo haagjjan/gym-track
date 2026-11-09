@@ -9,7 +9,9 @@ import {
   type ReactNode,
   type RefObject
 } from "react";
+import { Segmented } from "./volume-panels";
 import { useAvatarSceneSupport } from "../avatar/use-avatar-scene";
+import { useOptionalDevicePrivacy } from "../privacy/device-privacy";
 import {
   FRONT_AZIMUTH,
   type FigureFrame,
@@ -31,22 +33,51 @@ export interface VolumeBodyMapProps {
   heatCeiling: number;
   /** Paints each region a distinct hue for map/alignment inspection. */
   debugRegions?: boolean;
+  /** Rendered beside the Front/Back control, above the figure. */
+  toolbarEnd?: ReactNode;
+}
+
+const HINT_SEEN_KEY = "gymtrack.volume-gesture-hint-seen";
+
+/**
+ * One-time gesture hint: shown until the first drag, or for a few seconds.
+ * "Seen" is only remembered when the user allowed functional device storage;
+ * otherwise the hint simply shows on each visit.
+ */
+function useGestureHint(): [boolean, () => void] {
+  const functionalStorageEnabled = useOptionalDevicePrivacy()?.functionalStorageEnabled ?? false;
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    if (functionalStorageEnabled) {
+      try {
+        if (window.localStorage.getItem(HINT_SEEN_KEY)) return;
+        window.localStorage.setItem(HINT_SEEN_KEY, "1");
+      } catch {
+        // Storage blocked: showing the hint each visit is acceptable.
+      }
+    }
+    setVisible(true);
+    const timer = window.setTimeout(() => setVisible(false), 6000);
+    return () => window.clearTimeout(timer);
+  }, [functionalStorageEnabled]);
+  return [visible, () => setVisible(false)];
 }
 
 /**
  * Muscle-volume body: a dark hologram figure whose trained muscles use the
- * shared five-stage purple heat scale, with selection outlined in lavender. Regions come from
+ * shared five-stage purple heat scale, with the selection outlined. Regions come from
  * projected ID maps (region-map.ts) sampled per fragment, so boundaries are
  * crisp and picking reads the same pixels. "Body only" — no environment; the
  * fused pedestal is discarded in-shader and a cyan projector pad grounds the
- * figure. Bounded canvas by design; drag to orbit, buttons ease front/back.
+ * figure. Bounded canvas by design; drag to orbit, the segmented control eases front/back.
  */
 export function VolumeBodyMap({
   weeklySetsBySlug,
   selectedSlug,
   onSelect,
   heatCeiling,
-  debugRegions = false
+  debugRegions = false,
+  toolbarEnd
 }: VolumeBodyMapProps): ReactNode {
   const { support, reducedMotion } = useAvatarSceneSupport();
   const orbitPolicy = volumeOrbitPolicy(useCoarsePointer());
@@ -54,9 +85,29 @@ export function VolumeBodyMap({
   const controlsRef = useRef<OrbitControlsLike | null>(null);
   const userOrbitRef = useRef(false);
   const [frame, setFrame] = useState<FigureFrame | null>(null);
+  const [view, setView] = useState<"front" | "back" | null>("front");
+  const [hintVisible, dismissHint] = useGestureHint();
+  // Lift the base light when nothing is trained so the bare anatomy stays readable.
+  const noSets = !Object.values(weeklySetsBySlug).some((sets) => sets > 0);
+
+  const showView = (next: "front" | "back"): void => {
+    setView(next);
+    viewRef.current?.(next === "front" ? FRONT_AZIMUTH : FRONT_AZIMUTH + Math.PI);
+  };
 
   return (
-    <div className="relative h-full w-full">
+    <div>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <Segmented
+          label="Figure view"
+          onChange={showView}
+          options={[{ id: "front", label: "Front" }, { id: "back", label: "Back" }]}
+          value={view}
+        />
+        {toolbarEnd}
+      </div>
+      {/* The stage owns the canvas: isolate keeps WebGL below every card and sheet. */}
+      <div className="relative isolate h-[52dvh] min-h-80 overflow-hidden rounded-[var(--radius-card)] bg-stage lg:h-[560px]">
       {support === "unavailable" ? (
         <StaticMapFallback />
       ) : support === "ready" ? (
@@ -75,12 +126,12 @@ export function VolumeBodyMap({
             gl={{ antialias: true, powerPreference: "high-performance" }}
             style={{ touchAction: orbitPolicy.touchAction }}
           >
-            <color attach="background" args={["#0a0a0a"]} />
+            <color attach="background" args={["#0b0d10"]} />
 
             {/* Dark-body rig: the figure reads as a dim slate form, trained
                 muscles emit on top. Kept low so emissive contrast survives. */}
-            <hemisphereLight args={["#8b97a6", "#141821", 0.85]} />
-            <directionalLight color="#eaf6ff" intensity={0.85} position={[3, 5, 4]} />
+            <hemisphereLight args={["#9aa6b5", "#1b2029", noSets ? 1.8 : 1.1]} />
+            <directionalLight color="#eaf6ff" intensity={noSets ? 1.5 : 1} position={[3, 5, 4]} />
             <directionalLight color="#b9c6d0" intensity={0.35} position={[-4, 3, -3]} />
 
             <VolumeMuscleBody
@@ -112,6 +163,8 @@ export function VolumeBodyMap({
               onStart={() => {
                 // A user drag takes over — the focus ease must yield, not fight.
                 userOrbitRef.current = true;
+                dismissHint();
+                setView(null);
               }}
               ref={(instance) => {
                 controlsRef.current = instance;
@@ -123,18 +176,12 @@ export function VolumeBodyMap({
         </div>
       ) : null}
 
-      {/* Solid tint, no backdrop blur: these sit over the animating canvas. */}
-      <div className="absolute left-3 top-3 flex gap-1.5">
-        <ViewButton label="FRONT" onClick={() => viewRef.current?.(FRONT_AZIMUTH)} />
-        <ViewButton
-          label="BACK"
-          onClick={() => viewRef.current?.(FRONT_AZIMUTH + Math.PI)}
-        />
+      {hintVisible ? (
+        <p className="pointer-events-none absolute inset-x-4 bottom-3 z-10 mx-auto w-fit max-w-full rounded-full bg-black/60 px-4 py-2 text-center text-footnote text-white">
+          {orbitPolicy.hint}
+        </p>
+      ) : null}
       </div>
-
-      <p className="label-caps pointer-events-none absolute bottom-2 left-3 text-outline">
-        {orbitPolicy.hint}
-      </p>
     </div>
   );
 }
@@ -210,24 +257,11 @@ function CanvasTouchPolicy({
 /** Static fallback when WebGL is unavailable (legacy Home-avatar behavior). */
 function StaticMapFallback(): ReactNode {
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-2">
-      <p className="label-caps text-cyan-dim">STATIC_MODE // 3D_UNAVAILABLE</p>
-      <p className="max-w-64 text-center text-[11px] text-fg-muted">
-        This device cannot render the body map. Select muscles from the
-        distribution matrix instead.
+    <div className="flex h-full flex-col items-center justify-center gap-2 px-6">
+      <p className="text-headline text-white">3D body map unavailable</p>
+      <p className="max-w-64 text-center text-footnote text-white/70">
+        This device can&apos;t render 3D. Pick muscles from the list instead.
       </p>
     </div>
-  );
-}
-
-function ViewButton({ label, onClick }: { label: string; onClick: () => void }): ReactNode {
-  return (
-    <button
-      className="label-caps cursor-pointer rounded border border-outline-dim bg-void/75 px-3 py-2 text-fg-muted transition-colors hover:border-cyan hover:text-cyan"
-      onClick={onClick}
-      type="button"
-    >
-      {label}
-    </button>
   );
 }

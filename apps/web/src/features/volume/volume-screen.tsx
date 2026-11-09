@@ -1,14 +1,15 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useMemo, useState, type Dispatch, type SetStateAction, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction, type ReactNode } from "react";
 import type { WeeklyVolumePayload } from "../../shared/api/types";
-import { EmptyState, ErrorState, Metric, Panel, Skeleton } from "../../shared/ui/ui";
-import { BayAmbience } from "../avatar/bay-ambience";
+import Link from "next/link";
+import { buttonClass } from "../../shared/ui/button";
+import { StatTile } from "../../shared/ui/stat-tile";
+import { ErrorState, Skeleton } from "../../shared/ui/ui";
 /*import { useDisplaySettings } from "../dashboard/use-display-settings";*/
 import { errorMessage } from "../../shared/api/client";
 import { useUserPreferences, useWeeklyVolume } from "../../shared/api/hooks";
-/*import { BodyMap2D } from "./body-map-2d";*/
 import {
   HEAT_MAX_WEEKLY_SETS,
   type RegionSlug
@@ -27,9 +28,7 @@ const VolumeBodyMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-full items-center justify-center">
-        <p className="label-caps animate-pulse-slow text-cyan-dim">Loading the body map</p>
-      </div>
+      <Skeleton className="h-[52dvh] min-h-80 rounded-[var(--radius-card)] lg:h-[560px]" />
     )
   }
 );
@@ -56,6 +55,7 @@ export function VolumeView({ volume, heatCeiling = HEAT_MAX_WEEKLY_SETS, windowD
   const [selectedSlug, setSelectedSlug] = useState<RegionSlug | null>(null);
   /*const { settings: displaySettings, isLoaded: displaySettingsLoaded } =
   useDisplaySettings();*/
+  const selectedCardRef = useRef<HTMLDivElement>(null);
   const [debugRegions] = useState(
     () => typeof window !== "undefined" && window.location.search.includes("debugRegions")
   );
@@ -94,132 +94,90 @@ export function VolumeView({ volume, heatCeiling = HEAT_MAX_WEEKLY_SETS, windowD
     0
   );
   const windowLabel =
-    volumeWindows.find((item) => item.days === windowDays)?.label ?? `${windowDays}D`;
+    volumeWindows.find((item) => item.days === windowDays)?.words ?? `last ${windowDays} days`;
+
+  // On phones the detail card sits below the figure and legend: bring it into view.
+  useEffect(() => {
+    if (selectedSlug) selectedCardRef.current?.scrollIntoView({ block: "nearest" });
+  }, [selectedSlug]);
+
+  const hasNoSets = !volume.isLoading && !volume.isError && windowTotal === 0;
 
   return (
-    <div className="hud-grid relative isolate min-h-full">
-      <BayAmbience />
+    <div className="mx-auto min-h-full max-w-6xl space-y-6 px-4 pb-8 pt-4 lg:px-6">
+      <h1 className="text-large-title text-text">Muscle volume</h1>
 
-      <div className="relative z-10 mx-auto max-w-6xl space-y-4 p-4 lg:p-6">
-        <header>
-          <div>
-            {/* <p className="label-caps text-outline">BODY_RECONSTRUCTION</p> */}
-            <h1 className="font-display text-2xl font-bold tracking-tight text-fg">
-              Muscle volume
-            </h1>
-          </div>
-        </header>
+      {volume.isError ? (
+        <ErrorState
+          message={errorMessage(volume.error, "Couldn't load your muscle volume. Check your connection and try again.")}
+          retry={() => void volume.refetch()}
+        />
+      ) : null}
 
-        {volume.isError ? (
-          <ErrorState
-            message={errorMessage(volume.error, "Weekly volume could not be loaded.")}
-            retry={() => void volume.refetch()}
+      <dl className="grid grid-cols-2 gap-4 rounded-[var(--radius-card)] bg-surface p-4">
+        <StatTile label="Muscles trained" value={volume.isLoading ? "…" : activeMuscles} />
+        <StatTile label="This week" unit="sets" value={volume.isLoading ? "…" : latestWeekTotal} />
+      </dl>
+
+      {hasNoSets ? (
+        <div className="rounded-[var(--radius-card)] bg-surface p-4">
+          <p className="text-body text-text">No sets in the {windowLabel} yet. Log a workout and your muscles light up.</p>
+          <Link className={`${buttonClass("primary")} mt-3 w-full`} href="/workout">Start workout</Link>
+        </div>
+      ) : null}
+
+      <div className="space-y-6 lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-6 lg:space-y-0">
+        <div className="space-y-4">
+          <VolumeBodyMap
+            debugRegions={debugRegions}
+            heatCeiling={heatCeiling}
+            onSelect={handleSelect}
+            selectedSlug={selectedSlug}
+            toolbarEnd={<WindowControls onChange={setWindowDays} value={windowDays} />}
+            weeklySetsBySlug={weeklySetsBySlug}
           />
-        ) : null}
 
-        <div className="hidden grid-cols-2 gap-3 lg:grid">
-          <Panel accent="none">
-            <Metric
-              label="Muscles trained"
-              value={volume.isLoading ? "…" : String(activeMuscles)}
-            />
-          </Panel>
-          <Panel accent="lavender">
-            <Metric
-              label="This week"
-              tone="lavender"
-              value={volume.isLoading ? "…" : String(latestWeekTotal)}
-              detail="working sets"
-            />
-          </Panel>
+          <HeatLegend heatCeiling={heatCeiling} />
         </div>
 
-        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-4">
-          {/* ===== Body map: borderless region, body only (no environment) ===== */}
-          <div className="relative mb-4 lg:mb-0">
-            <div className="h-[52dvh] min-h-80 lg:h-[560px]">
-              <WindowControls onChange={setWindowDays} value={windowDays} />
-              <VolumeBodyMap
-                debugRegions={debugRegions}
+        <div className="space-y-6">
+          {volume.isLoading ? (
+            <Skeleton className="h-40 rounded-[var(--radius-card)]" />
+          ) : selected ? (
+            <section aria-label="Selected muscle" className="scroll-mb-24 rounded-[var(--radius-card)] bg-surface p-4" ref={selectedCardRef}>
+              <MuscleIntel
+                workoutHref={workoutHref}
+                aggregate={selected}
                 heatCeiling={heatCeiling}
-                onSelect={handleSelect}
-                selectedSlug={selectedSlug}
-                weeklySetsBySlug={weeklySetsBySlug}
+                windowLabel={windowLabel}
               />
+              <button className="mt-3 min-h-11 text-body text-accent" onClick={() => setSelectedSlug(null)} type="button">Close</button>
+            </section>
+          ) : null}
+
+          {volume.isLoading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-11 rounded-[var(--radius-card)]" />
+              <Skeleton className="h-11 rounded-[var(--radius-card)]" />
+              <Skeleton className="h-11 rounded-[var(--radius-card)]" />
             </div>
-
-            <Panel accent="cyan" className="glass-cyan mt-3" eyebrow="Heat scale">
-              <HeatLegend heatCeiling={heatCeiling} />
-
-              {!volume.isLoading && windowTotal === 0 ? (
-                <p className="mt-3 rounded border border-outline-dim/60 bg-surface-low/40 px-3 py-2 text-[11px] text-fg-muted">
-                  No working sets in this window yet — muscles stay dark until you log training.
-                </p>
-              ) : null}
-            </Panel>
-
-            <div className="mt-3 grid grid-cols-2 gap-3 lg:hidden">
-              <Panel accent="none">
-                <Metric
-                  label="Muscles trained"
-                  value={volume.isLoading ? "…" : String(activeMuscles)}
-                />
-              </Panel>
-              <Panel accent="lavender">
-                <Metric
-                  detail="working sets"
-                  label="This week"
-                  tone="lavender"
-                  value={volume.isLoading ? "…" : String(latestWeekTotal)}
-                />
-              </Panel>
-            </div>
-          </div>
-
-          {/* ===== Side stack ===== */}
-          <div className="space-y-4">
-            <Panel accent="lavender" eyebrow="Selected muscle">
-              {volume.isLoading ? (
-                <Skeleton className="h-40" />
-              ) : selected ? (
-                <MuscleIntel
-                  workoutHref={workoutHref}
-                  aggregate={selected}
-                  heatCeiling={heatCeiling}
-                  windowLabel={windowLabel}
-                />
-              ) : (
-                <EmptyState
-                  message="Tap a muscle on the body, or a row below, to see its detail."
-                  title="Nothing selected"
-                />
-              )}
-            </Panel>
-
-            <Panel accent="cyan" eyebrow="All muscles">
-              {volume.isLoading ? (
-                <div className="space-y-2">
-                  <Skeleton className="h-8" />
-                  <Skeleton className="h-8" />
-                  <Skeleton className="h-8" />
-                </div>
-              ) : (
+          ) : !hasNoSets && windowTotal > 0 ? (
+            <section>
+              <h2 className="mb-2 px-4 text-headline text-text">All muscles</h2>
+              <div className="overflow-hidden rounded-[var(--radius-card)] bg-surface">
                 <DistributionMatrix
                   aggregates={aggregates}
                   heatCeiling={heatCeiling}
                   onSelect={handleSelect}
                   selectedSlug={selectedSlug}
                 />
-              )}
-              <div className="mt-3 flex items-baseline justify-between border-t border-outline-dim/60 pt-3">
-                <span className="label-caps text-outline">Total working sets</span>
-                <span className="font-mono text-sm text-fg">
-                  {volume.isLoading ? "…" : windowTotal}{" "}
-                  <span className="text-outline">{"// "}{windowLabel}</span>
-                </span>
+                <div className="flex min-h-11 items-center justify-between border-t border-line px-4">
+                  <span className="text-body text-text-secondary">Total, {windowLabel}</span>
+                  <span className="num text-body text-text">{windowTotal} sets</span>
+                </div>
               </div>
-            </Panel>
-          </div>
+            </section>
+          ) : null}
         </div>
       </div>
     </div>

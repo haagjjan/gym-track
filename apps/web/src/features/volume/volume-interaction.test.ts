@@ -6,7 +6,7 @@ describe("volume body-map pointer policy", () => {
   it("allows vertical page scrolling and disables touch zoom for coarse pointers", () => {
     assert.deepEqual(volumeOrbitPolicy(true), {
       enableZoom: false,
-      hint: "SWIPE SIDEWAYS TO ROTATE · SWIPE UP/DOWN TO SCROLL",
+      hint: "Swipe sideways to rotate the figure.",
       touchAction: "pan-y"
     });
   });
@@ -14,7 +14,7 @@ describe("volume body-map pointer policy", () => {
   it("keeps full orbit and zoom behavior for a fine pointer", () => {
     assert.deepEqual(volumeOrbitPolicy(false), {
       enableZoom: true,
-      hint: "DRAG TO ORBIT · SCROLL TO ZOOM",
+      hint: "Drag to rotate the figure. Scroll to zoom.",
       touchAction: "none"
     });
   });

@@ -40,12 +40,6 @@ export function sideMapU(xn: number, nz: number, range: number): number {
   return nz >= 0 ? (xn + range) / (2 * range) : (range - xn) / (2 * range);
 }
 
-export function sideDominance(nx: number, nz: number): number {
-  const total = Math.abs(nx) + Math.abs(nz);
-
-  return Math.abs(nz) / Math.max(total, PROJECTION_EPSILON);
-}
-
 export function shouldUseSideMap(nx: number, nz: number, sideCovered: boolean): boolean {
   return sideCovered && Math.abs(nz) > Math.abs(nx);
 }
