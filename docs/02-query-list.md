@@ -172,11 +172,9 @@ The database schema, constraints, and indexes will be designed to support these 
 
 Status: Deferred from the MVP and not part of the first schema/API pass.
 
-## 7) Founding Beta and Account Lifecycle
+## 7) Account Lifecycle
 
-- Q23 generically create/deduplicate a waitlist request without disclosing its prior state.
-- Q24 lock settings/request rows, count consuming accounts and unexpired invites, enforce cap/rolling approval limit, and issue one hashed invitation atomically. Invitation delivery is synchronous after the transaction; record a bounded `SENT` or `FAILED` result without rolling back the durable invitation.
-- Q25 consume one valid invitation with a matching email while creating the verified account and session transactionally.
+- Q23–Q25 (waitlist request, invitation issue, invitation consume) were removed with the beta admission flow (ADR 0022). Signup now records the adult/residence attestation and policy versions on `users`. The numbers stay reserved so older references remain unambiguous.
 - Q26 export every user-owned profile/workout/template/exercise/preference/onboarding/event/message record without secrets or other-user security data.
 - Q27 lock an account for deletion, revoke all sessions, cancel by token/admin, select due accounts and hard-delete the complete ownership graph idempotently. Scheduling is committed only after provider acceptance of its cancellation link; on delivery failure reactivate the account and invalidate the pending token. Finalization continues across individual deletion or notification failures.
 - Q28 get/update privacy and onboarding state; increment reliable login/workout counters independently of optional analytics.

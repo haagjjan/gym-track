@@ -1458,8 +1458,8 @@ Cardio is deferred from the MVP. Do not implement these endpoints in the first A
 
 ## Validation Rules
 
-- `REGISTRATION_MODE` accepts only `ENABLED`, `INVITE_ONLY`, or `DISABLED`; production defaults to
-  `DISABLED` when the variable is absent.
+- `REGISTRATION_MODE` accepts only `ENABLED` or `DISABLED` (`INVITE_ONLY` was removed by ADR 0022 and is
+  rejected at startup); production defaults to `DISABLED` when the variable is absent and runs `ENABLED`.
 - Required fields must be present and non-empty unless nullable.
 - `email` must be a valid email string.
 - `username` must be globally unique case-insensitively.

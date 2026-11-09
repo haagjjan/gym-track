@@ -1,258 +1,157 @@
-# Codebase Map
+# Codebase map
 
-This document is a factual map of the current repository for future agent
-sessions. It reflects the live tree inspected on 2026-07-04, including the
-frontend rework and SaaS hardening files currently present in the worktree.
+A factual map of the repository, checked against the tree on 2026-11-09 (branch `ux-rework`,
+UX rework Step 12). Rules and boundaries are in [ARCHITECTURE.md](ARCHITECTURE.md); the full
+directory listing is in [docs/repository-structure.md](docs/repository-structure.md).
 
-## Current Shape
+## Shape
 
-- Monorepo managed by `pnpm` workspaces.
-- Root scripts and shared tooling live in `package.json`, `pnpm-workspace.yaml`,
-  `tsconfig.base.json`, `eslint.config.mjs`, and `playwright.config.ts`.
-- `apps/api` owns the Fastify API, Kysely data access, SQL migrations, and API tests.
-- `apps/web` owns the Next.js App Router app, same-origin proxy routes, feature UI,
-  shared browser API helpers, and Playwright smoke tests.
-- `docs` owns requirements, query/schema/API contracts, implementation plans, ADRs,
-  design references, operations docs, and status notes.
-- `_legacy-reference` contains archived frontend reference code from the UI rebuild.
-- `.claude` stores agent-local context, skills, memory, and local Claude settings.
+- pnpm workspace. Root tooling: `package.json`, `pnpm-workspace.yaml`, `tsconfig.base.json`,
+  `eslint.config.mjs`, `playwright.config.ts`, `compose.yaml` (local stack),
+  `compose.monitoring.yaml` (local monitoring overlay), `render.yaml` (alternative host).
+- `apps/api`: Fastify API, Kysely data access, SQL migrations, API tests.
+- `apps/web`: Next.js App Router app, same-origin BFF routes, UI, Playwright specs.
+- `ops/`: production and staging Compose definitions, monitoring, logging, backup, status page.
+- `docs/`: requirements, data and API contracts, design system, ADRs, live runbooks.
+  Finished material is in `docs/archive/`.
+- `scripts/mobile-preview.sh`: Capacitor dev shells for the iOS Simulator and Android emulator.
 
-There is no `prisma/` directory, `schema.prisma`, or Prisma client in this repo.
-The database source of truth is SQL migrations plus Kysely table typings.
+There is no Prisma. The schema lives in SQL migrations plus Kysely types.
 
-## Product State
-
-Gym Progress Tracker is a TypeScript/PostgreSQL web app for logging strength
-workouts, tracking exercise progress, and reviewing weekly muscle-group volume.
-The backend/auth/database foundation is intentionally kept. The active product
-surface is the Body Cockpit UI redesign and polish.
-
-Implemented or present in the current tree:
-
-- Email/password signup, login, logout, and current-user lookup.
-- Email verification, resend verification, forgot password, and reset password flows.
-- Argon2 password hashing, hashed opaque DB-backed sessions, secure cookies, rate
-  limiting, lockout, security headers, and log redaction.
-- Workout create/list/detail/end flows.
-- Active workout logging with exercises, ordered exercise blocks, sets, RIR, rest
-  time, notes, editing, deletion, and completion.
-- Shared exercise library, muscle group lookup, exercise-name review/block behavior.
-- Exercise progress, exercise summaries, completed-exercise navigation, and weekly
-  volume analytics.
-- Canonical workout CSV export/import with preview and exercise-name review.
-- First-party server-side app events in `app_events`.
-- Next.js UI for auth, dashboard, launch/start workout, active session, history,
-  progress, weekly volume, settings, and account recovery flows.
-- 3D avatar/statue work with React Three Fiber under `apps/web/src/features/avatar`.
-
-## Backend
+## API (`apps/api`)
 
 Entry points:
 
-- `apps/api/src/main.ts`: loads env, creates Kysely DB, builds server, starts Fastify,
-  and handles graceful shutdown.
-- `apps/api/src/server.ts`: wires Fastify, helmet, rate limiting, cookies, repositories,
-  services, feature routes, mailer, app events, and auth cleanup.
-- `apps/api/src/db/database.ts`: Kysely `AppDatabase` table typings and Postgres pool.
-- `apps/api/src/shared/env.ts`: Zod environment validation.
-- `apps/api/src/shared/logger.ts`: Pino/Fastify logging setup and redaction.
-- `apps/api/src/shared/mailer.ts`: Resend/log email transport abstraction.
-- `apps/api/src/shared/events.ts`: fire-and-forget first-party app event tracking.
+- `src/main.ts`: loads env, creates the database, builds and starts the server, graceful shutdown.
+- `src/server.ts`: Fastify plugins (helmet, rate limits, cookies), repositories, services,
+  feature routes, mailer, app events, auth cleanup.
+- `src/db/database.ts`: Kysely table types and the pool.
+- `src/shared/`: `env.ts` (Zod env), `logger.ts`, `request-logging.ts`, `metrics.ts`,
+  `mailer.ts` (Resend or log transport), `events.ts`, `client-attribution.ts`,
+  `rate-limit-response.ts`, `http-validation.ts`.
 
-Feature folders:
+Features (`src/features/`), each with routes, schemas, services, repositories and tests:
 
-- `features/auth`: signup/login/logout/me, verification, password reset, sessions,
-  password hashing, token generation, repository, service, schemas, tests.
-- `features/workouts`: session create/list/detail/end, session exercise mutations,
-  set mutations, CSV import/export, repositories, services, schemas, tests, integration flow.
-- `features/exercises`: exercise and muscle-group routes, exercise creation/restoration,
-  name quality review, repositories, services, schemas, tests.
-- `features/analytics`: completed exercises, exercise progress, exercise summaries,
-  weekly volume, repositories, services, schemas, tests.
-- `features/health`: health and database health checks.
+| Feature | Owns |
+| --- | --- |
+| `auth` | signup, login, logout, me, email verification, password reset, sessions, lockout |
+| `users` | preferences, onboarding state, data export, account deletion, cancellation and erasure |
+| `lifecycle` | scheduler for auth cleanup, due deletions and retention |
+| `workouts` | workouts, session exercises, sets, retroactive edits, CSV import/export |
+| `templates` | workout templates and starting a workout from one |
+| `exercises` | catalog (about 820 system exercises), search, custom exercises, merge, muscle groups |
+| `analytics` | completed exercises, exercise progress and summaries, weekly volume |
+| `messages` | in-app messages, campaigns, deliveries, responses |
+| `admin` | overview, members, deletion support, campaigns, audit log |
+| `status` | aggregate numbers for the public status page |
+| `health` | health and database health |
 
-API routes are mounted under `/api/v1/*`. Route handlers authenticate, validate with
-Zod, and translate service results into the repo error envelope:
+Routes are mounted under `/api/v1/*`. Errors use
+`{ "error": { "code", "message", "fields", "details" } }`.
 
-```json
-{ "error": { "code": "...", "message": "...", "fields": {}, "details": {} } }
-```
+Database: 10 migrations in `db/migrations/` (core schema, muscle seed, auth hardening and
+events, exercise muscles and templates, canonical classifications, catalog expansion and search,
+public beta foundation, workout mutation safety, onboarding demo). Tables: `users`,
+`user_sessions`, `auth_action_tokens`, `account_deletion_tokens`, `erasure_tombstones`,
+`app_events`, `admin_audit_events`, `muscle_groups`, `exercises`, `exercise_muscle_groups`,
+`exercise_secondary_muscles`, `workout_sessions`, `session_exercises`, `sets`,
+`workout_templates`, `workout_template_exercises`, `campaigns`, `campaign_targets`,
+`message_deliveries`, `beta_settings`, `beta_access_requests`. The last two are left over from
+the beta; ADR 0022 plans their cleanup.
 
-Business logic belongs in feature services. Kysely access belongs in repositories.
-Web code must not import database clients or Kysely.
+## Web (`apps/web`)
 
-## Database
+Routes (`src/app/`):
 
-Schema files:
+| Route | Screen |
+| --- | --- |
+| `/` | Home: greeting, start card, week totals, personal bests, recent workouts, 3D figure |
+| `/workout` | Workout tab: start empty, resume, start from a template or a past workout |
+| `/workouts` | History (search, filters, paging, CSV import and export) |
+| `/workouts/[workoutId]` | Live set logger, or a finished workout's detail |
+| `/workouts/templates`, `/workouts/exercises` | Templates and the exercise catalog (pushed from the Workout tab) |
+| `/progress` (alias `/analytics`) | Exercise progress chart |
+| `/weekly-volume` | 3D muscle volume map (`?debugRegions=1` paints region ownership) |
+| `/settings`, `/messages`, `/help`, `/help/demo/*` | Settings, inbox, help and the guided example |
+| `/admin` | Admin console (admins only) |
+| `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/verify-email`, `/cancel-deletion` | Account flows |
+| `/privacy`, `/terms`, `/cookies`, `/support` | Public policy pages |
+| `/api/*` | BFF route handlers that forward to the Fastify API |
 
-- `apps/api/db/migrations/20260515120000000_create_core_schema.sql`
-- `apps/api/db/migrations/20260515121000000_seed_muscle_groups.sql`
-- `apps/api/db/migrations/20260703120000000_add_auth_hardening_and_events.sql`
-- `apps/api/db/migrate.json`
+Shared code (`src/shared/`):
 
-Core tables:
+- `ui/`: `Button`, `Sheet` (bottom sheet on phones, dialog on wide screens), `ConfirmDialog`,
+  `Stepper`, `StatTile`, `InfoPopover`, sortable list, radio-group keyboard helper,
+  `useModalBehavior` (focus trap, Escape, inert background, scroll lock), `icons.tsx`,
+  `ui.tsx` (skeleton, error state).
+- `api/`: browser API client, TanStack Query hooks, types, CSV helpers.
+- `format.ts`: dates, durations, clock and numbers. `workout-edits.ts`, `public-policy.ts`,
+  `query-provider.tsx`, client diagnostics and server logging helpers.
 
-- `users`
-- `user_sessions`
-- `auth_action_tokens`
-- `app_events`
-- `muscle_groups`
-- `exercises`
-- `exercise_secondary_muscles`
-- `workout_sessions`
-- `session_exercises`
-- `sets`
+Features (`src/features/`):
 
-Important rules:
+| Feature | Contents |
+| --- | --- |
+| `shell` | app shell (tab bar, sidebar, headers, mini bar), `navigation.ts` route table and back contract, `app-history.tsx` in-app history, `theme.ts` |
+| `session` | live set logger: header, exercise list, exercise sheet, set composer and editor, rest timer, bottom bar, completion summary |
+| `launch` | Workout tab screen |
+| `dashboard` | Home screen and panels; device-local body profile, favourite lifts, display settings |
+| `history` | History list, rows, CSV panel and format guide |
+| `progress` | progress chart (pinned axes, zoom, table view) and controls |
+| `volume` | volume screen and panels, 3D body map, region maps, mask shader, camera director, aggregation |
+| `avatar` | Home 3D scene: stage, camera, turntable driver, PR burst, hologram bay (textures, environment, motes), pedestal, statue |
+| `templates`, `exercises`, `workouts` | template editor and list; exercise picker, editor and form; shared facet filters |
+| `settings` | settings screen and its panels (theme, rest timer, favourite lifts, heat ceiling, privacy and data, exercise merge, help) |
+| `onboarding` | guided example: lessons, demo data, demo screens, guide card |
+| `privacy` | device-storage choice and `useScopedLocalStorage` |
+| `auth`, `legal`, `messages`, `admin`, `status`, `analytics` | account flows, policy pages, inbox, admin console, proxy helpers |
 
-- One open workout per user through a partial unique index on `workout_sessions`.
-- Workout data uses soft deletes with `deleted_at`.
-- Exercise names are globally unique case-insensitively.
-- Weights are stored in kg.
-- Weekly volume counts working sets only and uses primary muscle groups.
-- Aggregates such as estimated 1RM and weekly volume are computed on read.
+3D assets: `public/models/avatar/avatar-base.fbx` (figure) and `base-v-2.fbx` (pedestal).
+Muscle regions: `public/volume/muscle-regions-{front,back,side}.svg`, with an editing guide in
+`public/volume/README.md`.
 
-## Frontend
-
-Entry points:
-
-- `apps/web/src/app/layout.tsx`: global fonts, metadata, viewport, diagnostics listener,
-  TanStack Query provider, and global CSS.
-- `apps/web/src/app/page.tsx`: authenticated dashboard.
-- `apps/web/src/app/workout/page.tsx`: workout launch/start screen.
-- `apps/web/src/app/workouts/page.tsx`: history screen.
-- `apps/web/src/app/workouts/[workoutId]/page.tsx`: active/completed session screen.
-- `apps/web/src/app/progress/page.tsx`: progress analytics.
-- `apps/web/src/app/weekly-volume/page.tsx`: volume analytics.
-- `apps/web/src/app/settings/page.tsx`: local biometrics and favorite lifts.
-- `apps/web/src/app/login`, `signup`, `forgot-password`, `reset-password`,
-  and `verify-email`: auth and account flows.
-
-Web feature folders:
-
-- `features/auth`: auth screens, account recovery screens, auth proxy helpers,
-  server auth, user types.
-- `features/shell`: app shell, desktop sidebar, mobile top/tab navigation, icons.
-- `features/dashboard`: Body Cockpit dashboard, connector layer, local biometrics,
-  favorite lift preferences.
-- `features/launch`: start/resume/clone workout flow.
-- `features/session`: fullscreen active workout logger, exercise sheet, rest timer,
-  numeric stepper, confirm-tap helper, start-session helper.
-- `features/history`: history list/detail expansion and CSV panel.
-- `features/progress`: progress screen and Recharts-based progress chart.
-- `features/volume`: weekly volume screen, heatmap logic, 3D body map.
-- `features/avatar`: reusable avatar/stage/statue scene and avatar spike.
-- `features/settings`: settings screen for local-only biometrics/favorite lifts.
-- `components/ui.tsx`: reusable HUD panel/button/metric/empty/loading/error primitives.
-- `shared/api`: browser API client, hooks, types, and CSV helpers.
-- `shared/api-base-url.ts`: API base URL resolution for server-side calls.
-- `shared/client-diagnostics.ts`: local/client diagnostics buffer.
-- `shared/query-provider.tsx`: TanStack Query client.
-
-Browser components call same-origin `/api/*` Next route handlers. Those route
-handlers forward requests and cookies to the Fastify `/api/v1/*` API. This keeps
-browser auth same-origin and avoids a CORS surface.
-
-## UI Direction
-
-The current design direction is the Aether / Body Cockpit system:
-
-- Dark obsidian surfaces.
-- Electric cyan primary accent.
-- Soft lavender secondary accent.
-- Neon green success/performance accent.
-- Space Grotesk for headings/labels.
-- JetBrains Mono for data and functional text.
-- Glassmorphism/HUD panels, thin borders, subtle glows, dense but legible layouts.
-- Mobile gym use is mandatory; active logging must be fast and one-handed.
-- Do not paste Stitch `code.html` into production. Use it only as visual reference.
-- Do not add 3D to active workout logging.
-
-Relevant design docs:
-
-- `docs/DESIGN.md`
-- `docs/10-frontend-rework-brief.md`
-- `docs/11-phase0-frontend-inventory.md`
-- `docs/14-ui-polish-and-ops-round-2.md`
-- `docs/design/stitch-redesign-v2/design-notes.md`
-- `docs/design/stitch-redesign-v2/implementation-roadmap.md`
-
-## Docs And Decisions
-
-Primary source docs:
-
-- `AGENTS.md`: agent working rules.
-- `README.md`: current high-level project overview and commands.
-- `docs/repository-structure.md`: current repo map and local-only file rules.
-- `docs/00-workflow.md`: phase roadmap and implementation status.
-- `docs/01-requirements.md`: MVP product requirements and user flows.
-- `docs/02-query-list.md`: DB-driven query requirements.
-- `docs/03-data-model-notes.md`: business/data rules.
-- `docs/04-schema-draft.md`: schema draft and query mapping.
-- `docs/05-api-contract.md`: REST API contract.
-- `docs/07-implementation-pattern.md`: feature-slice implementation pattern.
-- `docs/08-next-implementation-plan.md`: current fresh-session handoff.
-- `docs/12-saas-hardening.md`: recent auth/security/ops hardening summary.
-- `docs/13-operator-guide.md`: day-to-day running, users, analytics, CSV, env notes.
-- `docs/deployment-runbook.md`: Render deployment and operations runbook.
-- `ARCHITECTURE.md`, `ENGINEERING.md`, `CONTRIBUTING.md`: boundaries, code standards,
-  and workflow gates.
-
-ADRs:
-
-- `0001`: documentation workflow guardrails.
-- `0002`: TypeScript/PostgreSQL monorepo direction.
-- `0003`: Next.js, Fastify, pnpm, Kysely, Zod, owned auth.
-- `0004`: `node-pg-migrate`, Argon2, DB-backed opaque sessions, Docker Compose Postgres.
-- `0005`: Render web/API services plus Render PostgreSQL.
+Tests: unit tests next to the code (`*.test.ts`, Node test runner). Playwright specs in
+`apps/web/e2e/`: `auth-workout-smoke`, `workout-templates`, `onboarding-demo`, `public-status`,
+`volume-mobile-gesture`.
 
 ## Scripts
 
-Root scripts from `package.json`:
+| Command | What it does |
+| --- | --- |
+| `pnpm start` / `pnpm stop` | full local stack in Docker Compose (Postgres, migrations, API, web) |
+| `pnpm db:start` | Postgres only |
+| `pnpm dev:api`, `pnpm dev:web` | hot-reload servers on :4000 and :3000 (load `.env` into the shell first for the API) |
+| `pnpm migrate:up` and friends | `node-pg-migrate` through the API package |
+| `pnpm check` | type-check, lint, unit tests, build |
+| `pnpm test:integration` | API tests against a real database (`INTEGRATION_DATABASE_URL`) |
+| `pnpm test:performance` | algorithmic regression ceilings |
+| `pnpm smoke:web` | Playwright against a running web app (`WEB_BASE_URL`) |
+| `pnpm ops:monitoring:*` | local monitoring overlay |
+| `scripts/mobile-preview.sh [all\|ios\|android]` | open the dev server in the phone shells |
 
-- `pnpm start`: Docker Compose full stack: Postgres, migrations, API, web.
-- `pnpm stop`: stop Compose stack.
-- `pnpm db:start`: start only Postgres.
-- `pnpm db:stop`: stop Compose stack.
-- `pnpm db:logs`: follow Postgres logs.
-- `pnpm dev:api`: Fastify dev server via `tsx watch`.
-- `pnpm dev:web`: Next.js dev server.
-- `pnpm migrate:*`: run `node-pg-migrate` through the API package.
-- `pnpm type-check`: recursive package type checks.
-- `pnpm lint`: root ESLint.
-- `pnpm test`: recursive package tests.
-- `pnpm build`: recursive package builds.
-- `pnpm check`: `type-check`, `lint`, `test`, then `build`.
-- `pnpm test:integration`: API database integration test suite.
-- `pnpm smoke:web`: Playwright smoke test against a running web app.
+CI (`.github/workflows/`): `repo-checks.yml` runs project checks, API integration and web smoke
+on every pull request and push to `main`. `status-page.yml` publishes the status page after a
+green `main`.
 
-See `.claude/skills/how-to-run-checks.md` before running expensive checks.
+## Where to read next
 
-## Local And Deployment
+| Topic | Document |
+| --- | --- |
+| UI, tokens, navigation, copy | [docs/DESIGN.md](docs/DESIGN.md) |
+| Product requirements | [docs/01-requirements.md](docs/01-requirements.md) |
+| Queries, data rules, schema | [docs/02-query-list.md](docs/02-query-list.md), [docs/03-data-model-notes.md](docs/03-data-model-notes.md), [docs/04-schema-draft.md](docs/04-schema-draft.md) |
+| API contract | [docs/05-api-contract.md](docs/05-api-contract.md) |
+| Feature-slice pattern and file-size rules | [docs/07-implementation-pattern.md](docs/07-implementation-pattern.md) |
+| Data structures and diagnostics | [docs/09-observability-and-data-structures.md](docs/09-observability-and-data-structures.md) |
+| Running the service | [docs/13-operator-guide.md](docs/13-operator-guide.md), [ops/production/README.md](ops/production/README.md) |
+| Current state and next steps | [docs/99-current-project-state.md](docs/99-current-project-state.md) |
+| Decisions | [docs/decisions/](docs/decisions/README.md) |
 
-Local:
+## Cautions
 
-- Node 22+, pnpm 10+, Docker.
-- `.env.example` documents public local variables. Do not read or commit real `.env`.
-- `pnpm start` runs the production-like Compose stack.
-- For hot reload, run Postgres/migrations, then `pnpm dev:api` and `pnpm dev:web`.
-
-Deployment:
-
-- `render.yaml` defines Docker-backed web/API services and Render PostgreSQL.
-- API migrations run as the API pre-deploy command.
-- Web reaches API over private networking via `API_INTERNAL_HOSTPORT`.
-- Production secrets and email provider keys belong in host environment variables only.
-
-## Known Gaps And Cautions
-
-- The worktree may be dirty. Inspect `git status --short` before editing and do not
-  revert unrelated user changes.
-- Some older docs lag current code; prefer `README.md`, `docs/11`, `docs/12`,
-  `docs/13`, `docs/14`, and the actual source tree for recent UI/auth hardening state.
-- Settings biometrics and favorite lifts are local-device preferences, not API-backed.
-- Saved workout templates/protocols are not a backend feature yet.
-- There is no admin/roles model yet. Internal analytics dashboard access control is an
-  open decision in `docs/14-ui-polish-and-ops-round-2.md`.
-- Hosted production credentials, custom domains, and real email delivery are operational
-  setup tasks, not checked-in repo state.
+- The worktree is often dirty with the owner's uncommitted work. Check `git status --short` and
+  leave unrelated changes alone.
+- Never run `next build` while `next dev` shares `apps/web/.next`. It corrupts the dev server.
+- Local auth and signup share one rate-limit bucket per IP, so parallel e2e runs hit `429`s.
+  Run specs one at a time.
+- Device-local preferences are not synced to the API.

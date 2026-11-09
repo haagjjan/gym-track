@@ -2,9 +2,9 @@
 
 ## 0. Meta
 - **Owner: Jan Haag**  
-- **Last updated:** 2026.08.04
-- **Status:** Draft
-- **Target release:** MVP v0.1  
+- **Last updated:** 2026.11.09
+- **Status:** MVP shipped as public v0; this file is the living requirement record
+- **Target release:** public v0, then the Capacitor phone apps (ADR 0021)
 
 ---
 
@@ -53,7 +53,7 @@ not good success metrics
 - Web sharing
 - Nutrition
 - Coaching
-- mobile application
+- a separate native mobile codebase (the phone apps wrap the web UI in Capacitor, ADR 0021)
 - Template planning data such as sets, rep ranges, weights, RIR/RPE, or template-specific rest times
 - Supersets, circuits, alternative suggestions, favorites, and recent/frequent exercise ranking
 - Template folders, tags, sharing, public templates, version history, and archiving
@@ -97,7 +97,7 @@ not good success metrics
 - Web sharing
 - Nutrition
 - coaching
-- Mobile Application
+- A separate native mobile codebase (see ADR 0021)
 - Cardio logging and cardio history (planned vNext)
 
 ---
@@ -117,7 +117,9 @@ not good success metrics
 
 ## 5.1 V1 mobile gym-use requirements
 
-- Responsive mobile web is the V1 phone experience; a native mobile app is not required.
+> Visual style, colour roles, labels and navigation are now defined by [DESIGN.md](DESIGN.md), which supersedes the colour and label details in this section. The functional rules still apply.
+
+- Responsive mobile web was the V1 phone experience. The phone apps ship the same UI inside a Capacitor shell (ADR 0021).
 - Product chrome uses the `Gym Progress Tracker` name, a conventional settings cog, and only displays real application state; fake online/optimal/readiness labels and the idle figure overlay are absent. White is neutral titles/names/text/values, cyan is action/selection/focus/live input, lavender is working sets and secondary information, muted light green is warmup context, bright green is confirmed success/completion/rest complete/genuine performance, and red is error/destructive. Volume retains its separate five-stage purple heat scale and every color-coded state also has a text, icon, value, or pattern cue.
 - Every workout control first navigates to the launch/resume flow. Starting an empty workout or a template is an explicit choice.
 - An empty workout name is valid. Names save on blur or Enter.
@@ -130,7 +132,7 @@ not good success metrics
 - Exercise List can filter `All`, `Editable by me`, or `Read-only`; system and other-user exercises are read-only. The reviewed system catalog should cover ordinary strength programs. Creation presents ranked existing matches but always allows an explicit warned custom-name choice. Primary and secondary muscle selectors use bounded overlays for both create and edit while retaining counts and the primary-muscle requirement without moving form actions.
 - Progress uses one best working set per user-local calendar day, including days with multiple sessions; exercise picker counts reflect those plotted days. The selected 1W/1M/3M/MAX window controls total sets and total tonnage, including working and warmup sets, while best set and estimated 1RM remain all-time.
 - Volume uses five exact purple heat stages, proportional bar lengths within a stage, inspectable set ranges, and an account-synced 5–50 ceiling. On touch devices, vertical movement beginning on the 3D figure scrolls the page, horizontal movement rotates, taps select muscles, and pinch zoom is disabled; the visible mobile hint explains sideways rotation versus vertical scrolling.
-- `docs/beta-process/private-beta-1/private-beta-1-report.md` supersedes usability audit v4, then v3, then v2 where they conflict; the older sources continue to define behavior not superseded by newer evidence.
+- `docs/archive/beta-process/private-beta-1/private-beta-1-report.md` supersedes usability audit v4, then v3, then v2 where they conflict; the older sources continue to define behavior not superseded by newer evidence.
 
 ---
 
@@ -553,7 +555,7 @@ not good success metrics
 - Recommended: “weekly” = ISO week (Mon–Sun)
 - Recommended: count only **working sets**, exclude warmups
 - Weekly Volume should be visually and navigationally distinct from Progress.
-- The interactive 3D body map is the default. A device-local setting can select the lighter 2D front/back map.
+- The interactive 3D body map is the only view. Front and back buttons snap the camera; without WebGL the map shows a short notice and the per-muscle panels below still work.
 - Front/back view controls and muscle focus use the same smooth camera transition, except when reduced motion is requested.
 - On coarse-pointer/mobile devices, vertical movement that begins on the 3D canvas scrolls the page, horizontal movement rotates the figure, taps select muscles, and pinch zoom is disabled. Desktop keeps mouse orbit and zoom.
 
@@ -707,15 +709,17 @@ Deferred from MVP.
 - Can muscle groups be assigned automatically?
 - Whether a future Progress view should offer an optional all-set mode; V1 defaults to one strongest working set per local day.
 
-## 12. Founding Beta Requirements
+## 12. Public account requirements
 
-- Public intake is email-only with required 18+ attestation and Privacy acknowledgement; all outcomes are indistinguishable publicly.
-- Only `ADMIN` may approve. A seven-day, single-use invite reserves one of 50 seats and verifies the fixed email on signup. Initial approvals are limited to 10 in a rolling 24 hours.
+The Founding Beta admission flow (waitlist, admin approval, single-use invitations, 50-seat cap) was replaced by open signup in ADR 0022.
+
+- Signup is open. It requires the attestation "I'm at least 18 and live in Switzerland" and acceptance of the current Terms and Privacy versions. `REGISTRATION_MODE=DISABLED` is the kill switch.
+- Email verification is required but doesn't block use; Settings shows the pending state with a resend action.
 - Every account can export server data and request password-confirmed deletion with a locked seven-day grace, emailed cancellation and permanent live-data erasure.
 - Account-linked analytics and functional device storage are opt-in; browser data is per-user and legacy unscoped data is never imported silently.
 - First-run help is dismissible, resumable and repeatable; practice data is never persisted. Guidance never interrupts an active workout.
 - In-app campaigns are owner-to-user only, plain text, optional-response, dismissible, one at a time and suppressed during active editing. Users may opt out of non-essential prompts.
-- The service identifies the cohort honestly and permanently as Founding Beta. There are no fake counters, advertising trackers, user-to-user messaging, marketing email or access benefits for voluntary support.
+- Accounts created during the Founding Beta keep that history, but the product no longer separates cohorts. There are no fake counters, advertising trackers, user-to-user messaging, marketing email or access benefits for voluntary support.
 
 ## Hands-on onboarding (version 2)
 

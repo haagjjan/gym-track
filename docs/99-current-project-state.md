@@ -1,108 +1,61 @@
-# Current Project State
+# Current project state
 
-This note is a compact handoff for a model that cannot inspect the repository directly. It summarizes the repository as it exists now, not the original MVP plan.
+A short handoff for someone (or a model) who can't look around the repository. Last updated
+2026-11-09. For the code map read [CODEBASE.md](../CODEBASE.md); for the rules read
+[ARCHITECTURE.md](../ARCHITECTURE.md).
 
-## 1. Current Stack And Repo Structure
+## Where things stand
 
-- Monorepo uses `pnpm` workspaces and strict TypeScript.
-- API stack: Fastify, Kysely, PostgreSQL, Zod, `node-pg-migrate`, and Argon2.
-- Web stack: Next.js App Router, React, and feature-owned UI modules.
-- Local orchestration: Docker Compose for PostgreSQL, migrations, API, and web.
-- Deployment target: Render Blueprint with Docker-backed web/API services and Render PostgreSQL.
+- **Production** runs public v0 at `app.gymtrack.ch` from `main`. Signup is open to adults who
+  live in Switzerland (ADR 0022). It is self-hosted on a home server behind Cloudflare Tunnel and
+  Caddy, with monitoring, alerting, encrypted off-machine backups and a public status page.
+- **Mobile apps** will be Capacitor shells around a bundled build of the web UI (ADR 0021,
+  accepted with a spike gate). Nothing native ships yet.
+- **UX rework** (branch `ux-rework`) gets the web UI ready to ship as that app. Done so far:
+  - a new design system in [DESIGN.md](DESIGN.md): system font, one cyan accent, light and dark
+    themes, sentence-case copy
+  - the new shell: tab bar on phones (Home, History, Workout, Progress, Volume), in-app back,
+    safe areas
+  - every screen reworked, with new copy
+  - code cleanup: spike route removed, 3D files split, shared `Sheet` and storage hooks
+  - docs and repo cleanup: archive under [archive/](archive/README.md), the root docs rewritten
 
-Repo layout:
+  The owner commits each step; check `git status` for what is still uncommitted.
 
-- `apps/api` owns the Fastify API, database access, migrations, and API tests.
-- `apps/web` owns the Next.js app, route handlers, feature UI, and Playwright smoke coverage.
-- `docs` owns requirements, schema/API docs, implementation notes, deployment notes, and ADRs.
-- Root files own workspace/tooling/CI: `package.json`, `pnpm-workspace.yaml`, `compose.yaml`, `render.yaml`, `playwright.config.ts`.
+## What the product does
 
-## 2. What Is Already Implemented
+Log strength workouts on a phone (sets with weight, reps, RIR, notes, a rest timer), reuse
+templates, review history, import and export CSV, follow exercise progress, and see weekly
+muscle volume on a 3D body. New accounts get a guided example that never touches their data.
+Accounts support email verification, password reset, data export, deletion with a grace period,
+and hard erasure. Admins get an overview, member tools, deletion support, campaigns and an audit
+log.
 
-- Core documentation and architecture decisions are in place.
-- Local dev foundation exists: workspace tooling, Docker Compose PostgreSQL/API/web orchestration, `.env.example`, and migration commands.
-- API foundation exists: health check, environment validation, database connectivity, logging, and server bootstrap.
-- Auth is implemented: signup, email verification/resend, login, logout, forgot/reset password, current-user lookup, account lockout, Argon2 hashing, DB-backed opaque sessions, and secure cookie support.
-- Workout sessions are implemented: create, list, detail, and end.
-- Exercise library is implemented: list selectable exercises, create or restore shared exercises, and list seeded muscle groups.
-- Workout logging is implemented: add/reorder/delete session exercises, add/update/delete sets.
-- Analytics is implemented: completed-exercise navigation, exercise progress, exercise summary, and weekly muscle volume.
-- CSV workout import/export is implemented on the API and wired into the web UI.
-- Web UI exists for signup/login/logout, authenticated home state, workout logging, workout history/detail, Progress, Weekly Volume, and CSV import/export controls.
-- Quality gates exist: unit tests, sequential pure-function performance regression tests, API database integration tests, Playwright smoke tests, and GitHub Actions checks.
-- Deployment and operations support exist: Render config, an active private `gym-prod` deployment, structured logging, private monitoring and Telegram alerting, encrypted off-machine backups, isolated restore tests, and recovery runbooks.
+## Next steps
 
-## 3. Important Files And What They Do
+1. **Mobile readiness gate (UX rework Step 13):** a full pass in the iOS and Android shells,
+   independent review, and owner sign-off. Check that logging sets works with the keyboard open,
+   that back behaves right on both platforms, and the frame rate on real phones.
+2. **Mobile app plan:** written after Step 13, based on ADR 0021. The Capacitor spike decides
+   whether token auth, offline sync or native plugins are needed (each needs its own ADR).
+3. **Signup consent hotfix:** prepared in the `../gym-progress-tracker-hotfix` worktree, branch
+   `hotfix/signup-consent`, not merged yet. Rebase `ux-rework` after it lands on `main`.
+4. **Beta table cleanup:** drop `beta_access_requests` and `users.beta_cohort` and move
+   `campaigns_open` out of `beta_settings` (planned in ADR 0022).
 
-- `README.md`: high-level project overview, local run commands, and current status summary.
-- `docs/00-workflow.md`: phase roadmap and what is considered implemented.
-- `docs/01-requirements.md`: MVP scope and user flows.
-- `docs/02-query-list.md`: DB-driven query requirements that shaped the schema.
-- `docs/03-data-model-notes.md`: business rules such as soft deletes, ordering, metric units, and set rules.
-- `docs/04-schema-draft.md`: PostgreSQL schema draft and query mapping.
-- `docs/05-api-contract.md`: REST contract for auth, workouts, exercise library, and analytics.
-- `docs/07-implementation-pattern.md`: feature-slice pattern for API and web code.
-- `docs/08-next-implementation-plan.md`: current V1 release-verification handoff.
-- `docs/Usability_Audit/usability-audit-v4.md`: latest V1 beta behavior, with v3/v2 consulted only where not superseded.
-- `docs/Usability_Audit/performance-audit-v1.md`: pure-function regression workloads, ceilings, commands, and limitations.
-- `docs/design/stitch-redesign-v2/*`: historical visual direction; it does not supersede the current usability audits or runtime behavior.
-- `docs/deployment-runbook.md`: Render deployment, migration, backup, restore, and monitoring checklist.
-- `docs/decisions/`: architecture decision records for stack and deployment direction.
-- `apps/api/src/server.ts`: wires Fastify plugins, repositories, and feature routes together.
-- `apps/api/src/main.ts`: process startup, env loading, DB connection, and graceful shutdown.
-- `apps/api/src/features/*`: feature-owned API slices for auth, workouts, exercises, analytics, and health.
-- `apps/web/src/app/*`: Next.js routes for home, auth, workouts, progress, weekly-volume, and proxy endpoints.
-- `apps/web/src/app/api/*`: same-origin proxy routes for auth, workouts, analytics, and CSV flows.
-- `apps/web/src/features/*`: feature-owned browser logic and UI for auth, workouts, and analytics.
-- `apps/web/e2e/auth-workout-smoke.spec.ts`: browser smoke flow for the local stack.
-- `apps/api/db/migrations/*`: SQL migrations for the core schema and muscle-group seed data.
+## Known gaps and risks
 
-## 4. Existing Docs And Notes That Matter
+- File downloads (data export, CSV) and external links need native handling inside the phone
+  shells. Not built yet.
+- Device-local preferences (body profile, favourite lifts, display, rest timer) are not synced
+  between devices.
+- Muscle-region art in `apps/web/public/volume/` is hand-drawn and still being refined by the
+  owner.
+- The simulator can't show heat or frame rate on real phones; those need device checks.
+- Production is a single home server: no high availability or automatic failover.
 
-- `AGENTS.md`, `ARCHITECTURE.md`, `ENGINEERING.md`, and `CONTRIBUTING.md` define the working rules for agents and contributors.
-- `docs/repository-structure.md` is the source of truth for where files belong.
-- `docs/decisions/0002-application-stack.md` through `0005-deployment-target.md` record the accepted stack and deployment direction.
-- `docs/Statusupdate-Whiteboxtesting.md` is a loose testing/status note and appears less authoritative than the roadmap docs.
-- The old roadmap docs still describe the project in phase language; `docs/08-next-implementation-plan.md` is the current release-verification handoff.
-- `README.md` reflects the current implementation directly, including hardened auth, CSV import/export, split Progress/Weekly Volume UI, and performance checks.
+## Checks
 
-## 5. Current Tests And Commands
-
-Root scripts in `package.json`:
-
-- `pnpm check` runs type-check, lint, tests, and build.
-- `pnpm test` runs package tests.
-- `pnpm test:performance` runs API and web pure-function timing suites sequentially.
-- `pnpm test:integration` runs API database integration tests.
-- `pnpm smoke:web` runs Playwright smoke tests.
-- `pnpm start` launches the full Docker Compose stack.
-- `pnpm dev:api` and `pnpm dev:web` run the two apps in development mode.
-- `pnpm migrate:up`, `pnpm migrate:down`, `pnpm migrate:redo`, and `pnpm migrate:create` manage migrations.
-
-Relevant repo checks:
-
-- `git diff --check`
-- `git status --short`
-- GitHub Actions runs project checks, sequential performance regression tests, API integration tests, and web smoke tests.
-
-## 6. Open TODO / FIXME / NOTE Comments
-
-- No actionable `TODO` or `FIXME` comments were found in tracked app source or docs.
-- The only tracked-source `NOTE` found was in `apps/web/next-env.d.ts`: it says the generated file should not be edited.
-- `TODO` comments also exist in `.git/hooks/sendemail-validate.sample`, but that file is a Git sample hook, not application code.
-
-## 7. Next Sensible Implementation Steps
-
-- Follow `docs/08-next-implementation-plan.md` and run V1 release verification against a fresh migrated database, representative legacy data, and real mobile browsers.
-- Include type-check, lint, unit, performance, integration, smoke, build, and diff checks. Then perform the documented 390px, 430px, and 1440px interaction QA.
-- Fix observed release regressions only. Broad import/export redesign, more advanced exercise naming, and full workout-history reset remain post-beta.
-- Keep the backend, auth, database, public API behavior, and current responsive UI foundation unless verification finds a concrete defect.
-
-## 8. Known Risks Or Unclear Parts
-
-- Some historical roadmap and design docs lag the code. Prefer `docs/08-next-implementation-plan.md`, then usability audit v4/v3/v2 in their documented precedence order.
-- `docs/01-requirements.md` still reads like an early draft in places, so treat it as requirement history plus current MVP intent, not a perfect implementation ledger.
-- The app now includes more implemented slices than the original MVP docs initially described, so the safest source for “what next” is `docs/08-next-implementation-plan.md` plus the current code tree.
-- Hosted credentials, custom domains, production tester launch execution, and real-user performance monitoring remain outside the repository.
-- Pure-function timing gates catch algorithmic regressions but do not validate browser page-load NFRs, device GPU behavior, or production latency.
-- Intentional 3D scene/shader modules and the development-only muscle authoring tool retain documented size exceptions in `docs/07-implementation-pattern.md`.
+`pnpm check` (type-check, lint, unit tests, build), `pnpm test:integration`,
+`WEB_BASE_URL=http://localhost:3000 pnpm smoke:web`, and `git diff --check`. Run e2e specs one at
+a time locally, because signup and auth share one rate-limit bucket per IP.

@@ -4,8 +4,9 @@
 [![Status page](https://img.shields.io/badge/status-status.gymtrack.ch-67e8f9)](https://status.gymtrack.ch)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Gym Progress Tracker is a mobile-first strength-training log for recording workouts quickly,
-reusing training templates, exploring exercise progress, and understanding weekly muscle volume.
+Gym Progress Tracker (GymTrack) is a mobile-first strength-training log for recording workouts
+quickly, reusing training templates, following exercise progress, and seeing weekly muscle volume
+on a 3D body.
 
 This repository contains the complete product and its operating model: the Next.js interface,
 Fastify API, PostgreSQL migrations, authentication and privacy workflows, account administration,
@@ -14,6 +15,9 @@ procedures, and the evidence gathered during the closed Founding Beta.
 
 > **Current release stage:** public v0. After the closed Founding Beta, signup is open to adults
 > who live in Switzerland ([ADR 0022](docs/decisions/0022-open-public-registration.md)).
+> The web UI is being reworked for phones, because the same UI will ship as the iOS and Android
+> app in a Capacitor shell ([ADR 0021](docs/decisions/0021-mobile-app-stack.md),
+> [design system](docs/DESIGN.md)).
 
 [Create an account](https://app.gymtrack.ch/signup) ·
 [Service status](https://status.gymtrack.ch) ·
@@ -32,18 +36,19 @@ The core workflow is deliberately simple:
 
 ### Training and analysis
 
-- Mobile-first live workout logging with previous-performance context, set editing, exercise
-  ordering, rest timing and local recovery of an unfinished set draft.
+- Mobile-first live workout logging with previous-performance context, set editing in sheets,
+  exercise ordering, a rest timer and local recovery of an unfinished set draft.
 - Ordered workout templates that can be created, duplicated, updated and started directly.
 - A reviewed 820-exercise system catalog with aliases, typo-tolerant search, muscle/equipment/type
   facets and controlled custom exercises.
 - Workout history and detail, plus a documented canonical CSV import/export format with preview.
 - Exercise Progress charts with range totals, tonnage, best set and estimated one-repetition max.
-- Weekly muscle-volume analysis with configurable heat thresholds and interactive 2D/3D body maps.
-- Responsive member surfaces for dashboard, workouts, templates, exercises, progress, volume,
-  messages, help and settings.
+- Weekly muscle-volume analysis on an interactive 3D body with a configurable heat ceiling.
+- A guided example workout for new accounts that never touches their own data (ADR 0020).
+- Tab-bar navigation on phones (Home, History, Workout, Progress, Volume), a sidebar on wide
+  screens, light and dark themes.
 
-### Accounts, privacy and beta operations
+### Accounts, privacy and administration
 
 - Argon2id passwords, opaque database-backed sessions, secure cookies, login lockout, email
   verification and password recovery.
@@ -118,8 +123,11 @@ ops/
   status/              independent live status and build-evidence page
 docs/
   decisions/           architecture decision records
-  beta-process/        requirements, risks, launch gates and execution evidence
-  server/              host foundation, deployment, monitoring and recovery reports
+  beta-process/        live privacy documents (data inventory, retention, DPIA, processors)
+  server/              live recovery runbooks and the Grafana guide
+  archive/             finished plans, reports and the old UI reference (see its README)
+scripts/
+  mobile-preview.sh    Capacitor dev shell for the iOS Simulator and Android emulator
 ```
 
 Root configuration owns workspace tooling, local Docker Compose, CI, engineering rules and the
@@ -169,7 +177,11 @@ pnpm dev:web
 ```
 
 The API defaults to `http://localhost:4000`; the web application defaults to
-`http://localhost:3000`.
+`http://localhost:3000`. `tsx watch` doesn't read `.env` by itself, so load it into the shell
+before `pnpm dev:api` (`set -a && . ./.env && set +a`).
+
+To look at the UI inside the phone shells, run `scripts/mobile-preview.sh [all|ios|android]`
+while `pnpm dev:web` is running. It needs Xcode for iOS and the Android SDK for Android.
 
 ## Verification
 
@@ -244,7 +256,7 @@ capacity, real-device, email, incident and status-page rehearsals. This reposito
 - complete assistive-technology coverage beyond the documented scope.
 
 The Founding Beta gate evidence and rollout stop rules are in
-[docs/beta-process/public-beta/goal-1/launch-gates.md](docs/beta-process/public-beta/goal-1/launch-gates.md).
+[docs/archive/beta-process/public-beta/goal-1/launch-gates.md](docs/archive/beta-process/public-beta/goal-1/launch-gates.md).
 
 ## Documentation guide
 
@@ -258,13 +270,15 @@ Start here depending on the question:
 | Why were major choices made? | [Architecture decisions](docs/decisions/README.md) |
 | What does the data model support? | [Query list](docs/02-query-list.md), [data notes](docs/03-data-model-notes.md), [schema](docs/04-schema-draft.md) |
 | What does the API expose? | [API contract](docs/05-api-contract.md) |
-| What did the Founding Beta prove? | [Launch gates](docs/beta-process/public-beta/goal-1/launch-gates.md) and [Goal 5 closure](docs/beta-process/public-beta/goal-5/goal-5-scope.md) |
-| How is the server operated or recovered? | [Server index](docs/server/SERVER-SETUP-INDEX.md) and [disaster recovery](docs/server/disaster-recovery.md) |
+| What did the Founding Beta prove? | [Launch gates](docs/archive/beta-process/public-beta/goal-1/launch-gates.md) and [Goal 5 closure](docs/archive/beta-process/public-beta/goal-5/goal-5-scope.md) |
+| How is the server operated or recovered? | [Production operations](ops/production/README.md), [operator guide](docs/13-operator-guide.md) and [disaster recovery](docs/server/disaster-recovery.md) |
+| How should the UI look and read? | [Design system](docs/DESIGN.md) |
+| Where is the code? | [Codebase map](CODEBASE.md) and [repository structure](docs/repository-structure.md) |
 | How should changes be made? | [Engineering rules](ENGINEERING.md) and [Contributing](CONTRIBUTING.md) |
 
-Historical roadmaps and execution reports intentionally preserve the state at the time they were
-written. Prefer the current analysis, current README, ADRs and exact execution reports when older
-“remaining work” text conflicts with completed evidence.
+Finished roadmaps, briefs and execution reports live in [docs/archive](docs/archive/README.md).
+They keep the state at the time they were written. When they disagree with the current docs,
+the ADRs or the code, the current material wins.
 
 ## Security
 

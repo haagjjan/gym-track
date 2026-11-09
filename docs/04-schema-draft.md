@@ -324,13 +324,13 @@ Cardio C1-C2 are deferred and intentionally unsupported by the first schema pass
 
 - Decide whether `workout_type` should become a constrained lookup once workout splits are implemented.
 
-## Founding Beta Schema Extension
+## Account, privacy and messaging schema (added for the Founding Beta)
 
 Migration `20260805120000000_add_public_beta_foundation.sql` extends `users` with explicit role/account state/cohort, reliable activity counters, privacy choices, policy evidence, deletion deadline and versioned onboarding. `exercises.created_by_user_id` becomes `ON DELETE SET NULL` so a shared referenced definition can outlive its creator without retaining identity.
 
 Migration `20260806120000000_add_workout_mutation_safety.sql` adds nullable parent-scoped client mutation IDs to `session_exercises` and `sets`. Existing rows remain unchanged with `NULL`; new API creates require UUIDs and use the partial unique indexes for replay safety.
 
-`beta_settings` is the locked singleton for immediate waitlist/invitation/campaign controls, account cap and rolling approval limit. `beta_access_requests` stores policy/age evidence, state, hashed invitation and joined account. `admin_audit_events` records privileged actions. `account_deletion_tokens` and `erasure_tombstones` support reversible grace and restore-safe hard erasure.
+`beta_settings` is a locked singleton. Since ADR 0022 only its campaign publishing switch (`campaigns_open`) is still used; the waitlist, invitation, cap and approval-limit columns are unused. `beta_access_requests` (waitlist requests) and `users.beta_cohort` are no longer written by product code but stay covered by export, erasure and retention until a follow-up migration drops them. `admin_audit_events` records privileged actions. `account_deletion_tokens` and `erasure_tombstones` support reversible grace and restore-safe hard erasure.
 
 `campaigns`, `campaign_targets` and `message_deliveries` store immutable published content/audience, bounded trigger/response design and exactly-once per-user state. All ownership FKs cascade on user erasure unless a retained shared definition explicitly nulls creator identity. The processing and retention rules are in `docs/beta-process/public-beta/data-processing-inventory.md`.
 

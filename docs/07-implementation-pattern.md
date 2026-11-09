@@ -219,7 +219,7 @@ The usability-audit-v2/v3 remediation and audit-v4 beta refinements continue the
 - The shell/chrome uses honest product/state labels and centralized semantic colors; the five-stage Volume heat scale remains a separate data-visualization palette with non-color cues.
 - Audit v4 reuses existing columns and analytics range parameters, so it requires no schema migration or architecture ADR.
 
-Status: implemented for the V1 responsive web remediation described by `docs/Usability_Audit/usability-audit-v4.md`, with v3 and v2 retained only where v4 does not supersede them.
+Status: implemented for the V1 responsive web remediation described by `docs/archive/Usability_Audit/usability-audit-v4.md`, with v3 and v2 retained only where v4 does not supersede them.
 
 ## Analytics API Slice
 
@@ -310,10 +310,9 @@ The UI rework should polish the existing app screens without introducing a full 
 - Progress charts use date on the x axis and both weight and reps on the y axis: weight as a solid line, reps as a dotted non-continuous line that restarts or changes color when weight changes.
 - Progress supports 1 week, 1 month, 3 months, and all-entry windows; selected-window summary totals accompany the daily strongest-working-set plot.
 - Weekly Volume is muscle-map-first: show an anatomical body with separated muscles, use the exact five-stage purple working-set heat scale, and show selected-muscle stats next to the figure.
-- Prefer a real interactive 3D body map when it fits the slice; otherwise ship a clear 2D front/back muscle map first and keep the implementation ready to replace with 3D later.
 - Use `recharts` for conventional Progress charts. Use Three.js only if the Weekly Volume body map is implemented as a real 3D scene.
 
-Status: implemented for separate `/progress` and `/weekly-volume` destinations, completed-exercise progress navigation, `recharts` weight/reps progress charts, an interactive anatomical 3D weekly muscle map, and an optional device-local 2D front/back view selected in Settings.
+Status: implemented for separate `/progress` and `/weekly-volume` destinations, completed-exercise progress navigation, `recharts` weight/reps progress charts, and an interactive anatomical 3D weekly muscle map (the 2D view was removed in the UX rework).
 
 ## CSV Workout Import/Export Slice
 
@@ -340,7 +339,7 @@ The cleanup keeps public behavior stable while restoring the documented boundari
 - CSV grouping and Volume aggregation use indexed maps/sets. Exercise-name suggestions use a bounded two-row Levenshtein calculation because suggestions beyond the accepted distance cannot appear in the response.
 - `pnpm test:performance` runs API and web packages sequentially on fixed workloads, after warmups, using the median of three samples. Every gate also checks output counts.
 
-The performance workloads and ceilings are recorded in `docs/Usability_Audit/performance-audit-v1.md`. They detect pure-function algorithmic regressions only; browser page-load NFRs and real-user performance still need separate measurement.
+The performance workloads and ceilings are recorded in `docs/archive/Usability_Audit/performance-audit-v1.md`. They detect pure-function algorithmic regressions only; browser page-load NFRs and real-user performance still need separate measurement.
 
 Status: implemented without endpoint, database, public response-shape, or storage-key changes.
 
@@ -376,8 +375,7 @@ repository-variable setup remain owner-operated external configuration.
 
 The following source files remain above the normal review targets after cleanup:
 
-- `apps/web/src/features/avatar/avatar-stage.tsx` and `hologram-bay.tsx` exceed 400 lines because they contain one cohesive Three.js scene/shader pipeline. Their rendering math is intentionally unchanged; split them only at a real scene-responsibility boundary.
-- `apps/web/src/features/volume/muscle-spike.tsx` and `muscle-spike-scene.tsx` exceed the 250-line target as a development-only anatomy authoring tool. They are not a product route and should be split only if the tool gains another stable responsibility.
+- `apps/web/src/features/avatar/hologram-bay.tsx` (about 290 lines) stays one declarative scene description after the November 2026 split into stage, camera, driver, burst, textures, environment and motes modules.
 - `apps/api/src/features/exercises/exercise-name-catalog.ts` exceeds 400 lines because it is a static, curated name and blocked-term catalog rather than orchestration logic.
 
 Other files between 250 and 400 lines remain visible review triggers under `ENGINEERING.md`; this cleanup does not grant them a permanent exception.
