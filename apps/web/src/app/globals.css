@@ -1,104 +1,164 @@
 @import "tailwindcss";
 
 /*
- * Aether Fitness System tokens — source of truth: docs/DESIGN.md.
- * Color names map to usage, values map 1:1 to the DESIGN.md frontmatter.
+ * GymTrack tokens. Source of truth: docs/DESIGN.md.
+ *
+ * Raw values live as CSS variables on :root (dark, the default) and
+ * [data-theme="light"]. @theme maps them by role, so components use
+ * bg-surface, text-text-secondary and so on, and switching the theme never
+ * changes a class name.
  */
+:root,
+[data-theme="dark"] {
+  --bg: #0b0d10;
+  --surface: #15181c;
+  --surface-raised: #1e2227;
+  --line: #2a2f35;
+  --control-line: #6b7580;
+  --text: #f1f3f5;
+  --text-secondary: #a7b0b9;
+  --text-muted: #8a949e;
+  --accent: #2dd4e6;
+  --on-accent: #04191c;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --bg: #f2f3f5;
+  --surface: #ffffff;
+  --surface-raised: #e9ecef;
+  --line: #d9dde2;
+  --control-line: #7b848d;
+  --text: #0f1215;
+  --text-secondary: #4a535c;
+  --text-muted: #5f6871;
+  --accent: #0b6f7c;
+  --on-accent: #ffffff;
+  --success: #15803d;
+  --warning: #b45309;
+  --danger: #c81e1e;
+  color-scheme: light;
+}
+
+:root {
+  /* The 3D bay is a dark stage in both themes (DESIGN.md, Data colors). */
+  --stage: #0b0d10;
+
+  --tabbar-height: 3.5rem;
+  --minibar-height: 3.5rem;
+  --ease-enter: cubic-bezier(0.2, 0, 0, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+}
+
 @theme {
-  /* Surfaces (obsidian stack) */
-  --color-void: #0a0a0a;
-  --color-surface: #131313;
-  --color-surface-low: #1c1b1b;
-  --color-surface-mid: #201f1f;
-  --color-surface-high: #2a2a2a;
-  --color-surface-highest: #353534;
+  --color-*: initial;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-black: #000;
+  --color-white: #fff;
 
-  /* Foreground */
-  --color-fg: #e5e2e1;
-  --color-fg-muted: #b9cacb;
-  --color-outline: #849495;
-  --color-outline-dim: #3a494b;
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-line: var(--line);
+  --color-control-line: var(--control-line);
+  --color-text: var(--text);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-stage: var(--stage);
 
-  /* Primary — electric cyan (critical actions, active states, data peaks) */
-  --color-cyan: #00f2ff;
-  --color-cyan-bright: #e1fdff;
-  --color-cyan-dim: #00dbe7;
-  --color-cyan-deep: #006a71;
-  --color-on-cyan: #00363a;
+  /* Type: the platform font, rounded tabular numerals for numbers. */
+  --font-sans: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-numeric: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
-  /* Secondary — soft lavender (recovery, auxiliary data) */
-  --color-lavender: #d9b9ff;
-  --color-lavender-dim: #cba4fb;
-  --color-lavender-deep: #583584;
+  /* iOS text styles in rem, so 200% zoom works. */
+  --text-large-title: 2.125rem;
+  --text-large-title--line-height: 2.5625rem;
+  --text-large-title--font-weight: 700;
+  --text-title-1: 1.75rem;
+  --text-title-1--line-height: 2.125rem;
+  --text-title-1--font-weight: 700;
+  --text-title-2: 1.375rem;
+  --text-title-2--line-height: 1.75rem;
+  --text-title-2--font-weight: 700;
+  --text-title-3: 1.25rem;
+  --text-title-3--line-height: 1.5625rem;
+  --text-title-3--font-weight: 600;
+  --text-headline: 1.0625rem;
+  --text-headline--line-height: 1.375rem;
+  --text-headline--font-weight: 600;
+  --text-body: 1.0625rem;
+  --text-body--line-height: 1.375rem;
+  --text-callout: 1rem;
+  --text-callout--line-height: 1.3125rem;
+  --text-subhead: 0.9375rem;
+  --text-subhead--line-height: 1.25rem;
+  --text-footnote: 0.8125rem;
+  --text-footnote--line-height: 1.125rem;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1rem;
+  --text-caption--font-weight: 500;
+  --text-tab: 0.6875rem;
+  --text-tab--line-height: 0.8125rem;
+  --text-tab--font-weight: 500;
 
-  /* Set semantics — muted green is warmup context, never success feedback. */
-  --color-warmup: #9fcbb0;
-  --color-warmup-deep: #315b42;
-
-  /* Tertiary — neon green (peak performance, success) */
-  --color-green: #51fb37;
-  --color-green-bright: #78ff5d;
-  --color-green-dim: #36e51c;
-  --color-green-deep: #0d7000;
-
-  /* Error */
-  --color-red: #ffb4ab;
-  --color-red-deep: #93000a;
-
-  /* Typography */
-  --font-display: var(--font-space-grotesk), "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-jetbrains), "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-
-  /* Shape — "soft-tech" */
-  --radius-sm: 0.125rem;
-  --radius-DEFAULT: 0.25rem;
-  --radius-md: 0.375rem;
-  --radius-lg: 0.5rem;
+  /* Shape: 12 for cards and sheets, 10 for buttons and inputs. */
+  --radius: 0.625rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.75rem;
   --radius-xl: 0.75rem;
+  --radius-2xl: 0.75rem;
+  --radius-card: 0.75rem;
+  --radius-control: 0.625rem;
 
-  /* Glow hierarchy */
-  --shadow-glow-cyan: 0 0 12px rgba(0, 242, 255, 0.35);
-  --shadow-glow-cyan-strong: 0 0 18px rgba(0, 242, 255, 0.55);
-  --shadow-glow-green: 0 0 12px rgba(81, 251, 55, 0.4);
-  --shadow-glow-lavender: 0 0 12px rgba(217, 185, 255, 0.3);
-
-  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 @layer base {
   html {
-    background: var(--color-void);
+    background: var(--bg);
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
-    background: var(--color-void);
-    color: var(--color-fg);
-    font-family: var(--font-mono);
-    font-size: 14px;
-    line-height: 1.45;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 1.0625rem;
+    line-height: 1.375rem;
     -webkit-font-smoothing: antialiased;
-  }
-
-  h1,
-  h2,
-  h3,
-  h4 {
-    font-family: var(--font-display);
+    -webkit-tap-highlight-color: transparent;
   }
 
   ::selection {
-    background: rgba(0, 242, 255, 0.25);
-    color: var(--color-cyan-bright);
+    background: color-mix(in srgb, var(--accent) 30%, transparent);
   }
 
-  * {
-    scrollbar-width: thin;
-    scrollbar-color: var(--color-surface-highest) transparent;
+  /* Links inside running text need more than color to stand out (WCAG 1.4.1).
+     Not li: grouped-list rows are whole-row links with a chevron. */
+  :where(p, label, dd) a {
+    text-decoration-line: underline;
+    text-underline-offset: 0.15em;
   }
 
   :focus-visible {
-    outline: 1px solid var(--color-cyan);
+    outline: 2px solid var(--accent);
     outline-offset: 2px;
+  }
+
+  input,
+  select,
+  textarea {
+    /* Below 16px, iOS zooms the page on focus. */
+    font-size: max(1rem, 1em);
   }
 
   input[type="number"]::-webkit-outer-spin-button,
@@ -111,25 +171,30 @@
     -moz-appearance: textfield;
     appearance: textfield;
   }
+
+  .font-numeric {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Rounded tabular numerals for weights, reps, durations and stat values. */
+@utility num {
+  font-family: var(--font-numeric);
+  font-variant-numeric: tabular-nums;
 }
 
 /* Opening an exercise from the list is the one transition worth watching: it
-   is how you confirm you landed on the exercise you picked. It runs long enough
-   to read, on a decelerating curve with a slight settle, while the way back to
-   the list stays brisk. */
+   is how you confirm you landed on the exercise you picked. The way back to
+   the list stays brisk. Only transform and opacity animate. */
 @keyframes session-mode-forward {
   from {
     opacity: 0;
-    transform: translateX(28px) scale(0.97);
-  }
-
-  60% {
-    opacity: 1;
+    transform: translateX(28px);
   }
 
   to {
     opacity: 1;
-    transform: translateX(0) scale(1);
+    transform: translateX(0);
   }
 }
 
@@ -142,65 +207,10 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .session-mode-forward {
-    animation: session-mode-forward 420ms cubic-bezier(0.16, 0.84, 0.3, 1);
+    animation: session-mode-forward 280ms var(--ease-enter);
   }
 
   .session-mode-back {
-    animation: session-mode-back 220ms ease-out;
+    animation: session-mode-back 200ms var(--ease-enter);
   }
-}
-
-/* Glassmorphic panel — depth via blur + glass border, never drop shadows.
-   Opacity tuned so panel text stays legible even over the bright accents of the
-   hologram-bay backdrop, while the environment still reads through. */
-@utility glass {
-  background: rgba(19, 19, 19, 0.72);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(132, 148, 149, 0.16);
-}
-
-@utility glass-cyan {
-  background: rgba(14, 20, 21, 0.68);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(0, 242, 255, 0.22);
-}
-
-/* Signature HUD chamfer — cut top-left / bottom-right corners */
-@utility chamfer {
-  clip-path: polygon(
-    14px 0,
-    100% 0,
-    100% calc(100% - 14px),
-    calc(100% - 14px) 100%,
-    0 100%,
-    0 14px
-  );
-}
-
-/* Space Grotesk tracked-out label */
-@utility label-caps {
-  font-family: var(--font-display);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  line-height: 16px;
-  text-transform: uppercase;
-}
-
-/* Barely-visible HUD grid (5% white per DESIGN.md data-viz rules) */
-@utility hud-grid {
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-  background-size: 48px 48px;
-}
-
-/* Status indicator square (DESIGN.md status cards) */
-@utility status-dot {
-  width: 4px;
-  height: 4px;
-  flex: none;
-  display: inline-block;
 }
