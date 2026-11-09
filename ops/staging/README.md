@@ -1,4 +1,4 @@
-# Goal 3 Staging Operations
+# Staging Operations
 
 This directory owns the reviewed, non-secret deployment definition for the owner-only staging
 environment. Staging is a second Compose project on `gym-prod`; it does not reuse production
@@ -34,7 +34,7 @@ Before server work:
    the root Infomaniak MX/SPF records unchanged and keep mail-related records DNS-only.
 2. Create a sending-only Resend key named for staging.
 3. Choose exactly two owner-controlled inboxes: the staging administrator and the invited-user
-   test account. Neither may belong to a beta tester.
+   test account. Neither may belong to a real member.
 4. Add `staging.gymtrack.ch` to the existing tunnel with origin
    `http://127.0.0.1:3100`, then protect it with an exact-owner Cloudflare Access application.
    Do not create a staging API hostname or wildcard route.
@@ -60,7 +60,7 @@ systemctl is-active cloudflared
 Stop if any production service is unhealthy, the latest successful off-machine backup exceeds
 the 24-hour RPO, port 3100 is occupied, available memory is below 6 GiB, root free space is below
 50 GiB, `cloudflared` is inactive, or the release commit has not passed CI. Do not repair an
-unrelated production problem within Goal 3.
+unrelated production problem as part of a staging run.
 
 Record the production status and row-count evidence before and after staging. Do not print
 environment variables or inspect secret contents.
@@ -246,11 +246,11 @@ the destructive beta `down` migration on production.
 
 ## Evidence and completion
 
-Write sanitized results to
-`docs/beta-process/public-beta/goal-3/goal-3-staging-report.md`. Include timestamps, exact release
+Write sanitized results to a dated staging report (the first one is
+`docs/archive/beta-process/public-beta/goal-3/goal-3-staging-report.md`). Include timestamps, exact release
 SHA, image IDs, pass/fail outcomes, migration ledger names, dump hashes, resource measurements and
 production health comparisons. Exclude secrets, account addresses, Cloudflare/Resend identifiers,
 internal tokens and raw personal data.
 
-Goal 3 remains open if any acceptance item fails or lacks evidence. The FBX redistribution issue,
-production edge changes and public-production delivery remain separate launch gates.
+A staging run fails if any acceptance item fails or lacks evidence. Production edge changes and
+production delivery are verified separately in `ops/production/README.md`.

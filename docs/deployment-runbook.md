@@ -1,8 +1,18 @@
-# Deployment Runbook
+# Render deployment runbook (alternative target)
 
 ## Status
 
-Small-batch deployment runbook for the retained Render alternative in ADR 0005. ADR 0009 selects the private `gym-prod` home server as the active operated target; that rollout follows the sequential runbooks under `docs/server/wave-b-application-platform/`.
+**This is not the live deployment.** Production runs on the private home server (ADR 0009).
+For releases, rollback and recovery there, use:
+
+- [ops/production/README.md](../ops/production/README.md): release procedure and rollback
+- [docs/13-operator-guide.md](13-operator-guide.md): day-to-day operation
+- [docs/server/disaster-recovery.md](server/disaster-recovery.md): recovery
+
+This file covers the Render alternative from ADR 0005, kept so the app can move to a managed host
+if the home server ever has to go. `render.yaml` and the `Dockerfile.render-*` files still build.
+How the home server was originally set up is in
+[archive/server/](archive/server/SERVER-SETUP-INDEX.md).
 
 This runbook does not contain production secrets. Store hosted credentials only in Render environment variables and Render-managed database configuration.
 
@@ -36,14 +46,14 @@ The Render Blueprint uses:
    - `gym-progress-tracker-api`
    - `gym-progress-tracker-db`
 4. Keep the default service/database names unless every reference in `render.yaml` is updated together.
-5. Confirm the deployment region is acceptable for the first tester group. The checked-in config uses `oregon`; change this before first deploy if tester and data residency requirements point elsewhere.
+5. Confirm the deployment region. The checked-in config uses `oregon`; members live in Switzerland (ADR 0016), so change it to a European region before the first deploy and re-check the privacy documents.
 6. Deploy the database first through the Blueprint.
 7. Deploy the API and confirm the pre-deploy migration step completes.
 8. Deploy the web service after the API health check is passing.
 9. Open the web service URL and complete a smoke flow:
    - log in with a pre-created test account
-   - confirm `/signup` reports registration unavailable
-   - confirm a direct signup request returns `403 REGISTRATION_DISABLED`
+   - while `REGISTRATION_MODE=DISABLED`, confirm `/signup` reports registration unavailable and a
+     direct signup request returns `403 REGISTRATION_DISABLED`
    - start a workout
    - create or pick an exercise
    - add one set
@@ -67,7 +77,7 @@ The Blueprint manages these non-secret values:
 | API | `AUTH_COOKIE_NAME` | `gym_progress_session` |
 | API | `AUTH_COOKIE_SECURE` | `true` |
 | API | `AUTH_SESSION_TTL_DAYS` | `30` |
-| API | `REGISTRATION_MODE` | `DISABLED` |
+| API | `REGISTRATION_MODE` | `DISABLED` on first deploy, `ENABLED` after verification (ADR 0022) |
 | API | `DATABASE_URL` | Render `fromDatabase` private connection string |
 | Web | `NODE_ENV` | `production` |
 | Web | `PORT` | `10000` |
@@ -76,7 +86,7 @@ The Blueprint manages these non-secret values:
 | Web | `APP_BASE_URL` | `https://app.gymtrack.ch` |
 | Web | `APP_ALLOWED_HOSTS` | canonical hostname plus the Render health-check hostname |
 | Web | `HSTS_ENABLED` | `false` until canonical HTTPS stability is verified |
-| Web | `REGISTRATION_MODE` | `DISABLED` |
+| Web | `REGISTRATION_MODE` | same value as the API |
 | Web | `API_INTERNAL_HOSTPORT` | Render `fromService` private host and port |
 
 The Blueprint permits the Render hostname for GET health checks but does not add it as an
@@ -100,19 +110,19 @@ Release steps:
 3. Let Render deploy after checks pass.
 4. Confirm the API deploy log includes a successful migration step.
 5. Confirm `GET /api/v1/health` returns `database: "ok"`.
-6. Smoke-test the browser flow before inviting testers back in.
+6. Smoke-test the browser flow before turning registration back on.
 
 Rollback notes:
 
 - For application-only regressions, use Render rollback to the previous successful service deploy.
-- For migrations, do not run `migrate down` against tester data unless the rollback has been reviewed. Prefer a forward fix when data has already been written with the new schema.
+- For migrations, do not run `migrate down` against member data unless the rollback has been reviewed. Prefer a forward fix when data has already been written with the new schema.
 - For destructive data mistakes, pause writes by suspending the web/API services before restoring or cloning the database.
 
 ## Backup And Restore Checks
 
-Before inviting testers:
+Before opening registration:
 
-- Use a paid Render PostgreSQL plan for tester data so point-in-time recovery and on-demand logical exports are available.
+- Use a paid Render PostgreSQL plan for member data so point-in-time recovery and on-demand logical exports are available.
 - Confirm the database has backups enabled in the Render dashboard.
 - Create one on-demand logical export after the first successful smoke flow.
 - Record the backup timestamp in a private operator note, not in the repo.
@@ -123,12 +133,12 @@ Monthly small-batch restore test:
 1. Create a fresh restore target database.
 2. Restore from a recent backup or point-in-time recovery timestamp.
 3. Point a temporary API/web environment at the restored database.
-4. Verify login, history, workout detail, and analytics with non-sensitive tester-approved data.
+4. Verify login, history, workout detail, and analytics with synthetic data.
 5. Delete the temporary services and database after the test.
 
 ## Monitoring Checklist
 
-Before inviting testers, configure Render notifications for:
+Before opening registration, configure Render notifications for:
 
 - service deploy failures
 - service health check failures
@@ -136,7 +146,7 @@ Before inviting testers, configure Render notifications for:
 - PostgreSQL storage approaching the plan limit
 - PostgreSQL connection saturation
 
-Daily during the first tester week:
+Daily during the first week after a move:
 
 - Review API logs for `500` errors, auth failures that look abnormal, and database connectivity errors.
 - Review web logs for proxy `502` responses to the API.
@@ -145,6 +155,6 @@ Daily during the first tester week:
 
 Escalation:
 
-1. If the API health check is degraded, pause tester onboarding and inspect database health first.
-2. If writes are failing, stop inviting new testers and preserve logs before redeploying.
+1. If the API health check is degraded, set `REGISTRATION_MODE=DISABLED` and inspect database health first.
+2. If writes are failing, keep registration disabled and preserve logs before redeploying.
 3. If data loss is suspected, suspend web/API services before restore investigation.

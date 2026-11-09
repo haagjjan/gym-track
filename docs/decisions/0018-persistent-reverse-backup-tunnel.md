@@ -7,7 +7,7 @@ Accepted on 2026-08-19.
 ## Context
 
 The encrypted Restic repository remains on the owner's MacBook behind the restricted
-`gym-backup` SFTP account. The original server-initiated route to `MacBook-Jan.local` became
+`gym-backup` SFTP account. The original server-initiated route to `<backup-mac>.local` became
 unreliable because the production host could neither resolve nor route to that name across the
 current nested home-network topology. This caused required backup and maintenance runs to fail
 even while the MacBook was awake.

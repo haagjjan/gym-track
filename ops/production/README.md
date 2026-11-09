@@ -1,4 +1,4 @@
-# Public-Beta Production Operations
+# Production Operations
 
 This directory owns the reviewed, non-secret production definition for `app.gymtrack.ch`.
 It replaces the unreviewable host-only Compose/Caddy copy at the next controlled deployment; it
@@ -28,12 +28,11 @@ default, and to an empty value to disable the redirect entirely.
 
 ## Commit and CI gate
 
-Do not install this definition from a dirty worktree or a branch name. After the controller
-commits the final Goal 4 batch:
+Do not install this definition from a dirty worktree or a branch name. For every release:
 
 1. Require the exact 40-character commit SHA to pass CI.
-2. Deploy that same SHA to staging and verify Privacy, Terms, Cookie/Storage, Support and beta
-   limitations with the approved runtime values.
+2. Deploy that same SHA to staging and verify Privacy, Terms, Cookie/Storage and Support
+   with the approved runtime values.
 3. Fetch the exact commit into `/srv/gym-tracker/repo` without local changes.
 4. Copy `production.env.example` to the host-only
    `/srv/gym-tracker/deploy/env/production.env`, replace every `REQUIRED_FULL_GIT_SHA` with the
@@ -72,7 +71,7 @@ incident evidence.
 The production black-box must retain received-header evidence that SPF, DKIM and DMARC align for
 `noreply@send.gymtrack.ch`. The root DMARC record has no aggregate-reporting address, so the
 manual Resend review is the selected initial monitoring path; revisit automated DMARC reporting
-before increasing scope beyond the founding cohort.
+if signup volume grows well beyond the current user base.
 
 ## Static validation
 
@@ -131,9 +130,8 @@ The cutover remains a joint production action, not a pre-commit setup step:
    (ADR 0022) and confirm a new account can sign up only after ticking the age/residence and
    policy checkboxes.
 
-The selected external tester performs the broader real-user product confirmation. Goal 4 does
-not repeat the already green capacity and full staging suite unless application or database
-behavior changes.
+A broader real-user product check is done by hand after notable releases. The capacity run and
+the full staging suite are repeated only when application or database behaviour changes.
 
 ## Access-log credential containment
 
