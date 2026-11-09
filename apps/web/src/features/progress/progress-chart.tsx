@@ -11,10 +11,11 @@ import {
   XAxis,
   YAxis
 } from "recharts";
-import { EmptyState } from "../../shared/ui/ui";
+import { Button } from "../../shared/ui/button";
 import type { ExerciseProgressItem } from "../../shared/api/types";
-import { shortDate } from "../../shared/format";
+import { formatDay } from "../../shared/format";
 import type { ChartMode, ChartWindow } from "./progress-selection";
+import { Segmented } from "./progress-segmented";
 import { ProgressChartControls } from "./progress-chart-controls";
 import {
   est1rmDot,
@@ -28,11 +29,10 @@ import {
 import {
   CHART_HEIGHT,
   PinnedLeftAxis,
-  PinnedRightAxis,
   X_AXIS_HEIGHT,
-  Y_AXIS_LEFT_WIDTH,
-  Y_AXIS_RIGHT_WIDTH
+  Y_AXIS_LEFT_WIDTH
 } from "./progress-chart-axes";
+import { ProgressChartTable } from "./progress-chart-table";
 import { useProgressChartZoom } from "./use-progress-chart-zoom";
 
 export type { ChartMode, ChartWindow } from "./progress-selection";
@@ -41,10 +41,11 @@ const POINT_WIDTH_PX = 56;
 const MIN_VISIBLE_POINTS = 8;
 const TIME_DOMAIN: [string, string] = ["dataMin", "dataMax"];
 /** Keeps first/last dots and the tilted date labels clear of the pinned axis strips. */
-const X_PADDING: { left: number; right: number } = { left: 36, right: 26 };
+const X_PADDING: { left: number; right: number } = { left: 36, right: 12 };
 /** Target horizontal spacing between X-axis date ticks. */
 /** Pinch/wheel zoom bounds: ×0.5 densifies for overview, ×4 spreads for detail. */
 const DRAW_IN_MS = 900;
+const WINDOW_PHRASE: Record<ChartWindow, string> = { "7": "last week", "30": "last month", "90": "last 3 months", all: "full history" };
 
 /**
  * Strength time series: LOAD_REPS mode plots the day's best working set
@@ -56,6 +57,7 @@ export function ProgressChart({
   onInspectPoint,
   mode,
   onModeChange,
+  onShowAllTime,
   onShowRepsChange,
   onShowWeightChange,
   showReps,
@@ -66,6 +68,7 @@ export function ProgressChart({
   onInspectPoint?: ((date: string) => void) | undefined;
   mode: ChartMode;
   onModeChange: (mode: ChartMode) => void;
+  onShowAllTime?: (() => void) | undefined;
   onShowRepsChange: (show: boolean) => void;
   onShowWeightChange: (show: boolean) => void;
   showReps: boolean;
@@ -73,26 +76,22 @@ export function ProgressChart({
   window: ChartWindow;
 }): ReactNode {
   const [inspectedDate, setInspectedDate] = useState("");
+  const [view, setView] = useState<"chart" | "table">("chart");
   const { gestureActive, reducedMotion, reset, scrollerRef, zoom } =
     useProgressChartZoom(window);
   const rows = useMemo(() => toChartRows(items, window, mode), [items, mode, window]);
   const yearBoundaries = useMemo(() => yearBoundaryTimes(rows), [rows]);
 
   if (rows.length === 0) {
+    const hasOlderSets = window !== "all" && items.some((item) => item.setType === "working");
     return (
-      <div>
-        <ProgressChartControls
-          mode={mode}
-          onModeChange={onModeChange}
-          onShowRepsChange={onShowRepsChange}
-          onShowWeightChange={onShowWeightChange}
-          showReps={showReps}
-          showWeight={showWeight}
-        />
-        <EmptyState
-          message="No working sets in this window. Widen the range or log a session."
-          title="Nothing in this window"
-        />
+      <div className="py-6 text-center">
+        <p className="text-body text-text-secondary">
+          {hasOlderSets ? `No sets in the ${WINDOW_PHRASE[window]}.` : "No sets logged for this exercise yet."}
+        </p>
+        {hasOlderSets && onShowAllTime ? (
+          <Button className="mt-3" onClick={onShowAllTime} size="compact" variant="secondary">Show all time</Button>
+        ) : null}
       </div>
     );
   }
@@ -108,7 +107,7 @@ export function ProgressChart({
   const xTicks = regularTimeTicks(rows, innerWidth);
   // Both modes plot kilograms on the left; reps only exist in LOAD_REPS mode.
   const showLeftAxis = mode === "estimated" || showWeight;
-  const showRightAxis = mode === "loadReps" && showReps;
+  const showRightAxis = mode === "loadReps" && showReps && showWeight;
   // Draw-in stays a mount/window-change flourish; it pauses during zoom
   // gestures (constant morphs while pinching read as jitter) and respects
   // prefers-reduced-motion.
@@ -116,6 +115,9 @@ export function ProgressChart({
 
   return (
     <div>
+      <div className="mb-3">
+        <Segmented label="Chart view" onChange={setView} options={[{ label: "Chart", value: "chart" }, { label: "Table", value: "table" }]} value={view} />
+      </div>
       <ProgressChartControls
         mode={mode}
         onModeChange={onModeChange}
@@ -125,27 +127,24 @@ export function ProgressChart({
         showWeight={showWeight}
       />
 
-      {/* Unit captions sit above the pinned strips so axis values always read
-          with their unit, and never collide with the topmost tick. */}
-      <div className="mb-1 flex items-center justify-between font-mono text-[9px] tracking-[0.14em] text-outline">
-        <span>{showLeftAxis ? "KG" : ""}</span>
+      {view === "table" ? <ProgressChartTable mode={mode} rows={rows} showReps={showReps} showWeight={showWeight} /> : (
+      <>
+      {/* The unit caption sits above the pinned axis so values always read with their unit. */}
+      <div className="mb-1 flex items-center justify-between text-caption text-text-muted">
+        <span>{showLeftAxis ? "kg" : ""}</span>
         {zoom !== 1 ? (
           <button
-            className="cursor-pointer rounded border border-outline-dim px-1.5 py-0.5 text-[9px] tracking-[0.14em] text-outline transition-colors hover:border-cyan hover:text-cyan"
+            className="flex min-h-11 cursor-pointer items-center px-2 text-caption text-accent"
             onClick={reset}
             type="button"
           >
-            ZOOM ×{zoom.toFixed(1)} — RESET
+            Zoom ×{zoom.toFixed(1)}, reset
           </button>
         ) : null}
-        <span className={showRightAxis ? "text-lavender-dim" : ""}>
-          {showRightAxis ? "REPS" : ""}
-        </span>
       </div>
 
       <div className="relative">
         {showLeftAxis ? <PinnedLeftAxis mode={mode} rows={rows} /> : null}
-        {showRightAxis ? <PinnedRightAxis rows={rows} /> : null}
 
         {/* rtl scroll container: newest data starts in view. Stable scrollbar
             gutter so a scrollbar appearing mid-draw can't remeasure the chart
@@ -159,17 +158,17 @@ export function ProgressChart({
           <div dir="ltr" style={{ minWidth: "100%", width: innerWidth }}>
             <ResponsiveContainer height={CHART_HEIGHT} width="100%">
               <LineChart data={rows} onClick={(state) => { if (state.activeIndex == null) return; const row = rows[Number(state.activeIndex)]; if (row) inspect(row.date); }} margin={{ top: 8, right: 12, bottom: 4, left: -8 }}>
-                <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <CartesianGrid stroke="var(--line)" vertical={false} />
                 {yearBoundaries.map((boundaryTime) => (
                   <ReferenceLine
                     key={boundaryTime}
                     label={{
-                      fill: "#b9cacb",
-                      fontSize: 10,
+                      fill: "var(--text-muted)",
+                      fontSize: 12,
                       position: "insideTopLeft",
                       value: String(new Date(boundaryTime).getUTCFullYear())
                     }}
-                    stroke="rgba(185, 202, 203, 0.45)"
+                    stroke="var(--line)"
                     strokeWidth={2}
                     x={boundaryTime}
                     yAxisId="left"
@@ -182,12 +181,12 @@ export function ProgressChart({
                   // Render every provided tick — the defaults thin them out again.
                   interval={0}
                   padding={X_PADDING}
-                  stroke="#849495"
+                  stroke="var(--text-muted)"
                   tick={{
                     angle: -45,
                     dy: 4,
-                    fill: "#849495",
-                    fontSize: 10,
+                    fill: "var(--text-muted)",
+                    fontSize: 12,
                     textAnchor: "end"
                   }}
                   tickFormatter={(value: number) => formatDateTick(value)}
@@ -206,29 +205,21 @@ export function ProgressChart({
                   width={Y_AXIS_LEFT_WIDTH}
                   yAxisId="left"
                 />
-                {mode === "loadReps" ? (
-                  <YAxis
-                    axisLine={false}
-                    domain={["auto", "auto"]}
-                    orientation="right"
-                    tick={false}
-                    tickLine={false}
-                    width={Y_AXIS_RIGHT_WIDTH}
-                    yAxisId="right"
-                  />
-                ) : null}
+                {/* Reps share the plot on their own hidden scale: only one y-axis is ever drawn. */}
+                {mode === "loadReps" ? <YAxis domain={["auto", "auto"]} hide yAxisId="right" /> : null}
                 <Tooltip
                   contentStyle={{
-                    background: "rgba(19,19,19,0.95)",
-                    border: "1px solid rgba(0,242,255,0.25)",
-                    borderRadius: 8,
-                    fontFamily: "var(--font-mono)",
-                    fontSize: 11
+                    background: "var(--surface-raised)",
+                    border: "1px solid var(--line)",
+                    borderRadius: 12,
+                    fontSize: 14
                   }}
+                  cursor={{ stroke: "var(--text-muted)", strokeWidth: 1 }}
+                  itemStyle={{ color: "var(--text)" }}
                   labelFormatter={(value) =>
-                    typeof value === "number" ? shortDate(new Date(value).toISOString()) : value
+                    typeof value === "number" ? formatDay(new Date(value).toISOString()) : value
                   }
-                  labelStyle={{ color: "#b9cacb" }}
+                  labelStyle={{ color: "var(--text-secondary)" }}
                 />
                 {/* Left→right draw-in on mount/window change. The doc-14 "skip"
                     glitch was the scrollbar appearing mid-draw and remeasuring
@@ -241,7 +232,7 @@ export function ProgressChart({
                     dot={est1rmDot}
                     isAnimationActive={animate}
                     name="Est. 1RM (kg)"
-                    stroke="#51fb37"
+                    stroke="var(--accent)"
                     strokeWidth={2}
                     type="monotone"
                     yAxisId="left"
@@ -254,8 +245,8 @@ export function ProgressChart({
                         dataKey="weight"
                         dot={weightDot}
                         isAnimationActive={animate}
-                        name="Top set (kg)"
-                        stroke="#00dbe7"
+                        name="Best set (kg)"
+                        stroke="var(--accent)"
                         strokeWidth={2}
                         type="monotone"
                         yAxisId="left"
@@ -268,7 +259,7 @@ export function ProgressChart({
                         dot={repsDot}
                         isAnimationActive={animate}
                         name="Reps"
-                        stroke="#d9b9ff"
+                        stroke="var(--text-secondary)"
                         strokeDasharray="4 3"
                         strokeWidth={1.5}
                         type="monotone"
@@ -282,13 +273,16 @@ export function ProgressChart({
           </div>
         </div>
       </div>
-      <label className="mt-3 block text-xs text-fg-muted">Inspect plotted day
-        <select aria-label="Inspect plotted day" className="mt-1 min-h-11 w-full rounded border border-outline-dim bg-surface px-3 text-sm text-fg" onChange={(event) => { if (event.target.value) inspect(event.target.value); }} value={inspected?.date ?? ""}>
-          <option value="">Choose a plotted day</option>
-          {rows.map((row) => <option key={row.date} value={row.date}>{row.label} · {row.weight} kg × {row.reps}</option>)}
+      {showRightAxis ? <p className="mt-1 text-caption text-text-muted">Reps are drawn to fit the plot. Open the table for exact values.</p> : null}
+      <label className="mt-3 block text-subhead text-text-secondary">Inspect plotted day
+        <select aria-label="Inspect plotted day" className="mt-1 min-h-[3.125rem] w-full rounded-[var(--radius-control)] border border-control-line bg-surface-raised px-3 text-body text-text" onChange={(event) => { if (event.target.value) inspect(event.target.value); }} value={inspected?.date ?? ""}>
+          <option value="">Choose a day</option>
+          {rows.map((row) => <option key={row.date} value={row.date}>{row.label}: {row.weight} kg × {row.reps}</option>)}
         </select>
       </label>
-      <p aria-live="polite" className="mt-2 text-sm text-fg">{inspected ? `${inspected.label}: ${inspected.weight} kg × ${inspected.reps} reps · estimated 1RM ${inspected.est1rm} kg` : "Select a chart point or choose a day to inspect its values."}</p>
+      <p aria-live="polite" className="mt-2 text-callout text-text">{inspected ? `${inspected.label}: ${inspected.weight} kg × ${inspected.reps}, estimated 1RM ${inspected.est1rm} kg` : "Tap a point or choose a day to see its values."}</p>
+      </>
+      )}
     </div>
   );
 }

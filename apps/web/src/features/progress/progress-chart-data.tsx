@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { ExerciseProgressItem } from "../../shared/api/types";
-import { shortDate } from "../../shared/format";
+import { formatDay } from "../../shared/format";
 import { selectBestWorkingSets, type ChartMode, type ChartWindow } from "./progress-selection";
 
 export interface ChartRow {
@@ -42,7 +42,7 @@ export function yearBoundaryTimes(rows: ChartRow[]): number[] {
 }
 
 export function toChartRows(items: ExerciseProgressItem[], window: ChartWindow, mode: ChartMode): ChartRow[] {
-  const sorted = selectBestWorkingSets(items, window, mode).map<RawChartRow>((item) => ({ date: item.sessionDate, time: new Date(item.sessionDate).getTime(), label: shortDate(item.sessionDate), weight: Number(item.weightKg), reps: item.reps, est1rm: Number(item.estimatedOneRepMaxKg) })).sort((left, right) => left.time - right.time);
+  const sorted = selectBestWorkingSets(items, window, mode).map<RawChartRow>((item) => ({ date: item.sessionDate, time: new Date(item.sessionDate).getTime(), label: formatDay(item.sessionDate), weight: Number(item.weightKg), reps: item.reps, est1rm: Number(item.estimatedOneRepMaxKg) })).sort((left, right) => left.time - right.time);
   return sorted.map((row, index) => { const previous = sorted[index - 1]; return { ...row, weightChanged: !previous || row.weight !== previous.weight, repsChanged: !previous || row.reps !== previous.reps, est1rmChanged: !previous || row.est1rm !== previous.est1rm }; });
 }
 
