@@ -5,7 +5,7 @@ import { useThree, type ThreeEvent } from "@react-three/fiber";
 import { useEffect, useMemo, type ReactNode } from "react";
 import * as THREE from "three";
 import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
-import { createRadialGlowTexture } from "../avatar/hologram-bay";
+import { createRadialGlowTexture } from "../avatar/bay-textures";
 import {
   AVATAR_MODEL_URL,
   boundsAboveHeight,

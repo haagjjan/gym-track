@@ -1,8 +1,15 @@
 "use client";
 
 import { useFrame, useThree } from "@react-three/fiber";
-import { Suspense, useEffect, useMemo, useRef, type ReactNode } from "react";
+import { Suspense, useEffect, useMemo, type ReactNode } from "react";
 import * as THREE from "three";
+import { createBayEnvironment, ENVIRONMENT_SIZE, ENVIRONMENT_SIZE_SOFTWARE } from "./bay-environment";
+import { BayMotes } from "./bay-motes";
+import {
+  createFloorTextures,
+  createRadialGlowTexture,
+  createVerticalGradientTexture
+} from "./bay-textures";
 import {
   BayPedestal,
   PEDESTAL_BASE_Y,
@@ -33,9 +40,6 @@ import { RIM_CYAN } from "./statue-core";
  * Drop this inside a <Canvas> alongside the figure, OUTSIDE any turntable group.
  */
 
-const MOTE_COUNT = 90;
-const MOTE_FIELD_RADIUS = 5.5;
-const MOTE_FIELD_HEIGHT = 6.5;
 const WALL_RADIUS = 8;
 /**
  * Deck-texture resolution. The 1024 sheet is what the mood refs were tuned
@@ -44,271 +48,12 @@ const WALL_RADIUS = 8;
  */
 const FLOOR_TEXTURE_SIZE = 1024;
 const FLOOR_TEXTURE_SIZE_SOFTWARE = 256;
-/**
- * PMREM cube resolution. Prefiltering is the single most expensive thing this
- * scene does on a CPU rasterizer (see the note on `environment` below), and its
- * cost is dominated by the number of blur passes rather than their size — so a
- * small cube buys most of the saving while keeping real image-based lighting.
- *
- * Dropping the map ENTIRELY was measured and rejected: it is much faster still
- * (~0.8 s vs ~1.3 s bootstrap) but the pedestal stops reading as a sculpted
- * object — with nothing to reflect, its tiers, LED bands and front machinery
- * collapse into a flat silhouette. Fidelity wins here; see docs/14.
- */
-const ENVIRONMENT_SIZE = 256;
-const ENVIRONMENT_SIZE_SOFTWARE = 32;
 
 export interface HologramBayProps {
   /** Freeze the ambient pulse and drifting motes for reduced-motion users. */
   reducedMotion?: boolean;
   /** CPU rasterizer: draw the same bay, but skip the expensive prefiltering. */
   softwareRasterized?: boolean;
-}
-
-/** Soft radial gradient canvas texture — shared for glow pools/pads/halos. */
-export function createRadialGlowTexture(): THREE.Texture {
-  const size = 128;
-  const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
-
-  const ctx = canvas.getContext("2d");
-
-  if (ctx) {
-    const gradient = ctx.createRadialGradient(
-      size / 2,
-      size / 2,
-      0,
-      size / 2,
-      size / 2,
-      size / 2
-    );
-    gradient.addColorStop(0, "rgba(255,255,255,0.9)");
-    gradient.addColorStop(0.4, "rgba(255,255,255,0.28)");
-    gradient.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, size, size);
-  }
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-
-  return texture;
-}
-
-/**
- * Vertical white gradient strip (v axis) for the additive wall-base horizon
- * glow that stands in for the removed pilaster colonnade.
- */
-function createVerticalGradientTexture(
-  stops: ReadonlyArray<readonly [number, number]>
-): THREE.Texture {
-  const width = 4;
-  const height = 128;
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-
-  const ctx = canvas.getContext("2d");
-
-  if (ctx) {
-    // Canvas y grows downward while cylinder v grows upward — flip so stop 0
-    // is the BOTTOM of the mesh.
-    const gradient = ctx.createLinearGradient(0, height, 0, 0);
-
-    for (const [offset, alpha] of stops) {
-      gradient.addColorStop(offset, `rgba(255,255,255,${alpha})`);
-    }
-
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, width, height);
-  }
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-
-  return texture;
-}
-
-/**
- * Dark metal deck plates (mood ref: hologram-bay-mood.png): a 4×4 tile sheet
- * with seams, per-tile tone variance, and worn brushed streaks. The matching
- * roughness map polishes tile centers and roughens seams/wear so the env-map
- * reflection streaks break up like a used, slightly wet deck.
- */
-function createFloorTextures(size: number): {
-  map: THREE.Texture;
-  roughnessMap: THREE.Texture;
-} {
-  const tiles = 4;
-  const tile = size / tiles;
-
-  const colorCanvas = document.createElement("canvas");
-  colorCanvas.width = size;
-  colorCanvas.height = size;
-
-  const roughCanvas = document.createElement("canvas");
-  roughCanvas.width = size;
-  roughCanvas.height = size;
-
-  const color = colorCanvas.getContext("2d");
-  const rough = roughCanvas.getContext("2d");
-
-  if (color && rough) {
-    color.fillStyle = "#0f141c";
-    color.fillRect(0, 0, size, size);
-    // Mid-gray base roughness ≈ 0.42 — wet-metal territory once env-mapped.
-    rough.fillStyle = "#6b6b6b";
-    rough.fillRect(0, 0, size, size);
-
-    // Deterministic pseudo-random so HMR/StrictMode re-runs render identically.
-    let seed = 7;
-    const random = (): number => {
-      seed = (seed * 16807) % 2147483647;
-
-      return seed / 2147483647;
-    };
-
-    for (let tileY = 0; tileY < tiles; tileY += 1) {
-      for (let tileX = 0; tileX < tiles; tileX += 1) {
-        const x = tileX * tile;
-        const y = tileY * tile;
-
-        // Per-tile tone variance: some plates darker, some barely lighter.
-        const tone = (random() - 0.45) * 10;
-        color.fillStyle = `rgba(${tone > 0 ? "170,190,210" : "0,2,6"},${Math.abs(tone) / 100})`;
-        color.fillRect(x, y, tile, tile);
-
-        // Per-tile polish variance for uneven reflections.
-        const polish = Math.floor(random() * 46) - 23;
-        rough.fillStyle = `rgba(${polish > 0 ? "255,255,255" : "0,0,0"},${Math.abs(polish) / 255})`;
-        rough.fillRect(x, y, tile, tile);
-
-        // Brushed wear streaks, biased along one axis per plate.
-        const horizontal = random() > 0.5;
-
-        for (let streak = 0; streak < 9; streak += 1) {
-          const along = random() * tile;
-          const across = random() * tile;
-          const length = tile * (0.2 + random() * 0.5);
-          const lightness = random() > 0.6 ? "150,170,190" : "0,0,0";
-
-          color.fillStyle = `rgba(${lightness},0.045)`;
-          rough.fillStyle = "rgba(255,255,255,0.05)";
-
-          if (horizontal) {
-            color.fillRect(x + along, y + across, length, 1);
-            rough.fillRect(x + along, y + across, length, 1);
-          } else {
-            color.fillRect(x + across, y + along, 1, length);
-            rough.fillRect(x + across, y + along, 1, length);
-          }
-        }
-      }
-    }
-
-    // Seams: dark groove + a faint worn highlight lip, rough in the groove.
-    for (let line = 0; line <= tiles; line += 1) {
-      const at = Math.min(line * tile, size - 2);
-
-      color.fillStyle = "rgba(2,4,7,0.95)";
-      color.fillRect(0, at, size, 3);
-      color.fillRect(at, 0, 3, size);
-      color.fillStyle = "rgba(150,175,200,0.12)";
-      color.fillRect(0, at + 3, size, 1);
-      color.fillRect(at + 3, 0, 1, size);
-
-      rough.fillStyle = "rgba(255,255,255,0.5)";
-      rough.fillRect(0, at, size, 3);
-      rough.fillRect(at, 0, 3, size);
-    }
-  }
-
-  const map = new THREE.CanvasTexture(colorCanvas);
-  map.colorSpace = THREE.SRGBColorSpace;
-  map.wrapS = THREE.RepeatWrapping;
-  map.wrapT = THREE.RepeatWrapping;
-  // Floor circle spans 80 world units; the 4-tile sheet covers 8 → 2u plates.
-  map.repeat.set(10, 10);
-
-  const roughnessMap = new THREE.CanvasTexture(roughCanvas);
-  roughnessMap.wrapS = THREE.RepeatWrapping;
-  roughnessMap.wrapT = THREE.RepeatWrapping;
-  roughnessMap.repeat.set(10, 10);
-
-  return { map, roughnessMap };
-}
-
-/**
- * One-shot PMREM environment for the bay's metals. A throwaway scene of
- * overhead cool light bars over a dark void — the "ceiling lights" of the
- * mood refs exist only as these reflections (no visible source in frame),
- * which is what makes the floor and pedestal read as wet metal.
- */
-function createBayEnvironment(gl: THREE.WebGLRenderer, size: number): THREE.Texture {
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color("#04060a");
-
-  const barMaterial = new THREE.MeshBasicMaterial({ color: "#bfe9f2" });
-  const dimBarMaterial = new THREE.MeshBasicMaterial({ color: "#3f6672" });
-  const barGeometry = new THREE.BoxGeometry(2.6, 0.08, 0.5);
-  // Irregular ring of bars so floor reflections streak unevenly like the ref.
-  const bars: Array<[number, number, number, boolean]> = [
-    [0.3, 6.4, 3.4, true],
-    [1.4, 5.8, 4.6, false],
-    [2.5, 6.8, 3.0, true],
-    [3.5, 6.1, 5.2, false],
-    [4.4, 6.6, 3.8, true],
-    [5.4, 5.9, 4.4, false]
-  ];
-
-  for (const [angle, height, radius, bright] of bars) {
-    const bar = new THREE.Mesh(barGeometry, bright ? barMaterial : dimBarMaterial);
-
-    bar.position.set(Math.cos(angle) * radius, height, Math.sin(angle) * radius);
-    bar.rotation.y = angle + Math.PI / 2;
-    scene.add(bar);
-  }
-
-  // Two horizon rings the pedestal's outward metal faces reflect as a bright
-  // waistline — a low, bright one near the pedestal's own height so its dark
-  // outer tiers pick up a cyan sheen, plus a higher teal one for depth.
-  const horizonLow = new THREE.Mesh(
-    new THREE.TorusGeometry(5.2, 0.32, 8, 48),
-    new THREE.MeshBasicMaterial({ color: "#37b8ce" })
-  );
-  horizonLow.rotation.x = Math.PI / 2;
-  horizonLow.position.y = 0.5;
-  scene.add(horizonLow);
-
-  const horizon = new THREE.Mesh(
-    new THREE.TorusGeometry(6.5, 0.14, 8, 48),
-    new THREE.MeshBasicMaterial({ color: "#12707f" })
-  );
-  horizon.rotation.x = Math.PI / 2;
-  horizon.position.y = 2.2;
-  scene.add(horizon);
-
-  const ground = new THREE.Mesh(
-    new THREE.CircleGeometry(20, 24),
-    new THREE.MeshBasicMaterial({ color: "#05070a" })
-  );
-  ground.rotation.x = -Math.PI / 2;
-  scene.add(ground);
-
-  const pmrem = new THREE.PMREMGenerator(gl);
-  const environment = pmrem.fromScene(scene, 0.05, 0.1, 100, { size }).texture;
-
-  pmrem.dispose();
-  barGeometry.dispose();
-  scene.traverse((child) => {
-    if (child instanceof THREE.Mesh) {
-      child.geometry.dispose();
-      (child.material as THREE.Material).dispose();
-    }
-  });
-
-  return environment;
 }
 
 export function HologramBay({
@@ -400,26 +145,7 @@ export function HologramBay({
 
     return target;
   }, []);
-
-  const motesRef = useRef<THREE.Points>(null);
-  const motes = useMemo(() => {
-    const positions = new Float32Array(MOTE_COUNT * 3);
-    const speeds = new Float32Array(MOTE_COUNT);
-
-    for (let index = 0; index < MOTE_COUNT; index += 1) {
-      const radius = Math.sqrt(Math.random()) * MOTE_FIELD_RADIUS;
-      const theta = Math.random() * Math.PI * 2;
-
-      positions[index * 3] = Math.cos(theta) * radius;
-      positions[index * 3 + 1] = Math.random() * MOTE_FIELD_HEIGHT;
-      positions[index * 3 + 2] = Math.sin(theta) * radius;
-      speeds[index] = 0.05 + Math.random() * 0.12;
-    }
-
-    return { positions, speeds };
-  }, []);
-
-  useFrame((state, delta) => {
+  useFrame((state) => {
     if (reducedMotion) {
       padGlowMaterial.opacity = 0.6;
 
@@ -430,24 +156,6 @@ export function HologramBay({
     const pulse = 0.5 + 0.5 * Math.sin(state.clock.elapsedTime * 0.6);
 
     padGlowMaterial.opacity = 0.54 + pulse * 0.12;
-
-    const points = motesRef.current;
-
-    if (points) {
-      const attribute = points.geometry.getAttribute("position") as THREE.BufferAttribute;
-
-      for (let index = 0; index < MOTE_COUNT; index += 1) {
-        let y = (attribute.getY(index) ?? 0) + (motes.speeds[index] ?? 0) * delta;
-
-        if (y > MOTE_FIELD_HEIGHT) {
-          y -= MOTE_FIELD_HEIGHT;
-        }
-
-        attribute.setY(index, y);
-      }
-
-      attribute.needsUpdate = true;
-    }
   });
 
   return (
@@ -580,22 +288,7 @@ export function HologramBay({
         />
       </mesh>
 
-      {/* Slow drifting motes: the only continuous, non-interactive ambient loop. */}
-      <points ref={motesRef}>
-        <bufferGeometry>
-          <bufferAttribute attach="attributes-position" args={[motes.positions, 3]} />
-        </bufferGeometry>
-        <pointsMaterial
-          blending={THREE.AdditiveBlending}
-          color={RIM_CYAN}
-          depthWrite={false}
-          opacity={0.5}
-          size={0.045}
-          sizeAttenuation
-          toneMapped={false}
-          transparent
-        />
-      </points>
+      <BayMotes reducedMotion={reducedMotion} />
     </group>
   );
 }
