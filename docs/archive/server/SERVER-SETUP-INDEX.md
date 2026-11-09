@@ -52,12 +52,12 @@ Codex must not:
 | Wave | Stage | Document | Status | Execution permission |
 |---|---:|---|---|---|
 | Current state | 0 | [`server-status-gym-prod.md`](../status/server-status-gym-prod.md) | Complete through Stage 11 | Read only |
-| A | 1 | [`01-host-baseline-audit.md`](./wave-a-host-fundation/01-host-baseline-audit.md) | Complete | Read only |
-| A | 2 | [`02-os-admin-foundation.md`](./wave-a-host-fundation/02-os-admin-foundation.md) | Complete | Read only |
-| A | 3 | [`03-access-network-hardening.md`](./wave-a-host-fundation/03-access-network-hardening.md) | Complete | Read only |
-| A | 4 | [`04-docker-platform.md`](./wave-a-host-fundation/04-docker-platform.md) | Complete | Read only |
-| B | 5–8 | [`wave-b-application-platform/README.md`](./wave-b-application-platform/README.md) | Complete | Read only |
-| C | 9–11 | [`wave-c-operations-dashboard/README.md`](./wave-c-operations-dashboard/README.md) | Complete | Read only |
+| A | 1 | [`01-host-baseline-audit.md`](wave-a-host-fundation/01-host-baseline-audit.md) | Complete | Read only |
+| A | 2 | [`02-os-admin-foundation.md`](wave-a-host-fundation/02-os-admin-foundation.md) | Complete | Read only |
+| A | 3 | [`03-access-network-hardening.md`](wave-a-host-fundation/03-access-network-hardening.md) | Complete | Read only |
+| A | 4 | [`04-docker-platform.md`](wave-a-host-fundation/04-docker-platform.md) | Complete | Read only |
+| B | 5–8 | [`wave-b-application-platform/README.md`](wave-b-application-platform/README.md) | Complete | Read only |
+| C | 9–11 | [`wave-c-operations-dashboard/README.md`](wave-c-operations-dashboard/README.md) | Complete | Read only |
 
 Update this table only after a stage has been reviewed and accepted.
 
@@ -115,7 +115,7 @@ Stages 9 through 11 are complete. Their reports are the source of truth for moni
 Each executed stage must create a report under:
 
 ```text
-docs/server/reports/
+docs/archive/server/reports/
 ```
 
 Expected filenames:

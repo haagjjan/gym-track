@@ -47,7 +47,7 @@
   costs are recorded, and the production Resend and BFF secrets are installed with verified
   protected metadata; a fresh backup containing both secrets, cutover black-box, status and
   physical-device gates remain. See
-  `docs/beta-process/public-beta/goal-4/goal-4-production-verification.md`.
+  `docs/archive/beta-process/public-beta/goal-4/goal-4-production-verification.md`.
 
 ## Phase 0 — Project Setup & Working Style
 
@@ -306,5 +306,5 @@ Admit at most 50 Switzerland-resident, English-speaking adult founding members t
 Repository foundation implemented: invite-only access and runtime controls, explicit admin authorization/audit, waitlist and PII-free alerts, export/deletion/erasure ledger, privacy/device controls, onboarding/help, in-app campaigns, public policy/support routes, external status source, signed client attribution, strict backup retention, ADRs and test coverage. Launch remains blocked on every unchecked item in `docs/public-beta/launch-gates.md`, especially qualified legal/DPIA approval and deployed operational evidence.
 
 The 2026-09-30 onboarding follow-up replaces the text tutorial with the isolated hands-on
-example documented in ADR 0020 and `docs/08-next-implementation-plan.md`. This is a product
+example documented in ADR 0020 and `docs/archive/08-next-implementation-plan.md`. This is a product
 implementation slice; it does not establish deployment or launch readiness.

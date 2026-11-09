@@ -19,7 +19,7 @@ Required inputs:
 - [`../reports/07-gym-tracker-deployment-report.md`](../reports/07-gym-tracker-deployment-report.md)
 - confirmed web and API service names and ports;
 - confirmed Next.js BFF behavior;
-- working Ethernet address `192.168.1.57`;
+- working Ethernet address `<server-lan-ip>`;
 - tested primary and fallback SSH access;
 - Docker firewall findings from Wave A.
 
@@ -88,7 +88,7 @@ Do not deploy multiple reverse proxies.
 Client browser
     |
     v
-Caddy on 192.168.1.57:80
+Caddy on <server-lan-ip>:80
     |
     v
 Next.js web service
@@ -112,13 +112,13 @@ Fastify should not be directly browser-accessible when the BFF is designed to ha
 Initial private entry point:
 
 ```text
-http://192.168.1.57/
+http://<server-lan-ip>/
 ```
 
 Publish only:
 
 ```text
-192.168.1.57:80
+<server-lan-ip>:80
 ```
 
 Do not publish:
@@ -126,10 +126,10 @@ Do not publish:
 ```text
 0.0.0.0:80
 [::]:80
-192.168.86.178:80
+<server-wifi-ip>:80
 ```
 
-Google Nest clients may reach `192.168.1.57` through the existing routed topology.
+Google Nest clients may reach `<server-lan-ip>` through the existing routed topology.
 
 The source address observed by the server may be the Google Nest router’s upper-network address rather than the original client address. Verify rather than assume.
 
@@ -141,7 +141,7 @@ Docker-published ports can bypass normal assumptions about UFW because Docker cr
 
 Stage 8 must therefore use:
 
-1. explicit binding to `192.168.1.57`;
+1. explicit binding to `<server-lan-ip>`;
 2. one published proxy service only;
 3. inspection of Docker-generated rules;
 4. deliberate `DOCKER-USER` filtering where required;
@@ -273,7 +273,7 @@ Required publication:
 
 ```yaml
 ports:
-  - "192.168.1.57:80:80"
+  - "<server-lan-ip>:80:80"
 ```
 
 Do not publish port 443 yet.
@@ -297,7 +297,7 @@ sudo docker compose config
 The only intended LAN-facing application publication should be:
 
 ```text
-192.168.1.57:80
+<server-lan-ip>:80
 ```
 
 ### 6. Start and validate locally
@@ -313,8 +313,8 @@ sudo docker compose logs --tail=200 proxy
 From the server:
 
 ```bash
-curl -v http://192.168.1.57/
-curl -fsS http://192.168.1.57/ >/dev/null
+curl -v http://<server-lan-ip>/
+curl -fsS http://<server-lan-ip>/ >/dev/null
 ```
 
 Verify:
@@ -331,7 +331,7 @@ Verify:
 From the MacBook:
 
 ```bash
-curl -v http://192.168.1.57/
+curl -v http://<server-lan-ip>/
 ```
 
 On the server, inspect proxy logs and, if needed:
@@ -342,8 +342,8 @@ sudo tcpdump -ni enp4s0 'tcp port 80'
 
 Record whether the observed source is:
 
-- the MacBook’s original `192.168.86.x` address;
-- the Google Nest router’s upstream `192.168.1.x` address;
+- the MacBook’s original `<wifi-subnet>` address;
+- the Google Nest router’s upstream `<lan-subnet>` address;
 - another routed or NAT address.
 
 Stop packet capture after the test.
@@ -368,7 +368,7 @@ Policy:
 Because Google Nest traffic may appear NATed on the upper network, the initial trusted source may be:
 
 ```text
-192.168.1.0/24
+<lan-subnet>
 ```
 
 Do not guess a narrower rule until the observed source is known.
@@ -415,7 +415,7 @@ sudo ss -lntup
 Open:
 
 ```text
-http://192.168.1.57/
+http://<server-lan-ip>/
 ```
 
 Verify:
@@ -436,12 +436,12 @@ Do not record authentication cookies.
 
 ### 11. Test from the phone
 
-Connect the phone to `Haag_74`.
+Connect the phone to `<wifi-ssid>`.
 
 Open:
 
 ```text
-http://192.168.1.57/
+http://<server-lan-ip>/
 ```
 
 Verify:
@@ -460,9 +460,9 @@ Do not test from mobile data. Public access is out of scope.
 From the MacBook:
 
 ```bash
-nc -vz 192.168.1.57 5432
-nc -vz 192.168.1.57 <api-container-port>
-nc -vz 192.168.1.57 <web-container-port>
+nc -vz <server-lan-ip> 5432
+nc -vz <server-lan-ip> <api-container-port>
+nc -vz <server-lan-ip> <web-container-port>
 ```
 
 Expected:
@@ -520,7 +520,7 @@ sudo docker compose restart proxy web api
 Verify:
 
 ```bash
-curl -fsS http://192.168.1.57/ >/dev/null
+curl -fsS http://<server-lan-ip>/ >/dev/null
 sudo docker compose ps
 ```
 
@@ -554,7 +554,7 @@ Verify:
 cd /srv/gym-tracker/deploy/compose
 
 sudo docker compose ps
-curl -fsS http://192.168.1.57/ >/dev/null
+curl -fsS http://<server-lan-ip>/ >/dev/null
 sudo ss -lntup
 sudo ufw status verbose
 sudo iptables -S DOCKER-USER
@@ -575,7 +575,7 @@ Update:
 Add:
 
 ```text
-LAN_URL=http://192.168.1.57/
+LAN_URL=http://<server-lan-ip>/
 PROXY_IMAGE=<pinned-image>
 LAN_ENABLED_AT=<ISO-8601 timestamp>
 ```
@@ -645,7 +645,7 @@ Do not leave the service broadly exposed.
 Create:
 
 ```text
-docs/server/reports/08-reverse-proxy-and-private-lan-access-report.md
+docs/archive/server/reports/08-reverse-proxy-and-private-lan-access-report.md
 ```
 
 Include:
@@ -685,7 +685,7 @@ Stage 8 is complete only when:
 
 - one pinned reverse-proxy service exists;
 - only the proxy is LAN-published;
-- publication is bound to `192.168.1.57`;
+- publication is bound to `<server-lan-ip>`;
 - PostgreSQL and Fastify remain private;
 - Docker-aware firewall policy is reviewed and persistent;
 - the application works from MacBook and phone;

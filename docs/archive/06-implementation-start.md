@@ -2,13 +2,13 @@
 
 ## Purpose
 
-This is the historical implementation handoff for the foundation batches. Use `docs/08-next-implementation-plan.md` for current fresh-session implementation planning.
+This is the historical implementation handoff for the foundation batches. Use `docs/archive/08-next-implementation-plan.md` for current fresh-session implementation planning.
 
-This document records the staged implementation handoff that started the app foundation. The first batches have now moved beyond planning: Phase 6 tooling, Phase 7 migrations, the production-like local Compose runner, the API health foundation, the API auth foundation, the first auth UI slice, the Workout Sessions API slice, the Exercise Library API slice, the Workout Logging API slice, and the first Workout Logging UI slice are implemented. Future work should continue from the current status in `README.md`, `docs/00-workflow.md`, `docs/repository-structure.md`, and `docs/08-next-implementation-plan.md`.
+This document records the staged implementation handoff that started the app foundation. The first batches have now moved beyond planning: Phase 6 tooling, Phase 7 migrations, the production-like local Compose runner, the API health foundation, the API auth foundation, the first auth UI slice, the Workout Sessions API slice, the Exercise Library API slice, the Workout Logging API slice, and the first Workout Logging UI slice are implemented. Future work should continue from the current status in `README.md`, `docs/archive/00-workflow.md`, `docs/repository-structure.md`, and `docs/archive/08-next-implementation-plan.md`.
 
 ## Historical Copy-Paste Prompt
 
-The prompt below is preserved for context only. Do not use it for current implementation work; use `docs/08-next-implementation-plan.md` instead.
+The prompt below is preserved for context only. Do not use it for current implementation work; use `docs/archive/08-next-implementation-plan.md` instead.
 
 ```md
 We are starting implementation for the Gym Progress Tracker.
@@ -19,13 +19,13 @@ First, read these docs before changing files:
 - ARCHITECTURE.md
 - ENGINEERING.md
 - CONTRIBUTING.md
-- docs/00-workflow.md
+- docs/archive/00-workflow.md
 - docs/01-requirements.md
 - docs/02-query-list.md
 - docs/03-data-model-notes.md
 - docs/04-schema-draft.md
 - docs/05-api-contract.md
-- docs/06-implementation-start.md
+- docs/archive/06-implementation-start.md
 - docs/decisions/0002-application-stack.md
 - docs/decisions/0003-framework-tooling.md
 - docs/decisions/0004-implementation-readiness.md

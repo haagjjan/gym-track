@@ -42,7 +42,7 @@ Do not:
 - deploy the Gym Tracker;
 - clone the application repository;
 - create PostgreSQL, Prometheus, Grafana, or application containers;
-- expose a container port on `0.0.0.0`, `::`, `192.168.1.57`, or `192.168.86.178`;
+- expose a container port on `0.0.0.0`, `::`, `<server-lan-ip>`, or `<server-wifi-ip>`;
 - create production Docker networks or volumes;
 - move Docker’s data root;
 - disable Docker firewall management;
@@ -407,8 +407,8 @@ It must not be bound to:
 ```text
 0.0.0.0:18080
 [::]:18080
-192.168.1.57:18080
-192.168.86.178:18080
+<server-lan-ip>:18080
+<server-wifi-ip>:18080
 ```
 
 Remove:
@@ -584,7 +584,7 @@ Docker installation must not be “fixed” by resetting router/network configur
 Create:
 
 ```text
-docs/server/reports/04-docker-platform-report.md
+docs/archive/server/reports/04-docker-platform-report.md
 ```
 
 Include:

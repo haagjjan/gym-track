@@ -247,8 +247,8 @@ Verification while running:
 - Compose reported `127.0.0.1:18080->80/tcp`;
 - `ss` showed `docker-proxy` listening only on `127.0.0.1:18080`;
 - Docker's NAT rule matched destination `127.0.0.1/32` only;
-- a MacBook request to `192.168.1.57:18080` timed out;
-- a MacBook request to `192.168.86.178:18080` timed out;
+- a MacBook request to `<server-lan-ip>:18080` timed out;
+- a MacBook request to `<server-wifi-ip>:18080` timed out;
 - the container inherited the configured 10 MB × 3-file JSON log policy.
 
 Cleanup used `docker compose down --volumes --remove-orphans`, then removed the known Compose file and empty temporary directory. Final state before and after reboot:
@@ -285,8 +285,8 @@ While the Compose test ran, Docker created a loopback-specific DNAT rule for por
 UFW remained active with low logging and these only explicit inbound rules:
 
 ```text
-22/tcp on enp4s0 from 192.168.1.0/24
-22/tcp on wlp3s0 from 192.168.86.0/24
+22/tcp on enp4s0 from <lan-subnet>
+22/tcp on wlp3s0 from <wifi-subnet>
 ```
 
 With forwarding now active, UFW reports routed traffic as `deny` rather than `disabled`; its intended deny policy remains. No UFW application or Docker port rule was added.
@@ -494,8 +494,8 @@ curl -fsS http://127.0.0.1:18080/
 ss -lntp
 docker inspect --format '{{json .HostConfig.LogConfig}}' \
   gym-stage4-compose-test-test-1
-curl --connect-timeout 3 http://192.168.1.57:18080/
-curl --connect-timeout 3 http://192.168.86.178:18080/
+curl --connect-timeout 3 http://<server-lan-ip>:18080/
+curl --connect-timeout 3 http://<server-wifi-ip>:18080/
 sysctl net.ipv4.ip_forward net.ipv6.conf.all.forwarding
 iptables -S
 iptables -S DOCKER-USER
@@ -600,4 +600,4 @@ The Wave A technical outcome is satisfied:
 
 Wave A execution is complete pending review and acceptance of this report. Do not begin Wave B merely because its planning documents exist. Wave B requires separate authorization and must define filesystem ownership, repository access, secrets, persistent data, PostgreSQL, application deployment, reverse proxy, private LAN exposure, and Docker-aware port policy deliberately.
 
-The existing documentation path mismatches remain noted but unrepaired: the factual status handoff is under `docs/status/`, and the actual Wave A directory is `wave-a-host-fundation`. Updating the setup index and stage-status table should occur only after Stage 4 and Wave A are reviewed and accepted.
+The existing documentation path mismatches remain noted but unrepaired: the factual status handoff is under `docs/archive/status/`, and the actual Wave A directory is `wave-a-host-fundation`. Updating the setup index and stage-status table should occur only after Stage 4 and Wave A are reviewed and accepted.

@@ -2,7 +2,7 @@
 
 **Project:** Gym Tracker  
 **Target host:** `gym-prod`  
-**Current LAN address:** `http://192.168.1.57/`  
+**Current LAN address:** `http://<server-lan-ip>/`\
 **Document purpose:** Define the complete implementation and verification plan for Stage 1 only.  
 **Stage 1 outcome:** Jan can use the production Gym Tracker through a normal HTTPS URL from outside the home network, while everyone else is blocked before reaching the application and new account creation is disabled at the application layer.
 
@@ -104,7 +104,7 @@ The following belong to the later private-beta stage and must not be implemented
 Stage 1 begins from the following established state:
 
 - `gym-prod` runs Ubuntu with the T2-compatible kernel.
-- The application is available on the LAN at `http://192.168.1.57/`.
+- The application is available on the LAN at `http://<server-lan-ip>/`.
 - Caddy, Next.js, Fastify, PostgreSQL, Prometheus, Grafana, Alertmanager, and exporters run in Docker.
 - Caddy is the only LAN-facing application service.
 - Internal service ports are not available from the LAN.

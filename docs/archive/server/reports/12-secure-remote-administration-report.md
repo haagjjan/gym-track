@@ -63,7 +63,7 @@ Host gym-prod-remote
     AddKeysToAgent yes
     UseKeychain yes
     ProxyCommand /opt/homebrew/bin/cloudflared access ssh --hostname %h
-    HostKeyAlias 192.168.1.57
+    HostKeyAlias <server-lan-ip>
     StrictHostKeyChecking yes
     ServerAliveInterval 30
     ServerAliveCountMax 3

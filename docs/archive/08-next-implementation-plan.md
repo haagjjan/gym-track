@@ -25,7 +25,7 @@ drafts, spreadsheet-safe CSV export, idempotent serialized workout creates, sync
 observable email outcomes, startup-and-hourly lifecycle cleanup, and administrator containment
 and audit UI. This is repository evidence only; it does not establish staging or public-launch
 readiness. See
-`docs/beta-process/public-beta/goal-1/goal-1-remediation-report.md`.
+`docs/archive/beta-process/public-beta/goal-1/goal-1-remediation-report.md`.
 
 Goal 2 decisions are recorded. The DPIA and bounded legal-risk self-assessment were approved by
 the controller on 2026-08-10 without counsel review. A 2026-08-19 correction records Cloudflare's
@@ -44,7 +44,7 @@ Goal 3 is complete. The isolated staging environment runs exact green release
 `4a4fccdae263126ceda164a792059514123f957f`; migrations, dump restoration, previous-image
 rollback, fail-closed configuration, Cloudflare edge behavior, real controlled email,
 administrator bootstrap, admission controls and the complete invited-user workout flow passed.
-See `docs/beta-process/public-beta/goal-3/goal-3-staging-report.md`.
+See `docs/archive/beta-process/public-beta/goal-3/goal-3-staging-report.md`.
 
 Goal 4 pre-deployment verification is active. Application baseline
 `6b31f98981da266304484fb14c3a18904e279e4c` has a controller-reported fully green CI run
@@ -66,24 +66,24 @@ Better Stack setup and deployed status-domain verification remain open alongside
 black-box checks and physical-device QA. Later policy/configuration
 changes do not reopen unchanged application evidence, but the final commit needs green CI and a
 focused rendered-policy staging pass. See
-`docs/beta-process/public-beta/goal-4/goal-4-production-verification.md`.
+`docs/archive/beta-process/public-beta/goal-4/goal-4-production-verification.md`.
 
 ## Source of truth for V1 UI behavior
 
 Use these sources in order:
 
-1. `docs/beta-process/private-beta-1/private-beta-1-report.md` for observed Private Beta 1 behavior and expectations.
-2. `docs/beta-process/private-beta-1/private-beta-1-remediation.md` for the implementation/evidence map.
-3. `docs/Usability_Audit/usability-audit-v4.md` for behavior not superseded by Private Beta 1.
+1. `docs/archive/beta-process/private-beta-1/private-beta-1-report.md` for observed Private Beta 1 behavior and expectations.
+2. `docs/archive/beta-process/private-beta-1/private-beta-1-remediation.md` for the implementation/evidence map.
+3. `docs/archive/Usability_Audit/usability-audit-v4.md` for behavior not superseded by Private Beta 1.
 4. Audit v3, then v2, for behavior not superseded by newer sources.
 5. The implemented screens and API contract for exact current interaction/data shapes.
 6. Stitch redesign documents for visual direction only where they do not conflict with newer evidence.
 
 Private Beta 1, followed by audit v4, v3, and v2 only where not superseded, replaces conflicting behavior in:
 
-- `docs/design/stitch-redesign-v2/DESIGN.md`
-- `docs/design/stitch-redesign-v2/design-notes.md`
-- `docs/design/stitch-redesign-v2/implementation-roadmap.md`
+- `docs/archive/design/stitch-redesign-v2/DESIGN.md`
+- `docs/archive/design/stitch-redesign-v2/design-notes.md`
+- `docs/archive/design/stitch-redesign-v2/implementation-roadmap.md`
 
 The older redesign files remain useful for styling and atmosphere, but no longer own launch, live-session, list-filter, Progress, Volume, or Settings behavior.
 
@@ -174,9 +174,9 @@ We are continuing Founding Beta launch verification for the Gym Progress Tracker
 
 First read:
 - AGENTS.md
-- docs/Usability_Audit/usability-audit-v4.md
-- docs/Usability_Audit/usability-audit-v3.md
-- docs/Usability_Audit/usability-audit-v2.md
+- docs/archive/Usability_Audit/usability-audit-v4.md
+- docs/archive/Usability_Audit/usability-audit-v3.md
+- docs/archive/Usability_Audit/usability-audit-v2.md
 - docs/repository-structure.md
 - docs/01-requirements.md
 - docs/02-query-list.md
@@ -184,11 +184,11 @@ First read:
 - docs/04-schema-draft.md
 - docs/05-api-contract.md
 - docs/07-implementation-pattern.md
-- docs/08-next-implementation-plan.md
-- docs/18-public-beta-handoff.md
-- docs/beta-process/public-beta/goal-1/goal-1-remediation-report.md
-- docs/beta-process/public-beta/goal-1/launch-gates.md
-- docs/beta-process/public-beta/goal-3/goal-3-staging-report.md
+- docs/archive/08-next-implementation-plan.md
+- docs/archive/18-public-beta-handoff.md
+- docs/archive/beta-process/public-beta/goal-1/goal-1-remediation-report.md
+- docs/archive/beta-process/public-beta/goal-1/launch-gates.md
+- docs/archive/beta-process/public-beta/goal-3/goal-3-staging-report.md
 
 Important:
 - Audit v4 supersedes audit v3/v2 where they conflict; v3 then v2 define only behavior not superseded by newer audits.

@@ -22,23 +22,23 @@ Required inputs:
 ```text
 Primary:
 ssh gym-prod
-→ 192.168.1.57
+→ <server-lan-ip>
 → enp4s0
 
 Fallback:
 ssh gym-prod-wifi
-→ 192.168.86.178
+→ <server-wifi-ip>
 → wlp3s0
 ```
 
 Expected local networks:
 
 ```text
-Fiber Box LAN: 192.168.1.0/24
-Google Nest LAN: 192.168.86.0/24
+Fiber Box LAN: <lan-subnet>
+Google Nest LAN: <wifi-subnet>
 ```
 
-The Google Nest router may NAT clients from `192.168.86.0/24` when they connect to `192.168.1.57`. Do not assume the server sees the original MacBook address on the Ethernet path.
+The Google Nest router may NAT clients from `<wifi-subnet>` when they connect to `<server-lan-ip>`. Do not assume the server sees the original MacBook address on the Ethernet path.
 
 ---
 
@@ -109,7 +109,7 @@ The third field of `SSH_CONNECTION` is the server-side destination address.
 For the Ethernet alias it should be:
 
 ```text
-192.168.1.57
+<server-lan-ip>
 ```
 
 ### 2. Verify client-side aliases
@@ -132,8 +132,8 @@ whoami
 Expected server-side addresses:
 
 ```text
-gym-prod       → 192.168.1.57
-gym-prod-wifi  → 192.168.86.178
+gym-prod       → <server-lan-ip>
+gym-prod-wifi  → <server-wifi-ip>
 ```
 
 Do not proceed unless both work, or unless the user explicitly accepts losing the Wi-Fi fallback.
@@ -308,7 +308,7 @@ Add the Ethernet rule:
 
 ```bash
 sudo ufw allow in on enp4s0 \
-  from 192.168.1.0/24 \
+  from <lan-subnet> \
   to any port 22 proto tcp \
   comment 'SSH Fiber Box LAN'
 ```
@@ -317,7 +317,7 @@ Add the Wi-Fi fallback rule:
 
 ```bash
 sudo ufw allow in on wlp3s0 \
-  from 192.168.86.0/24 \
+  from <wifi-subnet> \
   to any port 22 proto tcp \
   comment 'SSH Google Nest LAN'
 ```
@@ -356,8 +356,8 @@ sudo ufw status numbered
 Final intended inbound SSH rules:
 
 ```text
-22/tcp on enp4s0 from 192.168.1.0/24
-22/tcp on wlp3s0 from 192.168.86.0/24
+22/tcp on enp4s0 from <lan-subnet>
+22/tcp on wlp3s0 from <wifi-subnet>
 ```
 
 There should be no broad IPv6 SSH allowance unless a specific local IPv6 access requirement has been approved.
@@ -384,7 +384,7 @@ Desired outbound result:
 
 ```text
 dev enp4s0
-src 192.168.1.57
+src <server-lan-ip>
 ```
 
 If Ethernet is already preferred, do not change route metrics.
@@ -540,7 +540,7 @@ Use local monitor and keyboard. Do not reset routers or reinstall Ubuntu.
 Create:
 
 ```text
-docs/server/reports/03-access-network-hardening-report.md
+docs/archive/server/reports/03-access-network-hardening-report.md
 ```
 
 Include:

@@ -17,8 +17,8 @@ Known high-level state:
 
 - Ubuntu 26.04 LTS, T2-compatible kernel;
 - Mac mini 2018, Intel x86_64, 32 GB RAM;
-- primary Ethernet address `192.168.1.57`;
-- fallback Wi-Fi address last observed as `192.168.86.178`;
+- primary Ethernet address `<server-lan-ip>`;
+- fallback Wi-Fi address last observed as `<server-wifi-ip>`;
 - SSH key access and UFW active;
 - sleep-related targets masked;
 - no application deployment confirmed.
@@ -302,8 +302,8 @@ Pay special attention to services bound to:
 ```text
 0.0.0.0
 ::
-192.168.1.57
-192.168.86.178
+<server-lan-ip>
+<server-wifi-ip>
 ```
 
 ### 9. Services and failures
@@ -426,7 +426,7 @@ Summarize meaningful errors. Do not paste large repetitive logs into the report.
 Create:
 
 ```text
-docs/server/reports/01-host-baseline-audit-report.md
+docs/archive/server/reports/01-host-baseline-audit-report.md
 ```
 
 Use this structure:

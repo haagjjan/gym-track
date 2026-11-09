@@ -177,7 +177,7 @@ not a redesign: keep the FBX, analytics, heat ramp, 2D map capability, selection
 and Part 3 camera behavior unchanged.
 
 - [x] Archive the exact pre-rework front/back SVGs with provenance and SHA-256 hashes under
-      `docs/design-refs/volume-regions-pre-anatomy-rework/`.
+      `docs/archive/design-refs/volume-regions-pre-anatomy-rework/`.
 - [x] Add a mirrored, sparse anatomical-right side override and keep GPU rendering and CPU picking on
       the same dominant-normal projection rule. Transparent side pixels fall back to front/back; opaque
       black pixels explicitly erase joint spill.

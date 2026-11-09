@@ -913,7 +913,7 @@ A local dump does not satisfy the normal backup policy.
 Create:
 
 ```text
-docs/server/reports/11-backup-restore-and-disaster-recovery-report.md
+docs/archive/server/reports/11-backup-restore-and-disaster-recovery-report.md
 ```
 
 Include:

@@ -478,7 +478,7 @@ Stop. Do not merge or overwrite layouts without a reviewed migration plan.
 Create:
 
 ```text
-docs/server/reports/05-server-filesystem-and-repository-report.md
+docs/archive/server/reports/05-server-filesystem-and-repository-report.md
 ```
 
 Include:

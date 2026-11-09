@@ -102,8 +102,8 @@ Both intended interfaces are connected:
 
 | Interface | Connection | Address | State | Effective IPv4 metric |
 |---|---|---|---|---:|
-| `enp4s0` | `netplan-enp4s0` | `192.168.1.57/24` | connected, carrier present | 100 |
-| `wlp3s0` | `Haag_74` | `192.168.86.178/24` | connected | 600 |
+| `enp4s0` | `netplan-enp4s0` | `<server-lan-ip>/24` | connected, carrier present | 100 |
+| `wlp3s0` | `<wifi-ssid>` | `<server-wifi-ip>/24` | connected | 600 |
 
 MAC addresses were inspected but are intentionally omitted from this report.
 
@@ -116,18 +116,18 @@ Ethernet also has global IPv6 addresses within an ISP-assigned `/64` prefix and 
 IPv4 routing is confirmed as:
 
 ```text
-default via 192.168.1.1 dev enp4s0 src 192.168.1.57 metric 100
-default via 192.168.86.1 dev wlp3s0 src 192.168.86.178 metric 600
+default via <lan-gateway> dev enp4s0 src <server-lan-ip> metric 100
+default via <wifi-gateway> dev wlp3s0 src <server-wifi-ip> metric 600
 ```
 
-`ip route get 1.1.1.1` selects `enp4s0` with source `192.168.1.57`. Ethernet is therefore the preferred outbound IPv4 path.
+`ip route get 1.1.1.1` selects `enp4s0` with source `<server-lan-ip>`. Ethernet is therefore the preferred outbound IPv4 path.
 
 A default IPv6 route exists through Ethernet. There are no custom policy-routing rules beyond the standard local, main, and default tables.
 
 DNS is provided through `systemd-resolved`:
 
-- Ethernet DNS: `192.168.1.1`, search domain `home`, preferred default route;
-- Wi-Fi DNS: `192.168.86.1`, search domain `lan`.
+- Ethernet DNS: `<lan-gateway>`, search domain `home`, preferred default route;
+- Wi-Fi DNS: `<wifi-gateway>`, search domain `lan`.
 
 DNS-over-TLS is disabled and DNSSEC is reported as unsupported by the active upstream configuration.
 
@@ -322,7 +322,7 @@ The audit resolves or updates these previously uncertain items:
 - Docker, PostgreSQL, Node.js, pnpm, application services, and `/srv` deployment state are confirmed absent.
 - Two package upgrades are visible in the existing apt cache.
 - Generic HWE kernel packages coexist with the active T2 kernel.
-- Wi-Fi is currently using `192.168.86.178`; a host-side DHCP lease does not independently prove the router reservation.
+- Wi-Fi is currently using `<server-wifi-ip>`; a host-side DHCP lease does not independently prove the router reservation.
 - Bluetooth-related errors are present in the current boot despite the earlier firmware-installation history.
 - The server retains a full set of desktop-oriented services even though it is operated headlessly.
 
@@ -409,7 +409,7 @@ nmcli device show enp4s0
 nmcli device show wlp3s0
 nmcli connection show netplan-enp4s0
 nmcli -t -f NAME,TYPE,DEVICE connection show --active
-nmcli connection show Haag_74
+nmcli connection show <wifi-ssid>
 ip route
 ip -6 route
 ip rule

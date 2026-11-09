@@ -67,7 +67,7 @@ File handling: the asset is currently at the repo root as `futuristic+humanoid+3
 I will review this before anything else proceeds. If it doesn't land, we adjust the concept here — cheaply — rather than after Phase 2.
 
 **Phase 2 — Concept screens (stop here for review)**
-Before writing any new component: archive the existing frontend UI code. Move current components/pages/styles into a clearly separate `_legacy-reference/` folder outside the active app (not deleted — the Phase 0 checklist still needs a source of truth for edge cases), so there is nothing left in the live app to adapt or incrementally edit. This is a rebuild, not a refactor — the old files should only ever be consulted for "what does this actually compute," never copied from for structure or styling.
+Before writing any new component: archive the existing frontend UI code. Move current components/pages/styles into a clearly separate `docs/archive/legacy-reference/` folder outside the active app (not deleted — the Phase 0 checklist still needs a source of truth for edge cases), so there is nothing left in the live app to adapt or incrementally edit. This is a rebuild, not a refactor — the old files should only ever be consulted for "what does this actually compute," never copied from for structure or styling.
 
 `DESIGN.md` already defines a full token system (colors, type scale, radius, spacing) — implement it using the styling approach you proposed in Phase 0.
 

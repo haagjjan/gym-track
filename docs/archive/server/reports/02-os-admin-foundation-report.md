@@ -38,8 +38,8 @@ At 2026-07-20 18:32 CEST:
 - package-manager integrity: clean;
 - no active apt or dpkg transaction;
 - SSH access: working through both Ethernet and Wi-Fi aliases;
-- Ethernet address: `192.168.1.57/24`;
-- Wi-Fi address: `192.168.86.178/24`;
+- Ethernet address: `<server-lan-ip>/24`;
+- Wi-Fi address: `<server-wifi-ip>/24`;
 - preferred outbound path: Ethernet;
 - timezone: `Europe/Zurich`;
 - NTP: synchronized through chrony;
@@ -131,7 +131,7 @@ libterm-readkey-perl
 
 The existing `bind9-dnsutils` package already provided `dig`, so no redundant DNS tool package was installed. All other target administration tools were already present.
 
-For a concise explanation of every intentionally managed administration, diagnostic, maintenance, networking, and T2-support tool referenced by this server setup, see [`../SERVER-TOOLS.md`](../SERVER-TOOLS.md). That reference distinguishes administrator-facing commands such as `ncdu`, `smartctl`, and `rg` from supporting packages that are normally used indirectly.
+For a concise explanation of every intentionally managed administration, diagnostic, maintenance, networking, and T2-support tool referenced by this server setup, see [`../SERVER-TOOLS.md`](../../../server/SERVER-TOOLS.md). That reference distinguishes administrator-facing commands such as `ncdu`, `smartctl`, and `rg` from supporting packages that are normally used indirectly.
 
 ## T2/kernel preservation checks
 
@@ -278,11 +278,11 @@ Confirmed after reboot and again during final verification:
 - SSH: active and enabled;
 - `sshd -t`: successful;
 - UFW: active with its pre-existing broad OpenSSH IPv4/IPv6 rules;
-- Ethernet: connected at `192.168.1.57/24`;
-- Wi-Fi: connected at `192.168.86.178/24`;
+- Ethernet: connected at `<server-lan-ip>/24`;
+- Wi-Fi: connected at `<server-wifi-ip>/24`;
 - `ssh gym-prod`: successful;
 - `ssh gym-prod-wifi`: successful;
-- outbound IPv4: Ethernet through `192.168.1.1`, source `192.168.1.57`;
+- outbound IPv4: Ethernet through `<lan-gateway>`, source `<server-lan-ip>`;
 - timezone and NTP: correct and synchronized;
 - TRIM: active and enabled;
 - sleep targets: masked;

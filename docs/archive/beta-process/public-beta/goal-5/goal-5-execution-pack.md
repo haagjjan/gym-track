@@ -94,7 +94,7 @@ restored `INVITE_ONLY` before the member flow began.
 ## PROD-6 and PROD-7 — Real mailbox and delivery evidence
 
 **Already recorded.** The sending domain is verified with DNS published through Cloudflare, and the
-controller is named delivery owner in [ops/production/README.md](../../../../ops/production/README.md)
+controller is named delivery owner in [ops/production/README.md](../../../../../ops/production/README.md)
 with per-batch and daily Resend dashboard review. The root DMARC record carries no aggregate
 reporting address, so manual review is the deliberate substitute for the founding cohort.
 
@@ -119,7 +119,7 @@ the incident publication rehearsal.
 hosted on the Mac mini or reached through its tunnel is disqualified — during the outage that
 matters, it would be unreachable too.
 
-**Decided 2026-08-20: GitHub Pages** — the only option independent of both the Mac mini and Cloudflare, and it adds no processor. A publishing workflow and the custom-domain `CNAME` are committed; see [ops/status/README.md](../../../../ops/status/README.md) for the two remaining caveats (Pages on a private repository needs a paid plan or a dedicated public repository, and GitHub Pages ignores the `_headers` file). Options considered:
+**Decided 2026-08-20: GitHub Pages** — the only option independent of both the Mac mini and Cloudflare, and it adds no processor. A publishing workflow and the custom-domain `CNAME` are committed; see [ops/status/README.md](../../../../../ops/status/README.md) for the two remaining caveats (Pages on a private repository needs a paid plan or a dedicated public repository, and GitHub Pages ignores the `_headers` file). Options considered:
 
 | Option | Independent of the Mac mini | Notes |
 | --- | --- | --- |
@@ -130,7 +130,7 @@ matters, it would be unreachable too.
 **Also needed:** a `status.gymtrack.ch` DNS record with TLS, and one incident publication
 rehearsal — publish a test incident, confirm it is publicly visible without authentication, then
 resolve and archive it. If a hosted provider is chosen, add it to
-[processor-inventory-final.md](../goal-2/processor-inventory-final.md) with region, transfer basis
+[processor-inventory-final.md](../../../../beta-process/public-beta/goal-2/processor-inventory-final.md) with region, transfer basis
 and retention before it carries any real content.
 
 ## SQC-1 — Remaining browser and provider-log evidence

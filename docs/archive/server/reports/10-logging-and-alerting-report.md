@@ -25,7 +25,7 @@ Stage 11 was not started.
 Observed before mutation:
 
 - Stage 9 was complete and all five original Prometheus targets were healthy.
-- The application was live at `192.168.1.57:80`.
+- The application was live at `<server-lan-ip>:80`.
 - Docker used bounded `json-file` logs with `max-size=10m` and `max-file=3` on every inspected container.
 - The journal was bounded to 1 GiB and 30 days and used approximately 152 MiB during the initial audit.
 - Exact deployed-secret matches in the inspected 24-hour logs were zero.

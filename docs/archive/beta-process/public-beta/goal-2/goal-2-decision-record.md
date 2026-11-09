@@ -55,7 +55,7 @@ but not eliminated. Staging is excluded from backups and from production alertin
 outages are found by use rather than notification. The spare Mac mini stays reserved as a
 recovery host.
 
-**Artifacts.** [ADR 0015](../../../decisions/0015-staging-environment.md) ·
+**Artifacts.** [ADR 0015](../../../../decisions/0015-staging-environment.md) ·
 [staging-environment-spec.md](staging-environment-spec.md)
 
 **Handoff.** Goal 3 executes the specification. Nothing is deployed yet.
@@ -264,7 +264,7 @@ same pass, or the rendered pages will contradict this record.
    retention limits and breach handling stay as built. They already exist, so the ongoing cost
    is near zero, and a later widening of scope becomes a legal review rather than a rebuild.
 
-**Artifacts.** [ADR 0016](../../../decisions/0016-founding-beta-jurisdiction-scope.md) ·
+**Artifacts.** [ADR 0016](../../../../decisions/0016-founding-beta-jurisdiction-scope.md) ·
 [jurisdiction-scope-changes.md](jurisdiction-scope-changes.md) — nine files, with exact diffs,
 and four dated snapshots explicitly excluded.
 
@@ -277,7 +277,7 @@ and four dated snapshots explicitly excluded.
   to `adult_attested_at` with no schema change.
 - Terms eligibility — Swiss residence and Swiss governing law stated.
 - Privacy Notice — states it is written for the revFADP and offered only in Switzerland.
-- `docs/00-workflow.md`, `docs/18-public-beta-handoff.md`, `launch-gates.md` and
+- `docs/archive/00-workflow.md`, `docs/archive/18-public-beta-handoff.md`, `launch-gates.md` and
   `dpia-screening.md` all updated; the counsel gate rewritten around the narrower scope.
 
 The DPIA screening's **conclusion is deliberately unchanged**. Geography was never what drove
@@ -440,7 +440,7 @@ verification belong to Goals 3–5.
 
 **Status: Decided** · 2026-08-07; provider evidence remains
 
-Written as [processor-inventory-final.md](processor-inventory-final.md). Every provider is
+Written as [processor-inventory-final.md](../../../../beta-process/public-beta/goal-2/processor-inventory-final.md). Every provider is
 classified as processor, controller-operated, or no-personal-data, because treating them alike
 produced a misleading picture.
 
@@ -561,8 +561,8 @@ reported Infomaniak charge. Cloudflare and Resend remain on their Free plans.
 **Publish, under MIT, with full history, including the homelab documentation.**
 
 Written up in [public-repository-plan.md](public-repository-plan.md). Artifacts created:
-[LICENSE](../../../../LICENSE), [NOTICE](../../../../NOTICE),
-[SECURITY.md](../../../../SECURITY.md).
+[LICENSE](../../../../../LICENSE), [NOTICE](../../../../../NOTICE),
+[SECURITY.md](../../../../../SECURITY.md).
 
 MIT because the purpose is demonstrating competence rather than controlling use, and nothing in
 the dependency set constrains the choice. Full history because 899 commits showing how the
@@ -574,7 +574,7 @@ MAC addresses, no public IPv4, no SSH keys and no credential values — the Wave
 already excluded passwords, fingerprints and serial numbers by design.
 
 **One genuine finding.** `reports/01-host-baseline-audit-report.md:112` published the
-ISP-assigned IPv6 prefix `2a04:ee40:20c5:c700::/64`. Unlike the RFC1918 addresses this is
+ISP-assigned IPv6 prefix `<public-ipv6-prefix>/64`. Unlike the RFC1918 addresses this is
 globally unique and tied to a specific subscriber line, and it corroborates the home address
 that is public by design on the legal pages. Redacted in the working tree; **still present in
 history**, which the full-history decision would publish. A targeted `git filter-repo` scrub is
@@ -593,7 +593,7 @@ confirmed on 2026-08-19 that they came from Tripo 3D's Free tier. Archived offic
 `CC BY 4.0` to public Free-tier models. That licence permits redistribution and adaptation with
 attribution. The public Support page and NOTICE now credit Tripo, link the licence and identify the
 application's modifications. See the
-[Tripo FBX licence evidence](tripo-fbx-license-evidence.md). The remaining repository-publication
+[Tripo FBX licence evidence](../../../../beta-process/public-beta/goal-2/tripo-fbx-license-evidence.md). The remaining repository-publication
 work is the unrelated pre-publication checklist in the plan.
 
 ---
@@ -603,7 +603,7 @@ work is the unrelated pre-publication checklist in the plan.
 **Status: Decided** · original controller approval recorded 2026-08-10; Cloudflare-scope
 correction reaffirmed 2026-08-19
 
-The full [DPIA](dpia.md) was approved by Jan Haag as controller. The companion
+The full [DPIA](../../../../beta-process/public-beta/goal-2/dpia.md) was approved by Jan Haag as controller. The companion
 [legal-risk acceptance](legal-risk-acceptance.md) was signed on the same date. The chosen approach
 is documented self-assessment and written residual-risk acceptance rather than engaging counsel
 for this free, Switzerland-only, invitation-only beta capped at 50 accounts. A 2026-08-19

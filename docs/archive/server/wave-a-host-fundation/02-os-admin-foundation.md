@@ -500,7 +500,7 @@ Restore the backed-up file or remove only the newly created drop-in, then restar
 Create:
 
 ```text
-docs/server/reports/02-os-admin-foundation-report.md
+docs/archive/server/reports/02-os-admin-foundation-report.md
 ```
 
 Include:

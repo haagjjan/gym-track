@@ -40,10 +40,10 @@ The Wave A reports are the source of truth when they differ from earlier plannin
 
 | Stage | Document | Purpose |
 |---:|---|---|
-| 5 | [`05-server-filesystem-and-repository.md`](./05-server-filesystem-and-repository.md) | Establish the host layout, repository access, ownership, secrets boundaries, and deployment metadata |
-| 6 | [`06-postgresql-foundation.md`](./06-postgresql-foundation.md) | Deploy private persistent PostgreSQL, create roles, and prove backup and restoration |
-| 7 | [`07-gym-tracker-deployment.md`](./07-gym-tracker-deployment.md) | Build and run the Fastify and Next.js services privately on the server |
-| 8 | [`08-reverse-proxy-and-private-lan-access.md`](./08-reverse-proxy-and-private-lan-access.md) | Add one controlled LAN entry point and verify the complete application from client devices |
+| 5 | [`05-server-filesystem-and-repository.md`](05-server-filesystem-and-repository.md) | Establish the host layout, repository access, ownership, secrets boundaries, and deployment metadata |
+| 6 | [`06-postgresql-foundation.md`](06-postgresql-foundation.md) | Deploy private persistent PostgreSQL, create roles, and prove backup and restoration |
+| 7 | [`07-gym-tracker-deployment.md`](07-gym-tracker-deployment.md) | Build and run the Fastify and Next.js services privately on the server |
+| 8 | [`08-reverse-proxy-and-private-lan-access.md`](08-reverse-proxy-and-private-lan-access.md) | Add one controlled LAN entry point and verify the complete application from client devices |
 
 Stages must be executed in order. The existence of a later-stage document is not permission to execute it.
 
@@ -142,7 +142,7 @@ Repository-controlled templates may live under the repository, but live secrets 
 Each stage must create a report under:
 
 ```text
-docs/server/reports/
+docs/archive/server/reports/
 ```
 
 Expected Wave B reports:

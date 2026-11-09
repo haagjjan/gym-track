@@ -610,7 +610,7 @@ sudo iptables -S DOCKER-USER
 
 Alertmanager must not be host- or LAN-accessible.
 
-From the MacBook, attempts to reach port `9093` on `192.168.1.57` must fail.
+From the MacBook, attempts to reach port `9093` on `<server-lan-ip>` must fail.
 
 ### 20. Restart and reboot verification
 
@@ -692,7 +692,7 @@ Then tune threshold, duration, labels, or grouping based on observed behavior.
 Create:
 
 ```text
-docs/server/reports/10-logging-and-alerting-report.md
+docs/archive/server/reports/10-logging-and-alerting-report.md
 ```
 
 Include:

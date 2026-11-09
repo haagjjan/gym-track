@@ -22,10 +22,10 @@ The following access model was proven before changes, after SSH hardening, after
 
 | Alias | Server destination | Interface | Result |
 |---|---|---|---|
-| `gym-prod` | `192.168.1.57:22` | `enp4s0` | Fresh key-only session passed |
-| `gym-prod-wifi` | `192.168.86.178:22` | `wlp3s0` | Fresh key-only session passed |
+| `gym-prod` | `<server-lan-ip>:22` | `enp4s0` | Fresh key-only session passed |
+| `gym-prod-wifi` | `<server-wifi-ip>:22` | `wlp3s0` | Fresh key-only session passed |
 
-The client source addresses were within the intended `192.168.1.0/24` and `192.168.86.0/24` networks. Exact client addresses are omitted because the rules are deliberately subnet-based and the client DHCP address is not a stable server requirement.
+The client source addresses were within the intended `<lan-subnet>` and `<wifi-subnet>` networks. Exact client addresses are omitted because the rules are deliberately subnet-based and the client DHCP address is not a stable server requirement.
 
 The original visible SSH session remained open through the SSH and UFW changes. It provided the recovery path during the `/dev/null` incident. New independent sessions were used for every acceptance test.
 
@@ -147,8 +147,8 @@ Status: active
 Logging: on (low)
 Default: deny (incoming), allow (outgoing), disabled (routed)
 
-22/tcp on enp4s0  ALLOW IN  192.168.1.0/24   # SSH Fiber Box LAN
-22/tcp on wlp3s0  ALLOW IN  192.168.86.0/24  # SSH Google Nest LAN
+22/tcp on enp4s0  ALLOW IN  <lan-subnet>   # SSH Fiber Box LAN
+22/tcp on wlp3s0  ALLOW IN  <wifi-subnet>  # SSH Google Nest LAN
 ```
 
 There is no broad OpenSSH application-profile rule and no broad IPv6 SSH rule. Both replacement paths passed again after rule deletion and after reboot.
@@ -164,11 +164,11 @@ No sensitive global IPv6 address is included in this report.
 Kernel routes before and after hardening, and after reboot, were:
 
 ```text
-Ethernet default via 192.168.1.1 on enp4s0, metric 100
-Wi-Fi default via 192.168.86.1 on wlp3s0, metric 600
+Ethernet default via <lan-gateway> on enp4s0, metric 100
+Wi-Fi default via <wifi-gateway> on wlp3s0, metric 600
 ```
 
-`ip route get 1.1.1.1` selected `enp4s0` with source `192.168.1.57`. NetworkManager profile values displayed `-1`, meaning automatic metrics, while the resulting DHCP routes had the desired effective metrics. Because Ethernet was already preferred reliably, no NetworkManager connection profile or route metric was changed.
+`ip route get 1.1.1.1` selected `enp4s0` with source `<server-lan-ip>`. NetworkManager profile values displayed `-1`, meaning automatic metrics, while the resulting DHCP routes had the desired effective metrics. Because Ethernet was already preferred reliably, no NetworkManager connection profile or route metric was changed.
 
 ## Packet-forwarding state
 
@@ -322,7 +322,7 @@ ufw status numbered
 ip route
 ip route get 1.1.1.1
 nmcli connection show netplan-enp4s0
-nmcli connection show Haag_74
+nmcli connection show <wifi-ssid>
 sysctl net.ipv4.ip_forward
 sysctl net.ipv6.conf.all.forwarding
 ss -lntup
@@ -343,8 +343,8 @@ sshd -T | grep -E '<selected SSH settings>'
 systemctl reload ssh
 systemctl is-active ssh
 systemctl is-enabled ssh
-ufw allow in on enp4s0 from 192.168.1.0/24 to any port 22 proto tcp comment 'SSH Fiber Box LAN'
-ufw allow in on wlp3s0 from 192.168.86.0/24 to any port 22 proto tcp comment 'SSH Google Nest LAN'
+ufw allow in on enp4s0 from <lan-subnet> to any port 22 proto tcp comment 'SSH Fiber Box LAN'
+ufw allow in on wlp3s0 from <wifi-subnet> to any port 22 proto tcp comment 'SSH Google Nest LAN'
 ufw status verbose
 ufw status numbered
 ```

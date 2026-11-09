@@ -35,7 +35,7 @@ there:
 - Production Resend and BFF secrets installed root-owned, and captured in a verified backup on
   2026-08-19.
 - The version-controlled non-secret production Compose/Caddy definition and cutover runbook in
-  [ops/production](../../../../ops/production/README.md), with CI invariant checks.
+  [ops/production](../../../../../ops/production/README.md), with CI invariant checks.
 
 The sections below preserve what was still outstanding when Goal 5 began; later sections record
 its execution and final closure rather than rewriting that chronology.

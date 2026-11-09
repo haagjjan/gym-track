@@ -109,7 +109,7 @@ No broad audit area is rated `Verified complete`. Individual repository controls
 ### 1. Public-beta scope and release boundaries
 
 - **Current state:** **Partially implemented**; confidence **High**; beta criticality **Launch blocker**.
-- **Evidence:** `docs/01-requirements.md`, `docs/18-public-beta-handoff.md`, ADRs 0012/0013, and `docs/public-beta/launch-gates.md` define invite-only admission, 18+ self-attestation, a 50-seat cap, 10 approvals per rolling 24 hours, and rollout stop rules.
+- **Evidence:** `docs/01-requirements.md`, `docs/archive/18-public-beta-handoff.md`, ADRs 0012/0013, and `docs/public-beta/launch-gates.md` define invite-only admission, 18+ self-attestation, a 50-seat cap, 10 approvals per rolling 24 hours, and rollout stop rules.
 - **Implemented:** Runtime admission controls exist and default closed in the schema. The waitlist, invitation, policies, account lifecycle, messaging, and administrator surfaces provide a concrete Founding Beta boundary.
 - **Uncertain:** There is no frozen release SHA, clean release candidate, verified production configuration, or linked evidence bundle. It is unclear whether existing owner data will coexist with beta accounts, be migrated, or be reset, and which limitations will be shown to invitees.
 - **Missing:** A release manifest covering deployed commit/image digests, migration set, configuration version, known limitations, rollback boundary, and data-reset/no-reset decision.
@@ -369,7 +369,7 @@ No broad audit area is rated `Verified complete`. Individual repository controls
 ### 27. Documentation
 
 - **Current state:** **Partially implemented**; confidence **High**; beta criticality **High**.
-- **Evidence:** Product, query, model, schema, API, architecture, engineering, deployment, operations, privacy, security, and recovery documents are extensive. `docs/08-next-implementation-plan.md` and `docs/public-beta/launch-gates.md` are useful current handoffs.
+- **Evidence:** Product, query, model, schema, API, architecture, engineering, deployment, operations, privacy, security, and recovery documents are extensive. `docs/archive/08-next-implementation-plan.md` and `docs/public-beta/launch-gates.md` are useful current handoffs.
 - **Implemented:** Most major decisions and operational concepts are documented, with ADRs and runbooks for the active architecture.
 - **Uncertain:** Which historical report or plan is authoritative when claims conflict, and whether operator procedures match the current release and live host.
 - **Missing:** A concise current release/operations index, evidence links per launch gate, version/owner/review date on operational SOPs, and a public/private documentation policy.

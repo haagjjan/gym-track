@@ -292,16 +292,16 @@ There is no host listener on `5432`. Docker reports PostgreSQL's declared contai
 MacBook checks failed as required for:
 
 ```text
-192.168.1.57:3000
-192.168.1.57:4000
-192.168.86.178:3000
-192.168.86.178:4000
+<server-lan-ip>:3000
+<server-lan-ip>:4000
+<server-wifi-ip>:3000
+<server-wifi-ip>:4000
 ```
 
 UFW remains active with only:
 
-- scoped SSH on `enp4s0` from `192.168.1.0/24`;
-- scoped SSH on `wlp3s0` from `192.168.86.0/24`.
+- scoped SSH on `enp4s0` from `<lan-subnet>`;
+- scoped SSH on `wlp3s0` from `<wifi-subnet>`.
 
 No UFW rule was added for the database, API, or web service.
 
@@ -427,7 +427,7 @@ PostgreSQL migration objects and seed rows were added to the existing persistent
 Local repository file created:
 
 ```text
-docs/server/reports/07-gym-tracker-deployment-report.md
+docs/archive/server/reports/07-gym-tracker-deployment-report.md
 ```
 
 No application source file, migration file, Dockerfile, lockfile, or server checkout file changed.

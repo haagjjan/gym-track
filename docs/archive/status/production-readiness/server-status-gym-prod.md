@@ -17,7 +17,7 @@ Current verified state:
 | Host | Ubuntu 26.04 LTS on active T2 kernel `7.1.3-1-t2-resolute` |
 | Application snapshot | `73dcc1086802abbf2cbd96e8b1f99502b4c543b1` |
 | Server repository | `/srv/gym-tracker/repo`, clean at the deployed snapshot |
-| Application access | Private LAN HTTP at `192.168.1.57:80` through Caddy |
+| Application access | Private LAN HTTP at `<server-lan-ip>:80` through Caddy |
 | Direct app ports | Next.js `3000`, Fastify `4000`, and PostgreSQL `5432` have no host publication |
 | Database | PostgreSQL 17.10, persistent, healthy, and populated with the approved production-account migration |
 | Monitoring | Prometheus, Alertmanager, Grafana, Node Exporter, cAdvisor, and PostgreSQL Exporter running under the `gym-tracker` Compose project |
@@ -180,7 +180,7 @@ The MacBook uses these intended entries in `~/.ssh/config`:
 
 ```sshconfig
 Host gym-prod
-    HostName 192.168.1.57
+    HostName <server-lan-ip>
     User admin-gym
     IdentityFile ~/.ssh/gym_prod_ed25519
     IdentitiesOnly yes
@@ -188,7 +188,7 @@ Host gym-prod
     UseKeychain yes
 
 Host gym-prod-wifi
-    HostName 192.168.86.178
+    HostName <server-wifi-ip>
     User admin-gym
     IdentityFile ~/.ssh/gym_prod_ed25519
     IdentitiesOnly yes
@@ -292,15 +292,15 @@ There are two routed IPv4 networks.
 
 ```text
 Router: Fiber Box W7
-Management IP: 192.168.1.1
-LAN: 192.168.1.0/24
+Management IP: <lan-gateway>
+LAN: <lan-subnet>
 SSID: Box_W7-8FCE83
 ```
 
 The Fiber Box:
 
 - is the upper router;
-- provides DHCP for `192.168.1.x`;
+- provides DHCP for `<lan-subnet>`;
 - connects to the internet/fiber service;
 - has its own active Wi-Fi;
 - has the NETGEAR switch connected on its LAN side;
@@ -309,19 +309,19 @@ The Fiber Box:
 ### Downstream network — Google Nest mesh
 
 ```text
-LAN: 192.168.86.0/24
-SSID: Haag_74
-Expected gateway: 192.168.86.1
+LAN: <wifi-subnet>
+SSID: <wifi-ssid>
+Expected gateway: <wifi-gateway>
 ```
 
 The Google Nest system operates as a routed downstream network, not merely as transparent access points.
 
-The MacBook normally connects through `Haag_74`.
+The MacBook normally connects through `<wifi-ssid>`.
 
 Observed MacBook addresses have included values such as:
 
 ```text
-192.168.86.134
+<wifi-client-ip>
 ```
 
 The exact MacBook DHCP address should not be assumed stable.
@@ -332,13 +332,13 @@ The exact MacBook DHCP address should not be assumed stable.
 Internet
   |
 Fiber Box W7
-192.168.1.0/24
+<lan-subnet>
   |-----------------------------|
   |                             |
 NETGEAR GS105E             Google Nest router
-  |                        192.168.86.0/24
+  |                        <wifi-subnet>
 gym-prod Ethernet                |
-192.168.1.57               MacBook and mesh clients
+<server-lan-ip>               MacBook and mesh clients
 ```
 
 This creates two routing/NAT layers for devices behind Google Nest.
@@ -356,7 +356,7 @@ The Mac mini is dual-homed.
 ```text
 Interface: enp4s0
 Connection profile: netplan-enp4s0
-Address: 192.168.1.57/24
+Address: <server-lan-ip>/24
 Network: Fiber Box LAN
 ```
 
@@ -385,10 +385,10 @@ The Fiber Box recognizes:
 
 ```text
 gym-prod
-192.168.1.57
+<server-lan-ip>
 ```
 
-A DHCP reservation for `192.168.1.57` was successfully created in the Fiber Box for the Ethernet MAC address.
+A DHCP reservation for `<server-lan-ip>` was successfully created in the Fiber Box for the Ethernet MAC address.
 
 Ubuntu itself remains configured for DHCP; no manual static IP was set inside Ubuntu.
 
@@ -404,16 +404,16 @@ The exact MAC is intentionally not included here.
 
 ```text
 Interface: wlp3s0
-SSID: Haag_74
-Address: 192.168.86.178/24
+SSID: <wifi-ssid>
+Address: <server-wifi-ip>/24
 Network: Google Nest LAN
 ```
 
 Google Home sees this Wi-Fi interface.
 
-Google Home does not show the Ethernet interface because Ethernet belongs to the upper `192.168.1.x` network.
+Google Home does not show the Ethernet interface because Ethernet belongs to the upper `<lan-subnet>` network.
 
-A DHCP reservation for `192.168.86.178` was discussed but was not confirmed. Do not assume the Wi-Fi address is reserved.
+A DHCP reservation for `<server-wifi-ip>` was discussed but was not confirmed. Do not assume the Wi-Fi address is reserved.
 
 ### Other interfaces
 
@@ -433,10 +433,10 @@ t2_ncm
 
 ## 10. Verified cross-network SSH path
 
-The MacBook, while connected to the Google Nest `192.168.86.x` network, successfully connected to:
+The MacBook, while connected to the Google Nest `<wifi-subnet>` network, successfully connected to:
 
 ```text
-192.168.1.57
+<server-lan-ip>
 ```
 
 Effective path:
@@ -448,16 +448,16 @@ Google Nest Wi-Fi
   |
 Google Nest router
   |
-Fiber Box 192.168.1.x network
+Fiber Box <lan-subnet> network
   |
 NETGEAR GS105E
   |
 gym-prod enp4s0
 ```
 
-The SSH host key for `192.168.1.57` matched the same Ubuntu SSH server previously known at `192.168.86.178`.
+The SSH host key for `<server-lan-ip>` matched the same Ubuntu SSH server previously known at `<server-wifi-ip>`.
 
-Connecting to `192.168.1.57` reaches `enp4s0`; it does not silently redirect to the Wi-Fi interface.
+Connecting to `<server-lan-ip>` reaches `enp4s0`; it does not silently redirect to the Wi-Fi interface.
 
 ---
 
@@ -466,13 +466,13 @@ Connecting to `192.168.1.57` reaches `enp4s0`; it does not silently redirect to 
 ```text
 Primary:
 ssh gym-prod
-→ 192.168.1.57
+→ <server-lan-ip>
 → enp4s0
 → Gigabit Ethernet
 
 Fallback:
 ssh gym-prod-wifi
-→ 192.168.86.178
+→ <server-wifi-ip>
 → wlp3s0
 → Google Nest Wi-Fi
 ```
@@ -696,7 +696,7 @@ Known open conditions:
 [confirmed] Hostname is gym-prod
 [confirmed] User admin-gym exists
 [confirmed] Internal Wi-Fi works after Apple firmware installation
-[confirmed] Wi-Fi connects to Haag_74
+[confirmed] Wi-Fi connects to <wifi-ssid>
 [confirmed] SSH is active
 [confirmed] SSH is enabled at boot
 [confirmed] Dedicated Ed25519 authentication works
@@ -710,12 +710,12 @@ Known open conditions:
 [confirmed] Ethernet interface enp4s0 is recognized
 [confirmed] Ethernet profile uses DHCP
 [confirmed] Ethernet autoconnect is enabled
-[confirmed] Ethernet receives 192.168.1.57/24
-[confirmed] 192.168.1.57 is reserved in the Fiber Box
-[confirmed] Wi-Fi address 192.168.86.178 is reserved in the Google Nest
+[confirmed] Ethernet receives <server-lan-ip>/24
+[confirmed] <server-lan-ip> is reserved in the Fiber Box
+[confirmed] Wi-Fi address <server-wifi-ip> is reserved in the Google Nest
 [confirmed] Ethernet negotiates at 1000 Mb/s full duplex
 [confirmed] Ethernet link detection reports yes
-[confirmed] SSH works through 192.168.1.57
+[confirmed] SSH works through <server-lan-ip>
 [confirmed] ssh gym-prod targets Ethernet
 [confirmed] ssh gym-prod-wifi targets Wi-Fi
 [confirmed] SSH config syntax was repaired and validated
@@ -749,8 +749,8 @@ Known open conditions:
 The server is reachable through two interfaces:
 
 ```text
-192.168.1.57   enp4s0   Ethernet
-192.168.86.178 wlp3s0   Wi-Fi
+<server-lan-ip>   enp4s0   Ethernet
+<server-wifi-ip> wlp3s0   Wi-Fi
 ```
 
 Network, SSH, firewall, Netplan, NetworkManager, IPv6, or routing changes can remove one or both access paths.

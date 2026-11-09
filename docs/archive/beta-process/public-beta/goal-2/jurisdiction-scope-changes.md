@@ -1,6 +1,6 @@
 # Switzerland-Only Scope — Wording Changes
 
-Decision: [ADR 0016](../../../decisions/0016-founding-beta-jurisdiction-scope.md).
+Decision: [ADR 0016](../../../../decisions/0016-founding-beta-jurisdiction-scope.md).
 
 Every place the beta is described as worldwide, or as open to anyone, has to change together.
 Half-applying this list leaves the rendered pages contradicting the decision record, which is
@@ -64,17 +64,17 @@ them. Switzerland-only narrows the analysis; it does not remove it.
 
 ## Documentation
 
-### 5. `docs/18-public-beta-handoff.md:5`
+### 5. `docs/archive/18-public-beta-handoff.md:5`
 Rewrite the release-model sentence. Currently reads "worldwide-targeted, English-only, 18+,
 invitation-only" and closes with "Worldwide remains a legal-review target; it is not approval
 to promote in every jurisdiction." Both the framing and that caveat are superseded — the caveat
 existed precisely because worldwide had not been approved, and the answer is now that it is not
 being attempted.
 
-### 6. `docs/00-workflow.md:269`
+### 6. `docs/archive/00-workflow.md:269`
 "50 worldwide-targeted, English-speaking adult founding members" → Switzerland-resident.
 
-### 7. `docs/beta-process/public-beta/goal-1/launch-gates.md:10`
+### 7. `docs/archive/beta-process/public-beta/goal-1/launch-gates.md:10`
 The counsel gate is written around approving a worldwide target:
 
 > Qualified counsel approves worldwide target or records excluded jurisdictions, Swiss

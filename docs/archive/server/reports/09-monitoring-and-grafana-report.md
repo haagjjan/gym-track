@@ -16,7 +16,7 @@ Fastify exports bounded request, response, latency, in-flight, process, environm
 
 Grafana provisions one healthy Prometheus datasource and three file-controlled dashboards. Anonymous access, sign-up, analytics, update checks, plugin administration, and automatic plugin preinstallation are disabled. The user authenticated through the SSH tunnel and confirmed that the dashboards render.
 
-Grafana is the only monitoring service published on the host and is bound only to `127.0.0.1:3001`. LAN probes confirmed that internal application and monitoring ports are not reachable. The existing Caddy publication at `192.168.1.57:80` was unchanged.
+Grafana is the only monitoring service published on the host and is bound only to `127.0.0.1:3001`. LAN probes confirmed that internal application and monitoring ports are not reachable. The existing Caddy publication at `<server-lan-ip>:80` was unchanged.
 
 The PostgreSQL exporter uses a dedicated non-superuser role with `pg_monitor` membership. Live credentials remain in protected files under `/srv/gym-tracker/secrets`; no value is included in this report, Compose, dashboard JSON, or Git.
 
@@ -199,12 +199,12 @@ Relevant listeners:
 
 ```text
 127.0.0.1:3001       Grafana
-192.168.1.57:80      Caddy application proxy
+<server-lan-ip>:80      Caddy application proxy
 ```
 
 No host publication exists for Next.js `3000`, Fastify `4000`, PostgreSQL `5432`, cAdvisor `8080`, Prometheus `9090`, Node Exporter `9100`, or PostgreSQL Exporter `9187`.
 
-MacBook probes confirmed ports `3000`, `3001`, `4000`, `5432`, `8080`, `9090`, `9100`, and `9187` were blocked on `192.168.1.57`. Port 80 remained reachable. No UFW, router, DNS, IPv6, public-domain, HTTPS, or public-tunnel change was made.
+MacBook probes confirmed ports `3000`, `3001`, `4000`, `5432`, `8080`, `9090`, `9100`, and `9187` were blocked on `<server-lan-ip>`. Port 80 remained reachable. No UFW, router, DNS, IPv6, public-domain, HTTPS, or public-tunnel change was made.
 
 ## SSH-tunnel and UI verification
 
@@ -272,8 +272,8 @@ Application/operations source used by Stage 9 includes the API metrics/environme
 
 ```text
 docs/server/GRAFANA-DASHBOARD-GUIDE.md
-docs/server/reports/09-monitoring-and-grafana-report.md
-docs/status/server-status-gym-prod.md
+docs/archive/server/reports/09-monitoring-and-grafana-report.md
+docs/archive/status/server-status-gym-prod.md
 ops/monitoring/README.md
 ```
 
@@ -309,9 +309,9 @@ Secrets, keys, cookies, complete database URLs, personal data, MAC addresses, an
 
 ```bash
 # Local inspection and API verification
-rg --files docs/server docs/status ops/monitoring apps/api
-sed -n '<reviewed ranges>' docs/server/wave-c-operations-dashboard/09-monitoring-and-grafana.md
-sed -n '<reviewed ranges>' docs/server/reports/08-reverse-proxy-and-private-lan-access-report.md
+rg --files docs/server docs/archive/status ops/monitoring apps/api
+sed -n '<reviewed ranges>' docs/archive/server/wave-c-operations-dashboard/09-monitoring-and-grafana.md
+sed -n '<reviewed ranges>' docs/archive/server/reports/08-reverse-proxy-and-private-lan-access-report.md
 git status --short
 git rev-parse HEAD
 rg -n 'prom-client|prometheus|metrics|histogram|counter|gauge|/metrics' apps/api ops compose*.yaml
@@ -362,9 +362,9 @@ docker compose -p gym-tracker -f <compose> run --rm --no-deps -T grafana \
 
 # MacBook access audit and tunnel
 for port in 3000 3001 4000 5432 8080 9090 9100 9187; do
-  nc -z -w 2 192.168.1.57 "$port"
+  nc -z -w 2 <server-lan-ip> "$port"
 done
-nc -z -w 2 192.168.1.57 80
+nc -z -w 2 <server-lan-ip> 80
 ssh -N -L 3001:127.0.0.1:3001 gym-prod
 
 # Restart, persistence, and reboot

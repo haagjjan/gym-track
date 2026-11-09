@@ -264,14 +264,14 @@ Repository artifacts created or changed for Stage 11:
 - `docs/server/restore-postgresql.md`;
 - `docs/server/restore-full-service.md`;
 - `docs/server/GRAFANA-DASHBOARD-GUIDE.md`;
-- `docs/server/SERVER-SETUP-INDEX.md`;
-- `docs/server/reports/11-backup-restore-and-disaster-recovery-report.md`;
-- `docs/server/wave-a-host-fundation/README.md`;
-- `docs/server/wave-b-application-platform/README.md`;
-- `docs/server/wave-c-operations-dashboard/README.md`;
-- `docs/status/server-status-gym-prod.md`;
+- `docs/archive/server/SERVER-SETUP-INDEX.md`;
+- `docs/archive/server/reports/11-backup-restore-and-disaster-recovery-report.md`;
+- `docs/archive/server/wave-a-host-fundation/README.md`;
+- `docs/archive/server/wave-b-application-platform/README.md`;
+- `docs/archive/server/wave-c-operations-dashboard/README.md`;
+- `docs/archive/status/server-status-gym-prod.md`;
 - `docs/repository-structure.md`;
-- `docs/00-workflow.md`;
+- `docs/archive/00-workflow.md`;
 - `ARCHITECTURE.md`.
 
 Server state created or changed:
@@ -329,10 +329,10 @@ tmux new -s stage11
 sftp -b - -i /home/admin-gym/codex-stage11-candidate/gym-backup-sftp-key \
   -o IdentityAgent=none -o IdentitiesOnly=yes \
   -o UserKnownHostsFile=/home/admin-gym/codex-stage11-candidate/macbook-test-known-hosts \
-  -o StrictHostKeyChecking=yes gym-backup@MacBook-Jan.local
+  -o StrictHostKeyChecking=yes gym-backup@<backup-mac>.local
 ssh -i /home/admin-gym/codex-stage11-candidate/gym-backup-sftp-key \
   -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
-  gym-backup@MacBook-Jan.local true
+  gym-backup@<backup-mac>.local true
 restic --no-cache \
   -o "sftp.args=-F /home/admin-gym/codex-stage11-candidate/restic-test-ssh-config" \
   snapshots
@@ -376,9 +376,9 @@ systemctl list-timers gym-tracker-backup.timer gym-tracker-backup-maintenance.ti
 systemctl --failed --no-pager
 restic snapshots --host gym-prod --tag gym-tracker --latest 5
 restic stats --mode raw-data --host gym-prod --tag gym-tracker
-curl --connect-timeout 5 http://192.168.1.57/login
-nc -z -w 2 192.168.1.57 80
-nc -z -w 1 192.168.1.57 <private-service-port>
+curl --connect-timeout 5 http://<server-lan-ip>/login
+nc -z -w 2 <server-lan-ip> 80
+nc -z -w 1 <server-lan-ip> <private-service-port>
 ```
 
 Repository validation included:

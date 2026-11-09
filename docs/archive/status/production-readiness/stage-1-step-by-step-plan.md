@@ -235,7 +235,7 @@ Ensure that the application behaves correctly when accessed through an HTTPS hos
 The current LAN address uses plain HTTP and a private IP. An external hostname changes:
 
 - scheme from `http` to `https`;
-- host from `192.168.1.57` to `<APP_HOSTNAME>`;
+- host from `<server-lan-ip>` to `<APP_HOSTNAME>`;
 - proxy chain;
 - client address forwarding;
 - secure cookie behaviour;
@@ -329,7 +329,7 @@ In a local or controlled proxy simulation:
 - login response creates expected cookie attributes;
 - logout clears the correct cookie;
 - redirects use `https://<APP_HOSTNAME>`;
-- no redirect points to `192.168.1.57`;
+- no redirect points to `<server-lan-ip>`;
 - normal application API calls work through the BFF;
 - unauthorized direct calls still fail;
 - CORS does not accept arbitrary credentialed origins.

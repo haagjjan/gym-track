@@ -189,7 +189,7 @@ Not operator actions, recorded so they are not lost between goals.
 
 Secure remote administration from audit Area 34 was completed on 2026-08-08. The owner-only
 `ssh.gymtrack.ch` Cloudflare Access path passed an outside-network test without a public SSH
-port; see [ADR 0017](../../../decisions/0017-secure-remote-administration.md) and the
+port; see [ADR 0017](../../../../decisions/0017-secure-remote-administration.md) and the
 [Stage 12 secure remote administration report](../../../server/reports/12-secure-remote-administration-report.md).
 
 | What | Owner | Why it matters |

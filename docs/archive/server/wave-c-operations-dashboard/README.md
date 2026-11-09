@@ -48,9 +48,9 @@ The completed reports are the source of truth when they differ from earlier plan
 
 | Stage | Document | Purpose |
 |---:|---|---|
-| 9 | [`09-monitoring-and-grafana.md`](./09-monitoring-and-grafana.md) | Deploy metrics collection, exporters, Grafana, and provisioned dashboards |
-| 10 | [`10-logging-and-alerting.md`](./10-logging-and-alerting.md) | Standardize logs, establish alert rules, and verify notification delivery |
-| 11 | [`11-backup-restore-and-disaster-recovery.md`](./11-backup-restore-and-disaster-recovery.md) | Implement encrypted backups, off-machine copies, restoration tests, and recovery runbooks |
+| 9 | [`09-monitoring-and-grafana.md`](09-monitoring-and-grafana.md) | Deploy metrics collection, exporters, Grafana, and provisioned dashboards |
+| 10 | [`10-logging-and-alerting.md`](10-logging-and-alerting.md) | Standardize logs, establish alert rules, and verify notification delivery |
+| 11 | [`11-backup-restore-and-disaster-recovery.md`](11-backup-restore-and-disaster-recovery.md) | Implement encrypted backups, off-machine copies, restoration tests, and recovery runbooks |
 
 Stages must be executed in order.
 
@@ -129,7 +129,7 @@ Initial Grafana host binding:
 During Wave C, Codex must not:
 
 - expose Grafana, Prometheus, exporters, Alertmanager, Loki, or PostgreSQL to the LAN or internet;
-- publish monitoring ports on `0.0.0.0`, `::`, `192.168.1.57`, or `192.168.86.178`;
+- publish monitoring ports on `0.0.0.0`, `::`, `<server-lan-ip>`, or `<server-wifi-ip>`;
 - weaken the existing reverse-proxy or application firewall policy;
 - place monitoring or backup credentials in Git;
 - place secrets directly in dashboard JSON, Prometheus configuration, or alert rules;
@@ -209,7 +209,7 @@ http://127.0.0.1:3001
 Each stage must create a report under:
 
 ```text
-docs/server/reports/
+docs/archive/server/reports/
 ```
 
 Expected Wave C reports:

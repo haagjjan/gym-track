@@ -7,7 +7,7 @@
 **Assumes:** Doc 14 Batches A, B, and C are closed. Batch D is functionally complete apart from minor frontend polish.
 
 > **Current Stage 1 authority:** For secure single-owner external access, the plans under
-> `docs/status/production-readiness/` and ADR 0011 supersede this document where they
+> `docs/archive/status/production-readiness/` and ADR 0011 supersede this document where they
 > conflict. In particular, public signup and production email onboarding are deferred;
 > Stage 1 uses an existing owner account with `REGISTRATION_MODE=DISABLED`.
 

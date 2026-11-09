@@ -77,7 +77,7 @@ Yes, and that is the accurate framing. The gap is not features; it is: (a) unver
 
 **All of them.** Every status below should be read as "as represented in the repository at commit `4cbcba8` plus the current working tree." Where a document asserts that something was verified on the host (e.g. the Stage 9/10/11 reports), I record that the *claim* exists and note that I could not confirm it.
 
-One specific evidence failure worth flagging: `docs/beta-process/private-beta-1/private-beta-1-remediation.md:6` cites the tested production baseline as commit `1ba15973df255d2e5bd3b94def03e25b050e870a`. **That object does not exist in this repository** (`git cat-file -t` fails on it across all refs). The real-device test evidence therefore cannot be tied to any commit I can inspect.
+One specific evidence failure worth flagging: `docs/archive/beta-process/private-beta-1/private-beta-1-remediation.md:6` cites the tested production baseline as commit `1ba15973df255d2e5bd3b94def03e25b050e870a`. **That object does not exist in this repository** (`git cat-file -t` fails on it across all refs). The real-device test evidence therefore cannot be tied to any commit I can inspect.
 
 ---
 
@@ -85,7 +85,7 @@ One specific evidence failure worth flagging: `docs/beta-process/private-beta-1/
 
 | # | Area | Status | Confidence | Beta criticality | Main evidence | Main gap |
 |---|------|--------|-----------|------------------|---------------|----------|
-| 1 | Public-beta scope and release boundaries | Implemented but verification incomplete | Medium | High | `docs/18-public-beta-handoff.md`; ADR 0012; `beta_settings` cap 50 / 10-per-day (`20260805120000000_add_public_beta_foundation.sql:37-51`) | No production evidence of the configured values; no data-reset mechanism behind the stop rules |
+| 1 | Public-beta scope and release boundaries | Implemented but verification incomplete | Medium | High | `docs/archive/18-public-beta-handoff.md`; ADR 0012; `beta_settings` cap 50 / 10-per-day (`20260805120000000_add_public_beta_foundation.sql:37-51`) | No production evidence of the configured values; no data-reset mechanism behind the stop rules |
 | 2 | Removal of owner-only assumptions | Partially implemented | High | Blocker | No owner email/ID anywhere in `apps/`; admin is a stored role (`beta.routes.ts:65-75`); bootstrap CLI `apps/api/scripts/promote-admin.mjs` | `APP_ENV=private-lan` disables all production assertions (`env.ts:44-48`, `request-security.ts:31-33`) |
 | 3 | Registration and invitation lifecycle | Implemented but verification incomplete | High | High | Hashed single-use 7-day invites, `forUpdate()` cap race guard (`beta.repository.ts:89-131`); concurrency integration test | Mail-send failure after commit consumes a seat and returns 500; raw token in URL query string |
 | 4 | Authentication and account management | Partially implemented | High | Blocker | signup/login/logout/verify/reset/lockout (`auth.routes.ts`, `auth-action.routes.ts`) | No password change, no email change, no session listing/revocation, no suspension endpoint |
@@ -134,7 +134,7 @@ One specific evidence failure worth flagging: `docs/beta-process/private-beta-1/
 ### Area 1 — Public-beta scope and release boundaries
 **Status: Implemented but verification incomplete · Confidence: Medium · Criticality: High**
 
-The release model is unusually well defined: worldwide-targeted, English-only, 18+, invitation-only, 50 seats, with the truthful public wording specified (`docs/18-public-beta-handoff.md:5`). It is enforced technically at four independent layers — the `REGISTRATION_MODE` environment value, three database runtime switches (`waitlist_open`, `invitations_open`, `campaigns_open`), the `account_cap`, and the `daily_approval_limit`. All three activity switches default to `false` on a fresh migration (`20260805120000000_add_public_beta_foundation.sql:39-41`), which is the correct fail-safe default. Seat accounting correctly counts `ACTIVE`, `DELETION_PENDING`, and `SUSPENDED` accounts plus unexpired invitations (`beta.repository.ts:100-109`).
+The release model is unusually well defined: worldwide-targeted, English-only, 18+, invitation-only, 50 seats, with the truthful public wording specified (`docs/archive/18-public-beta-handoff.md:5`). It is enforced technically at four independent layers — the `REGISTRATION_MODE` environment value, three database runtime switches (`waitlist_open`, `invitations_open`, `campaigns_open`), the `account_cap`, and the `daily_approval_limit`. All three activity switches default to `false` on a fresh migration (`20260805120000000_add_public_beta_foundation.sql:39-41`), which is the correct fail-safe default. Seat accounting correctly counts `ACTIVE`, `DELETION_PENDING`, and `SUSPENDED` accounts plus unexpired invitations (`beta.repository.ts:100-109`).
 
 **Uncertain:** whether production actually has `REGISTRATION_MODE=INVITE_ONLY` and cap 50 / 10-per-day. **Missing:** a data-reset capability. The stop rules say "stop immediately" but there is no defined or implemented path to wipe beta data and restart a cohort — only per-account deletion. **Risk:** if an early cohort produces corrupt data, the only tool is the DR restore path, which is far heavier than a beta reset.
 
@@ -436,12 +436,12 @@ Existing: a first-party `EventTracker` writing `app_events` server-side with no 
 Volume is large: ~36 directories under `docs/`, 13 ADRs, 11 Wave A–C stage reports averaging ~20 KB each, four usability audits, two design-iteration sets with screenshots, and the public-beta set.
 
 Classification:
-- **Current and authoritative:** `docs/public-beta/*` (all five), ADRs 0009–0013, `docs/18-public-beta-handoff.md`, `docs/server/disaster-recovery.md`, `ops/*/README.md`, `ENGINEERING.md`, `ARCHITECTURE.md`.
+- **Current and authoritative:** `docs/public-beta/*` (all five), ADRs 0009–0013, `docs/archive/18-public-beta-handoff.md`, `docs/server/disaster-recovery.md`, `ops/*/README.md`, `ENGINEERING.md`, `ARCHITECTURE.md`.
 - **Useful but outdated:** `README.md` (pre-beta, names Render), `AGENTS.md` (describes "first implementation foundation"), `docs/deployment-runbook.md` (Render-centric), `docs/13-operator-guide.md` (no public-beta admin coverage), usability audits v1–v3.
 - **Duplicate / superseded:** `docs/99-current-project-state.md` — actively misleading; describes the Render target and omits the entire public beta. ADR 0005 (Render) versus ADR 0009 (home server). ADR 0010 partially superseded by 0013.
-- **Speculative:** `docs/design/stitch-redesign-v1` and `v2`, `docs/UI_Redesign`.
-- **Implementation history:** `docs/server/reports/*` (11), `docs/status/*`, `docs/beta-process/private-beta-1/*`.
-- **Operationally sensitive — must stay private:** all of `docs/server/**` (LAN addresses `192.168.1.57`/`192.168.86.178`, SSH policy and port decisions, firewall rules, filesystem layout, monitoring credentials procedure), `docs/status/production-readiness/*`, `docs/13-operator-guide.md`.
+- **Speculative:** `docs/archive/design/stitch-redesign-v1` and `v2`, `docs/archive/UI_Redesign`.
+- **Implementation history:** `docs/archive/server/reports/*` (11), `docs/archive/status/*`, `docs/archive/beta-process/private-beta-1/*`.
+- **Operationally sensitive — must stay private:** all of `docs/server/**` (LAN addresses `<server-lan-ip>`/`<server-wifi-ip>`, SSH policy and port decisions, firewall rules, filesystem layout, monitoring credentials procedure), `docs/archive/status/production-readiness/*`, `docs/13-operator-guide.md`.
 - **Safe for public release after edit:** `README.md`, `ARCHITECTURE.md`, `ENGINEERING.md`, `CONTRIBUTING.md`, ADRs 0001–0008 and 0012–0013 (0009/0011 need redaction).
 
 **Can this set realistically be used to operate the system?** Partly. The runbooks are genuinely operational. But there is no index, no authority ranking, and at least one document (`99-current-project-state.md`) that a newcomer would read first and be actively misled by. Three empty placeholder directories (`docs/beta-process/private-beta-2`, `public-beta-1`, `public-production-1`) add noise.
@@ -555,23 +555,23 @@ Recommended placement once the repository is public and safe (Area 39): the app 
 **Good news first.** I searched all 899 commits for added `.env`, `*.pem`, `*.key`, `id_*`, and secret-named files: the only match is `.env.example`. `.gitignore` is thorough (env files, SSH keys including a specific `gym_prod_ed25519*` rule, secrets, dumps, certificates), `.dockerignore` matches it, no `.DS_Store` is tracked, and no personal email addresses appear in tracked application source. Third-party licensing is handled properly — the exercise catalog records its upstream, its Unlicense terms, and a pinned revision.
 
 **Risks that must be addressed before publishing:**
-1. **`docs/server/**` is an operational-security disclosure.** It contains internal LAN addresses (`192.168.1.57`, `192.168.86.178`, and both subnets), SSH policy and port decisions, firewall configuration, host filesystem layout under `/srv/gym-tracker`, monitoring role creation, and detailed hardening steps — a map of the deployment for anyone who finds the public origin. Roughly 25 files.
-2. **Same for** `docs/status/production-readiness/*` and `docs/13-operator-guide.md` (which includes the raw-SQL escape hatches).
-3. **`192.168.1.57` also appears in shipped configuration** — `compose.yaml:80-81` and `.env.example:29-30` default `APP_ALLOWED_HOSTS`/`APP_ALLOWED_ORIGINS` to the production server's LAN address. Replace with a generic placeholder.
+1. **`docs/server/**` is an operational-security disclosure.** It contains internal LAN addresses (`<server-lan-ip>`, `<server-wifi-ip>`, and both subnets), SSH policy and port decisions, firewall configuration, host filesystem layout under `/srv/gym-tracker`, monitoring role creation, and detailed hardening steps — a map of the deployment for anyone who finds the public origin. Roughly 25 files.
+2. **Same for** `docs/archive/status/production-readiness/*` and `docs/13-operator-guide.md` (which includes the raw-SQL escape hatches).
+3. **`<server-lan-ip>` also appears in shipped configuration** — `compose.yaml:80-81` and `.env.example:29-30` default `APP_ALLOWED_HOSTS`/`APP_ALLOWED_ORIGINS` to the production server's LAN address. Replace with a generic placeholder.
 4. **No LICENSE file.** Without one, the default is all-rights-reserved, which undercuts the portfolio purpose. Choose deliberately (MIT/Apache-2.0 for a portfolio piece; note Apache-2.0 adds a patent grant).
 5. **No SECURITY.md** and no security-reporting path in the README.
 6. **Commit-author variety** — six identities including `janva@MacBook-Pro.local`, `janva@Mac.net`, a `stud.unibas.ch` address, and a `Gym Tracker Deployment Snapshot <deployment-snapshot@localhost.invalid>` bot. Not a leak, but it advertises machine names and an institutional affiliation. Note this is history-wide.
 7. **Branch and tag names** encode deployment timestamps (`gym-prod-public-beta-20260806T071732Z` and six similar). Harmless but noisy, and they signal the operational schedule.
-8. **`_legacy-reference/`** is tracked dead code — 20+ files of a superseded UI. Not a security risk; it is confusing in a portfolio repository.
+8. **`docs/archive/legacy-reference/`** is tracked dead code — 20+ files of a superseded UI. Not a security risk; it is confusing in a portfolio repository.
 
-**Recommended actions (report only — I made no changes):** move `docs/server/**`, `docs/status/production-readiness/**`, and the operator guide into a separate private repository or a `private/` path excluded before publishing; genericize the LAN defaults in shipped config; add LICENSE and SECURITY.md; decide whether to publish from a fresh initial commit (avoiding the author-identity and branch-name history) or to accept the existing history. **Do not rewrite history** — publishing a clean squashed snapshot to a new public repository while keeping this one private is the lower-risk option and preserves your working history intact.
+**Recommended actions (report only — I made no changes):** move `docs/server/**`, `docs/archive/status/production-readiness/**`, and the operator guide into a separate private repository or a `private/` path excluded before publishing; genericize the LAN defaults in shipped config; add LICENSE and SECURITY.md; decide whether to publish from a fresh initial commit (avoiding the author-identity and branch-name history) or to accept the existing history. **Do not rewrite history** — publishing a clean squashed snapshot to a new public repository while keeping this one private is the lower-risk option and preserves your working history intact.
 
 ### Area 40 — README and public project documentation
 **Status: Partially implemented · Confidence: High · Criticality: Medium**
 
 The current README is competent for a developer but describes a project state that no longer exists: "past the planning stage and into V1 release verification," a "Current Status" section listing account deletion/export as *not* done (both are implemented), Render presented as a deployment path, and no mention of the public beta, invitations, legal pages, admin tooling, or the home-server target as primary. It links `docs/99-current-project-state.md` — the most outdated document in the repository — as the place to "understand the current state quickly."
 
-Recommended public structure: purpose (one paragraph, what and for whom); screenshots (2–4, mobile-first, from `docs/Usability_Audit/Screenshots` or fresh); functionality; architecture (a diagram of browser → Cloudflare → Caddy → Next BFF → Fastify → PostgreSQL, which is the genuinely interesting part); technology stack; setup (the existing content, which is good); testing (also good); deployment overview (self-hosted, no host specifics); beta status and how to request access; known limitations (English-only, 18+, invitation-only, no native app, no offline mode); roadmap; security reporting; and license.
+Recommended public structure: purpose (one paragraph, what and for whom); screenshots (2–4, mobile-first, from `docs/archive/Usability_Audit/Screenshots` or fresh); functionality; architecture (a diagram of browser → Cloudflare → Caddy → Next BFF → Fastify → PostgreSQL, which is the genuinely interesting part); technology stack; setup (the existing content, which is good); testing (also good); deployment overview (self-hosted, no host specifics); beta status and how to request access; known limitations (English-only, 18+, invitation-only, no native app, no offline mode); roadmap; security reporting; and license.
 
 **Next action:** rewrite the README against the actual current state, and drop the pointer to `99-current-project-state.md`.
 
@@ -584,8 +584,8 @@ Recommended structure:
 - **Public project documentation** — README, ARCHITECTURE (redacted), a stack overview, screenshots, license, SECURITY.md.
 - **Developer documentation** — ENGINEERING, CONTRIBUTING, AGENTS, implementation pattern, API contract, schema notes, ADRs (0009 and 0011 redacted).
 - **User documentation** — the in-app `/help`, `/support`, and legal pages, plus a short beta guide.
-- **Private operational documentation** — `docs/server/**`, `docs/status/production-readiness/**`, `docs/13-operator-guide.md`, `docs/public-beta/security-review.md`, `launch-gates.md`, the account register, and the recurring-maintenance schedule. Separate repository or an excluded path.
-- **Historical implementation reports** — `docs/server/reports/**`, `docs/beta-process/**`, usability audits v1–v3, design iterations. Archive under a clearly marked `archive/` and stop treating as current.
+- **Private operational documentation** — `docs/server/**`, `docs/archive/status/production-readiness/**`, `docs/13-operator-guide.md`, `docs/public-beta/security-review.md`, `launch-gates.md`, the account register, and the recurring-maintenance schedule. Separate repository or an excluded path.
+- **Historical implementation reports** — `docs/archive/server/reports/**`, `docs/beta-process/**`, usability audits v1–v3, design iterations. Archive under a clearly marked `archive/` and stop treating as current.
 
 ---
 
@@ -613,7 +613,7 @@ Recommended structure:
 
 11. **Configuration-name inconsistency.** Production uses database `gym_tracker` (`ops/backup/scripts/backup-postgres.sh:11`, `replay-erasure-ledger.sh`); the repository defaults to `gym_progress_tracker` (`compose.yaml:7`). The alert rules reference a Compose service `proxy` that `compose.yaml` does not define. Both are consequences of the production stack living outside Git.
 
-12. **`docs/18-public-beta-handoff.md` presents a long list of implemented capabilities as an accomplished "repository foundation."** Most of the web half of that list is **uncommitted** — `apps/web/src/app/admin/`, `apps/web/src/features/beta/`, `features/legal/`, `features/messages/`, `features/onboarding/`, `features/privacy/`, `features/settings/`, and the deletion/export/onboarding BFF routes are all untracked. They have never run through CI.
+12. **`docs/archive/18-public-beta-handoff.md` presents a long list of implemented capabilities as an accomplished "repository foundation."** Most of the web half of that list is **uncommitted** — `apps/web/src/app/admin/`, `apps/web/src/features/beta/`, `features/legal/`, `features/messages/`, `features/onboarding/`, `features/privacy/`, `features/settings/`, and the deletion/export/onboarding BFF routes are all untracked. They have never run through CI.
 
 13. **The web test glob silently excludes a test file.** `apps/web/package.json` runs `node --test "src/**/*.test.ts"`, which does not match `registration-disabled-screen.test.tsx`. That test never executes in `pnpm check` or CI. A small thing, but it means "tests pass" is quietly weaker than it reads.
 
@@ -854,8 +854,8 @@ Sized for one operator, ~50 users, one home server. Deliberately not enterprise.
 
 **Consolidate:**
 - The four usability audits plus the private-beta-1 set → one "verified UX findings" document with an explicit precedence rule; archive the rest.
-- `docs/15/16/17-production-operations-stage-*.md` plus `docs/status/production-readiness/*` → one current operations state document; archive the stage narratives.
-- `docs/server/wave-a/b/c` plus the 11 `docs/server/reports/*` → keep the runbook-shaped content; archive the report narratives.
+- `docs/15/16/17-production-operations-stage-*.md` plus `docs/archive/status/production-readiness/*` → one current operations state document; archive the stage narratives.
+- `docs/server/wave-a/b/c` plus the 11 `docs/archive/server/reports/*` → keep the runbook-shaped content; archive the report narratives.
 
 **Rewrite:**
 - `README.md` — against actual current state, per Area 40.
@@ -864,11 +864,11 @@ Sized for one operator, ~50 users, one home server. Deliberately not enterprise.
 - `docs/deployment-runbook.md` — currently Render-oriented; rewrite for the home server, with rollback.
 - `ARCHITECTURE.md` — the "Current State" paragraph is one enormous sentence listing everything ever built; replace with a current architecture description.
 
-**Archive (move under `docs/archive/`, clearly marked historical):** `docs/server/reports/**`, `docs/status/SWE-Reports/**`, `docs/beta-process/private-beta-1/**`, usability audits v1–v3, `docs/design/stitch-redesign-v1` and `v2`, `docs/UI_Redesign`, `docs/06-implementation-start.md`, `docs/10-frontend-rework-brief.md`, `docs/11-phase0-frontend-inventory.md`. Delete the three empty placeholder directories.
+**Archive (move under `docs/archive/`, clearly marked historical):** `docs/archive/server/reports/**`, `docs/archive/status/SWE-Reports/**`, `docs/archive/beta-process/private-beta-1/**`, usability audits v1–v3, `docs/archive/design/stitch-redesign-v1` and `v2`, `docs/archive/UI_Redesign`, `docs/archive/06-implementation-start.md`, `docs/archive/10-frontend-rework-brief.md`, `docs/archive/11-phase0-frontend-inventory.md`. Delete the three empty placeholder directories.
 
 **Delete or hard-flag:** `docs/99-current-project-state.md`. It is wrong in ways that would mislead a future you, and it is currently linked from the README as the fastest path to understanding the project.
 
-**Keep private (never publish):** `docs/server/**` in full, `docs/status/production-readiness/**`, the operator-guide operations half, `docs/public-beta/security-review.md` and `launch-gates.md` (they enumerate your controls and your unverified gaps), the account register, and the maintenance schedule.
+**Keep private (never publish):** `docs/server/**` in full, `docs/archive/status/production-readiness/**`, the operator-guide operations half, `docs/public-beta/security-review.md` and `launch-gates.md` (they enumerate your controls and your unverified gaps), the account register, and the maintenance schedule.
 
 **Publish (after edit):** `README.md`, `ARCHITECTURE.md` (redact the private-LAN topology), `ENGINEERING.md`, `CONTRIBUTING.md`, ADRs 0001–0008 and 0012–0013 (0009 and 0011 need redaction — they name the host and network model), `docs/01-requirements.md`, `docs/05-api-contract.md`, plus new `LICENSE` and `SECURITY.md`.
 
@@ -890,7 +890,7 @@ Grouped, not sequenced into an implementation plan.
 
 **Phase F — Documentation.** Delete the misleading, consolidate the duplicated, archive the historical, and split public from private. Do this before Phase G, because publishing a repository whose documentation you have not separated is how server topology ends up on the internet.
 
-**Phase G — Public repository preparation.** LICENSE, SECURITY.md, README rewrite, genericized LAN defaults, removal or relocation of `_legacy-reference/`, and a decision on publishing from a fresh snapshot versus existing history. Then the GitHub links from app, portfolio, and CV.
+**Phase G — Public repository preparation.** LICENSE, SECURITY.md, README rewrite, genericized LAN defaults, removal or relocation of `docs/archive/legacy-reference/`, and a decision on publishing from a fresh snapshot versus existing history. Then the GitHub links from app, portfolio, and CV.
 
 **Phase H — Portfolio statistics.** The cached public aggregate-stats endpoint and page. Genuinely nice for a portfolio and technically small — but it produces zero risk reduction, so it belongs after the beta is running.
 

@@ -1,6 +1,6 @@
 # Legal Risk Acceptance — Founding Beta
 
-Companion to [dpia.md](dpia.md). Records the controller's position on each question that would
+Companion to [dpia.md](../../../../beta-process/public-beta/goal-2/dpia.md). Records the controller's position on each question that would
 otherwise require qualified legal input, and the reasoning behind it.
 
 **Approach decided 2026-08-08:** documented self-assessment with written risk acceptance, in
@@ -72,7 +72,7 @@ control than most services of this size have.
 ## Q3 — Transfer basis for Cloudflare and Resend
 
 **Closed 2026-08-10.** Both agreements were retrieved and their mechanisms recorded in
-[processor-inventory-final.md](processor-inventory-final.md):
+[processor-inventory-final.md](../../../../beta-process/public-beta/goal-2/processor-inventory-final.md):
 
 | Provider | Transfer basis | Document |
 |---|---|---|

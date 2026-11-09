@@ -5,21 +5,21 @@
 - **Execution boundary:** Stage 8 only
 - **Compose project:** `gym-tracker`
 - **Application snapshot:** `c168dd9f31dc953724d4b62a47f16c22f77be01a`
-- **LAN origin:** `http://192.168.1.57/`
+- **LAN origin:** `http://<server-lan-ip>/`
 - **Final state:** healthy after application restart and host reboot
 - **Exposure boundary:** private Ethernet IPv4 only
 
 ## Executive summary
 
-Stage 8 completed successfully. A pinned Caddy `2.11.4-alpine` container now provides the Gym Tracker's only LAN-facing application entry point at `192.168.1.57:80`. The browser-facing path remains Caddy to Next.js to the Next.js BFF to Fastify to PostgreSQL. Caddy has no route or network path to PostgreSQL, and browser API traffic is not routed directly to Fastify.
+Stage 8 completed successfully. A pinned Caddy `2.11.4-alpine` container now provides the Gym Tracker's only LAN-facing application entry point at `<server-lan-ip>:80`. The browser-facing path remains Caddy to Next.js to the Next.js BFF to Fastify to PostgreSQL. Caddy has no route or network path to PostgreSQL, and browser API traffic is not routed directly to Fastify.
 
 The Stage 7 loopback publications for Next.js and Fastify were removed. PostgreSQL, Fastify, and Next.js have no host port publication. MacBook tests confirmed that port 80 succeeds only on the Ethernet address, while ports 3000, 4000, and 5432 fail on both server LAN addresses. Port 80 also fails on the Wi-Fi address. No IPv6, port 443, public DNS, router forwarding, tunnel, VPN, or public exposure was added.
 
 Caddy runs as UID/GID `10001:10001` with a read-only root filesystem, all capabilities dropped except `NET_BIND_SERVICE`, and `no-new-privileges` enabled. The Caddyfile is mounted read-only. Response headers remove server-identifying headers and add the reviewed security policy. An 11,000,000-byte request was rejected with `413`, proving the 10 MB proxy limit.
 
-Docker-aware filtering is implemented through an idempotent `GYM-TRACKER-IN` chain reached first from `DOCKER-USER`. It permits established traffic, permits the trusted upper LAN on `enp4s0` to the original `192.168.1.57:80` destination, permits the server's own test path, and drops every other forwarded source to that publication. A dedicated systemd oneshot reapplies and verifies the policy after Docker starts. The rules survived a controlled host reboot.
+Docker-aware filtering is implemented through an idempotent `GYM-TRACKER-IN` chain reached first from `DOCKER-USER`. It permits established traffic, permits the trusted upper LAN on `enp4s0` to the original `<server-lan-ip>:80` destination, permits the server's own test path, and drops every other forwarded source to that publication. A dedicated systemd oneshot reapplies and verifies the policy after Docker starts. The rules survived a controlled host reboot.
 
-The MacBook functional flow passed signup, login, authenticated refresh, same-origin BFF access, disposable workout-template create/read/update/delete, logout, and cookie checks. Phone tests passed on `Haag_74` before and after reboot, including mobile layout, login, authenticated refresh, API-backed pages, workout-resume behavior, and logout. The generated accounts, sessions, action tokens, events, exercise, workout, set data, templates, and cookie jars were removed. The production database returned to zero users.
+The MacBook functional flow passed signup, login, authenticated refresh, same-origin BFF access, disposable workout-template create/read/update/delete, logout, and cookie checks. Phone tests passed on `<wifi-ssid>` before and after reboot, including mobile layout, login, authenticated refresh, API-backed pages, workout-resume behavior, and logout. The generated accounts, sessions, action tokens, events, exercise, workout, set data, templates, and cookie jars were removed. The production database returned to zero users.
 
 An ordinary application restart left PostgreSQL running and preserved the migration ledger. The controlled host reboot preserved the Caddy image, all four container IDs, PostgreSQL system identifier, database OID, migration ledger, backup hash, firewall policy, private publication, and both SSH paths. The `grub2-common.service` issue reported in Stage 7 did not recur: the unit completed successfully without any GRUB or bootloader change. Final failed-unit count is zero.
 
@@ -63,7 +63,7 @@ The image was validated before installation, including:
 ```text
 MacBook or phone on the private home network
     |
-    | HTTP to 192.168.1.57:80
+    | HTTP to <server-lan-ip>:80
     v
 Caddy proxy
     | gym-tracker_frontend
@@ -82,7 +82,7 @@ Final service network membership:
 
 | Service | Networks | Host publication |
 | --- | --- | --- |
-| `proxy` | `frontend` | `192.168.1.57:80 -> 80/tcp` |
+| `proxy` | `frontend` | `<server-lan-ip>:80 -> 80/tcp` |
 | `web` | `frontend`, `application` | None |
 | `api` | `application`, `database` | None |
 | `postgres` | `database` | None |
@@ -176,7 +176,7 @@ Removed Stage 7 publications:
 Added Stage 8 publication:
 
 ```text
-192.168.1.57:80 -> proxy:80
+<server-lan-ip>:80 -> proxy:80
 ```
 
 Final `docker port` results:
@@ -185,10 +185,10 @@ Final `docker port` results:
 postgres  no mapping
 api       no mapping
 web       no mapping
-proxy     80/tcp -> 192.168.1.57:80
+proxy     80/tcp -> <server-lan-ip>:80
 ```
 
-The Caddy image declares container ports 443, 443/UDP, and 2019 in its metadata. Those declarations are not host publications. Host socket inspection and Docker port inspection confirm that only IPv4 `192.168.1.57:80` is published.
+The Caddy image declares container ports 443, 443/UDP, and 2019 in its metadata. Those declarations are not host publications. Host socket inspection and Docker port inspection confirm that only IPv4 `<server-lan-ip>:80` is published.
 
 The Stage 7 Compose definition is preserved for rollback:
 
@@ -198,23 +198,23 @@ The Stage 7 Compose definition is preserved for rollback:
 
 ## Observed Google Nest client source path
 
-The MacBook was connected to `Haag_74` with a downstream `192.168.86.x` address. Its route to `192.168.1.57` used the Google Nest gateway and the MacBook's Wi-Fi interface.
+The MacBook was connected to `<wifi-ssid>` with a downstream `<wifi-subnet>` address. Its route to `<server-lan-ip>` used the Google Nest gateway and the MacBook's Wi-Fi interface.
 
 A uniquely identified request was made from the MacBook to the Caddy listener. Caddy observed:
 
 ```text
-Client-side source       192.168.86.x
-Caddy-observed source    192.168.1.200
-Destination host         192.168.1.57
+Client-side source       <wifi-subnet>
+Caddy-observed source    <lan-client-ip>
+Destination host         <server-lan-ip>
 ```
 
 The Google Nest therefore source-NATs downstream client traffic to its upper-network address. Caddy logs after reboot contained only:
 
 - `127.0.0.1` for container-local health checks;
-- `192.168.1.57` for server-originated verification;
-- `192.168.1.200` for Google Nest client traffic.
+- `<server-lan-ip>` for server-originated verification;
+- `<lan-client-ip>` for Google Nest client traffic.
 
-The initial trusted source must remain `192.168.1.0/24`; narrowing it to the MacBook's downstream address would break routed/NATed clients.
+The initial trusted source must remain `<lan-subnet>`; narrowing it to the MacBook's downstream address would break routed/NATed clients.
 
 No packet capture needed to remain running after the access-log evidence was obtained.
 
@@ -226,8 +226,8 @@ UFW was not changed in Stage 8. Final host policy remains:
 Status: active
 Default: deny incoming, allow outgoing, deny routed
 
-22/tcp on enp4s0 from 192.168.1.0/24
-22/tcp on wlp3s0 from 192.168.86.0/24
+22/tcp on enp4s0 from <lan-subnet>
+22/tcp on wlp3s0 from <wifi-subnet>
 ```
 
 No broad UFW HTTP rule was added. The Docker publication is controlled through its explicit host-address bind and the `DOCKER-USER` path.
@@ -240,12 +240,12 @@ Final IPv4 policy:
 
 -N GYM-TRACKER-IN
 -A GYM-TRACKER-IN -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
--A GYM-TRACKER-IN -s 192.168.1.0/24 -i enp4s0 -p tcp \
-  -m conntrack --ctorigdst 192.168.1.57 --ctorigdstport 80 -j ACCEPT
--A GYM-TRACKER-IN -s 192.168.1.57/32 -p tcp \
-  -m conntrack --ctorigdst 192.168.1.57 --ctorigdstport 80 -j ACCEPT
+-A GYM-TRACKER-IN -s <lan-subnet> -i enp4s0 -p tcp \
+  -m conntrack --ctorigdst <server-lan-ip> --ctorigdstport 80 -j ACCEPT
+-A GYM-TRACKER-IN -s <server-lan-ip>/32 -p tcp \
+  -m conntrack --ctorigdst <server-lan-ip> --ctorigdstport 80 -j ACCEPT
 -A GYM-TRACKER-IN -p tcp \
-  -m conntrack --ctorigdst 192.168.1.57 --ctorigdstport 80 -j DROP
+  -m conntrack --ctorigdst <server-lan-ip> --ctorigdstport 80 -j DROP
 -A GYM-TRACKER-IN -j RETURN
 ```
 
@@ -261,7 +261,7 @@ The policy:
 Final Docker DNAT contains only the Stage 8 application rule for the reviewed ports:
 
 ```text
-192.168.1.57:80 -> current proxy-container IPv4:80
+<server-lan-ip>:80 -> current proxy-container IPv4:80
 ```
 
 No corresponding NAT rule exists for 3000, 4000, 5432, the Wi-Fi address, wildcard IPv4, or IPv6.
@@ -312,13 +312,13 @@ The temporary one-time post-reboot audit unit and script self-removed after use.
 ## LAN URL
 
 ```text
-http://192.168.1.57/
+http://<server-lan-ip>/
 ```
 
 Deployment state records:
 
 ```text
-LAN_URL=http://192.168.1.57/
+LAN_URL=http://<server-lan-ip>/
 PROXY_IMAGE=docker.io/library/caddy:2.11.4-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648
 PROXY_IMAGE_ID=sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648
 LAN_ENABLED_AT=2026-07-21T20:05:38+02:00
@@ -360,13 +360,13 @@ Protected Progress page                  200
 Logout                                   200
 ```
 
-The browser-facing and curl-facing hosts remained `192.168.1.57`. No direct Fastify URL was required or exposed.
+The browser-facing and curl-facing hosts remained `<server-lan-ip>`. No direct Fastify URL was required or exposed.
 
 The disposable MacBook account, template, sessions, action token, events, and cookie jar were removed. The first direct account-deletion attempt revealed the schema's deliberate `NO ACTION` user-session foreign key and changed nothing. A reviewed transaction then removed the exact generated account's dependent rows before deleting the user.
 
 ## Phone functional tests
 
-The user tested from a phone connected to `Haag_74`, not mobile data.
+The user tested from a phone connected to `<wifi-ssid>`, not mobile data.
 
 Before reboot:
 
@@ -415,7 +415,7 @@ Application environment decisions:
 
 ```text
 NODE_ENV=production
-APP_BASE_URL=http://192.168.1.57
+APP_BASE_URL=http://<server-lan-ip>
 AUTH_COOKIE_SECURE=false
 API_TRUST_PROXY=false
 ```
@@ -432,19 +432,19 @@ MacBook port results before and after reboot were identical:
 
 | Address | Port | Expected role | Result |
 | --- | ---: | --- | --- |
-| `192.168.1.57` | 80 | Caddy | Open |
-| `192.168.1.57` | 3000 | Next.js direct | Blocked |
-| `192.168.1.57` | 4000 | Fastify direct | Blocked |
-| `192.168.1.57` | 5432 | PostgreSQL direct | Blocked |
-| `192.168.86.178` | 80 | Wi-Fi application path | Blocked |
-| `192.168.86.178` | 3000 | Next.js direct | Blocked |
-| `192.168.86.178` | 4000 | Fastify direct | Blocked |
-| `192.168.86.178` | 5432 | PostgreSQL direct | Blocked |
+| `<server-lan-ip>` | 80 | Caddy | Open |
+| `<server-lan-ip>` | 3000 | Next.js direct | Blocked |
+| `<server-lan-ip>` | 4000 | Fastify direct | Blocked |
+| `<server-lan-ip>` | 5432 | PostgreSQL direct | Blocked |
+| `<server-wifi-ip>` | 80 | Wi-Fi application path | Blocked |
+| `<server-wifi-ip>` | 3000 | Next.js direct | Blocked |
+| `<server-wifi-ip>` | 4000 | Fastify direct | Blocked |
+| `<server-wifi-ip>` | 5432 | PostgreSQL direct | Blocked |
 
 Final relevant host listener:
 
 ```text
-192.168.1.57:80  docker-proxy for Caddy
+<server-lan-ip>:80  docker-proxy for Caddy
 ```
 
 There is no host listener for application ports 3000, 4000, or 5432.
@@ -608,7 +608,7 @@ The layout check records the modes of the protected Caddy runtime directories, t
 Local repository file created:
 
 ```text
-docs/server/reports/08-reverse-proxy-and-private-lan-access-report.md
+docs/archive/server/reports/08-reverse-proxy-and-private-lan-access-report.md
 ```
 
 No application source, Dockerfile, migration, lockfile, Git checkout, UFW file, NetworkManager profile, router setting, DNS setting, kernel, firmware, bootloader, database schema, or real-user row was changed.
@@ -638,9 +638,9 @@ Secret values, generated test credentials, cookie values, MAC addresses, complet
 Documentation and preflight:
 
 ```bash
-rg --files docs/server docs/status
-sed -n '<ranges>' docs/server/wave-b-application-platform/08-reverse-proxy-and-private-lan-access.md
-sed -n '<ranges>' docs/server/reports/07-gym-tracker-deployment-report.md
+rg --files docs/server docs/archive/status
+sed -n '<ranges>' docs/archive/server/wave-b-application-platform/08-reverse-proxy-and-private-lan-access.md
+sed -n '<ranges>' docs/archive/server/reports/07-gym-tracker-deployment-report.md
 ssh -o BatchMode=yes gym-prod '<identity, route, listener, Compose, service, and sudo checks>'
 git show c168dd9f31dc:<deployed-source-path>
 git grep '<BFF and proxy settings>' c168dd9f31dc -- apps/web apps/api
@@ -714,21 +714,21 @@ Only stateless web/proxy containers and their frontend network were removed. No 
 LAN, source-path, header, request-limit, and isolation tests:
 
 ```bash
-route -n get 192.168.1.57
-curl -fsS http://192.168.1.57/login
-curl -D - -o /dev/null http://192.168.1.57/login
+route -n get <server-lan-ip>
+curl -fsS http://<server-lan-ip>/login
+curl -D - -o /dev/null http://<server-lan-ip>/login
 head -c 11000000 /dev/zero | \
   curl -o /dev/null -w '<status and uploaded size>' \
   -H 'Content-Type: application/octet-stream' --data-binary @- \
-  http://192.168.1.57/api/auth/login
-nc -z -w 2 192.168.1.57 80
-nc -z -w 2 192.168.1.57 3000
-nc -z -w 2 192.168.1.57 4000
-nc -z -w 2 192.168.1.57 5432
-nc -z -w 2 192.168.86.178 80
-nc -z -w 2 192.168.86.178 3000
-nc -z -w 2 192.168.86.178 4000
-nc -z -w 2 192.168.86.178 5432
+  http://<server-lan-ip>/api/auth/login
+nc -z -w 2 <server-lan-ip> 80
+nc -z -w 2 <server-lan-ip> 3000
+nc -z -w 2 <server-lan-ip> 4000
+nc -z -w 2 <server-lan-ip> 5432
+nc -z -w 2 <server-wifi-ip> 80
+nc -z -w 2 <server-wifi-ip> 3000
+nc -z -w 2 <server-wifi-ip> 4000
+nc -z -w 2 <server-wifi-ip> 5432
 docker logs <proxy-container>
 ```
 
@@ -736,19 +736,19 @@ Functional tests used generated non-personal credentials, mode-`0600` cookie jar
 
 ```bash
 curl -c <temporary-cookie-jar> -H 'Content-Type: application/json' \
-  --data-binary @- http://192.168.1.57/api/auth/signup
-curl -b <temporary-cookie-jar> http://192.168.1.57/api/auth/me
-curl -b <temporary-cookie-jar> -X POST http://192.168.1.57/api/auth/logout
+  --data-binary @- http://<server-lan-ip>/api/auth/signup
+curl -b <temporary-cookie-jar> http://<server-lan-ip>/api/auth/me
+curl -b <temporary-cookie-jar> -X POST http://<server-lan-ip>/api/auth/logout
 curl -b <temporary-cookie-jar> -H 'Content-Type: application/json' \
-  --data-binary @- http://192.168.1.57/api/auth/login
+  --data-binary @- http://<server-lan-ip>/api/auth/login
 curl -b <temporary-cookie-jar> -H 'Content-Type: application/json' \
-  --data-binary @- http://192.168.1.57/api/workout-templates
+  --data-binary @- http://<server-lan-ip>/api/workout-templates
 curl -b <temporary-cookie-jar> \
-  http://192.168.1.57/api/workout-templates/<generated-id>
+  http://<server-lan-ip>/api/workout-templates/<generated-id>
 curl -b <temporary-cookie-jar> -X PATCH -H 'Content-Type: application/json' \
-  --data-binary @- http://192.168.1.57/api/workout-templates/<generated-id>
+  --data-binary @- http://<server-lan-ip>/api/workout-templates/<generated-id>
 curl -b <temporary-cookie-jar> -X DELETE \
-  http://192.168.1.57/api/workout-templates/<generated-id>
+  http://<server-lan-ip>/api/workout-templates/<generated-id>
 ```
 
 Disposable database cleanup used a transaction, exact generated-account selection, count assertions, dependent-row deletion in foreign-key order, final user deletion, and residue counts. No wildcard deletion was run without an exact-count guard.
@@ -759,7 +759,7 @@ Restart and reboot:
 docker compose -p gym-tracker -f <compose> restart proxy web api
 docker inspect <containers>
 docker exec <postgres> psql -U postgres -d gym_tracker -Atc '<ledger and identity queries>'
-curl -fsS http://192.168.1.57/login
+curl -fsS http://<server-lan-ip>/login
 /srv/gym-tracker/scripts/apply-docker-firewall.sh check
 systemctl reboot
 ssh -o BatchMode=yes gym-prod '<post-reboot identity>'
@@ -809,7 +809,7 @@ Wave B's required technical outcome is satisfied:
 - migrations remain explicit and do not run during ordinary start, restart, or reboot;
 - API, web, and proxy use the reviewed Compose project;
 - only Caddy is published to the private LAN;
-- Caddy binds only `192.168.1.57:80`;
+- Caddy binds only `<server-lan-ip>:80`;
 - browser traffic passes through Next.js and its BFF;
 - Fastify, Next.js, and PostgreSQL direct ports are blocked from both LAN addresses;
 - the Docker-aware policy is explicit, idempotent, persistent, and proven after reboot;
@@ -833,7 +833,7 @@ Do not begin Wave C merely because its planning directory exists.
 1. Keep Wave C private and preserve the Stage 8 LAN boundary. Do not publish Prometheus, exporters, Grafana, PostgreSQL, Fastify, or Next.js directly.
 2. Bind Grafana to loopback and use the already retained SSH forwarding policy for administration unless a separately reviewed private proxy route is approved.
 3. Treat Caddy logs as the current client-source record because Google Nest NAT hides downstream addresses and the BFF does not forward them to Fastify.
-4. Monitor the `gym-tracker-docker-firewall.service`, `DOCKER-USER` jump, proxy health, and the single `192.168.1.57:80` listener.
+4. Monitor the `gym-tracker-docker-firewall.service`, `DOCKER-USER` jump, proxy health, and the single `<server-lan-ip>:80` listener.
 5. Add backup scheduling and restore evidence without deleting the Stage 6/7 checkpoints.
 6. Keep `LOG_LEVEL=warn` until a real mail provider is configured; do not onboard real users with undeliverable verification/reset actions.
 7. Plan HTTPS and `AUTH_COOKIE_SECURE=true` together as a later explicit stage. Do not add HSTS before HTTPS exists.

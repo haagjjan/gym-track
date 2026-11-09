@@ -1,6 +1,6 @@
 # Staging Environment Specification
 
-Decision: [ADR 0015](../../../decisions/0015-staging-environment.md). Goal 2 owns this
+Decision: [ADR 0015](../../../../decisions/0015-staging-environment.md). Goal 2 owns this
 specification; Goal 3 executed it on 2026-08-10 through 2026-08-18.
 
 Goal 3's reviewed repository definition lives under `ops/staging/`. The exact green release

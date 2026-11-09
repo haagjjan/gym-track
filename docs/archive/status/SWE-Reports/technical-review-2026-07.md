@@ -230,11 +230,11 @@ Residual low-severity items: the login timing oracle and absent CSRF token (§4)
   **does not exist**.
 - `ARCHITECTURE.md` lists 5 API features; there are actually **7** (`templates`, `users` missing) —
   and it disagrees with the (correct) `docs/repository-structure.md`.
-- `docs/status/server-status-gym-prod.md` still claims the stack uses **"Turborepo"** and **"Prisma"**
+- `docs/archive/status/server-status-gym-prod.md` still claims the stack uses **"Turborepo"** and **"Prisma"**
   — neither is true.
 - `CODEBASE.md` is an aged snapshot (lists 3 migrations; there are 6).
 - Documented but unresolved `PATCH/DELETE /api/v1/workouts/:id` contract drift
-  (`docs/status/privat-beta-readiness.md`).
+  (`docs/archive/status/privat-beta-readiness.md`).
 
 *→ Reconcile these in one pass (P1).*
 
@@ -242,7 +242,7 @@ Residual low-severity items: the login timing oracle and absent CSRF token (§4)
 
 ## 10. Where the product stands
 
-Measured against the project's own `docs/status/privat-beta-readiness.md`, this is a
+Measured against the project's own `docs/archive/status/privat-beta-readiness.md`, this is a
 **private-beta candidate, not yet SaaS-ready**. The engineering foundation is strong; the missing
 pieces are product-lifecycle, not architecture: account settings / **account deletion & export**
 (not built), onboarding, proven production operation, and real mobile-device QA
@@ -286,7 +286,7 @@ Effort/impact are rough (S/M/L effort; ↑ high / → medium impact).
 - Add **repository/integration SQL tests** and a **handful of component tests**; broaden e2e beyond
   Chromium. *Effort M · Impact →*
 - Re-enable `reactStrictMode` and fix fallout. *Effort S · Impact →*
-- Delete `_legacy-reference/` after Phase 3 sign-off; remove committed `.DS_Store` files; pick one
+- Delete `docs/archive/legacy-reference/` after Phase 3 sign-off; remove committed `.DS_Store` files; pick one
   primary deploy target. *Effort S · Impact →*
 
 ---
@@ -298,5 +298,5 @@ Effort/impact are rough (S/M/L effort; ↑ high / → medium impact).
 - **Frontend:** `apps/web/src/app/api/**/route.ts`, `apps/web/src/features/**`,
   `apps/web/src/shared/ui/ui.tsx`, `apps/web/src/app/globals.css`, `apps/web/next.config.ts`.
 - **Repo / ops:** `.github/workflows/repo-checks.yml`, `pnpm-workspace.yaml`, `tsconfig.base.json`,
-  `compose.monitoring.yaml`, `ops/**`, `docs/decisions/**`, `docs/status/**`,
-  `docs/00-workflow.md`, `docs/99-current-project-state.md`.
+  `compose.monitoring.yaml`, `ops/**`, `docs/decisions/**`, `docs/archive/status/**`,
+  `docs/archive/00-workflow.md`, `docs/99-current-project-state.md`.

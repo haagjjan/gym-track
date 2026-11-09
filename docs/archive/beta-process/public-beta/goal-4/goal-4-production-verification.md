@@ -14,7 +14,7 @@ controller performs privileged, provider, asset-rights, real-device and cutover 
 | --- | --- | --- |
 | 0 | Complete | Clean baseline `ee537d9` |
 | 1 | Complete at repository scope | [Goal 1 remediation report](../goal-1/goal-1-remediation-report.md) |
-| 2 | Decisions complete; corrected Cloudflare scope reaffirmed 2026-08-19 | [Goal 2 decision record](../goal-2/goal-2-decision-record.md), [DPIA](../goal-2/dpia.md) and [legal-risk acceptance](../goal-2/legal-risk-acceptance.md) |
+| 2 | Decisions complete; corrected Cloudflare scope reaffirmed 2026-08-19 | [Goal 2 decision record](../goal-2/goal-2-decision-record.md), [DPIA](../../../../beta-process/public-beta/goal-2/dpia.md) and [legal-risk acceptance](../goal-2/legal-risk-acceptance.md) |
 | 3 | Complete | Exact release `4a4fccdae263126ceda164a792059514123f957f` and [Goal 3 staging report](../goal-3/goal-3-staging-report.md) |
 | 4 | In progress; application baseline, backup, restore, capacity and final-candidate staging evidence verified; production deployed proof remains | This report |
 

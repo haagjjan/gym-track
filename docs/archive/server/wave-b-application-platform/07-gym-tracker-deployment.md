@@ -50,7 +50,7 @@ Do not:
 
 - expose the application to the LAN;
 - add a reverse proxy;
-- publish Fastify directly to `192.168.1.57` or `192.168.86.178`;
+- publish Fastify directly to `<server-lan-ip>` or `<server-wifi-ip>`;
 - expose PostgreSQL;
 - create public DNS, HTTPS, or external access;
 - deploy Prometheus or Grafana;
@@ -535,8 +535,8 @@ sudo ss -lntup
 From the MacBook:
 
 ```bash
-nc -vz 192.168.1.57 <web-test-port>
-nc -vz 192.168.1.57 <api-test-port>
+nc -vz <server-lan-ip> <web-test-port>
+nc -vz <server-lan-ip> <api-test-port>
 ```
 
 Both should fail because Stage 7 ports are loopback-only.
@@ -587,7 +587,7 @@ Inspect Docker and Compose state. Do not recreate data volumes.
 Create:
 
 ```text
-docs/server/reports/07-gym-tracker-deployment-report.md
+docs/archive/server/reports/07-gym-tracker-deployment-report.md
 ```
 
 Include:

@@ -52,7 +52,7 @@ Convert Stitch screens into implementation references.
 
 Tasks:
 
-- Use `docs/design/stitch-redesign-v2/` as the source folder for the redesign.
+- Use `docs/archive/design/stitch-redesign-v2/` as the source folder for the redesign.
 - Treat `DESIGN.md` as the visual design-system reference:
   - colors
   - typography
@@ -643,11 +643,11 @@ Each task prompt should include:
 
 ```md
 Read:
-- docs/design/stitch-redesign-v2/DESIGN.md
-- docs/design/stitch-redesign-v2/design-notes.md
-- docs/design/stitch-redesign-v2/implementation-roadmap.md
+- docs/archive/design/stitch-redesign-v2/DESIGN.md
+- docs/archive/design/stitch-redesign-v2/design-notes.md
+- docs/archive/design/stitch-redesign-v2/implementation-roadmap.md
 - docs/PROJECT_STATE.md or the current project-state document if named differently
-- docs/08-next-implementation-plan.md if it still exists, but treat it as historical context only
+- docs/archive/08-next-implementation-plan.md if it still exists, but treat it as historical context only
 - the current app layout/component files before editing
 
 Task:

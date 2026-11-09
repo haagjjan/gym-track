@@ -31,10 +31,10 @@ The setup index defines the execution order and current authorization boundary.
 
 | Stage | Document | Purpose |
 |---:|---|---|
-| 1 | [`01-host-baseline-audit.md`](./01-host-baseline-audit.md) | Inspect and document the actual server state without making significant changes |
-| 2 | [`02-os-admin-foundation.md`](./02-os-admin-foundation.md) | Update Ubuntu and establish the base administration tooling and maintenance configuration |
-| 3 | [`03-access-network-hardening.md`](./03-access-network-hardening.md) | Harden SSH, UFW, routing, and network access without causing lockout |
-| 4 | [`04-docker-platform.md`](./04-docker-platform.md) | Install and verify Docker Engine, Buildx, containerd, and Docker Compose |
+| 1 | [`01-host-baseline-audit.md`](01-host-baseline-audit.md) | Inspect and document the actual server state without making significant changes |
+| 2 | [`02-os-admin-foundation.md`](02-os-admin-foundation.md) | Update Ubuntu and establish the base administration tooling and maintenance configuration |
+| 3 | [`03-access-network-hardening.md`](03-access-network-hardening.md) | Harden SSH, UFW, routing, and network access without causing lockout |
+| 4 | [`04-docker-platform.md`](04-docker-platform.md) | Install and verify Docker Engine, Buildx, containerd, and Docker Compose |
 
 The stages are dependent and must be executed in order.
 
@@ -106,7 +106,7 @@ ssh gym-prod-wifi
 Each stage must create a report under:
 
 ```text
-docs/server/reports/
+docs/archive/server/reports/
 ```
 
 Expected Wave A reports:

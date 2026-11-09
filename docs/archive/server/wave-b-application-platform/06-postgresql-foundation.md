@@ -379,7 +379,7 @@ The host part should be the Docker service name:
 postgres
 ```
 
-Do not use `192.168.1.57` for container-to-container database traffic.
+Do not use `<server-lan-ip>` for container-to-container database traffic.
 
 Do not include full URLs in the report.
 
@@ -402,7 +402,7 @@ Attempt from the host:
 
 ```bash
 nc -vz 127.0.0.1 5432
-nc -vz 192.168.1.57 5432
+nc -vz <server-lan-ip> 5432
 ```
 
 Both should fail unless a separate pre-existing local PostgreSQL service exists.
@@ -534,7 +534,7 @@ Do not continue. Record whether failure came from:
 Create:
 
 ```text
-docs/server/reports/06-postgresql-foundation-report.md
+docs/archive/server/reports/06-postgresql-foundation-report.md
 ```
 
 Include:

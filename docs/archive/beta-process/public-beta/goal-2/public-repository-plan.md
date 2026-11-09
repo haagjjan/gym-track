@@ -9,10 +9,10 @@ Current state: `github.com/haagjjan/gym-track`, **private**. Nothing is public y
 | Question | Decision |
 |---|---|
 | Publish? | **Yes** |
-| Licence | **MIT** — see [LICENSE](../../../../LICENSE) |
+| Licence | **MIT** — see [LICENSE](../../../../../LICENSE) |
 | History | **Full history**, not a squashed snapshot |
 | Homelab documentation | **Published** — `docs/server/**` goes public |
-| Third-party assets | Carved out of the MIT grant — see [NOTICE](../../../../NOTICE) |
+| Third-party assets | Carved out of the MIT grant — see [NOTICE](../../../../../NOTICE) |
 
 **Why MIT.** The purpose is demonstrating competence, not controlling use. Every direct
 dependency is MIT or Apache, and the exercise catalog is public domain, so nothing constrains
@@ -31,8 +31,8 @@ Docker platform setup, reverse proxying, monitoring, alerting and backup/recover
 some of the strongest portfolio material in the repository, and the operator intends to publish
 homelab documentation independently regardless.
 
-The risk was assessed rather than assumed. The private addresses (`192.168.1.57`,
-`192.168.86.178`) are RFC1918 and meaningless outside the LAN. The SSH policy is key-only,
+The risk was assessed rather than assumed. The private addresses (`<server-lan-ip>`,
+`<server-wifi-ip>`) are RFC1918 and meaningless outside the LAN. The SSH policy is key-only,
 `AllowUsers`-restricted, and reachable only from two LAN ranges — publishing it largely
 demonstrates that SSH is not internet-reachable. The filesystem layout is useful only to
 someone already inside.
@@ -45,7 +45,7 @@ fingerprints and serial numbers were excluded when they were written
 ## One redaction
 
 `reports/01-host-baseline-audit-report.md:112` published the ISP-assigned IPv6 prefix
-`2a04:ee40:20c5:c700::/64`.
+`<public-ipv6-prefix>/64`.
 
 This differs in kind from the RFC1918 addresses. A `/64` is globally unique and tied to a
 specific subscriber line, so it identifies the ISP and the connection, and it is stable enough
@@ -72,7 +72,7 @@ and preserves every commit, message and date — only hashes change:
 
 ```sh
 pipx install git-filter-repo
-echo '2a04:ee40:20c5:c700::/64==>an ISP-assigned /64 prefix' > /tmp/redact.txt
+echo '<public-ipv6-prefix>/64==>an ISP-assigned /64 prefix' > /tmp/redact.txt
 git filter-repo --replace-text /tmp/redact.txt
 git push --force origin main
 ```
@@ -95,7 +95,7 @@ future scans are clean, and run `gitleaks` in CI.
 
 ## Publish these later, not at launch
 
-`docs/beta-process/public-beta/goal-1/launch-gates.md` and `goal-1/security-review.md` are a different
+`docs/archive/beta-process/public-beta/goal-1/launch-gates.md` and `goal-1/security-review.md` are a different
 category from the homelab documentation. The homelab docs say *here is how I built it*. These
 two say *here is what I know is not yet verified* — an itemised list of one's own unverified
 controls, published while the service is live and the gates are unchecked.
@@ -112,13 +112,13 @@ impression worth giving. Publishing them beforehand mostly gives a reader a road
       They are confirmed Tripo 3D Free-tier outputs separately licensed `CC BY 4.0`, based on
       archived official pricing around both repository-introduction dates. NOTICE and the public
       Support page carry attribution and modification notices. Evidence:
-      [Tripo FBX licence evidence](tripo-fbx-license-evidence.md).
+      [Tripo FBX licence evidence](../../../../beta-process/public-beta/goal-2/tripo-fbx-license-evidence.md).
 - [ ] Decide on the IPv6 history scrub.
 - [ ] Add `.gitleaksignore`; add gitleaks to CI.
 - [ ] Rewrite `README.md` — it still describes a pre-beta project and points at
       `docs/99-current-project-state.md`, the most outdated document in the repository.
-- [ ] Genericise `192.168.1.57` in `compose.yaml:80-81` and `.env.example:29-30`. It is a
+- [ ] Genericise `<server-lan-ip>` in `compose.yaml:80-81` and `.env.example:29-30`. It is a
       shipped default, not documentation, and it should not be a real address in either case.
-- [ ] Decide whether `_legacy-reference/` is published — 20+ files of superseded UI that add
+- [ ] Decide whether `docs/archive/legacy-reference/` is published — 20+ files of superseded UI that add
       noise to a portfolio repository.
 - [ ] Move `launch-gates.md` and `security-review.md` publication to after the gates pass.

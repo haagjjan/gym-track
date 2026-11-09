@@ -318,7 +318,7 @@ Known issue:
 `README.md` still references an older UX slice plan, while:
 
 ```text
-docs/08-next-implementation-plan.md
+docs/archive/08-next-implementation-plan.md
 ```
 
 says the Stitch v2 redesign docs are now the source of truth.

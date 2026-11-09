@@ -4,7 +4,7 @@
 
 The release is offered to adults resident in **Switzerland only**, English-only, 18+, invitation-only, and capped at 50 reserved/active seats. Any eligible person may submit an email-only request, but only an explicit administrator may approve it. The truthful public wording is “Founding Beta — invitation only — limited to 50 accounts.”
 
-Scope was narrowed from worldwide to Switzerland-only on 2026-08-07 by [ADR 0016](decisions/0016-founding-beta-jurisdiction-scope.md). Swiss FADP governs; GDPR exposure is avoided through eligibility rather than compliance effort, and GDPR-equivalent controls are retained voluntarily. Eligibility is self-attested at request time and enforced by manual approval of every invitation. Widening scope again requires a new ADR, a DPIA re-screen, and qualified review.
+Scope was narrowed from worldwide to Switzerland-only on 2026-08-07 by [ADR 0016](../decisions/0016-founding-beta-jurisdiction-scope.md). Swiss FADP governs; GDPR exposure is avoided through eligibility rather than compliance effort, and GDPR-equivalent controls are retained voluntarily. Eligibility is self-attested at request time and enforced by manual approval of every invitation. Widening scope again requires a new ADR, a DPIA re-screen, and qualified review.
 
 Production registration uses `INVITE_ONLY`. `DISABLED` remains the environment kill switch. Database runtime settings independently pause waitlist intake, invitation issuance and campaigns, set the total cap, and enforce the rolling 24-hour approval limit. Active, suspended and deletion-pending accounts plus unexpired invitations consume seats.
 

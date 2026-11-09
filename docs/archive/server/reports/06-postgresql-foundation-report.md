@@ -173,10 +173,10 @@ No PostgreSQL host publication exists:
 - `docker port gym-tracker-postgres-1` returned no mapping;
 - inspected host port bindings were empty;
 - host `ss` output contained no listener on port `5432`;
-- connection attempts to loopback, Ethernet address `192.168.1.57`, and Wi-Fi address `192.168.86.178` were blocked;
+- connection attempts to loopback, Ethernet address `<server-lan-ip>`, and Wi-Fi address `<server-wifi-ip>` were blocked;
 - MacBook connection attempts to both server LAN addresses were blocked.
 
-UFW was unchanged. Its only allow rules remain scoped SSH access on Ethernet from `192.168.1.0/24` and Wi-Fi from `192.168.86.0/24`. No PostgreSQL firewall rule was added.
+UFW was unchanged. Its only allow rules remain scoped SSH access on Ethernet from `<lan-subnet>` and Wi-Fi from `<wifi-subnet>`. No PostgreSQL firewall rule was added.
 
 ## Initial backup
 

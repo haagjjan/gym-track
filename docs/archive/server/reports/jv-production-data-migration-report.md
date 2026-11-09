@@ -96,7 +96,7 @@ Post-import checks confirmed:
 - the executable schema hash is unchanged;
 - PostgreSQL remains running and healthy;
 - API, web, and reverse-proxy containers remain running and healthy;
-- `http://192.168.1.57/login` returns HTTP 200;
+- `http://<server-lan-ip>/login` returns HTTP 200;
 - the unauthenticated auth endpoint returns the expected HTTP 401.
 
 ## Cleanup
@@ -107,4 +107,4 @@ The full pre-import production backup was intentionally retained. The MacBook's 
 
 ## User verification still required
 
-Database and service verification are complete. The remaining end-user check is to sign in as `JV` at `http://192.168.1.57/login` with the existing local-development password and visually confirm the workout history, templates, exercises, Progress view, and Weekly Volume view.
+Database and service verification are complete. The remaining end-user check is to sign in as `JV` at `http://<server-lan-ip>/login` with the existing local-development password and visually confirm the workout history, templates, exercises, Progress view, and Weekly Volume view.

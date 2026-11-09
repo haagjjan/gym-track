@@ -664,7 +664,7 @@ There must be no LAN listener for:
 8080
 ```
 
-From the MacBook, attempts to reach these ports on `192.168.1.57` must fail.
+From the MacBook, attempts to reach these ports on `<server-lan-ip>` must fail.
 
 ### 20. Restart and reboot verification
 
@@ -741,7 +741,7 @@ Stop the exporter, rotate the credential, remove affected logs where safely poss
 Create:
 
 ```text
-docs/server/reports/09-monitoring-and-grafana-report.md
+docs/archive/server/reports/09-monitoring-and-grafana-report.md
 ```
 
 Include:
