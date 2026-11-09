@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { formatElapsedSeconds } from "../../shared/format";
+import { formatClock } from "../../shared/format";
 
-const RING_RADIUS = 26;
+const RING_RADIUS = 18;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
+const adjustButton = "min-h-11 min-w-11 rounded-full bg-surface-raised px-3 text-subhead text-text active:opacity-70";
+
 /**
- * Auto-starting rest countdown shown after each saved set. Vibrates (where
- * supported) when rest is up so the phone can stay in a pocket.
+ * Rest countdown that starts after each saved set. Vibrates (where supported)
+ * when rest is up, so the phone can stay in a pocket.
  */
 export function RestTimer({
   seconds,
@@ -50,82 +52,44 @@ export function RestTimer({
   }, [isDone]);
 
   return (
-    <div
-      className={`flex items-center gap-2 rounded-xl border bg-surface px-3 py-2 shadow-2xl transition-colors lg:gap-4 lg:px-4 lg:py-3 lg:shadow-none ${
-        isDone
-          ? "border-green/60 bg-green/10 shadow-glow-green"
-          : "border-cyan/30 bg-surface-low/80"
-      }`}
-      role="timer"
-    >
-      <svg aria-hidden className="size-12 shrink-0 lg:size-16" viewBox="0 0 64 64">
+    <div className="flex items-center gap-3" role="timer" aria-label="Rest timer">
+      <svg aria-hidden className="size-11 flex-none" viewBox="0 0 44 44">
+        <circle cx="22" cy="22" fill="none" r={RING_RADIUS} stroke="var(--line)" strokeWidth="3.5" />
         <circle
-          cx="32"
-          cy="32"
+          cx="22"
+          cy="22"
           fill="none"
           r={RING_RADIUS}
-          stroke="rgba(58, 73, 75, 0.6)"
-          strokeWidth="4"
-        />
-        <circle
-          cx="32"
-          cy="32"
-          fill="none"
-          r={RING_RADIUS}
-          stroke={isDone ? "#51fb37" : "#00dbe7"}
+          stroke={isDone ? "var(--success)" : "var(--accent)"}
           strokeDasharray={RING_CIRCUMFERENCE}
           strokeDashoffset={RING_CIRCUMFERENCE * (1 - fraction)}
           strokeLinecap="round"
-          strokeWidth="4"
-          transform="rotate(-90 32 32)"
+          strokeWidth="3.5"
+          transform="rotate(-90 22 22)"
         />
       </svg>
 
       <div className="min-w-0 flex-1">
-        <p className={`label-caps ${isDone ? "text-green" : "text-outline"}`}>
-          {isDone ? "Rest done — go" : "Resting"}
-        </p>
-        <p
-          className={`font-mono font-medium tracking-[0.05em] ${
-            isDone ? "text-green-bright" : "text-cyan-bright"
-          } text-xl lg:text-2xl`}
-        >
-          {formatElapsedSeconds(remaining)}
+        <p className="text-footnote text-text-secondary">{isDone ? "Rest over" : "Rest"}</p>
+        <p className={`num text-title-3 ${isDone ? "text-success" : "text-text"}`} data-testid="rest-remaining">
+          {formatClock(remaining)}
         </p>
       </div>
 
-      <div className="flex shrink-0 gap-2">
+      <div className="flex flex-none gap-2">
         {!isDone ? (
           <>
             {/* Quarter-minute steps, matching the rest length in Settings. */}
-            <button
-              aria-label="Shorten this rest by 15 seconds"
-              className="min-h-11 cursor-pointer rounded border border-outline-dim px-3 font-display text-[11px] font-bold uppercase tracking-[0.1em] text-fg-muted transition-colors hover:border-cyan hover:text-cyan"
-              onClick={() => onAdjust(-15)}
-              type="button"
-            >
-              −15S
+            <button aria-label="Shorten rest by 15 seconds" className={adjustButton} onClick={() => onAdjust(-15)} type="button">
+              −15 s
             </button>
-            <button
-              aria-label="Extend this rest by 15 seconds"
-              className="min-h-11 cursor-pointer rounded border border-outline-dim px-3 font-display text-[11px] font-bold uppercase tracking-[0.1em] text-fg-muted transition-colors hover:border-cyan hover:text-cyan"
-              onClick={() => onAdjust(15)}
-              type="button"
-            >
-              +15S
+            <button aria-label="Extend rest by 15 seconds" className={adjustButton} onClick={() => onAdjust(15)} type="button">
+              +15 s
             </button>
           </>
         ) : null}
-        <button
-          className={`min-h-11 cursor-pointer rounded border px-3 font-display text-[11px] font-bold uppercase tracking-[0.1em] transition-colors ${
-            isDone
-              ? "border-green text-green hover:bg-green/10"
-              : "border-outline-dim text-fg-muted hover:border-cyan hover:text-cyan"
-          }`}
-          onClick={onDismiss}
-          type="button"
-        >
-          {isDone ? "DISMISS" : "SKIP"}
+        <button className={`${adjustButton} text-accent`} onClick={onDismiss} type="button">
+          {isDone ? "Done" : "Skip"}
         </button>
       </div>
     </div>

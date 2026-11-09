@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { HudButton } from "../../shared/ui/ui";
+import { Button } from "../../shared/ui/button";
 import type { CreateExerciseInput, Exercise } from "../../shared/api/types";
 import { ExerciseEditorDialog } from "../exercises/exercise-editor-dialog";
 import { ExercisePicker } from "../exercises/exercise-picker";
-import { IconPlus } from "../shell/icons";
+import { IconPlus24 } from "../../shared/ui/icons";
 
 interface ExerciseSheetProps {
   isOpen: boolean;
@@ -39,16 +39,16 @@ export function ExerciseSheet(props: ExerciseSheetProps): ReactNode {
       <ExercisePicker
         footer={
           <div className="space-y-2">
-            <HudButton
+            <Button
               className="w-full"
               disabled={selectedIds.length === 0 || props.isSubmitting}
               onClick={async () => { if (await props.onAddSelected(selectedIds)) props.onClose(); }}
             >
               Add selected exercises ({selectedIds.length})
-            </HudButton>
-            <HudButton className="w-full" onClick={() => setShowCreate(true)} variant="outline">
-              <IconPlus /> Create new exercise
-            </HudButton>
+            </Button>
+            <Button className="w-full" onClick={() => setShowCreate(true)} variant="secondary">
+              <IconPlus24 /> Create new exercise
+            </Button>
           </div>
         }
         isOpen={props.isOpen && !showCreate}

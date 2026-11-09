@@ -30,7 +30,7 @@ export function useStartSession(): StartSession {
       router.push(openWorkout ? `/workouts/${openWorkout}` : "/workout");
     } catch (caught) {
       setError(
-        caught instanceof ApiError ? caught.message : "The session could not be started."
+        caught instanceof ApiError ? caught.message : "Couldn't start the workout. Try again."
       );
     } finally {
       setIsPending(false);
