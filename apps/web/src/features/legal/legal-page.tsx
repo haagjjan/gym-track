@@ -1,9 +1,28 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { PUBLIC_PRIVACY_VERSION } from "../../shared/public-policy";
+import { getCurrentUser } from "../auth/server-auth";
+import { LegalBack } from "./legal-back";
 
-export function LegalPage({ children, eyebrow, title, version = PUBLIC_PRIVACY_VERSION }: { children: ReactNode; eyebrow: string; title: string; version?: string }): ReactNode {
-  return <main className="min-h-dvh bg-void px-5 py-10 text-fg"><article className="mx-auto max-w-3xl rounded-xl border border-outline-dim/60 bg-surface/70 p-6 sm:p-9"><Link className="label-caps mb-6 inline-flex min-h-11 items-center rounded border border-outline-dim/60 px-3 text-cyan transition-colors hover:border-cyan/50 hover:bg-cyan/5" href="/settings">← Back to Settings</Link><p className="label-caps text-cyan">{eyebrow}</p><h1 className="mt-2 font-display text-3xl font-bold">{title}</h1><p className="mt-2 text-xs text-outline">Version {version} · Controller-approved self-assessment · Switzerland only</p>{!legalConfigComplete() ? <p className="mt-5 rounded border border-red/50 bg-red/5 p-3 text-xs text-red" role="alert">PUBLICATION_BLOCKED: controller and contact configuration is incomplete. Approved wording must not be published with placeholder contact details.</p> : null}<div className="legal-copy mt-7 space-y-6 text-sm leading-relaxed text-fg-muted">{children}</div><nav className="mt-9 flex flex-wrap gap-4 border-t border-outline-dim/50 pt-5 text-xs"><Link className="text-cyan" href="/privacy">Privacy</Link><Link className="text-cyan" href="/cookies">Cookies & storage</Link><Link className="text-cyan" href="/terms">Terms</Link><Link className="text-cyan" href="/support">Support</Link></nav></article></main>;
+export async function LegalPage({ children, title, version = PUBLIC_PRIVACY_VERSION }: { children: ReactNode; eyebrow?: string; title: string; version?: string }): Promise<ReactNode> {
+  // Signed-out visitors (from signup) go back to signup, not to Settings.
+  const signedIn = Boolean(await getCurrentUser());
+  return <main className="min-h-dvh bg-bg px-4 py-4 text-text">
+    <div className="mx-auto max-w-[65ch]">
+      <LegalBack signedIn={signedIn} />
+      <article className="pb-10 pt-4">
+        <h1 className="text-title-1 text-text">{title}</h1>
+        {!legalConfigComplete() ? <p className="mt-5 rounded-[var(--radius-card)] bg-surface p-3 text-subhead text-danger" role="alert">Contact details are incomplete, so this page can&apos;t be published yet. Set the controller and contact configuration first.</p> : null}
+        <div className="legal-copy mt-6 space-y-6 text-body text-text-secondary">{children}</div>
+        <footer className="mt-10 border-t border-line pt-4">
+          <nav aria-label="Legal pages" className="flex flex-wrap gap-x-5">
+            {[["/privacy", "Privacy"], ["/cookies", "Cookies and storage"], ["/terms", "Terms"], ["/support", "Support"]].map(([href, label]) => <Link className="inline-flex min-h-11 items-center text-callout text-accent" href={href!} key={href}>{label}</Link>)}
+          </nav>
+          <p className="mt-2 text-footnote text-text-muted">Version {version}. Switzerland only.</p>
+        </footer>
+      </article>
+    </div>
+  </main>;
 }
 
 /**
@@ -28,13 +47,13 @@ export function legalContacts(): {
   const supportEmail = process.env.SUPPORT_EMAIL;
 
   return {
-    controller: process.env.CONTROLLER_NAME ?? "[controller configuration required]",
-    address: process.env.CONTROLLER_ADDRESS ?? "[controller address required]",
-    privacyEmail: process.env.PRIVACY_EMAIL ?? "[privacy contact required]",
-    supportEmail: supportEmail ?? "[support contact required]",
+    controller: process.env.CONTROLLER_NAME ?? "Controller name not configured",
+    address: process.env.CONTROLLER_ADDRESS ?? "Controller address not configured",
+    privacyEmail: process.env.PRIVACY_EMAIL ?? "Privacy contact not configured",
+    supportEmail: supportEmail ?? "Support contact not configured",
     // Falls back to support rather than a placeholder: a reachable address is
     // better than none for a security report.
-    securityEmail: process.env.SECURITY_EMAIL ?? supportEmail ?? "[security contact required]"
+    securityEmail: process.env.SECURITY_EMAIL ?? supportEmail ?? "Security contact not configured"
   };
 }
 
@@ -48,5 +67,5 @@ function legalConfigComplete(): boolean {
 }
 
 export function Section({ children, title }: { children: ReactNode; title: string }): ReactNode {
-  return <section><h2 className="font-display text-lg font-bold text-fg">{title}</h2><div className="mt-2 space-y-2">{children}</div></section>;
+  return <section><h2 className="text-title-3 text-text">{title}</h2><div className="mt-2 space-y-3">{children}</div></section>;
 }
