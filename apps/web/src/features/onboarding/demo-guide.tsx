@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
-import { HudButton } from "../../shared/ui/ui";
+import { Button, buttonClass } from "../../shared/ui/button";
 import { useDemo } from "./demo-provider";
 import { currentInstruction, demoLessons, lessonFlag } from "./demo-lessons";
 import { lessonSatisfied, prepareLesson } from "./demo-state";
@@ -23,17 +23,20 @@ export function DemoGuide(): ReactNode {
     setState((current) => prepareLesson(current, nextIndex));
     router.push(`/help/demo/${demoLessons[nextIndex]?.path ?? ""}`);
   }
-  return <aside aria-label="Example guide" className="mx-4 mt-4 rounded-xl border border-cyan/40 bg-surface p-3 lg:mx-6">
-    <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-semibold text-cyan">Example data — separate from your account</p><Link className="inline-flex min-h-11 items-center text-sm text-fg-muted" href="/">Exit example →</Link></div>
+  // z-30 keeps the card above the 3D canvas and its ambience layers (z-0).
+  return <aside aria-label="Example guide" className="relative z-30 mx-4 mt-2 rounded-[var(--radius-card)] bg-surface p-3 lg:mx-6">
+    <div className="flex items-center justify-between gap-2">
+      <p className="min-w-0 text-subhead text-text-secondary">{lesson ? `Step ${state.lesson! + 1} of ${demoLessons.length}: ${lesson.title}` : "Example data, separate from your account"}</p>
+      <Link className={`${buttonClass("plain", "compact")} -mr-3 shrink-0`} href="/">Exit example</Link>
+    </div>
     {lesson ? <>
-      <p className="text-xs text-outline">Step {state.lesson! + 1} of {demoLessons.length} · {lesson.title}</p>
-      <p aria-live="polite" className="mt-1 text-sm text-fg">{ready ? "Done. Continue when you’re ready." : currentInstruction(lesson.id, state.events)}</p>
+      <p aria-live="polite" className="mt-1 text-callout text-text">{ready ? "Done. Continue when you\u2019re ready." : currentInstruction(lesson.id, state.events)}</p>
       <div className="mt-2 flex flex-wrap gap-2">
-        <HudButton disabled={!ready} onClick={() => next(false)}>{state.lesson === 5 ? "Finish example" : "Continue"}</HudButton>
-        <HudButton onClick={() => next(true)} variant="ghost">Skip step</HudButton>
-        <HudButton onClick={() => { setState((current) => prepareLesson(current, state.lesson!)); router.push(`/help/demo/${lesson.path}`); }} variant="ghost">Restart step</HudButton>
+        <Button disabled={!ready} onClick={() => next(false)} size="compact">{state.lesson === 5 ? "Finish example" : "Continue"}</Button>
+        <Button onClick={() => next(true)} size="compact" variant="secondary">Skip step</Button>
+        <Button onClick={() => { setState((current) => prepareLesson(current, state.lesson!)); router.push(`/help/demo/${lesson.path}`); }} size="compact" variant="secondary">Restart step</Button>
       </div>
-    </> : <p className="text-xs text-fg-muted">Explore freely. Practice resets when you reload or exit.</p>}
-    {error ? <p role="status" className="mt-2 text-xs text-lavender">{error} <Link className="underline" href="/help">Open Help</Link></p> : null}
+    </> : <p className="text-callout text-text-secondary">Explore freely. The example resets when you reload or exit.</p>}
+    {error ? <p role="status" className="mt-2 text-footnote text-warning">{error} <Link className="underline" href="/help">Open Help</Link></p> : null}
   </aside>;
 }

@@ -2,19 +2,57 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { HudButton, Panel } from "../../shared/ui/ui";
+import { Button, buttonClass } from "../../shared/ui/button";
+import { IconForward } from "../../shared/ui/icons";
 import { demoLessons, lessonFlag } from "./demo-lessons";
 import { useOnboarding } from "./use-onboarding";
 
+const listClass = "divide-y divide-line overflow-hidden rounded-[var(--radius-card)] bg-surface";
+const rowClass = "flex min-h-[3.75rem] items-center gap-3 px-4 py-2 active:bg-surface-raised";
+const groupTitle = "mb-2 px-4 text-subhead text-text-secondary";
+
 export function HelpScreen(): ReactNode {
   const { onboarding, error, retry } = useOnboarding();
-  return <div className="mx-auto max-w-3xl space-y-4 p-4 lg:p-6">
-    <header><h1 className="font-display text-2xl font-bold text-fg">Help & Tutorial</h1><p className="mt-2 text-sm text-fg-muted">Learn by trying the controls. Example workouts stay separate from your account.</p></header>
-    {error ? <div role="status" className="rounded border border-lavender p-3 text-sm text-fg"><p>{error}</p><HudButton className="mt-2" onClick={() => void retry()} variant="outline">Retry sync</HudButton></div> : null}
-    <Panel accent="cyan"><h2 className="font-display text-lg font-bold text-fg">Try a workout and follow it through</h2><p className="mt-2 text-sm text-fg-muted">Log a set, edit it, finish, then explore History, Progress and Volume.</p><Link className="mt-4 inline-flex min-h-11 items-center rounded bg-cyan px-4 text-sm font-bold text-on-cyan" href="/help/demo">Try the example</Link></Panel>
-    <Panel accent="lavender" eyebrow="Pick a lesson"><ul className="space-y-2">{demoLessons.map((lesson, index) => <li key={lesson.id}><Link className="flex min-h-12 items-center justify-between gap-3 rounded border border-outline-dim p-3 text-sm text-fg hover:border-cyan" href={`/help/demo?lesson=${lesson.id}`}><span>{index + 1}. {lesson.title}</span><span className="text-xs text-fg-muted">{onboarding?.steps[lessonFlag(lesson.id)] ? "Completed · Replay" : onboarding?.steps[lessonFlag(lesson.id, true)] ? "Skipped · Try it" : "Try it →"}</span></Link></li>)}</ul></Panel>
-    <Panel accent="none" eyebrow="Explore at your own pace"><div className="flex flex-wrap gap-3">{[["history", "Example history"], ["progress", "Example Progress"], ["volume", "Example Volume"]].map(([path, label]) => <Link className="inline-flex min-h-11 items-center text-sm text-cyan" href={`/help/demo?explore=${path}`} key={path}>{label} →</Link>)}</div></Panel>
-    <Panel accent="none" eyebrow="Quick reference"><dl className="space-y-3 text-sm text-fg-muted"><div><dt className="font-bold text-fg">Working and warmup sets</dt><dd>Working sets drive the progress chart and muscle volume. Warmups remain in History and summary totals.</dd></div><div><dt className="font-bold text-fg">RIR</dt><dd>Reps in reserve: how many clean repetitions you estimate remained.</dd></div><div><dt className="font-bold text-fg">Estimated 1RM</dt><dd>A calculated strength estimate for comparing trends, not an exact measurement.</dd></div></dl></Panel>
-    <div className="flex flex-wrap gap-4 text-sm"><Link className="min-h-11 text-cyan" href="/privacy">Privacy and data</Link><Link className="min-h-11 text-cyan" href="/support">Support and status</Link></div>
+  return <div className="mx-auto max-w-3xl space-y-8 px-4 py-4 lg:px-6">
+    <header>
+      <h1 className="text-title-1 text-text">Help</h1>
+      <p className="mt-2 text-body text-text-secondary">Learn by trying the controls. Example workouts stay separate from your account.</p>
+    </header>
+    {error ? <div className="rounded-[var(--radius-card)] bg-surface p-4" role="status"><p className="text-body text-text">{error}</p><Button className="mt-3" onClick={() => void retry()} size="compact" variant="secondary">Retry sync</Button></div> : null}
+    <section className="rounded-[var(--radius-card)] bg-surface p-4">
+      <h2 className="text-title-3 text-text">Log a workout and follow it through</h2>
+      <p className="mt-1 text-body text-text-secondary">Log a set, edit it, finish, then look at History, Progress and Volume.</p>
+      <Link className={`${buttonClass("primary")} mt-4 w-full`} href="/help/demo">Try the example</Link>
+    </section>
+    <section>
+      <h2 className={groupTitle}>Pick a lesson</h2>
+      <ul className={listClass}>{demoLessons.map((lesson, index) => {
+        const done = onboarding?.steps[lessonFlag(lesson.id)];
+        const skipped = onboarding?.steps[lessonFlag(lesson.id, true)];
+        return <li key={lesson.id}><Link className={rowClass} href={`/help/demo?lesson=${lesson.id}`}>
+          <span className="min-w-0 flex-1 text-body text-text">{index + 1}. {lesson.title}</span>
+          <span className="text-subhead text-text-secondary">{done ? "Completed" : skipped ? "Skipped" : ""}</span>
+          <IconForward className="shrink-0 text-text-muted" />
+        </Link></li>;
+      })}</ul>
+    </section>
+    <section>
+      <h2 className={groupTitle}>Explore at your own pace</h2>
+      <ul className={listClass}>{[["history", "Example history"], ["progress", "Example progress"], ["volume", "Example volume"]].map(([path, label]) => <li key={path}><Link className={rowClass} href={`/help/demo?explore=${path}`}><span className="min-w-0 flex-1 text-body text-text">{label}</span><IconForward className="shrink-0 text-text-muted" /></Link></li>)}</ul>
+    </section>
+    <section>
+      <h2 className={groupTitle}>Quick reference</h2>
+      <dl className="space-y-4 rounded-[var(--radius-card)] bg-surface p-4">
+        <div><dt className="text-headline text-text">Working and warmup sets</dt><dd className="mt-1 text-body text-text-secondary">Working sets drive the progress chart and muscle volume. Warmups remain in History and summary totals.</dd></div>
+        <div><dt className="text-headline text-text">Reps in reserve (RIR)</dt><dd className="mt-1 text-body text-text-secondary">Reps in reserve: how many clean repetitions you estimate remained.</dd></div>
+        <div><dt className="text-headline text-text">Estimated 1RM</dt><dd className="mt-1 text-body text-text-secondary">A calculated strength estimate for comparing trends, not an exact measurement.</dd></div>
+      </dl>
+    </section>
+    <section>
+      <ul className={listClass}>
+        <li><Link className={rowClass} href="/privacy"><span className="min-w-0 flex-1 text-body text-text">Privacy and data</span><IconForward className="shrink-0 text-text-muted" /></Link></li>
+        <li><Link className={rowClass} href="/support"><span className="min-w-0 flex-1 text-body text-text">Support and status</span><IconForward className="shrink-0 text-text-muted" /></Link></li>
+      </ul>
+    </section>
   </div>;
 }

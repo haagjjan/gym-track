@@ -6,7 +6,7 @@ import { apiFetch, errorMessage } from "../../shared/api/client";
 import type { Exercise } from "../../shared/api/types";
 import { useTemplateMutations } from "../../shared/api/hooks";
 import { useStartSession } from "../session/use-start-session";
-import { HudButton, Panel } from "../../shared/ui/ui";
+import { Button } from "../../shared/ui/button";
 import { useDemo } from "./demo-provider";
 import { demoExercises, demoTemplate } from "./demo-data";
 
@@ -31,13 +31,13 @@ export function DemoCopyTemplate(): ReactNode {
       }));
       const created = await create.mutateAsync({ name: demoTemplate.name, exerciseIds: resolved });
       setState((current) => ({ ...current, copiedTemplateId: created.id }));
-    } catch (caught) { setError(caught instanceof Error ? caught.message : errorMessage(caught, "The example template could not be copied.")); }
+    } catch (caught) { setError(caught instanceof Error ? caught.message : errorMessage(caught, "Couldn't copy the template. Check your connection and try again.")); }
     finally { copyingRef.current = false; setCopying(false); }
   }
-  return <Panel accent="cyan"><h2 className="font-display text-lg font-bold text-fg">Ready for your own workout?</h2>
-    <p className="mt-2 text-sm text-fg-muted">Keep the example exercise list if it suits you. Example weights and history are never copied.</p>
-    <div className="mt-3 flex flex-wrap gap-2"><HudButton disabled={isPending} onClick={() => void start()}>Start my workout</HudButton><HudButton disabled={copying || copied} onClick={() => void copy()} variant="outline">{copied ? "Template copied" : copying ? "Copying…" : "Copy example template"}</HudButton></div>
-    {copied ? <p className="mt-3 text-sm text-green" role="status">Exercise list copied. <Link className="underline" href={`/workouts/templates?template=${state.copiedTemplateId}`}>View saved template →</Link></p> : null}
-    {error || startError ? <p className="mt-3 text-sm text-red" role="alert">{error ?? startError}</p> : null}
-  </Panel>;
+  return <section className="rounded-[var(--radius-card)] bg-surface p-4"><h2 className="text-title-3 text-text">Ready for your own workout?</h2>
+    <p className="mt-2 text-body text-text-secondary">Keep the example exercise list if it suits you. Example weights and history are never copied.</p>
+    <div className="mt-4 flex flex-col gap-2"><Button disabled={isPending} onClick={() => void start()}>Start my workout</Button><Button disabled={copying || copied} onClick={() => void copy()} variant="secondary">{copied ? "Template copied" : copying ? "Copying…" : "Copy example template"}</Button></div>
+    {copied ? <p className="mt-3 text-body text-success" role="status">Exercise list copied. <Link className="underline" href={`/workouts/templates?template=${state.copiedTemplateId}`}>View saved template</Link></p> : null}
+    {error || startError ? <p className="mt-3 text-body text-danger" role="alert">{error ?? startError}</p> : null}
+  </section>;
 }
