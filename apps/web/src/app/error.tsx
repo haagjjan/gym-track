@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { HudButton } from "../shared/ui/ui";
+import { Button } from "../shared/ui/button";
 
 export default function GlobalError({
   error,
@@ -11,18 +11,13 @@ export default function GlobalError({
   reset: () => void;
 }): ReactNode {
   return (
-    <main className="hud-grid flex min-h-dvh items-center justify-center bg-void p-6">
-      <div className="glass chamfer max-w-md rounded-xl p-8 text-center">
-        <p className="label-caps text-red">SYSTEM_FAULT</p>
-        <h1 className="mt-2 font-display text-2xl font-bold tracking-tight text-fg">
-          Something broke in Gym Progress Tracker
-        </h1>
-        <p className="mt-3 break-words text-xs leading-relaxed text-fg-muted">
-          {error.message || "An unexpected error interrupted the session."}
+    <main className="flex min-h-dvh items-center justify-center bg-bg p-4">
+      <div className="w-full max-w-md text-center">
+        <h1 className="text-title-1 text-text">Something went wrong</h1>
+        <p className="mt-3 break-words text-body text-text-secondary">
+          {error.message || "An unexpected error interrupted the app. Try again."}
         </p>
-        <HudButton className="mt-5" onClick={reset} variant="outline">
-          REINITIALIZE
-        </HudButton>
+        <Button className="mt-6 w-full" onClick={reset}>Try again</Button>
       </div>
     </main>
   );

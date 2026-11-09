@@ -7,9 +7,8 @@ describe("RegistrationDisabledScreen", () => {
   it("shows a private-access message without a registration form", () => {
     const html = renderToStaticMarkup(<RegistrationDisabledScreen />);
 
-    assert.match(html, /REGISTRATION_UNAVAILABLE/);
-    assert.match(html, /New account creation is disabled/);
+    assert.match(html, /New accounts are paused/);
+    assert.match(html, /paused new sign-ups/);
     assert.doesNotMatch(html, /<form/);
-    assert.doesNotMatch(html, /REGISTERING/);
   });
 });

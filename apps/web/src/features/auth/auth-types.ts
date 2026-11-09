@@ -8,14 +8,6 @@ export interface AuthUser {
   createdAt: string;
 }
 
-export interface AuthErrorPayload {
-  error: {
-    code?: string | undefined;
-    message?: string | undefined;
-    fields?: Record<string, string[]> | undefined;
-  };
-}
-
 export function isAuthUser(value: unknown): value is AuthUser {
   if (!value || typeof value !== "object") {
     return false;
