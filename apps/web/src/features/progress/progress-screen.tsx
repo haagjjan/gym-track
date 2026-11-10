@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction, type ReactNode } from "react";
+import { useSearchParams } from "next/navigation";
 import type { CompletedExercise, ExerciseProgressItem, ExerciseSummaryPayload } from "../../shared/api/types";
 import type { ProgressViewPreferences } from "./progress-preferences";
 import { ErrorState, Skeleton } from "../../shared/ui/ui";
@@ -13,7 +14,6 @@ import {
 import { formatDay } from "../../shared/format";
 import { ProgressChart, type ChartWindow } from "./progress-chart";
 import { ProgressExerciseSelector } from "./progress-exercise-selector";
-import { RecentLogs } from "./progress-panels";
 import { Segmented } from "./progress-segmented";
 import {
   initialProgressViewPreferences,
@@ -35,7 +35,9 @@ const timeWindows: { label: string; value: ChartWindow }[] = [
  */
 export function ProgressScreen(): ReactNode {
   const completedExercises = useCompletedExercises();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // `?exercise=<id>` opens that exercise (the shortcut from the workout logger).
+  const requestedId = useSearchParams().get("exercise");
+  const [selectedId, setSelectedId] = useState<string | null>(requestedId);
   const [view, setView] = useState(initialProgressViewPreferences);
   const { window } = view;
 
@@ -47,12 +49,14 @@ export function ProgressScreen(): ReactNode {
     [completedExercises.data]
   );
 
-  // Auto-select the most recently trained exercise once data lands.
+  // Auto-select the most recently trained exercise once data lands, or when
+  // the requested one has no logged sets yet.
   useEffect(() => {
-    if (selectedId === null && exercises.length > 0) {
+    if (exercises.length === 0) return;
+    if (selectedId === null || (completedExercises.isSuccess && !exercises.some((exercise) => exercise.id === selectedId))) {
       setSelectedId(exercises[0]?.id ?? null);
     }
-  }, [exercises, selectedId]);
+  }, [completedExercises.isSuccess, exercises, selectedId]);
 
   const progress = useExerciseProgress(selectedId);
   const summaryRange = useMemo(() => progressSummaryRange(window), [window]);
@@ -74,10 +78,8 @@ export function ProgressView({ completedExercises, exercises, selectedId, onSele
   const selected = exercises.find((exercise) => exercise.id === selectedId) ?? null;
   const { window, mode: chartMode, showWeight, showReps } = view;
 
-  const showAllTime = () => setView((current) => updateProgressViewPreferences(current, { window: "all" }));
-
   return (
-    <div className="mx-auto max-w-5xl space-y-6 px-4 pb-8 pt-4 lg:px-6">
+    <div className="mx-auto max-w-5xl space-y-4 px-4 pb-8 pt-4 lg:px-6">
       <h1 className="text-large-title text-text">Progress</h1>
 
       {completedExercises.isError ? (
@@ -90,13 +92,26 @@ export function ProgressView({ completedExercises, exercises, selectedId, onSele
         />
       ) : null}
 
-      <div className="space-y-6 lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start lg:gap-6 lg:space-y-0">
-        <ProgressExerciseSelector autoCollapse={autoCollapseSelector} exercises={exercises} isLoading={completedExercises.isLoading} onSelect={onSelect} selectedId={selectedId} />
+      <div className="-mt-3 space-y-3 lg:mt-0 lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start lg:gap-6 lg:space-y-0">
+        <ProgressExerciseSelector exercises={exercises} inline={!autoCollapseSelector} isLoading={completedExercises.isLoading} onSelect={onSelect} selectedId={selectedId} />
 
-        <div className="space-y-6">
+        <div className="space-y-3">
+          {/* Summary first: always on screen without scrolling. */}
+          {selected ? (
+            <>
+              <ProgressSummaryMetrics
+                allTime={allTimeSummary.data}
+                allTimeLoading={allTimeSummary.isLoading}
+                range={rangeSummary.data}
+                rangeLoading={rangeSummary.isLoading}
+                window={window}
+              />
+
+            </>
+          ) : null}
           <section>
             {selected ? (
-              <div className="px-1">
+              <div className="mb-3 hidden px-1 lg:block">
                 <h2 className="break-words text-title-2 text-text">{selected.name}</h2>
                 <p className="text-subhead text-text-secondary">
                   {selected.primaryMuscleGroup.name}, last trained {formatDay(selected.lastDoneAt)}
@@ -104,11 +119,11 @@ export function ProgressView({ completedExercises, exercises, selectedId, onSele
               </div>
             ) : null}
 
-            <div className={selected ? "mt-3" : ""}>
+            <div>
               <Segmented label="Time window" onChange={(next: ChartWindow) => setView((current) => updateProgressViewPreferences(current, { window: next }))} options={timeWindows} value={window} />
             </div>
 
-            <div className="mt-3 rounded-[var(--radius-card)] bg-surface p-4">
+            <div className="mt-3 rounded-[var(--radius-card)] bg-surface px-4 py-3">
               {!selected ? (
                 completedExercises.isLoading ? <Skeleton className="h-64" /> : (
                   <p className="py-6 text-center text-body text-text-secondary">Choose an exercise to see how it has progressed.</p>
@@ -128,7 +143,6 @@ export function ProgressView({ completedExercises, exercises, selectedId, onSele
                   onModeChange={(mode) =>
                     setView((current) => updateProgressViewPreferences(current, { mode }))
                   }
-                  onShowAllTime={showAllTime}
                   onShowRepsChange={(next) =>
                     setView((current) =>
                       updateProgressViewPreferences(current, { showReps: next })
@@ -147,19 +161,6 @@ export function ProgressView({ completedExercises, exercises, selectedId, onSele
             </div>
           </section>
 
-          {selected ? (
-            <>
-              <ProgressSummaryMetrics
-                allTime={allTimeSummary.data}
-                allTimeLoading={allTimeSummary.isLoading}
-                range={rangeSummary.data}
-                rangeLoading={rangeSummary.isLoading}
-                window={window}
-              />
-
-              <RecentLogs isLoading={progress.isLoading} items={progress.data ?? []} mode={chartMode} window={window} />
-            </>
-          ) : null}
         </div>
       </div>
     </div>

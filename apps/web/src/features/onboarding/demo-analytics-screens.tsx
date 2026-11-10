@@ -17,7 +17,7 @@ export function DemoProgressScreen(): ReactNode {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [view, setView] = useState(initialProgressViewPreferences);
   const id = selectedId ?? exercises[0]?.id ?? "";
-  return <ProgressView autoCollapseSelector={false} completedExercises={loaded(exercises)} exercises={exercises} selectedId={id}
+  return <ProgressView completedExercises={loaded(exercises)} exercises={exercises} selectedId={id}
     onSelect={(id) => { setSelectedId(id); record("selectedLift"); }} progress={loaded(demoProgress(workouts, id))}
     allTimeSummary={loaded(demoSummary(workouts, id, "all", Date.now()))} rangeSummary={loaded(demoSummary(workouts, id, view.window, Date.now()))}
     onInspectPoint={() => record("inspectedPoint")} view={view} setView={(next) => {
