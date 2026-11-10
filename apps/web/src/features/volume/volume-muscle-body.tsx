@@ -29,7 +29,8 @@ export function VolumeMuscleBody({
   selectedSlug,
   onSelect,
   onFrame,
-  debugRegions
+  debugRegions,
+  theme
 }: {
   weeklySetsBySlug: Record<string, number>;
   heatCeiling: number;
@@ -37,6 +38,7 @@ export function VolumeMuscleBody({
   onSelect: (slug: RegionSlug | null) => void;
   onFrame: (frame: FigureFrame) => void;
   debugRegions: boolean;
+  theme: "dark" | "light";
 }): ReactNode {
   const fbx = useFBX(AVATAR_MODEL_URL);
   const invalidate = useThree((state) => state.invalidate);
@@ -50,6 +52,13 @@ export function VolumeMuscleBody({
       ),
     [regionMaps]
   );
+  // Dark stage: a cool slate rim so the dark body never melts into the
+  // background. Light stage: the body already reads dark on light, no rim.
+  useEffect(() => {
+    mask.uniforms.uRim.value.set(theme === "dark" ? "#8fb3cf" : "#000000").convertSRGBToLinear().multiplyScalar(theme === "dark" ? 0.75 : 0);
+    invalidate();
+  }, [invalidate, mask, theme]);
+
   const glowTexture = useMemo(createRadialGlowTexture, []);
 
   const { statue, frame } = useMemo(() => {

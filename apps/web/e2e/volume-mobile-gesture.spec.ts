@@ -6,6 +6,10 @@ test.use({
   viewport: { height: 900, width: 390 }
 });
 
+// A phone: touch, coarse pointer, and short enough that a new account's
+// Volume page (no data, compact stage) still has room to scroll.
+test.use({ hasTouch: true, isMobile: true, viewport: { height: 640, width: 390 } });
+
 test("lets a mobile swipe scroll from the 3D Volume figure while sideways drag still orbits", async ({ browserName, page }) => {
   test.skip(browserName !== "chromium", "Raw gesture injection uses the Chromium DevTools Protocol.");
   const tag = `${Date.now()}${process.pid}`;
@@ -22,7 +26,8 @@ test("lets a mobile swipe scroll from the 3D Volume figure while sideways drag s
   await page.goto("/weekly-volume");
   const canvas = page.locator("canvas").first();
   await expect(canvas).toBeVisible();
-  await expect.poll(() => canvas.evaluate((element) => getComputedStyle(element).touchAction)).toBe("pan-y");
+  // The canvas owns every touch and scrolls the page itself on vertical swipes.
+  await expect.poll(() => canvas.evaluate((element) => getComputedStyle(element).touchAction)).toBe("none");
 
   const client = await page.context().newCDPSession(page);
   const initialBox = await canvas.boundingBox();

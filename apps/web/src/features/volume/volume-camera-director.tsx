@@ -6,8 +6,9 @@ import * as THREE from "three";
 import { FRONT_AZIMUTH, type FigureFrame, type RegionSlug } from "./heatmap";
 
 export const ORBIT_TARGET = new THREE.Vector3(0, 1.15, 0);
-const DEFAULT_RADIUS = 4.61;
-const FOCUS_RADIUS = 3.05;
+// Fills the shorter phone stage: feet near the bottom edge, hands near the top.
+const DEFAULT_RADIUS = 3.45;
+const FOCUS_RADIUS = 2.3;
 const FOCUS_DAMP = 3;
 
 const REGION_FOCUS: Partial<Record<RegionSlug, { yn: number; side: "front" | "back" }>> = {
@@ -27,6 +28,8 @@ const REGION_FOCUS: Partial<Record<RegionSlug, { yn: number; side: "front" | "ba
 
 export interface OrbitControlsLike {
   enabled: boolean;
+  getAzimuthalAngle: () => number;
+  setAzimuthalAngle: (angle: number) => void;
   target: THREE.Vector3;
   update: () => void;
 }

@@ -7,7 +7,8 @@ describe("volume body-map pointer policy", () => {
     assert.deepEqual(volumeOrbitPolicy(true), {
       enableZoom: false,
       hint: "Swipe sideways to rotate the figure.",
-      touchAction: "pan-y"
+      touchRotate: true,
+      touchAction: "none"
     });
   });
 
@@ -15,6 +16,7 @@ describe("volume body-map pointer policy", () => {
     assert.deepEqual(volumeOrbitPolicy(false), {
       enableZoom: true,
       hint: "Drag to rotate the figure. Scroll to zoom.",
+      touchRotate: false,
       touchAction: "none"
     });
   });
