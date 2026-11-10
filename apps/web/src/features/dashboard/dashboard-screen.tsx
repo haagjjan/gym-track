@@ -14,9 +14,10 @@ import {
 } from "../../shared/api/hooks";
 import type { AuthUser } from "../auth/auth-types";
 import type { ExerciseSummaryPayload } from "../../shared/api/types";
-import { formatDayTime, formatNumber } from "../../shared/format";
+import { formatDayTime, formatCompactNumber } from "../../shared/format";
 import { BayAmbience } from "../avatar/bay-ambience";
 import { useStartSession } from "../session/use-start-session";
+import { HomeHeaderActions } from "../shell/home-header-actions";
 import {
   AvatarFallback,
   PerformanceRows,
@@ -144,14 +145,18 @@ export function DashboardScreen({ user }: { user: AuthUser }): ReactNode {
 
   return (
     <div className="mx-auto max-w-7xl px-4 pb-6 pt-2 lg:px-6">
-      <header className="pt-2">
-        <p className="text-subhead text-text-secondary">{dateLabel}</p>
-        <h1 className="text-large-title text-text [overflow-wrap:anywhere]">Hi, {user.username}</h1>
+      <header className="flex items-end justify-between gap-2 pt-2">
+        <div className="min-w-0">
+          <p className="text-subhead text-text-secondary">{dateLabel}</p>
+          <h1 className="text-large-title text-text [overflow-wrap:anywhere]">Hi, {user.username}</h1>
+        </div>
+        <HomeHeaderActions user={user} />
       </header>
 
       <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
         <div className="space-y-6">
-          <section aria-labelledby="start-title" className="rounded-[var(--radius-card)] bg-surface p-4">
+          {/* Desktop only: on phones the centre Workout tab starts or resumes (pulse or red dot). */}
+          <section aria-labelledby="start-title" className="hidden rounded-[var(--radius-card)] bg-surface p-4 lg:block">
             {activeWorkout ? (
               <>
                 <h2 className="text-headline text-text" id="start-title">Workout in progress</h2>
@@ -183,7 +188,7 @@ export function DashboardScreen({ user }: { user: AuthUser }): ReactNode {
               <dl className="grid grid-cols-3 divide-x divide-line">
                 <div className="px-4 py-3.5"><StatTile label="Workouts" value={week.workouts} /></div>
                 <div className="px-4 py-3.5"><StatTile label="Sets" value={week.sets} /></div>
-                <div className="px-4 py-3.5"><StatTile label="Volume" unit="kg" value={formatNumber(Math.round(week.volumeKg))} /></div>
+                <div className="px-4 py-3.5"><StatTile label="Volume" unit="kg" value={formatCompactNumber(week.volumeKg)} /></div>
               </dl>
             </div>
           </section>
@@ -197,7 +202,6 @@ export function DashboardScreen({ user }: { user: AuthUser }): ReactNode {
             </div>
             <PerformanceRows
               exercises={topExercises}
-              hasPins={hasPins}
               isLoading={completedExercises.isLoading || summaryA.isLoading}
               summaries={summaries}
             />
@@ -206,7 +210,7 @@ export function DashboardScreen({ user }: { user: AuthUser }): ReactNode {
           <section aria-labelledby="recent-title">
             <div className="mb-2 flex items-baseline justify-between px-1">
               <h2 className="text-title-3 text-text" id="recent-title">Recent workouts</h2>
-              <Link className="inline-flex min-h-11 items-center text-body text-accent" href="/workouts">See all workouts</Link>
+              <Link className="inline-flex min-h-11 items-center text-body text-accent" href="/workouts">See all</Link>
             </div>
             <SessionRows isLoading={workouts.isLoading} sessions={completedSessions.slice(0, 3)} />
           </section>

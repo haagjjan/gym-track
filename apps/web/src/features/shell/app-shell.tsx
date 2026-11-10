@@ -1,6 +1,5 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode, type SVGProps } from "react";
@@ -28,6 +27,8 @@ import { DevicePrivacyProvider } from "../privacy/device-privacy";
 import { OnboardingProvider } from "../onboarding/onboarding-provider";
 import { OnboardingInvitation } from "../onboarding/onboarding-invitation";
 import { MessageCenter } from "../messages/message-center";
+import { StatusBarScrim } from "../../shared/ui/status-bar-scrim";
+import { formatElapsed } from "../../shared/format";
 
 type IconComponent = (props: SVGProps<SVGSVGElement>) => ReactNode;
 
@@ -90,7 +91,8 @@ export function AppShell({
     <div className="flex min-h-dvh bg-bg text-text">
       <DesktopSidebar active={tab} demo={demo} openWorkout={openWorkout} pathname={pathname} user={user} />
       <div className="flex min-w-0 flex-1 flex-col">
-        {demo ? <DemoTopBar /> : pushed ? <PushedTopBar /> : pathname === "/" ? <HomeTopBar user={user} /> : <SafeAreaTop />}
+        <StatusBarScrim />
+        {demo ? <DemoTopBar /> : pushed ? <PushedTopBar /> : <SafeAreaTop />}
         <main
           className={`flex-1 lg:pb-0 ${
             showMiniBar
@@ -104,7 +106,7 @@ export function AppShell({
       </div>
       <div className="fixed inset-x-0 bottom-0 z-30 lg:hidden">
         {showMiniBar && openWorkout ? <WorkoutMiniBar workout={openWorkout} /> : null}
-        <TabBar active={tab} demo={demo} pathname={pathname} />
+        <TabBar active={tab} demo={demo} hasOpenWorkout={Boolean(openWorkout)} pathname={pathname} />
       </div>
       {!demo && canPrompt(pathname) ? <MessageCenter /> : null}
     </div>
@@ -131,51 +133,10 @@ function useOpenWorkout(enabled: boolean): WorkoutSummary | null {
   return workouts.data?.items.find((workout) => workout.isOpen) ?? null;
 }
 
-function useHasPendingMessages(): boolean {
-  const query = useQuery({
-    queryKey: ["messages", "pending"],
-    queryFn: ({ signal }) => apiFetch<{ items: unknown[] }>("/api/messages", { signal }),
-    staleTime: 60_000
-  });
-  return (query.data?.items.length ?? 0) > 0;
-}
-
 /* ---------- Top of screen ---------- */
 
 function SafeAreaTop(): ReactNode {
   return <div aria-hidden className="h-[env(safe-area-inset-top)] lg:hidden" />;
-}
-
-function HomeTopBar({ user }: { user: AuthUser }): ReactNode {
-  const hasMessages = useHasPendingMessages();
-
-  return (
-    <div className="flex justify-end gap-1 px-[max(1rem,env(safe-area-inset-right))] pt-[calc(env(safe-area-inset-top)+0.25rem)] lg:hidden">
-      {user.role === "ADMIN" ? (
-        <Link aria-label="Admin" className="inline-flex size-11 items-center justify-center rounded-full text-text" href="/admin">
-          <IconAdmin />
-        </Link>
-      ) : null}
-      <Link
-        aria-label={hasMessages ? "Messages, new message" : "Messages"}
-        className="relative inline-flex size-11 items-center justify-center rounded-full text-text"
-        href="/messages"
-      >
-        <IconInbox />
-        {hasMessages ? <span aria-hidden className="absolute right-2 top-2 size-2.5 rounded-full border-2 border-bg bg-accent" /> : null}
-      </Link>
-      <Link
-        aria-label={user.emailVerified ? "Profile and settings" : "Profile and settings, email not confirmed"}
-        className="relative inline-flex size-11 items-center justify-center rounded-full"
-        href="/settings"
-      >
-        <span className="flex size-9 items-center justify-center rounded-full bg-surface-raised text-subhead font-semibold text-text">
-          {user.username.charAt(0).toUpperCase()}
-        </span>
-        {!user.emailVerified ? <span aria-hidden className="absolute right-1 top-1 size-2.5 rounded-full border-2 border-bg bg-warning" /> : null}
-      </Link>
-    </div>
-  );
 }
 
 function PushedTopBar(): ReactNode {
@@ -216,9 +177,10 @@ function DemoTopBar(): ReactNode {
 
 /* ---------- Bottom of screen (phones) ---------- */
 
-function TabBar({ active, pathname, demo }: { active: TabId | null; pathname: string; demo: boolean }): ReactNode {
+function TabBar({ active, pathname, demo, hasOpenWorkout }: { active: TabId | null; pathname: string; demo: boolean; hasOpenWorkout: boolean }): ReactNode {
   const items = navigationItems(demo);
-  const highlightWorkout = demo && pathname === "/help/demo";
+  // Home has no start card on phones; a soft pulse points at the centre button instead.
+  const pulseWorkout = !demo && !hasOpenWorkout && pathname === "/";
 
   return (
     <nav
@@ -229,17 +191,18 @@ function TabBar({ active, pathname, demo }: { active: TabId | null; pathname: st
         {items.map((item) => item.id === "workout" ? (
           <Link
             aria-current={active === "workout" ? "page" : undefined}
-            aria-label={item.label}
+            aria-label={hasOpenWorkout && !demo ? `${item.label}, workout in progress` : item.label}
             className="flex items-center justify-center"
             href={item.href}
             key={item.id}
           >
             <span
-              className={`-mt-3.5 flex size-13 items-center justify-center rounded-full bg-accent text-on-accent shadow-[0_2px_8px_rgb(0_0_0/0.25)] transition-transform duration-[120ms] active:scale-95 ${
-                highlightWorkout ? "ring-4 ring-accent/40 ring-offset-2 ring-offset-bg" : ""
-              }`}
+              className={`relative -mt-3.5 flex size-13 items-center justify-center rounded-full bg-accent text-on-accent shadow-[0_2px_8px_rgb(0_0_0/0.25)] transition-transform duration-[120ms] active:scale-95 ${pulseWorkout ? "workout-tab-pulse" : ""}`}
             >
               <item.icon height="26" width="26" />
+              {hasOpenWorkout && !demo ? (
+                <span aria-hidden className="absolute right-0 top-0 size-3.5 rounded-full border-2 border-bg bg-danger" data-testid="workout-open-dot" />
+              ) : null}
             </span>
           </Link>
         ) : (
@@ -268,12 +231,7 @@ function useElapsed(startedAt: string): string {
     return () => globalThis.clearInterval(timer);
   }, []);
 
-  const seconds = Math.max(0, Math.floor((now - new Date(startedAt).getTime()) / 1000));
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = seconds % 60;
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
+  return formatElapsed(startedAt, now);
 }
 
 function workoutTitle(workout: WorkoutSummary): string {

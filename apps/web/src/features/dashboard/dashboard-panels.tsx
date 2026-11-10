@@ -44,12 +44,10 @@ function EmptyCard({ action, children }: { action?: ReactNode; children: ReactNo
 
 export function PerformanceRows({
   exercises,
-  hasPins,
   isLoading,
   summaries
 }: {
   exercises: PerformanceRowItem[];
-  hasPins: boolean;
   isLoading: boolean;
   summaries: ExerciseSummaryPayload[];
 }): ReactNode {
@@ -76,10 +74,10 @@ export function PerformanceRows({
                 <p className="line-clamp-2 text-headline text-text">{exercise.name}</p>
                 <p className="text-subhead text-text-secondary">
                   {topSet
-                    ? `Estimated 1RM, from ${formatKgValue(topSet.weightKg)} kg × ${topSet.reps}`
+                    ? `Est. 1RM, from ${formatKgValue(topSet.weightKg)} kg × ${topSet.reps}`
                     : exercise.totalSets > 0
                       ? `${exercise.totalSets} sets logged`
-                      : "No sets yet"}
+                      : "No sets yet :("}
                 </p>
               </div>
               <p className="num whitespace-nowrap text-headline text-text">
@@ -89,7 +87,6 @@ export function PerformanceRows({
           );
         })}
       </ul>
-      {!hasPins ? <Link className={`${inlineLinkClass} mt-1`} href="/settings">Calculated automatically. Pin favorites in Settings</Link> : null}
     </>
   );
 }
