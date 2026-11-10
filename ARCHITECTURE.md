@@ -1,200 +1,124 @@
 # Architecture
 
-## Current State
+This document states the boundaries and rules that hold across the codebase. The file-level map
+is in [CODEBASE.md](CODEBASE.md); the full directory map is in
+[docs/repository-structure.md](docs/repository-structure.md). Why each choice was made is in
+[docs/decisions/](docs/decisions/README.md).
 
-The repository currently contains product and data-planning documentation for a gym progress tracker plus the local development, database migration, first runnable app foundation, and deployment readiness path. The pnpm workspace, shared TypeScript tooling, Docker Compose local app orchestration, initial PostgreSQL migrations, Fastify health endpoint, database connectivity check, API auth foundation, workout session API foundation, exercise library and muscle group lookup API foundation, workout logging API foundation, analytics API foundation, canonical CSV workout import/export, first Next.js auth UI slice, first workout logging UI slice, workout history/detail screens, Progress and Weekly Volume screens, full project CI checks, API database integration coverage, web smoke test, Render deployment Blueprint, private `gym-prod` deployment, structured application logging, Prometheus API metrics and alert rules, private Alertmanager notifications, provisioned Grafana monitoring, encrypted off-machine backups, isolated restore tests, and recovery runbooks have been introduced.
+## System shape
 
-The source-of-truth documents are:
-
-- `docs/00-workflow.md` for roadmap phases
-- `docs/01-requirements.md` for MVP scope and user flows
-- `docs/02-query-list.md` for query-driven database requirements
-- `docs/03-data-model-notes.md` for data rules and modeling decisions
-- `docs/04-schema-draft.md` for the MVP database schema draft
-- `docs/05-api-contract.md` for the MVP REST API contract
-- `docs/07-implementation-pattern.md` for the API/web implementation pattern
-- `docs/repository-structure.md` for the current repo map and local-only file rules
-- `ENGINEERING.md` for TypeScript/PostgreSQL engineering standards
-- `docs/git-pipeline.md` for Git and repository check workflow
-- `docs/decisions/` for architecture decision records
-
-## Accepted Stack Direction
-
-ADR 0002 records the current stack direction:
-
-- TypeScript for frontend, backend/API, shared contracts, scripts, and tests
-- PostgreSQL as the planned relational database
-- SQL migrations as the durable schema source of truth
-- Separate app boundaries for web and API code
-- Markdown for project documentation and decision records
-
-ADR 0003 records the framework and tooling direction:
-
-- Next.js App Router for `apps/web`
-- Fastify for `apps/api`
-- pnpm workspaces for monorepo dependency management
-- Kysely for type-safe PostgreSQL queries
-- Zod for runtime validation and shared contract schemas
-- Owned email/password auth for the MVP, with API-managed users, sessions, and cookies
-
-ADR 0004 records the implementation-readiness direction:
-
-- `node-pg-migrate` for PostgreSQL migrations
-- Argon2 for password hashing
-- DB-backed opaque sessions through `user_sessions`
-- Secure HttpOnly cookies for auth transport
-- Docker Compose with the official PostgreSQL image for local development
-- Docker Compose local orchestration for production-like API/web startup
-
-ADR 0005 records the first deployment target:
-
-- Render Web Services for the Docker-backed web and API services
-- Render PostgreSQL for the first managed database
-- API pre-deploy migrations using `node-pg-migrate`
-- Secure production environment variables, managed backups, and basic health/log monitoring before inviting testers
-
-ADR 0009 records the active private deployment target:
-
-- The prepared `gym-prod` T2 Ubuntu host for the first operated private environment
-- Docker Compose for PostgreSQL 17, one-shot `node-pg-migrate` migrations, Fastify, and Next.js
-- A private-LAN reverse-proxy boundary with PostgreSQL and Fastify kept internal
-- Host state and secrets under `/srv/gym-tracker`, outside the cloned application repository
-- Retention of the Render configuration as an alternative rather than its removal
-
-ADR 0008 records the first private observability topology:
-
-- An opt-in Compose overlay rather than a replacement for local development or Render configuration
-- Prometheus plus Grafana with version-controlled data source and dashboard provisioning
-- Prometheus-managed alert rules and an unpublished Alertmanager with an internal scrape path, dedicated outbound egress, and one file-backed Telegram receiver
-- Node, container, and PostgreSQL exporters on an internal Docker network
-- A disabled-by-default internal Fastify metrics endpoint with bounded labels and release identity
-- Loopback-only Grafana access until the owner configures a reviewed private access path
-
-ADR 0010 records the private backup and recovery topology:
-
-- Restic encryption before off-machine SFTP storage
-- A hidden, chrooted, internal-SFTP-only MacBook destination account
-- Four daily opportunities for a 24-hour RPO and weekly retention maintenance
-- A separate protected recovery-password copy outside the SFTP chroot
-- Isolated PostgreSQL and configuration restore tests before claiming recovery
-
-ADR 0011 records the secure single-owner external-access application boundary:
-
-- `https://app.gymtrack.ch` as the canonical production origin
-- Cloudflare Access and Tunnel terminating at the existing Caddy ingress
-- fail-closed production registration with Fastify as the authoritative enforcement point
-- same-origin Next.js BFF host/Origin validation without browser CORS on Fastify
-- secure production cookies and `API_TRUST_PROXY=false` for the internal BFF-to-API hop
-- no new public application, database, or monitoring ports
-
-CSV workout import/export uses one canonical format first, with arbitrary legacy CSV mapping deferred until there is real need.
-
-API logging stays on Fastify's Pino foundation. `LOG_LEVEL` controls verbosity, local development uses `pino-pretty`, production emits structured JSON logs, tests default to disabled logging, and sensitive request values such as cookies, authorization headers, session tokens, emails, and request bodies are redacted. API request lifecycle logs and Next.js BFF failure logs share propagated request IDs and normalized routes without logging user identifiers.
-
-## Architecture Principles
-
-- Build from user flows and query needs, not from speculative infrastructure.
-- Keep modules small and separated by responsibility.
-- Prefer explicit data contracts over hidden coupling.
-- Choose boring, well-supported tools unless an ADR records a stronger reason.
-- Design for a fresh clone to become runnable with a short documented setup.
-
-## Planned Boundaries
-
-These boundaries apply as implementation grows:
-
-- UI owns user interaction, display state, form validation feedback, and navigation.
-- API/backend owns authentication, authorization, business rules, persistence workflows, and stable contracts for the UI.
-- Database owns durable data, relationships, constraints, indexes, and migrations.
-- Analytics/query layer owns derived workout statistics such as exercise progress, weekly working sets, and estimated one-rep-max calculations.
-- Documentation owns requirements, workflow rules, architecture decisions, and setup instructions.
-- Shared packages own cross-app contracts only after both web and API need them.
-
-## Current Repo Shape
-
-Create folders only when each folder has real files to own. Do not add empty scaffolding.
-
-Current shape:
+GymTrack is a TypeScript monorepo with two apps and one database.
 
 ```text
-apps/
-  web/
-  api/
-docs/
-  decisions/
-ops/
-  backup/
-  logging/
-  monitoring/
+Browser / phone shell
+  └─ Next.js web app (apps/web)        UI and a same-origin BFF under /api/*
+       └─ Fastify API (apps/api)       auth, business rules, persistence under /api/v1/*
+            └─ PostgreSQL 17           durable data, constraints, migrations
 ```
 
-Root tooling, local infrastructure overlays, and documentation live at the repository root. Encrypted backup, restore-test, systemd, recovery, and restricted destination setup assets live under `ops/backup`; versioned log-review scripts live under `ops/logging`; Prometheus, Alertmanager, Grafana, exporter, and PostgreSQL monitoring-role assets live under `ops/monitoring`. The current repo map is documented in `docs/repository-structure.md`.
+- The browser only talks to the Next.js origin. Next.js route handlers under
+  `apps/web/src/app/api/*` forward requests and cookies to Fastify. Fastify has no browser CORS
+  surface.
+- The BFF owns Host and Origin checks and edge-derived client attribution. Fastify owns
+  authentication, authorization, business transactions and persistence.
+- Production is self-hosted behind Cloudflare Tunnel and Caddy (ADR 0009, 0011). Fastify,
+  PostgreSQL and the monitoring stack are never published directly. Render configuration stays
+  in the repo as an alternative target (ADR 0005), not the live one.
+- The phone apps will be Capacitor shells around a bundled build of the same web UI (ADR 0021).
+  That is why the UI follows native mobile conventions (tab bar, safe areas, in-app back, sheets);
+  see [docs/DESIGN.md](docs/DESIGN.md).
 
-Within each app, organize by feature/domain first, then by technical role. Current API features include `admin`, `analytics`, `auth`, `beta`, `exercises`, `health`, `lifecycle`, `messages`, `templates`, `users`, and `workouts`.
+## Stack
 
-Avoid broad folders such as `misc`, oversized `utils`, unrelated `services`, or global feature-specific `components`. Shared code should move to `packages/shared` only after at least two real consumers exist.
+| Concern | Choice | ADR |
+| --- | --- | --- |
+| Language | TypeScript everywhere (strict) | 0002 |
+| Web | Next.js 15 App Router, React 19, Tailwind v4 tokens, TanStack Query, Recharts, React Three Fiber | 0003 |
+| API | Fastify 5, Zod at runtime boundaries, Kysely for queries | 0003 |
+| Database | PostgreSQL 17, SQL migrations with `node-pg-migrate` | 0002, 0004 |
+| Auth | Owned email/password: Argon2id, opaque DB-backed sessions, HttpOnly cookies | 0003, 0004 |
+| Registration | Open (`REGISTRATION_MODE=ENABLED`), `DISABLED` as the kill switch | 0022 |
+| Workout writes | Idempotent and serialized per workout | 0014 |
+| Privacy | Export, deletion grace period, hard erasure, consent versioning | 0013 |
+| Hosting | Docker Compose on a private home server, staging on the same host | 0009, 0015 |
+| Operations | Prometheus, Grafana, Alertmanager, encrypted Restic backups, public status page | 0008, 0010, 0018, 0019 |
+| Mobile | Capacitor with a bundled web build, behind a spike gate | 0021 |
 
-Current and expected app-internal shape:
+There is no Prisma. SQL migrations in `apps/api/db/migrations` are the schema source of truth,
+and `apps/api/src/db/database.ts` holds the matching Kysely table types.
+
+## Code organization
+
+Both apps are organized by feature first, then by technical role.
 
 ```text
-apps/web/src/
-  app/
-  features/
-    auth/
-    workouts/
-    exercises/
-    analytics/
-  shared/
-
 apps/api/src/
-  db/
-  features/
-    admin/
-    analytics/
-    auth/
-    beta/
-    exercises/
-    health/
-    lifecycle/
-    messages/
-    templates/
-    users/
-    workouts/
-  shared/
+  features/<feature>/   routes, schemas, services, repositories, tests
+  shared/               env, logging, metrics, mailer, events, rate limits
+  db/                   Kysely database types and pool
+
+apps/web/src/
+  app/                  Next.js routes, layouts and BFF route handlers
+  features/<feature>/   screens and feature-owned hooks and components
+  shared/               API client and hooks, formatters, diagnostics
+  shared/ui/            design-system primitives (Button, Sheet, ConfirmDialog, icons, ...)
 ```
 
-`apps/web` should follow Next.js App Router conventions for route files and layouts. Feature-specific UI stays near the feature; only reusable primitives move to shared UI folders.
+API features: `admin`, `analytics`, `auth`, `exercises`, `health`, `lifecycle`, `messages`,
+`status`, `templates`, `users`, `workouts`.
 
-`apps/api` should expose Fastify routes through feature-owned modules. Database queries should flow through feature repositories or query modules using Kysely, not direct SQL strings scattered through route handlers.
+Web features: `admin`, `analytics`, `auth`, `avatar`, `dashboard`, `exercises`, `history`,
+`launch`, `legal`, `messages`, `onboarding`, `privacy`, `progress`, `session`, `settings`,
+`shell`, `status`, `templates`, `volume`, `workouts`.
 
-## Dependency Rules
+## Dependency rules
 
-- UI may depend on documented API contracts, not direct database access.
-- Backend may depend on database migrations and query definitions, not UI implementation details.
-- Database migrations must be backward-readable from the docs and tied to query requirements.
-- Analytics must define whether values are stored or computed.
-- Shared types or contracts should be introduced only when they reduce real duplication.
-- Cross-app types must live in `packages/shared` only when both apps actually need them.
-- Zod schemas should validate runtime boundaries such as API requests, forms, environment variables, and external inputs.
-- Kysely query code should stay inside API/database boundaries and must not leak into the web app.
+- `apps/web` never imports database clients or Kysely. It depends on the documented API contract
+  ([docs/05-api-contract.md](docs/05-api-contract.md)).
+- In the API, route handlers authenticate, validate with Zod and call services. Business rules
+  live in services. Kysely queries live in feature repositories, not in handlers.
+- In the web app, `shared/` never imports from `features/`. A component used by two or more
+  features moves to `shared/ui`. Feature code may import other features' public pieces, but
+  shell and design primitives belong in `shared/`.
+- Route files in `app/` stay thin: metadata, rendering mode and one screen component.
+- Derived numbers (estimated 1RM, weekly volume, progress) are computed on read, not stored.
+- Device-local preferences (body profile, favourite lifts, display, rest timer) go through
+  `useScopedLocalStorage`, which scopes keys per user and honours the device-storage choice.
+- The 3D scenes (`features/avatar`, `features/volume`) render inside bounded canvases, use
+  emissive materials and sprites instead of post-processing, and fall back to static content when
+  WebGL is missing. Muscle regions come from the SVG maps in `apps/web/public/volume/`.
+- Cross-app shared packages (`packages/shared`) are only added once both apps need the same code.
+  None exists today.
 
-## Decision Rules
+## Runtime rules
 
-Create an ADR in `docs/decisions/` before changing or introducing:
+- Errors use one envelope: `{ "error": { "code", "message", "fields", "details" } }`.
+- Logs are structured Pino JSON in production. Cookies, auth headers, tokens, emails and request
+  bodies are redacted. The BFF and API share request IDs.
+- Metrics are bounded-label Prometheus metrics on an internal endpoint, off by default.
+- Workout data is soft-deleted. Only one open workout per user (partial unique index).
+  Weights are stored in kg.
 
-- Frontend framework or major UI library
-- Backend framework or runtime
-- Database engine or migration tool
-- Authentication/session strategy
-- API style and contract format
-- Deployment or hosting architecture
-- Major schema rules, such as soft delete policy, unit policy, or muscle attribution logic
+## When an ADR is required
 
-Small implementation choices inside an already approved stack can be documented in code, tests, or the relevant feature docs instead of an ADR.
+Write an ADR in `docs/decisions/` before changing:
 
-## Current Open Decisions
+- the web or API framework, or adding a major UI library
+- the database engine, migration tool or soft-delete and unit policies
+- the authentication or session strategy, or registration policy
+- the API style or contract format
+- hosting, deployment or backup topology
+- the mobile shell, token auth, offline sync or native plugins (ADR 0021 gates)
+- muscle attribution or other major schema rules
 
-- Whether authenticated LAN access later receives a private HTTPS design; Stage 1 uses the
-  canonical external HTTPS hostname for authenticated production use
-- Alert-threshold tuning after enough private-production history exists
-- Secondary immutable backup destination and retention/restore cadence tuning after operational history exists
+Smaller choices inside the accepted stack go in code, tests or the relevant feature doc.
+
+## Open decisions
+
+- Native file export and share (data export, CSV) inside the Capacitor shell.
+- In-app browser handling for external links in the phone apps.
+- Token auth and offline sync for the phone apps, if the Capacitor spike shows they are needed.
+- Dropping the unused beta tables (`beta_access_requests`, `users.beta_cohort`) and moving
+  `campaigns_open` out of `beta_settings`, as planned in ADR 0022.
+- Alert-threshold tuning and a second immutable backup destination, once there is more
+  production history.

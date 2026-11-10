@@ -1,18 +1,18 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { Button } from "../../shared/ui/button";
 import { ConfirmDialog } from "../../shared/ui/confirm-dialog";
-import { HudButton } from "../../shared/ui/ui";
 import { errorMessage } from "../../shared/api/client";
 import { useSessionMutations } from "../../shared/api/hooks";
 import type { SessionExercise } from "../../shared/api/types";
-import { IconPlus } from "../shell/icons";
-import { RestTimer } from "./rest-timer";
+import Link from "next/link";
+import { IconPlus24, IconTrend } from "../../shared/ui/icons";
 import { SetComposer } from "./set-composer";
 import type { SetDraft } from "./set-draft-storage";
-import { SessionEditorDock, SessionTimerDock } from "./session-editor-dock";
+import { SessionEditorDock } from "./session-editor-dock";
 import { SessionSetEditor, SessionSetRow } from "./session-set-list";
-import { formatDateTime, formatKgValue } from "../../shared/format";
+import { formatDay, formatKgValue } from "../../shared/format";
 import { useOnboarding } from "../onboarding/use-onboarding";
 
 interface ActiveExercisePanelProps {
@@ -27,9 +27,6 @@ interface ActiveExercisePanelProps {
   onError: (message: string | null) => void;
   onNewSetOpen: (open: boolean) => void;
   onSaveSet: () => void;
-  restTimer: { seconds: number; startedAt: number } | null;
-  onRestAdjust: (seconds: number) => void;
-  onRestDismiss: () => void;
   savedFlash: string | null;
   workoutEndedAt: string | null;
 }
@@ -37,6 +34,7 @@ interface ActiveExercisePanelProps {
 export function ActiveExercisePanel(props: ActiveExercisePanelProps): ReactNode {
   const [confirmRemove, setConfirmRemove] = useState(false);
   const { mark } = useOnboarding();
+  const sets = props.exercise.sets;
 
   function removeExercise(): void {
     props.onError(null);
@@ -46,56 +44,43 @@ export function ActiveExercisePanel(props: ActiveExercisePanelProps): ReactNode 
         onSuccess: () => setConfirmRemove(false),
         onError: (caught) => {
           setConfirmRemove(false);
-          props.onError(errorMessage(caught, "The exercise could not be removed."));
+          props.onError(errorMessage(caught, "Couldn't remove this exercise. Check your connection and try again."));
         }
       }
     );
   }
 
+  const editingSet = sets.find((set) => set.id === props.editingSetId) ?? null;
+
   return (
-    <section className="glass rounded-xl p-4" role="tabpanel">
-      <header className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h2 className="break-words font-display text-xl font-bold tracking-tight text-fg">
+    <section aria-labelledby="active-exercise-title">
+      <header className="flex items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <h2 className="break-words text-title-2 text-text" id="active-exercise-title">
             {props.exercise.exercise.name}
           </h2>
-          <p className="mt-0.5 text-xs text-fg-muted">
-            {(props.exercise.exercise.primaryMuscleGroups ?? [props.exercise.exercise.primaryMuscleGroup]).map((muscle) => muscle.name).join(" · ")}
-            {` · ${props.exercise.sets.length} ${props.exercise.sets.length === 1 ? "set" : "sets"}`}
+          <p className="mt-0.5 text-subhead text-text-secondary">
+            {muscleList(props.exercise)}
           </p>
         </div>
-        {props.canEdit ? (
-          <button
-            className="min-h-11 rounded border border-outline-dim px-3 text-xs font-semibold text-outline hover:border-red hover:text-red"
-            onClick={() => setConfirmRemove(true)}
-            type="button"
-          >
-            Remove
-          </button>
-        ) : null}
+        {/* Shortcut to this exercise's chart. The open workout stays one tap away (mini bar, Back). */}
+        <Link
+          aria-label={`${props.exercise.exercise.name} progress`}
+          className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-full bg-surface px-3 text-subhead font-semibold text-accent active:bg-surface-raised"
+          href={`/progress?exercise=${encodeURIComponent(props.exercise.exercise.id)}`}
+        >
+          <IconTrend /> Progress
+        </Link>
       </header>
 
       <PreviousPerformance exercise={props.exercise} />
 
-      <div className="mt-4 space-y-1.5">
-        {props.exercise.sets.length === 0 && !props.isNewSetOpen ? (
-          <p className="rounded-lg border border-dashed border-outline-dim p-4 text-center text-sm text-fg-muted">
-            No sets logged yet.
-          </p>
-        ) : null}
-        {props.exercise.sets.map((set) =>
-          props.editingSetId === set.id ? (
-            <SessionEditorDock key={set.id} label={`Edit set ${set.setOrder}`} onClose={() => props.onEditSet(null)}>
-              <SessionSetEditor
-                isHistorical={!props.canEdit}
-                mutations={props.mutations}
-                onClose={() => props.onEditSet(null)}
-                onError={props.onError}
-                onSaved={() => void mark("logEditSet")}
-                set={set}
-              />
-            </SessionEditorDock>
-          ) : (
+      <h3 className="mt-6 mb-2 px-1 text-footnote font-semibold text-text-secondary">
+        {sets.length === 0 ? "Sets" : `${sets.length} ${sets.length === 1 ? "set" : "sets"}`}
+      </h3>
+      {sets.length > 0 ? (
+        <ul aria-label="Logged sets" className="divide-y divide-line overflow-hidden rounded-[var(--radius-card)] bg-surface">
+          {sets.map((set) => (
             <SessionSetRow
               key={set.id}
               onEdit={() => {
@@ -105,9 +90,26 @@ export function ActiveExercisePanel(props: ActiveExercisePanelProps): ReactNode 
               set={set}
               workoutEndedAt={props.workoutEndedAt}
             />
-          )
-        )}
-      </div>
+          ))}
+        </ul>
+      ) : (
+        <p className="rounded-[var(--radius-card)] bg-surface p-4 text-subhead text-text-secondary">
+          {props.canEdit ? "No sets yet. Add your first set below." : "No sets were logged for this exercise."}
+        </p>
+      )}
+
+      {editingSet ? (
+        <SessionEditorDock key={editingSet.id} label={`Edit set ${editingSet.setOrder}`} onClose={() => props.onEditSet(null)}>
+          <SessionSetEditor
+            isHistorical={!props.canEdit}
+            mutations={props.mutations}
+            onClose={() => props.onEditSet(null)}
+            onError={props.onError}
+            onSaved={() => void mark("logEditSet")}
+            set={editingSet}
+          />
+        </SessionEditorDock>
+      ) : null}
 
       {props.canEdit ? (
         props.isNewSetOpen ? (
@@ -122,63 +124,61 @@ export function ActiveExercisePanel(props: ActiveExercisePanelProps): ReactNode 
             />
           </SessionEditorDock>
         ) : (
-          <HudButton
-            className="mt-2 w-full"
+          <Button
+            className="mt-3 w-full"
             onClick={() => {
               props.onEditSet(null);
               props.onNewSetOpen(true);
             }}
-            size="lg"
-            variant="outline"
           >
-            <IconPlus /> Add Set
-          </HudButton>
+            <IconPlus24 /> Add set
+          </Button>
         )
       ) : null}
 
-      {props.restTimer && !props.isNewSetOpen && !props.editingSetId ? (
-        <SessionTimerDock>
-          <RestTimer
-            onAdjust={props.onRestAdjust}
-            onDismiss={props.onRestDismiss}
-            seconds={props.restTimer.seconds}
-            startedAt={props.restTimer.startedAt}
-          />
-        </SessionTimerDock>
+      {props.canEdit ? (
+        <Button className="mt-8 w-full" onClick={() => setConfirmRemove(true)} size="compact" variant="destructive">
+          Remove exercise
+        </Button>
       ) : null}
 
       <ConfirmDialog
-        confirmLabel="REMOVE EXERCISE"
+        confirmLabel="Remove exercise"
         isOpen={confirmRemove}
         isPending={props.mutations.removeExercise.isPending}
-        message="This exercise and its logged sets will be removed from this workout."
+        message="Its sets in this workout are removed too."
         onCancel={() => setConfirmRemove(false)}
         onConfirm={removeExercise}
+        pendingLabel="Removing…"
         title={`Remove ${props.exercise.exercise.name}?`}
       />
     </section>
   );
 }
 
+function muscleList(exercise: SessionExercise): string {
+  const names = (exercise.exercise.primaryMuscleGroups ?? [exercise.exercise.primaryMuscleGroup]).map((muscle) => muscle.name);
+  if (names.length <= 1) return names[0] ?? "";
+  return `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+}
+
 function PreviousPerformance({ exercise }: { exercise: SessionExercise }): ReactNode {
   const previous = exercise.previousPerformance;
   return (
-    <section className="mt-3 rounded-lg border border-outline-dim/60 bg-surface-low/30 p-3" aria-label="Previous performance">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="min-w-0">
-          <p className="label-caps text-outline">Previous best set</p>
-          <p className="mt-0.5 break-words text-[10px] text-fg-muted">
-            {previous
-              ? `${previous.workoutTitle ?? "Previous workout"} · ${formatDateTime(previous.workoutStartedAt)}`
-              : "No earlier completed working set"}
-          </p>
-        </div>
-        {previous ? (
-          <span className="shrink-0 rounded-sm border border-lavender/50 bg-lavender/5 px-2 py-1 font-mono text-xs text-lavender">
-            {formatKgValue(previous.bestSet.weightKg)} kg × {previous.bestSet.reps}
-          </span>
-        ) : null}
+    <section aria-label="Previous best set" className="mt-4 flex items-center justify-between gap-3 rounded-[var(--radius-card)] bg-surface px-4 py-3">
+      <div className="min-w-0">
+        <p className="text-footnote text-text-secondary">Previous best set</p>
+        <p className="mt-0.5 break-words text-subhead text-text-muted">
+          {previous
+            ? `${previous.workoutTitle?.trim() || "Earlier workout"}, ${formatDay(previous.workoutStartedAt)}`
+            : "None yet. Your first working set sets it."}
+        </p>
       </div>
+      {previous ? (
+        <span className="num flex-none text-headline text-text">
+          {formatKgValue(previous.bestSet.weightKg)} kg × {previous.bestSet.reps}
+        </span>
+      ) : null}
     </section>
   );
 }

@@ -55,6 +55,7 @@ export const MUSCLE_FRAGMENT_COMMON = [
   "uniform vec3 uCyan;",
   "uniform vec3 uViolet;",
   "uniform vec3 uLavender;",
+  "uniform vec3 uRim;",
   "uniform vec3 uStage1;",
   "uniform vec3 uStage2;",
   "uniform vec3 uStage3;",
@@ -151,6 +152,10 @@ export const MUSCLE_COLOR_FRAGMENT = [
 
 export const MUSCLE_EMISSIVE_FRAGMENT = [
   "#include <emissivemap_fragment>",
+  "// Soft edge light that follows the camera, so the dark body keeps its",
+  "// outline against a dark stage from every angle (zero on a light stage).",
+  "float mRimFacing = abs(dot(normalize(vViewPosition), normal));",
+  "totalEmissiveRadiance += uRim * pow(1.0 - saturate(mRimFacing), 2.4);",
   "if (uMode < 0.5) {",
   "  totalEmissiveRadiance += muscleRamp(muscleHeat) * (0.12 + 0.9 * muscleHeat) * step(0.004, muscleHeat);",
   "  vec3 muscleViewDir = normalize(vViewPosition);",

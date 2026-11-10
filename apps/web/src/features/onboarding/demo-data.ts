@@ -22,7 +22,7 @@ export const demoTemplate: WorkoutTemplate = {
 };
 
 export function practiceWorkout(now: number, withTemplate = true): WorkoutDetail {
-  return { id: "example-practice", title: "Example full-body · practice", workoutType: null,
+  return { id: "example-practice", title: "Example full-body", workoutType: null,
     startedAt: new Date(now).toISOString(), endedAt: null, isOpen: true, sourceTemplateId: withTemplate ? demoTemplate.id : null,
     exercises: (withTemplate ? demoExercises : []).map((exercise, index) => ({ id: `practice-exercise-${index}`, position: index + 1, exercise, sets: [], previousPerformance: null })) };
 }
@@ -30,7 +30,7 @@ export function practiceWorkout(now: number, withTemplate = true): WorkoutDetail
 export function sampleWorkouts(now: number): WorkoutDetail[] {
   return [25, 22, 18, 15, 11, 8, 4, 1].map((days, index) => {
     const startedAt = new Date(now - days * 86_400_000).toISOString();
-    return { ...practiceWorkout(now), id: `example-history-${index}`, title: `Example full-body ${index + 1}`, startedAt,
+    return { ...practiceWorkout(now), id: `example-history-${index}`, title: `Example workout ${index + 1}`, startedAt,
       endedAt: new Date(new Date(startedAt).getTime() + 35 * 60_000).toISOString(), isOpen: false,
       exercises: demoExercises.map((exercise, position) => ({ id: `example-${index}-${position}`, position: position + 1, exercise, previousPerformance: null,
         sets: Array.from({ length: 3 + ((index + position) % 3) }, (_, setIndex) => exampleSet(index, position, setIndex, startedAt)) })) };

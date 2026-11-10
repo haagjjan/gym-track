@@ -1,9 +1,9 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useModalBehavior } from "../../shared/ui/use-modal-behavior";
 import type { CreateExerciseInput, Exercise } from "../../shared/api/types";
-import { IconClose } from "../shell/icons";
+import { Sheet } from "../../shared/ui/sheet";
+import { IconClose } from "../../shared/ui/icons";
 import { ExerciseForm } from "./exercise-form";
 
 interface ExerciseEditorDialogProps {
@@ -34,43 +34,41 @@ export function ExerciseEditorDialog({
   onSelectExisting,
   submitLabel
 }: ExerciseEditorDialogProps): ReactNode {
-  const dialogRef = useModalBehavior<HTMLElement>({ isOpen: exercise !== null, onClose });
-
-  if (!exercise) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-void/70 backdrop-blur-sm lg:items-center">
-      <section
-        aria-labelledby="exercise-editor-title"
-        aria-modal="true"
-        className="glass-cyan max-h-[92dvh] w-full overflow-y-auto rounded-t-xl p-4 lg:max-w-2xl lg:rounded-xl"
-        ref={dialogRef}
-        role="dialog"
-        tabIndex={-1}
-      >
-        <header className="mb-3 flex items-center justify-between gap-2">
-          <h2 className="min-w-0 break-words font-display text-lg font-bold text-fg" id="exercise-editor-title">
-            {exercise === "new" ? "Create exercise" : "Edit exercise"}
-          </h2>
-          <button
-            aria-label="Close exercise editor"
-            className="flex size-11 shrink-0 items-center justify-center rounded border border-outline-dim text-fg-muted"
-            data-modal-initial-focus
-            onClick={onClose}
-            type="button"
-          >
-            <IconClose />
-          </button>
-        </header>
-        <ExerciseForm
-          initial={exercise === "new" ? null : exercise}
-          isSubmitting={isSaving}
-          onCancel={onClose}
-          {...(onSelectExisting ? { onSelectExisting } : {})}
-          onSubmit={onSave}
-          {...(submitLabel ? { submitLabel } : {})}
-        />
-      </section>
-    </div>
+    <Sheet
+      className="max-h-[92dvh] overflow-y-auto"
+      closeOnScrim={false}
+      isOpen={exercise !== null}
+      labelledBy="exercise-editor-title"
+      layer="z-50"
+      onClose={onClose}
+    >
+      {exercise ? (
+        <>
+          <header className="mb-3 flex items-center justify-between gap-2">
+            <h2 className="min-w-0 break-words text-title-3 text-text" id="exercise-editor-title">
+              {exercise === "new" ? "Create exercise" : "Edit exercise"}
+            </h2>
+            <button
+              aria-label="Close exercise editor"
+              className="flex size-11 shrink-0 items-center justify-center rounded-full bg-surface text-text-secondary"
+              data-modal-initial-focus
+              onClick={onClose}
+              type="button"
+            >
+              <IconClose />
+            </button>
+          </header>
+          <ExerciseForm
+            initial={exercise === "new" ? null : exercise}
+            isSubmitting={isSaving}
+            onCancel={onClose}
+            {...(onSelectExisting ? { onSelectExisting } : {})}
+            onSubmit={onSave}
+            {...(submitLabel ? { submitLabel } : {})}
+          />
+        </>
+      ) : null}
+    </Sheet>
   );
 }

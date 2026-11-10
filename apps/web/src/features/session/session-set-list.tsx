@@ -1,14 +1,15 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { HudButton } from "../../shared/ui/ui";
+import { Button } from "../../shared/ui/button";
 import { errorMessage } from "../../shared/api/client";
 import type { useSessionMutations } from "../../shared/api/hooks";
 import type { SetInput, WorkoutSet } from "../../shared/api/types";
 import { formatKgValue } from "../../shared/format";
 import { isRetroactivelyEdited } from "../../shared/workout-edits";
-import { RirChips } from "./set-composer";
-import { Stepper } from "./stepper";
+import { IconForward } from "../../shared/ui/icons";
+import { RirChips, RirLabel, SET_TYPE_LABEL, SetTypeControl } from "./set-composer";
+import { Stepper } from "../../shared/ui/stepper";
 import { validateSetDraft } from "./validate-set-draft";
 import { useConfirmTap } from "./use-confirm-tap";
 
@@ -21,20 +22,30 @@ export function SessionSetRow({
   set: WorkoutSet;
   workoutEndedAt: string | null;
 }): ReactNode {
+  const warmup = set.setType === "warmup";
+  const edited = isRetroactivelyEdited(set, workoutEndedAt);
+
   return (
-    <button
-      className="flex min-h-12 w-full items-center gap-2 rounded-lg border border-outline-dim/50 bg-surface-low/30 px-3 text-left transition-colors hover:border-cyan/50"
-      onClick={onEdit}
-      type="button"
-    >
-      <span className="w-6 shrink-0 text-center font-mono text-xs text-outline">{set.setOrder}</span>
-      <span className="min-w-0 flex-1 font-mono text-sm text-fg">
-        {formatKgValue(set.weightKg)} kg × {set.reps}
-      </span>
-      <span className="font-mono text-xs text-fg-muted">RIR {set.rir}</span>
-      <Badge label={set.setType === "warmup" ? "Warmup" : "Working"} tone={set.setType === "warmup" ? "warmup" : "lavender"} />
-      {isRetroactivelyEdited(set, workoutEndedAt) ? <Badge label="Edited" tone="cyan" /> : null}
-    </button>
+    <li>
+      <button
+        aria-label={`Set ${set.setOrder}${warmup ? ", warm-up" : ""}: ${formatKgValue(set.weightKg)} kg × ${set.reps}, RIR ${set.rir}${edited ? ", edited" : ""}. Edit`}
+        className="flex min-h-[3.25rem] w-full items-center gap-3 px-4 text-left active:bg-surface-raised"
+        onClick={onEdit}
+        type="button"
+      >
+        <span aria-hidden className={`num flex size-7 flex-none items-center justify-center rounded-full text-footnote font-semibold ${warmup ? "bg-surface-raised text-text-secondary" : "bg-surface-raised text-text"}`}>
+          {warmup ? "W" : set.setOrder}
+        </span>
+        <span aria-hidden className="min-w-0 flex-1">
+          <span className="num block text-body text-text">{formatKgValue(set.weightKg)} kg × {set.reps}</span>
+          {warmup || edited ? (
+            <span className="block text-footnote text-text-muted">{[warmup ? SET_TYPE_LABEL.warmup : null, edited ? "Edited" : null].filter(Boolean).join(", ")}</span>
+          ) : null}
+        </span>
+        <span aria-hidden className="num flex-none text-subhead text-text-secondary">RIR {set.rir}</span>
+        <IconForward aria-hidden className="flex-none text-text-muted" />
+      </button>
+    </li>
   );
 }
 
@@ -73,7 +84,7 @@ export function SetEditor({ isHistorical, isSaving, isDeleting, onSave, onDelete
   const confirmSave = useConfirmTap(save);
 
   function remove(): void {
-    void onDelete().then(onClose).catch((caught) => onError(errorMessage(caught, "The set could not be deleted.")));
+    void onDelete().then(onClose).catch((caught) => onError(errorMessage(caught, "Couldn't delete this set. Check your connection and try again.")));
   }
 
   function save(): void {
@@ -83,92 +94,49 @@ export function SetEditor({ isHistorical, isSaving, isDeleting, onSave, onDelete
     onError(null);
     void onSave({ ...result.input, restTimeSeconds: set.restTimeSeconds })
       .then(() => { onSaved?.(); onClose(); })
-      .catch((caught) => onError(errorMessage(caught, "The set could not be updated.")));
+      .catch((caught) => onError(errorMessage(caught, "Couldn't save this set. Check your connection and try again.")));
   }
 
   return (
-    <div className={`rounded-lg border p-3 ${isHistorical ? "border-lavender/50" : "border-cyan/40"}`} data-set-inputs>
-      <p className={`label-caps mb-2 ${isHistorical ? "text-lavender" : "text-cyan"}`}>
-        Edit set {set.setOrder}
-      </p>
+    <div data-set-inputs>
+      <h2 className="text-title-3 text-text">Edit set {set.setOrder}</h2>
       {isHistorical ? (
-        <p className="mb-2 rounded border border-lavender/40 bg-lavender/5 px-2 py-1.5 text-xs text-lavender">
-          Saving permanently changes this completed workout.
-        </p>
+        <p className="mt-1 text-subhead text-text-secondary">This workout is finished. Saving changes its history and stats.</p>
       ) : null}
-      <div className="mb-3 flex gap-1.5" role="radiogroup" aria-label="Set type">
-        {(["working", "warmup"] as const).map((type) => (
-          <button
-            aria-checked={setType === type}
-            className={`min-h-11 rounded border px-3 font-display text-[11px] font-bold capitalize ${
-              setType === type
-                ? type === "working"
-                  ? "border-lavender bg-lavender/15 text-lavender"
-                  : "border-warmup bg-warmup/10 text-warmup"
-                : "border-outline-dim text-outline"
-            }`}
-            key={type}
-            onClick={() => setSetType(type)}
-            role="radio"
-            type="button"
-          >
-            {type}
-          </button>
-        ))}
+      <div className="mt-3">
+        <SetTypeControl onChange={setSetType} value={setType} />
       </div>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        <Stepper decimals label="WEIGHT" onChange={setWeightKg} step={2.5} unit="KG" value={weightKg} />
-        <Stepper label="REPS" min={1} onChange={setReps} step={1} unit="REPS" value={reps} />
-        <div className="col-span-2 sm:col-span-1">
-          <p className="label-caps mb-1.5 text-outline">RIR</p>
-          <RirChips onChange={setRir} value={rir} />
-        </div>
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <Stepper decimals label="Weight" onChange={setWeightKg} step={2.5} unit="kg" value={weightKg} />
+        <Stepper label="Reps" min={1} onChange={setReps} step={1} unit="reps" value={reps} />
       </div>
-      <label className="mt-3 block">
-        <span className="label-caps text-outline">Note</span>
+      <div className="mt-4">
+        <RirLabel />
+        <RirChips onChange={setRir} value={rir} />
+      </div>
+      <label className="mt-4 block">
+        <span className="text-subhead text-text-secondary">Note</span>
         <input
-          className="mt-1 min-h-11 w-full rounded border border-outline-dim bg-surface-low/60 px-3 text-sm text-fg focus:border-cyan focus:outline-none"
+          className="mt-1.5 min-h-[3.125rem] w-full rounded-[var(--radius-control)] border border-control-line bg-surface px-3 text-body text-text placeholder:text-text-muted"
           maxLength={1_000}
           onChange={(event) => setNote(event.currentTarget.value)}
-          placeholder="Grip, tempo, pain flag…"
+          placeholder="Grip, tempo, how it felt"
           value={note}
         />
       </label>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <HudButton
-          className="flex-1"
-          disabled={isSaving}
-          onClick={isHistorical ? confirmSave.trigger : save}
-          size="sm"
-          variant={isHistorical && confirmSave.isArmed ? "success" : "primary"}
-        >
+      <div className="mt-4 grid grid-cols-[1fr_auto] gap-2">
+        <Button disabled={isSaving} onClick={isHistorical ? confirmSave.trigger : save}>
           {isSaving
-            ? "SAVING…"
-            : isHistorical && !confirmSave.isArmed
-              ? "SAVE HISTORICAL EDIT"
-              : isHistorical
-                ? "CONFIRM SAVE"
-                : "SAVE"}
-        </HudButton>
-        <HudButton onClick={onClose} size="sm" variant="ghost">Cancel</HudButton>
-        <HudButton disabled={isDeleting} onClick={confirmDelete.trigger} size="sm" variant="danger">
-          {confirmDelete.isArmed ? "CONFIRM" : "DELETE"}
-        </HudButton>
+            ? "Saving…"
+            : isHistorical && confirmSave.isArmed
+              ? "Tap again to save"
+              : "Save"}
+        </Button>
+        <Button onClick={onClose} variant="secondary">Cancel</Button>
       </div>
+      <Button className="mt-2 w-full" disabled={isDeleting} onClick={confirmDelete.trigger} variant="destructive">
+        {confirmDelete.isArmed ? "Tap again to delete" : "Delete set"}
+      </Button>
     </div>
-  );
-}
-
-function Badge({ label, tone }: { label: string; tone: "cyan" | "lavender" | "warmup" }): ReactNode {
-  return (
-    <span className={`shrink-0 rounded-sm border px-1.5 py-0.5 text-[9px] uppercase tracking-[0.06em] ${
-      tone === "cyan"
-        ? "border-cyan/40 text-cyan"
-        : tone === "warmup"
-          ? "border-warmup/40 text-warmup"
-          : "border-lavender/40 text-lavender"
-    }`}>
-      {label}
-    </span>
   );
 }

@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { apiFetch, errorMessage } from "../../shared/api/client";
-import { HudButton, Panel } from "../../shared/ui/ui";
-import { FilterBar, ResultCount, SearchFilter, SelectFilter, humanise, matchesSearch } from "./admin-filters";
+import { formatTimestamp } from "../../shared/format";
+import { Button } from "../../shared/ui/button";
+import { AdminPanel, FilterBar, ResultCount, SearchFilter, SelectFilter, humanise, matchesSearch } from "./admin-filters";
 import type { AdminAuditEvent } from "./admin-types";
 
 interface AuditPage { items: AdminAuditEvent[]; nextCursor: string | null; }
@@ -43,7 +44,7 @@ export function AuditAdminPanel(): ReactNode {
     && matchesSearch(search, item.adminUsername, item.action, item.targetId, formatDetails(item.details))
   ), [action, items, search, targetType]);
 
-  return <section className="space-y-4"><h2 className="font-display text-xl font-bold text-fg">Audit log</h2><Panel accent="cyan" eyebrow="Privileged actions, newest first">
+  return <section className="space-y-4"><h2 className=" text-title-2 text-text">Audit log</h2><AdminPanel title="Privileged actions, newest first">
 
     <FilterBar>
       <SearchFilter label="Search" onChange={setSearch} placeholder="Administrator, target, or detail" value={search} />
@@ -52,7 +53,7 @@ export function AuditAdminPanel(): ReactNode {
       <ResultCount noun="event" shown={visible.length} total={items.length} />
     </FilterBar>
 
-    <div className="mt-3 overflow-x-auto"><table className="w-full min-w-[760px] text-left text-sm"><caption className="sr-only">Recent privileged actions</caption><thead className="label-caps text-outline"><tr><th className="p-2">When / who</th><th className="p-2">Action</th><th className="p-2">Target</th><th className="p-2">Details</th></tr></thead><tbody>{visible.map((item) => <tr className="border-t border-outline-dim/50" key={item.id}><td className="p-2"><span className="block text-xs text-fg">{new Date(item.createdAt).toLocaleString()}</span><span className="block break-words text-[11px] text-outline">{item.adminUsername ?? "System"}</span></td><td className="p-2 font-mono text-xs text-cyan">{item.action}</td><td className="max-w-64 p-2"><span className="block text-xs text-fg">{humanise(item.targetType)}</span><span className="block break-all font-mono text-[11px] text-outline">{item.targetId}</span></td><td className="max-w-80 p-2 text-xs text-fg-muted"><span className="block break-words">{formatDetails(item.details)}</span></td></tr>)}</tbody></table>{items.length === 0 && !isLoading ? <p className="p-4 text-outline">No audit events yet.</p> : null}{items.length > 0 && visible.length === 0 ? <p className="p-4 text-outline">No event matches these filters.</p> : null}</div>{nextCursor ? <div className="mt-4"><HudButton disabled={isLoading} onClick={() => void load(nextCursor)} variant="outline">{isLoading ? "LOADING…" : "LOAD OLDER EVENTS"}</HudButton></div> : null}</Panel>{notice ? <p className="text-sm text-outline" role="status">{notice}</p> : null}</section>;
+    <div className="mt-3 overflow-x-auto"><table className="w-full min-w-[760px] text-left text-callout"><caption className="sr-only">Recent privileged actions</caption><thead className="text-subhead text-text-secondary"><tr><th className="p-2">When / who</th><th className="p-2">Action</th><th className="p-2">Target</th><th className="p-2">Details</th></tr></thead><tbody>{visible.map((item) => <tr className="border-t border-line" key={item.id}><td className="p-2"><span className="block text-footnote text-text">{formatTimestamp(item.createdAt)}</span><span className="block break-words text-caption text-text-muted">{item.adminUsername ?? "System"}</span></td><td className="p-2 text-footnote text-accent">{humanise(item.action)}</td><td className="max-w-64 p-2"><span className="block text-footnote text-text">{humanise(item.targetType)}</span><span className="block break-all num text-caption text-text-muted">{item.targetId}</span></td><td className="max-w-80 p-2 text-footnote text-text-secondary"><span className="block break-words">{formatDetails(item.details)}</span></td></tr>)}</tbody></table>{items.length === 0 && !isLoading ? <p className="p-4 text-text-muted">No audit events yet.</p> : null}{items.length > 0 && visible.length === 0 ? <p className="p-4 text-text-muted">No event matches these filters.</p> : null}</div>{nextCursor ? <div className="mt-4"><Button disabled={isLoading} onClick={() => void load(nextCursor)} size="compact" variant="secondary">{isLoading ? "Loading…" : "Load older events"}</Button></div> : null}</AdminPanel>{notice ? <p className="text-callout text-text-muted" role="status">{notice}</p> : null}</section>;
 }
 
 function uniqueSorted(values: string[]): string[] {
@@ -61,5 +62,5 @@ function uniqueSorted(values: string[]): string[] {
 
 function formatDetails(details: Record<string, string | number>): string {
   const entries = Object.entries(details);
-  return entries.length > 0 ? entries.map(([key, value]) => `${key}: ${value}`).join(" · ") : "—";
+  return entries.length > 0 ? entries.map(([key, value]) => `${humanise(key)}: ${value}`).join(", ") : "—";
 }

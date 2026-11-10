@@ -2,33 +2,51 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
-import { HudButton } from "../../shared/ui/ui";
+import { useEffect, useId, useRef, useState, type FormEvent, type MouseEvent, type ReactNode } from "react";
+import { Button } from "../../shared/ui/button";
 import { ApiError, apiFetch } from "../../shared/api/client";
 import { PUBLIC_PRIVACY_VERSION, PUBLIC_TERMS_VERSION } from "../../shared/public-policy";
+
+/**
+ * Reading the Terms or Privacy notice from signup leaves this page, which would
+ * lose what was typed. The fields (never the password) are kept in memory only,
+ * not in browser storage, and restored when the user comes back.
+ */
+let signupDraft: { email: string; username: string; adult: boolean; policies: boolean } | null = null;
+
+function rememberSignupDraft(event: MouseEvent<HTMLAnchorElement>): void {
+  const form = event.currentTarget.closest("form");
+  if (!form) return;
+  const field = (name: string): HTMLInputElement | null => form.elements.namedItem(name) as HTMLInputElement | null;
+  signupDraft = {
+    email: field("email")?.value ?? "",
+    username: field("username")?.value ?? "",
+    adult: field("adult")?.checked ?? false,
+    policies: field("policies")?.checked ?? false
+  };
+}
+import { AuthFrame, FormError, PasswordField, TextField, inlineLinkClass } from "./auth-frame";
 
 type AuthMode = "login" | "signup";
 
 const copy = {
   login: {
-    eyebrow: "SIGN IN",
-    title: "Welcome back",
-    intro: "Sign in with your username or the email address on your account.",
-    submit: "SIGN IN",
-    pending: "SIGNING IN…",
+    title: "Sign in",
+    intro: "Use your username or the email address on your account.",
+    submit: "Sign in",
+    pending: "Signing in…",
     switchText: "Need an account?",
     switchHref: "/signup",
-    switchLabel: "CREATE ACCOUNT"
+    switchLabel: "Create account"
   },
   signup: {
-    eyebrow: "NEW ACCOUNT",
-    title: "Create your account",
-    intro: "Pick a username and a password. Your email is used for sign-in, verification, and account recovery.",
-    submit: "CREATE ACCOUNT",
-    pending: "CREATING ACCOUNT…",
+    title: "Create account",
+    intro: "Pick a username and a password. Your email is used for sign-in, verification and account recovery.",
+    submit: "Create account",
+    pending: "Creating account…",
     switchText: "Already have an account?",
     switchHref: "/login",
-    switchLabel: "SIGN IN"
+    switchLabel: "Sign in"
   }
 } as const;
 
@@ -49,6 +67,23 @@ export function AuthScreen({
   // Hydration marker: the submit handler only exists client-side, so tests
   // (and impatient thumbs) must be able to tell when the form is armed.
   const [isHydrated, setIsHydrated] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    const form = formRef.current;
+    if (mode !== "signup" || !form || !signupDraft) return;
+    const draft = signupDraft;
+    signupDraft = null;
+    const field = (name: string): HTMLInputElement | null => form.elements.namedItem(name) as HTMLInputElement | null;
+    const email = field("email");
+    const username = field("username");
+    const adult = field("adult");
+    const policies = field("policies");
+    if (email) email.value = draft.email;
+    if (username) username.value = draft.username;
+    if (adult) adult.checked = draft.adult;
+    if (policies) policies.checked = draft.policies;
+  }, [mode]);
 
   useEffect(() => {
     setIsHydrated(true);
@@ -83,154 +118,141 @@ export function AuthScreen({
       setIsPending(false);
 
       if (error instanceof ApiError) {
-        setFieldErrors(firstFieldErrors(error.fields));
+        setFieldErrors(firstFieldErrors(error.fields, mode));
         setFormError(error.message);
         return;
       }
 
       setFormError(mode === "signup"
-        ? "The account could not be created. Try again."
-        : "Sign-in failed. Check your connection and try again.");
+        ? "Couldn't create the account. Check your connection and try again."
+        : "Couldn't sign in. Check your connection and try again.");
     }
   }
 
   return (
-    <main className="hud-grid relative flex min-h-dvh items-center justify-center bg-void p-5">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,219,231,0.07),transparent_60%)]"
-      />
+    <AuthFrame title={details.title} titleId="auth-title">
+      <p className="mt-2 text-body text-text-secondary">{details.intro}</p>
 
-      <div className="relative w-full max-w-md">
-        <p className="mb-6 text-center font-display text-sm font-bold uppercase tracking-[0.1em] text-fg">
-          Gym Progress Tracker
-        </p>
+      <form
+        className="mt-6 space-y-5"
+        ref={formRef}
+        data-hydrated={isHydrated}
+        noValidate
+        onSubmit={(event) => void handleSubmit(event)}
+      >
+        {mode === "signup" ? (
+          <TextField
+            autoComplete="email"
+            error={fieldErrors.email}
+            inputMode="email"
+            label="Email address"
+            name="email"
+            type="email"
+          />
+        ) : null}
+        <TextField
+          autoComplete="username"
+          error={fieldErrors.username}
+          label={mode === "signup" ? "Username" : "Username or email"}
+          name="username"
+          type="text"
+        />
+        <PasswordField
+          autoComplete={mode === "signup" ? "new-password" : "current-password"}
+          error={fieldErrors.password}
+          label={mode === "signup" ? "Password (at least 10 characters)" : "Password"}
+          name="password"
+        />
 
-        <section aria-labelledby="auth-title" className="glass-cyan chamfer rounded-xl p-6 sm:p-8">
-          <p className="label-caps text-outline">{details.eyebrow}</p>
-          <h1 className="mt-2 font-display text-2xl font-bold tracking-tight text-fg" id="auth-title">
-            {details.title}
-          </h1>
-          <p className="mt-2 text-xs leading-relaxed text-fg-muted">{details.intro}</p>
-
-          <form
-            className="mt-6 space-y-4"
-            data-hydrated={isHydrated}
-            noValidate
-            onSubmit={(event) => void handleSubmit(event)}
-          >
-            {mode === "signup" ? (
-              <AuthField
-                autoComplete="email"
-                error={fieldErrors.email}
-                label="Email address"
-                name="email"
-                type="email"
-              />
-            ) : null}
-            <AuthField
-              autoComplete="username"
-              error={fieldErrors.username}
-              label={mode === "signup" ? "Username" : "Username or email"}
-              name="username"
-              type="text"
-            />
-
-            {mode === "signup" ? (
-              <div className="space-y-3 rounded border border-outline-dim/60 bg-surface-low/40 p-3 text-xs text-fg-muted">
-                <label className="flex gap-3"><input className="mt-0.5 size-4" name="adult" required type="checkbox" /> <span>I&apos;m at least 18 and live in Switzerland.</span></label>
-                <label className="flex gap-3"><input className="mt-0.5 size-4" name="policies" required type="checkbox" /> <span>I accept the <Link className="text-cyan" href="/terms" target="_blank">Terms</Link> and have read the <Link className="text-cyan" href="/privacy" target="_blank">Privacy Notice</Link>.</span></label>
-              </div>
-            ) : null}
-            <AuthField
-              autoComplete={mode === "signup" ? "new-password" : "current-password"}
-              error={fieldErrors.password}
-              label={mode === "signup" ? "Password (at least 10 characters)" : "Password"}
-              name="password"
-              type="password"
-            />
-
-            {mode === "login" ? (
-              <p className="text-right">
-                <Link
-                  className="text-[11px] uppercase tracking-[0.08em] text-outline transition-colors hover:text-cyan"
-                  href="/forgot-password"
-                >
-                  Forgot your password?
-                </Link>
-              </p>
-            ) : null}
-
-            {formError ? (
-              <p className="rounded border border-red/40 bg-red/5 px-3 py-2 text-xs text-red" role="alert">
-                {formError}
-              </p>
-            ) : null}
-
-            <HudButton className="w-full" disabled={isPending} size="lg" type="submit">
-              {isPending ? details.pending : details.submit}
-            </HudButton>
-          </form>
-
-          {mode === "signup" || registrationEnabled ? (
-            <p className="mt-5 text-center text-xs text-fg-muted">
-              {details.switchText}{" "}
-              <Link className="font-display font-bold tracking-[0.08em] text-cyan hover:text-cyan-bright" href={details.switchHref}>
-                {details.switchLabel}
+        {mode === "signup" ? (
+          <div className="space-y-1">
+            <CheckRow name="adult">I&apos;m at least 18 and live in Switzerland.</CheckRow>
+            <CheckRow name="policies">
+              I accept the{" "}
+              <Link className="text-accent underline" href="/terms" onClick={rememberSignupDraft}>
+                Terms
+              </Link>{" "}
+              and have read the{" "}
+              <Link className="text-accent underline" href="/privacy" onClick={rememberSignupDraft}>
+                Privacy Notice
               </Link>
-            </p>
-          ) : (
-            <p className="mt-5 text-center text-xs text-fg-muted">
-              Sign-ups are closed right now. Existing accounts can still sign in.
-            </p>
-          )}
-        </section>
-      </div>
-    </main>
+              .
+            </CheckRow>
+          </div>
+        ) : null}
+
+        {mode === "login" ? (
+          <p className="-mt-2">
+            <Link className={`${inlineLinkClass} -ml-1 px-1`} href="/forgot-password">
+              Forgot your password?
+            </Link>
+          </p>
+        ) : null}
+
+        {formError ? <FormError>{formError}</FormError> : null}
+
+        <Button className="w-full" disabled={isPending} type="submit">
+          {isPending ? details.pending : details.submit}
+        </Button>
+      </form>
+
+      {mode === "signup" || registrationEnabled ? (
+        <p className="mt-4 flex flex-wrap items-center justify-center gap-x-2 text-body text-text-secondary">
+          {details.switchText}
+          <Link className={`${inlineLinkClass} px-1`} href={details.switchHref}>
+            {details.switchLabel}
+          </Link>
+        </p>
+      ) : (
+        <p className="mt-6 text-center text-subhead text-text-secondary">
+          Sign-ups are closed right now. Existing accounts can still sign in.
+        </p>
+      )}
+    </AuthFrame>
   );
 }
 
-function AuthField({
-  autoComplete,
-  error,
-  label,
-  name,
-  type,
-  readOnly = false,
-  value
-}: {
-  autoComplete: string;
-  error?: string | undefined;
-  label: string;
-  name: string;
-  type: string;
-  readOnly?: boolean;
-  value?: string | undefined;
-}): ReactNode {
+function CheckRow({ children, name }: { children: ReactNode; name: string }): ReactNode {
+  const id = useId();
+
   return (
-    <label className="block">
-      <span className="label-caps text-outline">{label}</span>
-      <input
-        autoComplete={autoComplete}
-        className="mt-1.5 block min-h-11 w-full rounded-sm border-b border-outline-dim bg-surface-low/60 px-3 font-mono text-sm text-fg transition-colors focus:border-cyan focus:bg-surface-low focus:shadow-glow-cyan focus:outline-none"
-        name={name}
-        readOnly={readOnly}
-        type={type}
-        defaultValue={value}
-      />
-      {error ? <span className="mt-1 block text-[11px] text-red">{error}</span> : null}
-    </label>
+    <div className="flex min-h-11 items-start gap-3 py-2.5">
+      <input className="size-6 flex-none accent-[var(--accent)]" id={id} name={name} required type="checkbox" />
+      <label className="text-subhead text-text-secondary" htmlFor={id}>
+        {children}
+      </label>
+    </div>
   );
 }
 
-function firstFieldErrors(fields: Record<string, string[]> | undefined): FieldErrors {
+/**
+ * Turns known validation messages into plain sentences. Anything unrecognised
+ * is shown as the server sent it, so a distinct reason is never replaced by
+ * unrelated advice.
+ */
+function plainFieldError(key: keyof FieldErrors, raw: string, mode: AuthMode): string {
+  const empty = /at least 1 character|required|empty/i.test(raw);
+  if (mode === "login" && empty) {
+    return key === "password" ? "Enter your password." : "Enter your username or email address.";
+  }
+  if (key === "email" && /invalid email|email/i.test(raw) && !empty) return "Enter a valid email address, like name@example.com.";
+  if (key === "email" && empty) return "Enter your email address.";
+  if (key === "password" && /at least 10/i.test(raw)) return "Use at least 10 characters for your password.";
+  if (key === "password" && empty) return "Enter a password.";
+  if (key === "username" && /taken|exist|already|in use/i.test(raw)) return "That username is taken. Try another one.";
+  if (key === "username" && empty) return "Enter a username.";
+  if (key === "username" && /at most 50/i.test(raw)) return "Use at most 50 characters for your username.";
+  return raw;
+}
+
+function firstFieldErrors(fields: Record<string, string[]> | undefined, mode: AuthMode): FieldErrors {
   const errors: FieldErrors = {};
 
   for (const key of ["email", "username", "password"] as const) {
     const first = fields?.[key]?.[0];
 
     if (first) {
-      errors[key] = first;
+      errors[key] = plainFieldError(key, first, mode);
     }
   }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, type ReactNode } from "react";
-import { HudButton, Panel } from "../../shared/ui/ui";
+import { Button, buttonClass } from "../../shared/ui/button";
 import {
   CSV_EXPORT_URL,
   csvErrorLines,
@@ -14,7 +14,7 @@ import { CsvFormatDialog } from "./csv-format-dialog";
 
 /**
  * Data portability: CSV export of closed workouts and the canonical-format
- * import with its preview → confirm loop (warnings confirmable, blocked names
+ * import with its preview and confirm loop (warnings confirmable, blocked names
  * must be fixed in the file).
  */
 export function CsvPanel({ onImported }: { onImported: () => void }): ReactNode {
@@ -89,26 +89,21 @@ export function CsvPanel({ onImported }: { onImported: () => void }): ReactNode 
   const hasBlocked = (preview?.blocked.length ?? 0) > 0;
 
   return (
-    <Panel accent="lavender" eyebrow="Import and export">
-      <p className="text-[11px] leading-relaxed text-fg-muted">
-        Export your closed workouts, or import history in the canonical CSV format
-        (max 5,000 rows per file).
+    <section aria-labelledby="csv-title" className="space-y-3 rounded-[var(--radius-card)] bg-surface p-4">
+      <h2 className="text-title-3 text-text" id="csv-title">Import and export</h2>
+      <p className="text-subhead text-text-secondary">
+        Export your finished workouts, or import history from a CSV file (up to 5,000 rows).
       </p>
-      <button className="mt-2 min-h-11 text-left text-xs font-semibold text-lavender hover:text-fg" onClick={() => setFormatOpen(true)} type="button">View CSV format →</button>
+      <Button className="-ml-5" onClick={() => setFormatOpen(true)} size="compact" variant="plain">View CSV format</Button>
 
-      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-        <a
-          className="label-caps inline-flex min-h-11 items-center justify-center rounded border border-outline-dim px-4 text-fg-muted transition-colors hover:border-cyan hover:text-cyan"
-          download
-          href={CSV_EXPORT_URL}
-        >
-          EXPORT_CSV
-        </a>
-        <label className="min-w-0 flex-1 cursor-pointer">
-          <span className="sr-only">Choose CSV file</span>
+      <div className="space-y-3">
+        <a className={`${buttonClass("secondary")} w-full`} download href={CSV_EXPORT_URL}>Export CSV</a>
+        <div className="flex items-center gap-3">
+          <label className={`${buttonClass("secondary")} shrink-0 cursor-pointer focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent`}>
+          <span>Choose CSV file</span>
           <input
             accept=".csv,text/csv"
-            className="block w-full cursor-pointer text-xs text-fg-muted file:mr-3 file:min-h-11 file:cursor-pointer file:rounded file:border file:border-outline-dim file:bg-surface-low file:px-3 file:font-display file:text-[11px] file:font-bold file:uppercase file:tracking-[0.1em] file:text-fg-muted"
+            className="sr-only"
             onChange={(event) => {
               setFile(event.currentTarget.files?.[0] ?? null);
               resetFeedback();
@@ -116,62 +111,42 @@ export function CsvPanel({ onImported }: { onImported: () => void }): ReactNode 
             ref={fileInputRef}
             type="file"
           />
-        </label>
-        <HudButton
-          disabled={isPending || !file}
-          onClick={() => void handlePreview()}
-          variant="outline"
-        >
-          {isPending && !preview ? "CHECKING…" : "PREVIEW IMPORT"}
-        </HudButton>
+          </label>
+          <p className="min-w-0 truncate text-subhead text-text-secondary">{file ? file.name : "No file chosen"}</p>
+        </div>
+        <Button className="w-full" disabled={isPending || !file} onClick={() => void handlePreview()} variant="secondary">
+          {isPending && !preview ? "Checking…" : "Preview import"}
+        </Button>
       </div>
 
-      {message ? (
-        <p className="mt-3 rounded border border-green/40 bg-green/5 px-3 py-2 text-xs text-green-bright">
-          {message}
-        </p>
-      ) : null}
+      {message ? <p className="text-subhead text-success">{message}</p> : null}
 
       {errors.length > 0 ? (
-        <ul className="mt-3 space-y-1 rounded border border-red/40 bg-red/5 px-3 py-2" role="alert">
-          {errors.map((line) => (
-            <li className="text-xs text-red" key={line}>
-              {line}
-            </li>
-          ))}
+        <ul className="space-y-1" role="alert">
+          {errors.map((line) => <li className="text-subhead text-danger" key={line}>{line}</li>)}
         </ul>
       ) : null}
 
       {preview ? (
-        <div className="mt-3 space-y-3 rounded border border-outline-dim/60 bg-surface-low/40 p-3">
-          <p className="text-xs text-fg">
-            {`${preview.importedWorkouts} ${preview.importedWorkouts === 1 ? "workout" : "workouts"} / ${preview.importedRows} ${preview.importedRows === 1 ? "row" : "rows"} ready for review.`}
+        <div className="space-y-3 border-t border-line pt-3">
+          <p className="text-body text-text">
+            {`${preview.importedWorkouts} ${preview.importedWorkouts === 1 ? "workout" : "workouts"} in ${preview.importedRows} ${preview.importedRows === 1 ? "row" : "rows"} ready to review.`}
           </p>
 
-          {hasBlocked ? (
-            <ReviewList items={preview.blocked} title="BLOCKED_EXERCISE_NAMES" tone="red" />
-          ) : null}
-          {hasWarnings ? (
-            <ReviewList items={preview.warnings} title="Names to review" tone="lavender" />
-          ) : null}
+          {hasBlocked ? <ReviewList items={preview.blocked} title="Blocked exercise names" tone="danger" /> : null}
+          {hasWarnings ? <ReviewList items={preview.warnings} title="Names to review" tone="warning" /> : null}
 
           {!hasBlocked ? (
-            <HudButton
-              disabled={isPending}
-              onClick={() => void handleImport(hasWarnings)}
-              size="sm"
-            >
-              {isPending ? "IMPORTING…" : hasWarnings ? "CONFIRM IMPORT" : "IMPORT NOW"}
-            </HudButton>
+            <Button className="w-full" disabled={isPending} onClick={() => void handleImport(hasWarnings)} variant="primary">
+              {isPending ? "Importing…" : hasWarnings ? "Confirm import" : "Import now"}
+            </Button>
           ) : (
-            <p className="text-[11px] text-red">
-              Fix the blocked names in the file, then preview again.
-            </p>
+            <p className="text-subhead text-danger">Fix the blocked names in the file, then preview again.</p>
           )}
         </div>
       ) : null}
       <CsvFormatDialog isOpen={formatOpen} onClose={() => setFormatOpen(false)} />
-    </Panel>
+    </section>
   );
 }
 
@@ -182,23 +157,19 @@ function ReviewList({
 }: {
   items: CsvReviewItem[];
   title: string;
-  tone: "red" | "lavender";
+  tone: "danger" | "warning";
 }): ReactNode {
-  const toneClass = tone === "red" ? "text-red" : "text-lavender";
-
   return (
     <div>
-      <p className={`label-caps ${toneClass}`}>{title}</p>
+      <p className={`text-headline ${tone === "danger" ? "text-danger" : "text-warning"}`}>{title}</p>
       <ul className="mt-1 space-y-0.5">
         {items.slice(0, 6).map((item) => (
-          <li className="text-[11px] text-fg-muted" key={`${item.row}-${item.originalName}`}>
+          <li className="text-subhead text-text-secondary" key={`${item.row}-${item.originalName}`}>
             Row {item.row}: {item.originalName}
-            {item.suggestions.length > 0 ? ` → ${item.suggestions.join(", ")}` : ""}
+            {item.suggestions.length > 0 ? `, try ${item.suggestions.join(", ")}` : ""}
           </li>
         ))}
-        {items.length > 6 ? (
-          <li className="text-[11px] text-outline">+{items.length - 6} more…</li>
-        ) : null}
+        {items.length > 6 ? <li className="text-subhead text-text-muted">and {items.length - 6} more</li> : null}
       </ul>
     </div>
   );
@@ -206,7 +177,7 @@ function ReviewList({
 
 function previewMessage(preview: CsvImportPreview): string {
   if (preview.importability === "ready") {
-    return "Preview is clean — ready to import.";
+    return "The preview looks clean and is ready to import.";
   }
 
   if (preview.importability === "blocked") {

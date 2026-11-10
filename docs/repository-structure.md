@@ -3,75 +3,52 @@
 This file is the map for where things live in the Gym Progress Tracker repo. Keep existing paths stable unless a cleanup explicitly updates every reference.
 
 ## Root
-*IN: Repos only, up to 3 lvl deep*
+Tracked folders, up to three levels deep (generated 2026-11-09; `docs/archive` collapsed, see its README):
 
 ```text
 .
-├── _legacy-reference
-│   └── web
-│       ├── app
-│       ├── features
-│       └── shared
 ├── apps
-│   ├── api
-│   │   ├── db
-│   │   ├── dist
-│   │   ├── node_modules
-│   │   └── src
-│   └── web
-│       ├── e2e
-│       ├── node_modules
-│       ├── public
-│       └── src
+│   ├── api
+│   │   ├── catalog
+│   │   ├── db
+│   │   ├── scripts
+│   │   └── src
+│   └── web
+│       ├── e2e
+│       ├── public
+│       └── src
 ├── docs
-│   ├── Source_Pictures
-│   │   └── Home Screen 
-│   ├── UI_Redesign
-│   │   └── GeneralOverview
-│   ├── Usability_Audit
-│   │   └── Screenshots
-│   ├── decisions
-│   ├── design
-│   │   ├── stitch-redesign-v1
-│   │   └── stitch-redesign-v2
-│   ├── design-refs
-│   │   └── volume-regions-pre-anatomy-rework
-│   ├── server
-│   │   ├── reports
-│   │   ├── wave-a-host-fundation
-│   │   ├── wave-b-application-platform
-│   │   └── wave-c-operations-dashboard
-│   └── status
-│       ├── SWE-Reports
-│       └── production-readiness
-├── node_modules
-│   ├── @eslint
-│   │   ├── eslintrc -> ../.pnpm/@eslint+eslintrc@3.3.5/node_modules/@eslint/eslintrc
-│   │   └── js -> ../.pnpm/@eslint+js@9.39.4/node_modules/@eslint/js
-│   ├── @playwright
-│   │   └── test -> ../.pnpm/@playwright+test@1.61.0/node_modules/@playwright/test
-│   ├── eslint -> .pnpm/eslint@9.39.4_jiti@2.7.0/node_modules/eslint
-│   ├── eslint-config-next -> .pnpm/eslint-config-next@15.5.19_eslint@9.39.4_jiti@2.7.0__typescript@5.9.3/node_modules/eslint-config-next
-│   ├── typescript -> .pnpm/typescript@5.9.3/node_modules/typescript
-│   └── typescript-eslint -> .pnpm/typescript-eslint@8.61.1_eslint@9.39.4_jiti@2.7.0__typescript@5.9.3/node_modules/typescript-eslint
+│   ├── archive
+│   ├── audit-2026-11
+│   ├── beta-process
+│   │   └── public-beta
+│   ├── decisions
+│   ├── design
+│   │   └── mockups
+│   ├── design-refs
+│   └── server
 ├── ops
-│   ├── backup
-│   │   ├── deploy
-│   │   ├── macos
-│   │   ├── scripts
-│   │   └── systemd
-│   ├── logging
-│   │   └── scripts
-│   ├── status
-│   │   ├── public
-│   │   └── scripts
-│   └── monitoring
-│       ├── alertmanager
-│       ├── grafana
-│       ├── postgres
-│       ├── prometheus
-│       └── textfile
-└── test-results
+│   ├── backup
+│   │   ├── deploy
+│   │   ├── macos
+│   │   ├── scripts
+│   │   └── systemd
+│   ├── logging
+│   │   ├── scripts
+│   │   └── systemd
+│   ├── monitoring
+│   │   ├── alertmanager
+│   │   ├── grafana
+│   │   ├── postgres
+│   │   └── prometheus
+│   ├── production
+│   ├── staging
+│   │   ├── caddy
+│   │   └── postgres
+│   └── status
+│       ├── public
+│       └── scripts
+└── scripts
 ```
 
 - `README.md` is the human starting point.
@@ -128,17 +105,19 @@ apps/
         |   |-- admin/
         |   |-- analytics/
         |   |-- auth/
-        |   |-- beta/
+        |   |-- avatar/
         |   |-- dashboard/
-        |   |-- navigation/
+        |   |-- exercises/
         |   |-- history/
         |   |-- launch/
+        |   |-- legal/
         |   |-- messages/
         |   |-- onboarding/
         |   |-- privacy/
         |   |-- progress/
         |   |-- session/
         |   |-- settings/
+        |   |-- shell/
         |   |-- status/
         |   |-- templates/
         |   |-- volume/
@@ -153,20 +132,21 @@ apps/
   Goal 4 capacity evidence; `capacity-metrics.ts` owns its bounded result summary. The workload
   requires explicit isolated-data and target approval and must never be aimed at real user data.
 - `apps/api/tsconfig.build.json` owns the compiled API runtime build used by Docker.
-- `apps/api/src/features/<feature>` owns each API vertical slice. Current features include `admin`, `analytics`, `auth`, `beta`, `exercises`, `health`, `lifecycle`, `messages`, `templates`, `users`, and `workouts`.
+- `apps/api/src/features/<feature>` owns each API vertical slice. Current features: `admin`, `analytics`, `auth`, `exercises`, `health`, `lifecycle`, `messages`, `status`, `templates`, `users`, and `workouts`.
 - `apps/api/src/features/admin` owns canonical administrator user containment and bounded audit-read interfaces; `apps/api/src/features/lifecycle` owns the single-process startup-and-hourly cleanup scheduler.
 - `apps/api/src/db` owns database connection and database health helpers.
 - `apps/api/src/shared` owns API-only shared boundaries such as environment validation, logger configuration, and common HTTP validation responses.
 - `apps/api/src/features/auth/authenticate-request.ts` owns shared Fastify session-cookie authentication for protected feature routes.
-- `apps/web` owns the Next.js App Router app plus the first auth, workout logging, workout history/detail, CSV import/export, analytics UI slices, and Playwright smoke tests.
+- `apps/web` owns the Next.js App Router app, the BFF route handlers, all product UI, and the Playwright specs.
 - `apps/web/src/middleware.ts` and `apps/web/src/request-security.ts` own the Next.js
   host allowlist, same-origin state-change guard, and browser-facing security headers.
-- `apps/web/public/models/avatar/avatar-base.fbx` is the shared 3D human figure asset. The pedestal is fused into this FBX rather than stored as a separate model file.
+- `apps/web/public/models/avatar/avatar-base.fbx` is the shared 3D figure (its fused pedestal is cut away at runtime and not rendered). `base-v-2.fbx` is the dashboard pedestal.
 - `apps/web/src/features/avatar` owns the dashboard avatar scene, hologram bay, and runtime figure/pedestal separation and materials.
 - `apps/web/src/features/volume` owns the interactive muscle-volume figure view, which reuses the shared avatar FBX and applies the muscle-region visualization.
-- `apps/web/src/app/muscle-spike` and its `features/volume/muscle-spike*` modules are a development-only anatomy authoring tool, not a product route. Its Playwright authoring test is opt-in with `MUSCLE_SPIKE_E2E=true` against `next dev`; normal production smoke runs skip it. The obsolete avatar spike has been removed.
+- `apps/web/public/volume/` holds the muscle-region SVG maps and their editing guide (`README.md`). Edit them against `/weekly-volume?debugRegions=1`.
+- `apps/web/src/shared/ui` owns design-system primitives (Button, Sheet, ConfirmDialog, Stepper, icons). `shared/` must not import from `features/`.
 - `apps/web/e2e` owns browser smoke tests for core UI flows that run against the local app stack.
-- `apps/web/src/features/analytics` owns the Progress and Weekly Volume UI, browser analytics API helpers, and same-origin analytics API proxy helpers.
+- `apps/web/src/features/analytics` owns the same-origin analytics API proxy helper. The Progress and Volume screens live in `features/progress` and `features/volume`.
 - `apps/web/src/features/auth` owns web auth forms, server auth helpers, and auth proxy helpers.
 - `apps/web/src/features/dashboard` owns the logged-in dashboard/home screen, real active-workout presentation, avatar composition, and dashboard-only styles.
 - `apps/web/src/features/navigation` owns the logged-in `Gym Progress Tracker` app shell, route navigation, settings cog, and truthful global state labels.
@@ -243,46 +223,40 @@ ops/
 
 ```text
 docs/
-|-- 00-workflow.md
 |-- 01-requirements.md
 |-- 02-query-list.md
 |-- 03-data-model-notes.md
 |-- 04-schema-draft.md
 |-- 05-api-contract.md
-|-- 06-implementation-start.md
 |-- 07-implementation-pattern.md
-|-- 08-next-implementation-plan.md
 |-- 09-observability-and-data-structures.md
-|-- 18-public-beta-handoff.md
-|-- beta-process/
-|-- Usability_Audit/
-|   |-- performance-audit-v1.md
-|   |-- usability-audit-v2.md
-|   |-- usability-audit-v3.md
-|   `-- usability-audit-v4.md
+|-- 13-operator-guide.md
+|-- 99-current-project-state.md
+|-- DESIGN.md
+|-- audit-2026-11.md
+|-- audit-2026-11/
+|-- current-system-analysis.md
 |-- deployment-runbook.md
-|-- git-pipeline.md
-|-- status/
-|   |-- Statusupdate-Whiteboxtesting.md
-|   `-- privat-beta-readiness.md
 |-- repository-structure.md
-`-- decisions/
+|-- archive/
+|-- beta-process/public-beta/   (live privacy documents)
+|-- decisions/
+|-- design/mockups/
+|-- design-refs/
+`-- server/
 ```
 
-- `docs/00-workflow.md` tracks the roadmap and current phase progress.
 - `docs/01-requirements.md` through `docs/05-api-contract.md` are product, query, data, schema, and API source-of-truth docs.
-- `docs/06-implementation-start.md` records the original staged implementation handoff.
 - `docs/07-implementation-pattern.md` records the feature-slice pattern used by API and web work.
-- `docs/08-next-implementation-plan.md` records the current fresh-session handoff and remaining implementation blocks.
+- `docs/99-current-project-state.md` is the short handoff: where things stand and what is next.
+- `docs/13-operator-guide.md` is the day-to-day operations guide.
 - `docs/09-observability-and-data-structures.md` records implemented data structures and the planned logging/diagnostics approach for client and API failures.
-- `docs/beta-process/private-beta-1/` keeps the original report/evidence and its observation-to-code remediation matrix.
-- `docs/beta-process/public-beta/goal-structure.md` is the canonical Goal 0-6 declaration: what each
-  goal covers, who can complete each task type, and how the numbering reconciles with the executed
-  goal reports.
-- `docs/18-public-beta-handoff.md` is the Founding Beta implementation handoff; `docs/beta-process/public-beta/` owns the goal declaration, per-goal evidence reports, processing inventory, DPIA, launch evidence gates, and erasure/restore runbook.
-- `docs/Usability_Audit/` records V1 responsive-web usability decisions and the pure-function performance regression baseline. Read usability audit v4 first, then v3 and v2 only for behavior not superseded by a newer audit; the audit-v4 rework list remains post-beta.
-- `docs/deployment-runbook.md` records Render deployment, migration, backup, restore-test, and monitoring steps for small-batch users.
-- `docs/status/` contains short-lived status reviews, audit notes, and private-beta readiness updates.
+- `docs/beta-process/public-beta/` keeps the live privacy documents: data-processing inventory and retention/erasure runbook (`goal-1/`), DPIA, processor inventory and the 3D model licence evidence (`goal-2/`). The beta goal reports and launch gates moved to `docs/archive/beta-process/`.
+- `docs/deployment-runbook.md` covers the Render alternative target. The live release procedure is `ops/production/README.md`.
+- `docs/DESIGN.md` is the design system (tokens, navigation, components, copy voice); `docs/design/mockups/` holds its signed-off phone mockup.
+- `docs/audit-2026-11.md` and `docs/audit-2026-11/` are the UX, copy, code and docs audit behind the UX rework.
+- `docs/archive/` holds finished plans, reports, design concepts and the old UI reference; its `README.md` is the index.
+- `scripts/mobile-preview.sh` opens the dev server in Capacitor shells on the iOS Simulator and Android emulator; the shell itself lives outside the repo.
 - `docs/decisions` contains ADRs, including the accepted Render deployment target. Add or update an ADR before changing stack, auth strategy, schema policy, API style, or deployment direction.
 
 ## Local-Only Files
@@ -328,7 +302,7 @@ Use `.env.example` for shared environment variable documentation. Do not commit 
 
 ## Hands-on example ownership
 
-- `apps/web/src/features/onboarding` owns invitations, versioned lesson flags, the in-memory
+- `apps/web/src/features/onboarding` owns the Home invitation card, versioned lesson flags, the in-memory
   example controller, catalog-backed sample data, demo analytics, and explicit template copy.
 - `apps/web/src/app/help/demo` owns the authenticated persistent demo layout and bounded
   route family. A new layout mount starts fresh; no demo drafts are stored on the device.

@@ -11,9 +11,11 @@ import { ActiveExercisePanel } from "./active-exercise-panel";
 import { ExerciseSheet } from "./exercise-sheet";
 import { clearWorkoutSetDrafts } from "./set-draft-storage";
 import { SessionExerciseList } from "./session-exercise-list";
+import { SessionBottomBar } from "./session-bottom-bar";
 import { SessionHeader } from "./session-header";
+import { RestTimer } from "./rest-timer";
 import { SessionModeNavigation } from "./session-mode-navigation";
-import { SessionCompletionSummary } from "./session-completion-summary";
+import { SessionCompletionFooter, SessionCompletionSummary } from "./session-completion-summary";
 import { calculateSessionTotals, resolveActiveExercise, SessionError, SessionSkeleton, SessionStats } from "./session-screen-support";
 import { useSessionSetLogging } from "./use-session-set-logging";
 import { useOnboarding } from "../onboarding/use-onboarding";
@@ -34,6 +36,7 @@ export function SessionScreen({
   const workoutMutations = useWorkoutMutations();
   const [activeExerciseId, setActiveExerciseId] = useState<string | null>(null);
   const [sessionMode, setSessionMode] = useState<"exercises" | "sets">("exercises");
+  const [followActive, setFollowActive] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -43,6 +46,32 @@ export function SessionScreen({
   const exercises = useMemo(() => workout?.exercises ?? [], [workout]);
   const activeExercise = resolveActiveExercise(exercises, activeExerciseId);
   const totals = useMemo(() => calculateSessionTotals(exercises), [exercises]);
+
+  // While logging, remember the open exercise for this browser session, so
+  // leaving for the Progress shortcut (or a reload) comes back to it. A
+  // finished workout always opens on its summary.
+  const viewRestored = useRef(false);
+  useEffect(() => {
+    if (!workout || viewRestored.current) return;
+    viewRestored.current = true;
+    try {
+      const saved = JSON.parse(globalThis.sessionStorage.getItem(`gymtrack.session-view.${workoutId}`) ?? "null") as { exerciseId?: unknown; mode?: unknown } | null;
+      if (workout.isOpen && saved && saved.mode === "sets" && workout.exercises.some((item) => item.id === saved.exerciseId)) {
+        setActiveExerciseId(saved.exerciseId as string);
+        setSessionMode("sets");
+      }
+    } catch {
+      // Storage blocked or corrupt: start on the list.
+    }
+  }, [workout, workoutId]);
+  useEffect(() => {
+    if (!viewRestored.current) return;
+    try {
+      globalThis.sessionStorage.setItem(`gymtrack.session-view.${workoutId}`, JSON.stringify({ exerciseId: activeExerciseId, mode: sessionMode }));
+    } catch {
+      // Not critical.
+    }
+  }, [activeExerciseId, sessionMode, workoutId]);
   const logging = useSessionSetLogging({ activeExercise, mutations, onError: setActionError, onStatus: setStatus, userId, workoutId });
   const { closeEditors } = logging;
 
@@ -68,7 +97,10 @@ export function SessionScreen({
         added.push(await mutations.addExercise.mutateAsync({ clientMutationId, exerciseId }));
       }
       const lastAdded = added.at(-1);
-      if (lastAdded) setActiveExerciseId(lastAdded.id);
+      if (lastAdded) {
+        setFollowActive(true);
+        setActiveExerciseId(lastAdded.id);
+      }
       closeEditors();
       setSheetOpen(false);
       setSessionMode("sets");
@@ -76,7 +108,7 @@ export function SessionScreen({
       exerciseMutationIds.current.clear();
       return true;
     } catch (caught) {
-      setActionError(errorMessage(caught, "The exercise could not be added."));
+      setActionError(errorMessage(caught, "Couldn't add the exercise. Check your connection and try again."));
       return false;
     }
   }
@@ -96,7 +128,7 @@ export function SessionScreen({
     reordered.splice(to, 0, moved);
     mutations.reorderExercises.mutate(
       { items: reordered.map((item, index) => ({ sessionExerciseId: item.id, position: index + 1 })) },
-      { onError: (caught) => setActionError(errorMessage(caught, "Exercise reorder failed.")) }
+      { onError: (caught) => setActionError(errorMessage(caught, "Couldn't save the new order. Check your connection and try again.")) }
     );
   }
 
@@ -106,30 +138,23 @@ export function SessionScreen({
   const isOpen = workout.isOpen;
 
   return (
-    <div className="min-h-dvh bg-void">
+    <div className="flex min-h-dvh flex-col bg-bg">
       <SessionHeader
         focusName={focusName}
-        isEnding={workoutMutations.endWorkout.isPending}
         isOpen={isOpen}
         isRenaming={workoutMutations.updateWorkout.isPending}
         onDelete={() => setConfirmDelete(true)}
-        onEnd={() => {
-          workoutMutations.endWorkout.mutate(workout.id, {
-            onSuccess: () => clearWorkoutSetDrafts(userId, workoutId),
-            onError: (caught) => setActionError(errorMessage(caught, "The workout could not be completed."))
-          });
-        }}
         onRename={(title) => workoutMutations.updateWorkout.mutate(
           { workoutId: workout.id, input: { title } },
-          { onError: (caught) => setActionError(errorMessage(caught, "The workout name could not be saved.")) }
+          { onError: (caught) => setActionError(errorMessage(caught, "Couldn't rename the workout. Check your connection and try again.")) }
         )}
         startedAt={workout.startedAt}
         title={workout.title}
       />
 
-      <main className={`mx-auto grid w-full max-w-5xl gap-4 px-4 pt-4 lg:grid-cols-[minmax(0,1fr)_260px] lg:gap-6 ${logging.restTimer ? "pb-32 lg:pb-8" : "pb-4 lg:pb-8"}`}>
-        <div className="min-w-0 space-y-4">
-          {actionError ? <ErrorState message={actionError} title="That did not work" /> : null}
+      <main className={`mx-auto grid w-full flex-1 content-start gap-6 overflow-x-clip px-4 pt-4 ${isOpen ? "max-w-5xl pb-6 lg:grid-cols-[minmax(0,1fr)_17rem]" : "max-w-3xl pb-[calc(env(safe-area-inset-bottom)+1.5rem)]"}`}>
+        <div className="min-w-0 space-y-6">
+          {actionError ? <ErrorState message={actionError} title="Something went wrong" /> : null}
           <p aria-live="polite" className="sr-only">{status}</p>
 
           {!isOpen && workout.endedAt ? (
@@ -144,54 +169,78 @@ export function SessionScreen({
           <div className={sessionMode === "exercises" || !activeExercise ? "session-mode-back" : "session-mode-forward"} key={sessionMode}>
             {sessionMode === "exercises" || !activeExercise ? (
               <SessionExerciseList
-              activeId={activeExercise?.id ?? null}
-              canEdit={isOpen}
-              exercises={exercises}
-              isReordering={mutations.reorderExercises.isPending}
-              onAdd={() => setSheetOpen(true)}
-              onReorder={reorderExercises}
-              onSelect={(id) => {
-                setActiveExerciseId(id);
-                closeEditors();
-                setSessionMode("sets");
-              }}
+                activeId={activeExercise?.id ?? null}
+                canEdit={isOpen}
+                exercises={exercises}
+                followActive={followActive}
+                isReordering={mutations.reorderExercises.isPending}
+                onAdd={() => setSheetOpen(true)}
+                onReorder={reorderExercises}
+                onSelect={(id) => {
+                  setFollowActive(true);
+                  setActiveExerciseId(id);
+                  closeEditors();
+                  setSessionMode("sets");
+                }}
               />
             ) : (
               <>
                 <SessionModeNavigation
-                exerciseName={activeExercise.exercise.name}
-                onBack={() => setSessionMode("exercises")}
-                onNext={() => selectRelativeExercise(1)}
-                onPrevious={() => selectRelativeExercise(-1)}
-                position={exercises.findIndex((exercise) => exercise.id === activeExercise.id)}
-                total={exercises.length}
+                  exerciseName={activeExercise.exercise.name}
+                  onBack={() => setSessionMode("exercises")}
+                  onNext={() => selectRelativeExercise(1)}
+                  onPrevious={() => selectRelativeExercise(-1)}
+                  position={exercises.findIndex((exercise) => exercise.id === activeExercise.id)}
+                  total={exercises.length}
                 />
                 <ActiveExercisePanel
-                canEdit={isOpen}
-                draft={logging.currentDraft()}
-                editingSetId={logging.editingSetId}
-                exercise={activeExercise}
-                isNewSetOpen={logging.newSetOpen}
-                mutations={mutations}
-                onDraftChange={logging.updateDraft}
-                onEditSet={logging.setEditingSetId}
-                onError={setActionError}
-                onNewSetOpen={(open) => open ? logging.openNewSet() : logging.cancelNewSet()}
-                onRestAdjust={(seconds) => logging.setRestTimer((current) => current ? { ...current, seconds: Math.max(0, current.seconds + seconds) } : null)}
-                onRestDismiss={() => logging.setRestTimer(null)}
-                onSaveSet={() => { void logging.saveSet().then((saved) => { if (saved) void mark("logEditSet"); }); }}
-                restTimer={logging.restTimer}
-                savedFlash={null}
-                workoutEndedAt={workout.endedAt}
+                  canEdit={isOpen}
+                  draft={logging.currentDraft()}
+                  editingSetId={logging.editingSetId}
+                  exercise={activeExercise}
+                  isNewSetOpen={logging.newSetOpen}
+                  mutations={mutations}
+                  onDraftChange={logging.updateDraft}
+                  onEditSet={logging.setEditingSetId}
+                  onError={setActionError}
+                  onNewSetOpen={(open) => open ? logging.openNewSet() : logging.cancelNewSet()}
+                  onSaveSet={() => { void logging.saveSet().then((saved) => { if (saved) void mark("logEditSet"); }); }}
+                  savedFlash={null}
+                  workoutEndedAt={workout.endedAt}
                 />
               </>
             )}
           </div>
 
+          {!isOpen ? <SessionCompletionFooter workout={workout} /> : null}
         </div>
 
-        <SessionStats exercises={exercises.length} totals={totals} />
+        {isOpen ? <SessionStats exercises={exercises.length} totals={totals} /> : null}
       </main>
+
+      {isOpen ? (
+        <SessionBottomBar
+          isEnding={workoutMutations.endWorkout.isPending}
+          onEnd={() => {
+            workoutMutations.endWorkout.mutate(workout.id, {
+              onSuccess: () => {
+                clearWorkoutSetDrafts(userId, workoutId);
+                logging.setRestTimer(null);
+              },
+              onError: (caught) => setActionError(errorMessage(caught, "Couldn't finish the workout. Check your connection and try again."))
+            });
+          }}
+        >
+          {logging.restTimer ? (
+            <RestTimer
+              onAdjust={(seconds) => logging.setRestTimer((current) => current ? { ...current, seconds: Math.max(0, current.seconds + seconds) } : null)}
+              onDismiss={() => logging.setRestTimer(null)}
+              seconds={logging.restTimer.seconds}
+              startedAt={logging.restTimer.startedAt}
+            />
+          ) : null}
+        </SessionBottomBar>
+      ) : null}
 
       <ExerciseSheet
         isOpen={sheetOpen && isOpen}
@@ -205,10 +254,10 @@ export function SessionScreen({
         }}
       />
       <ConfirmDialog
-        confirmLabel={isOpen ? "DISCARD WORKOUT" : "DELETE LOG"}
+        confirmLabel={isOpen ? "Discard workout" : "Delete workout"}
         isOpen={confirmDelete}
         isPending={workoutMutations.deleteWorkout.isPending}
-        message={isOpen ? "This workout and every logged set will be removed." : "This workout will be removed from history and analytics."}
+        message={isOpen ? "The workout and every set in it are removed. This can't be undone." : "It's removed from your history, Progress and Volume. This can't be undone."}
         onCancel={() => setConfirmDelete(false)}
         onConfirm={async () => {
           try {
@@ -219,10 +268,11 @@ export function SessionScreen({
             router.refresh();
           } catch (caught) {
             setConfirmDelete(false);
-            setActionError(errorMessage(caught, "The workout could not be deleted."));
+            setActionError(errorMessage(caught, isOpen ? "Couldn't discard the workout. Check your connection and try again." : "Couldn't delete the workout. Check your connection and try again."));
           }
         }}
-        title={isOpen ? "Discard this workout?" : "Delete this workout log?"}
+        pendingLabel={isOpen ? "Discarding…" : "Deleting…"}
+        title={isOpen ? "Discard this workout?" : "Delete this workout?"}
       />
     </div>
   );

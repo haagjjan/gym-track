@@ -9,7 +9,6 @@
 # editor/IDE
 .vscode/
 .idea/
-.claude/worktrees/
 
 # logs
 *.log
@@ -45,26 +44,26 @@ ops/monitoring/textfile/
 tmp/
 temp/
 
-# SSH 
+# SSH keys
 id_rsa*
 id_ed25519*
 gym_prod_ed25519*
 
-# Server
+# Server data and dumps (SQL is ignored except reviewed, secret-free scripts)
 secrets/
 backups/
 *.dump
 *.sql
 !apps/api/db/migrations/*.sql
-*.log
+!ops/monitoring/postgres/*.sql
 
-# Other Server docs
+# Certificates and private keys
 *.pem
 *.key
 *.p12
 *.pfx
 
-# Local agent setup
+# Local agent setup (agent files are local on purpose, not part of the repo)
 AGENTS.md
 CLAUDE.md
 GEMINI.md

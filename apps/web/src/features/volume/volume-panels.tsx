@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
-import { EmptyState } from "../../shared/ui/ui";
-import { formatNumber, shortDate } from "../../shared/format";
+import { radioGroupKeyDown } from "../../shared/ui/radio-group";
+import type { Dispatch, ReactNode, SetStateAction } from "react";
+import { formatDay, formatNumber } from "../../shared/format";
+import { IconClose, IconForward } from "../../shared/ui/icons";
 import {
   HEAT_STAGE_COLORS,
   heatBarWidth,
@@ -16,29 +17,36 @@ import {
 import type { MuscleAggregate } from "./volume-aggregation";
 
 export const volumeWindows = [
-  { label: "1W", days: 7 },
-  { label: "1M", days: 30 },
-  { label: "3M", days: 90 }
+  { label: "1W", days: 7, words: "last 7 days" },
+  { label: "1M", days: 30, words: "last 30 days" },
+  { label: "3M", days: 90, words: "last 90 days" }
 ] as const;
 
 export type VolumeWindowDays = (typeof volumeWindows)[number]["days"];
 
-export function WindowControls({
+/** iOS-style segmented control; every segment is at least 44 px tall. */
+export function Segmented<T extends string | number>({
+  label,
   onChange,
+  options,
   value
 }: {
-  onChange: Dispatch<SetStateAction<VolumeWindowDays>>;
-  value: VolumeWindowDays;
+  label: string;
+  onChange: (value: T) => void;
+  options: readonly { id: T; label: string; ariaLabel?: string }[];
+  value: T | null;
 }): ReactNode {
   return (
-    <div aria-label="Volume window" className="absolute right-3 top-3 z-10 flex gap-1 rounded bg-void/75 p-1" role="radiogroup">
-      {volumeWindows.map((item) => (
+    <div aria-label={label} className="flex rounded-full bg-surface p-1" onKeyDown={radioGroupKeyDown} role="radiogroup">
+      {options.map((item) => (
         <button
-          aria-checked={value === item.days}
-          className={`label-caps min-h-11 min-w-11 cursor-pointer rounded border px-2 transition-colors ${value === item.days ? "border-cyan bg-cyan/15 text-cyan" : "border-outline-dim text-outline"}`}
-          key={item.days}
-          onClick={() => onChange(item.days)}
+          aria-checked={value === item.id}
+          aria-label={item.ariaLabel}
+          className={`min-h-11 min-w-11 cursor-pointer rounded-full px-3 text-callout ${value === item.id ? "bg-surface-raised font-semibold text-text" : "text-text-secondary"}`}
+          key={item.id}
+          onClick={() => onChange(item.id)}
           role="radio"
+          tabIndex={(value === item.id) ? 0 : -1}
           type="button"
         >
           {item.label}
@@ -48,60 +56,117 @@ export function WindowControls({
   );
 }
 
-export function HeatLegend({ heatCeiling }: { heatCeiling: number }): ReactNode {
-  const [activeBucket, setActiveBucket] = useState<number | null>(null);
+export function WindowControls({
+  onChange,
+  value
+}: {
+  onChange: Dispatch<SetStateAction<VolumeWindowDays>>;
+  value: VolumeWindowDays;
+}): ReactNode {
   return (
-    <div className="mt-3">
-      <div aria-label="Working set heat ranges" className="grid grid-cols-5 gap-1">
-        {HEAT_STAGE_COLORS.map((color, index) => (
-          <button
-            aria-label={heatRangeLabel(index + 1, heatCeiling)}
-            className="flex min-h-11 items-center rounded-sm outline-none ring-offset-2 ring-offset-void hover:ring-2 hover:ring-lavender focus-visible:ring-2 focus-visible:ring-lavender"
-            key={color}
-            onBlur={() => setActiveBucket(null)}
-            onClick={() => setActiveBucket((current) => current === index + 1 ? null : index + 1)}
-            onFocus={() => setActiveBucket(index + 1)}
-            onMouseEnter={() => setActiveBucket(index + 1)}
-            onMouseLeave={() => setActiveBucket(null)}
-            title={heatRangeLabel(index + 1, heatCeiling)}
-            type="button"
-          >
-            <span aria-hidden className="h-2 w-full rounded-sm" style={{ background: color }} />
-          </button>
+    <Segmented
+      label="Volume window"
+      onChange={onChange}
+      options={volumeWindows.map((item) => ({ id: item.days, label: item.label }))}
+      value={value}
+    />
+  );
+}
+
+/** Shared outline: keeps the palest stages visible on the light card. */
+const SWATCH_OUTLINE = "#5b3aa8";
+
+/**
+ * One compact row: the six stages as a strip, each with its upper bound in
+ * sets per week. The full wording stays available to screen readers.
+ */
+export function HeatLegend({ heatCeiling }: { heatCeiling: number }): ReactNode {
+  const stages = [
+    { color: volumeRampCss(0), short: "0", label: "No sets" },
+    ...HEAT_STAGE_COLORS.map((color, index) => ({
+      color,
+      short: index === 4 ? `${formatNumber((4 * heatCeiling) / 5)}+` : formatNumber(((index + 1) * heatCeiling) / 5),
+      label: heatRangeLabel(index + 1, heatCeiling)
+    }))
+  ];
+  return (
+    <div className="rounded-[var(--radius-card)] bg-surface px-4 py-3">
+      <div className="flex items-baseline justify-between gap-3 text-footnote text-text-secondary">
+        <span>Sets per week</span>
+        <Link className="inline-flex min-h-11 -my-3 items-center text-accent" href="/settings">
+          Full color at <span className="num ml-1">{formatNumber(heatCeiling)}</span>
+        </Link>
+      </div>
+      <ul aria-label="Working set heat ranges" className="mt-1.5 grid grid-cols-6 gap-1">
+        {stages.map((stage) => (
+          <li className="min-w-0" key={stage.label}>
+            <span aria-hidden className="block h-3 rounded-[var(--radius-sm)] border-[1.5px]" style={{ background: stage.color, borderColor: SWATCH_OUTLINE }} />
+            <span aria-hidden className="num mt-1 block text-center text-caption text-text-muted">{stage.short}</span>
+            <span className="sr-only">{stage.label}</span>
+          </li>
         ))}
-      </div>
-      <div className="mt-1 flex justify-between font-mono text-[9px] uppercase tracking-[0.08em] text-outline">
-        <span>{`>0–${formatNumber(heatCeiling / 5)}`}</span>
-        <span>{`${heatCeiling}+ sets/wk`}</span>
-      </div>
-      <p aria-live="polite" className="mt-2 min-h-4 text-center font-mono text-[10px] uppercase tracking-[0.06em] text-lavender">
-        {activeBucket ? heatRangeLabel(activeBucket, heatCeiling) : "Tap or focus a color to see its set range"}
-      </p>
+      </ul>
     </div>
   );
 }
 
+/**
+ * The tapped muscle, right under the figure. For one week the numbers are
+ * just that week's sets; for longer windows, the weekly average and the total.
+ */
 export function MuscleIntel({
   workoutHref,
   aggregate,
   heatCeiling,
+  onClose,
+  windowDays,
   windowLabel
 }: {
   workoutHref?: ((id: string) => string) | undefined;
   aggregate: MuscleAggregate;
   heatCeiling: number;
+  onClose: () => void;
+  windowDays: number;
   windowLabel: string;
 }): ReactNode {
+  const oneWeek = windowDays <= 7;
   return (
     <div>
-      <h2 className="font-display text-lg font-bold tracking-tight text-fg">{aggregate.name}</h2>
-      <p className="label-caps mt-0.5 text-lavender">{loadStatus(aggregate.weeklyAvg, heatCeiling)}</p>
-      <dl className="mt-3 space-y-1.5">
-        <IntelRow label="Weekly average" value={`${formatNumber(aggregate.weeklyAvg)} sets`} />
-        <IntelRow label={`${windowLabel} total`} value={`${aggregate.totalSets} sets`} />
-        <IntelRow label="This week" value={`${aggregate.latestWeekSets} sets`} />
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-title-3 text-text">{aggregate.name}</h2>
+          <p className="mt-0.5 flex items-center gap-2 text-subhead text-text-secondary">
+            <span aria-hidden className="size-2.5 shrink-0 rounded-full border" style={{ background: volumeRampCss(aggregate.weeklyAvg, heatCeiling), borderColor: SWATCH_OUTLINE }} />
+            {loadStatus(aggregate.weeklyAvg, heatCeiling)}
+          </p>
+        </div>
+        <button aria-label={`Close ${aggregate.name}`} className="-mr-2 -mt-1 flex size-11 shrink-0 items-center justify-center rounded-full text-text-secondary active:bg-surface-raised" onClick={onClose} type="button">
+          <IconClose />
+        </button>
+      </div>
+      <dl className="mt-3 grid grid-cols-2 gap-4">
+        {oneWeek ? (
+          <>
+            <IntelTile label="Last 7 days" unit="sets" value={aggregate.totalSets} />
+            <IntelTile label="Workouts" value={aggregate.sessions.length} />
+          </>
+        ) : (
+          <>
+            <IntelTile label="Per week" unit="sets" value={formatNumber(aggregate.weeklyAvg)} />
+            <IntelTile label={`Total, ${windowLabel}`} unit="sets" value={aggregate.totalSets} />
+          </>
+        )}
       </dl>
       <ContributionList aggregate={aggregate} workoutHref={workoutHref} />
+    </div>
+  );
+}
+
+function IntelTile({ label, unit, value }: { label: string; unit?: string; value: ReactNode }): ReactNode {
+  return (
+    <div className="min-w-0">
+      <dt className="truncate text-footnote text-text-secondary">{label}</dt>
+      <dd className="num text-title-3 text-text">{value}{unit ? <span className="ml-1 text-callout text-text-secondary">{unit}</span> : null}</dd>
     </div>
   );
 }
@@ -111,12 +176,12 @@ function ContributionList({ aggregate, workoutHref }: { aggregate: MuscleAggrega
     <>
       {aggregate.exercises.length > 0 ? (
         <div className="mt-4">
-          <p className="label-caps text-outline">Lifts that trained it</p>
-          <ul className="mt-1.5 space-y-1">
-            {aggregate.exercises.slice(0, 5).map((exercise) => (
-              <li className="flex items-baseline justify-between gap-2" key={exercise.id}>
-                <span className="min-w-0 truncate text-xs text-fg">{exercise.name}</span>
-                <span className="font-mono text-[11px] text-fg-muted">{exercise.sets}</span>
+          <h3 className="text-subhead font-semibold text-text-secondary">Exercises</h3>
+          <ul className="mt-1 divide-y divide-line">
+            {aggregate.exercises.slice(0, 3).map((exercise) => (
+              <li className="flex min-h-11 items-center justify-between gap-3" key={exercise.id}>
+                <span className="min-w-0 truncate text-body text-text">{exercise.name}</span>
+                <span className="num flex-none text-callout text-text-secondary">{exercise.sets} sets</span>
               </li>
             ))}
           </ul>
@@ -124,13 +189,16 @@ function ContributionList({ aggregate, workoutHref }: { aggregate: MuscleAggrega
       ) : null}
       {aggregate.sessions.length > 0 ? (
         <div className="mt-4">
-          <p className="label-caps text-outline">Recent workouts</p>
-          <ul className="mt-1.5 space-y-1">
-            {aggregate.sessions.slice(0, 4).map((session) => (
+          <h3 className="text-subhead font-semibold text-text-secondary">Recent workouts</h3>
+          <ul className="mt-1 divide-y divide-line">
+            {aggregate.sessions.slice(0, 3).map((session) => (
               <li key={`${session.workoutId}-${session.date}`}>
-                <Link className="flex items-baseline justify-between gap-2 rounded px-1 py-0.5 transition-colors hover:bg-surface-low" href={workoutHref?.(session.workoutId) ?? `/workouts/${session.workoutId}`}>
-                  <span className="font-mono text-[11px] uppercase text-fg-muted">{shortDate(session.date)}</span>
-                  <span className="font-mono text-[11px] text-fg">{session.sets} sets</span>
+                <Link className="flex min-h-11 items-center justify-between gap-3 active:bg-surface-raised" href={workoutHref?.(session.workoutId) ?? `/workouts/${session.workoutId}`}>
+                  <span className="text-body text-text">{formatDay(session.date)}</span>
+                  <span className="flex items-center gap-1 text-callout text-text-secondary">
+                    <span className="num">{session.sets} sets</span>
+                    <IconForward />
+                  </span>
                 </Link>
               </li>
             ))}
@@ -139,10 +207,6 @@ function ContributionList({ aggregate, workoutHref }: { aggregate: MuscleAggrega
       ) : null}
     </>
   );
-}
-
-function IntelRow({ label, value }: { label: string; value: string }): ReactNode {
-  return <div className="flex items-baseline justify-between gap-2"><dt className="label-caps text-outline">{label}</dt><dd className="font-mono text-sm tracking-[0.05em] text-fg">{value}</dd></div>;
 }
 
 export function DistributionMatrix({
@@ -157,10 +221,10 @@ export function DistributionMatrix({
   selectedSlug: string | null;
 }): ReactNode {
   const rows = [...aggregates.values()].sort((left, right) => right.weeklyAvg - left.weeklyAvg);
-  if (rows.length === 0) return <EmptyState message="Muscle groups appear here once this window has logged sets." title="Nothing logged yet" />;
+  if (rows.length === 0) return null;
 
   return (
-    <ul className="space-y-1">
+    <ul className="divide-y divide-line">
       {rows.map((row) => (
         <DistributionRow
           heatCeiling={heatCeiling}
@@ -178,17 +242,20 @@ function DistributionRow({ heatCeiling, isSelected, onSelect, row }: { heatCeili
   const isRegion = REGION_SLUGS.includes(row.slug as RegionSlug);
   return (
     <li>
-      <button className={`flex min-h-9 w-full cursor-pointer items-center gap-2 rounded border px-2 transition-colors ${isSelected ? "border-cyan/60 bg-cyan/10" : "border-transparent hover:bg-surface-low"}`} disabled={!isRegion} onClick={() => isRegion && onSelect(row.slug as RegionSlug)} type="button">
-        <span className="w-24 shrink-0 truncate text-left text-xs text-fg">{row.name}</span>
-        <span aria-hidden className="h-1.5 min-w-0 flex-1 rounded-full bg-surface-high">
-          <span className="block h-full rounded-full" style={{ width: `${heatBarWidth(row.weeklyAvg, heatCeiling)}%`, background: volumeRampCss(row.weeklyAvg, heatCeiling) }} />
+      <button aria-pressed={isSelected} className={`flex min-h-11 w-full cursor-pointer items-center gap-3 px-4 active:bg-surface-raised ${isSelected ? "bg-surface-raised" : ""}`} disabled={!isRegion} onClick={() => isRegion && onSelect(row.slug as RegionSlug)} type="button">
+        <span className={`w-24 shrink-0 truncate text-left text-body ${isSelected ? "font-semibold text-text" : "text-text"}`}>{row.name}</span>
+        {/* Neutral track (no black bar in light mode); the fill carries the swatch outline. */}
+        <span aria-hidden className="h-2.5 min-w-0 flex-1 rounded-full bg-surface-raised">
+          {row.weeklyAvg > 0 ? (
+            <span className="block h-full min-w-2.5 rounded-full border" style={{ width: `${heatBarWidth(row.weeklyAvg, heatCeiling)}%`, background: volumeRampCss(row.weeklyAvg, heatCeiling), borderColor: SWATCH_OUTLINE }} />
+          ) : null}
         </span>
-        <span className="w-10 shrink-0 text-right font-mono text-[11px] text-fg-muted">{formatNumber(row.weeklyAvg)}</span>
+        <span className="num w-10 shrink-0 text-right text-callout text-text-secondary">{formatNumber(row.weeklyAvg)}</span>
       </button>
     </li>
   );
 }
 
 function loadStatus(weeklyAvg: number, heatCeiling: number): string {
-  return weeklyAvg <= 0 ? "NO_RECORDED_SETS" : `HEAT_STAGE_${heatBucket(weeklyAvg, heatCeiling)}`;
+  return weeklyAvg <= 0 ? "No sets recorded" : heatRangeLabel(heatBucket(weeklyAvg, heatCeiling), heatCeiling);
 }

@@ -2,8 +2,10 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useMemo, useRef, useState, type ReactNode } from "react";
-import { ErrorState, HudButton, Panel } from "../../shared/ui/ui";
+import { useMemo, type ReactNode } from "react";
+import { buttonClass, Button } from "../../shared/ui/button";
+import { StatTile } from "../../shared/ui/stat-tile";
+import { ErrorState } from "../../shared/ui/ui";
 import {
   useCompletedExercises,
   useExerciseSummary,
@@ -12,23 +14,16 @@ import {
 } from "../../shared/api/hooks";
 import type { AuthUser } from "../auth/auth-types";
 import type { ExerciseSummaryPayload } from "../../shared/api/types";
-import { shortDate } from "../../shared/format";
-import { IconBolt, IconChart, IconVolume } from "../shell/icons";
-import type { SceneConnector } from "../avatar/avatar-stage";
+import { formatDayTime, formatCompactNumber } from "../../shared/format";
 import { BayAmbience } from "../avatar/bay-ambience";
 import { useStartSession } from "../session/use-start-session";
-import { ConnectorLayer, type ConnectorLink } from "./connector-layer";
+import { HomeHeaderActions } from "../shell/home-header-actions";
 import {
   AvatarFallback,
-  BiometricRows,
-  IdentityRows,
-  LatestLogs,
   PerformanceRows,
-  QuickLink,
   SessionRows,
   type PerformanceRowItem
 } from "./dashboard-panels";
-import { TiltCard } from "./tilt-card";
 import { useDisplaySettings } from "./use-display-settings";
 import { useFavoriteLifts } from "./use-favorite-lifts";
 
@@ -37,18 +32,9 @@ const AvatarStage = dynamic(
   { ssr: false, loading: () => <AvatarFallback label="Loading your figure" /> }
 );
 
-const connectorLinks: ConnectorLink[] = [
-  { from: "card-identity", to: "body-head" },
-  { from: "card-performance", to: "body-arm" },
-  { from: "card-sessions", to: "body-chest" },
-  { from: "card-biometrics", to: "body-legs" }
-];
-
 export function DashboardScreen({ user }: { user: AuthUser }): ReactNode {
-  const stageRef = useRef<HTMLDivElement>(null);
-  // Card side/height measurements the 3D connector beams anchor against.
-  const [sceneConnectors, setSceneConnectors] = useState<SceneConnector[]>([]);
-  const workouts = useWorkouts(8);
+  // 20 is the page the shell already loads (shared cache), enough for a whole week.
+  const workouts = useWorkouts(20);
   const completedExercises = useCompletedExercises();
   const weeklyVolume = useWeeklyVolume(7);
   const { start, isPending: isStarting, error: startError } = useStartSession();
@@ -129,7 +115,7 @@ export function DashboardScreen({ user }: { user: AuthUser }): ReactNode {
     return latest?.items.reduce((total, item) => total + item.workingSets, 0) ?? 0;
   }, [weeklyVolume.data]);
 
-  // SYSTEM_CHARGE: weekly working sets vs a 48-set target drives the rim glow.
+  // Readiness: weekly working sets vs a 48-set target drives the rim glow.
   const systemCharge = Math.max(12, Math.min(100, Math.round((weeklySets / 48) * 100)));
 
   // Cockpit display prefs (Settings): idle turntable spin is user-toggleable.
@@ -139,124 +125,95 @@ export function DashboardScreen({ user }: { user: AuthUser }): ReactNode {
   // a designed celebration effect (e.g. a purple hologram body-scan on workout
   // completion). The stage's pulseSignal machinery stays for that future use.
 
-  const measureKey = `${workouts.isLoading}-${completedExercises.isLoading}-${summaries.length}-${completedSessions.length}`;
+  // This week's totals come from the recent workouts already loaded (Monday
+  // start, local time), so no extra request is needed.
+  const week = useMemo(() => {
+    const now = new Date();
+    const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7));
+    const inWeek = (workouts.data?.items ?? []).filter(
+      (workout) => !workout.isOpen && new Date(workout.startedAt) >= weekStart
+    );
+
+    return {
+      workouts: inWeek.length,
+      sets: inWeek.reduce((total, workout) => total + workout.totalSets, 0),
+      volumeKg: inWeek.reduce((total, workout) => total + Number(workout.tonnageKg || 0), 0)
+    };
+  }, [workouts.data]);
+
+  const dateLabel = new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long" }).format(new Date());
 
   return (
-    <div className="hud-grid relative isolate min-h-full" ref={stageRef}>
-      <BayAmbience />
+    <div className="mx-auto max-w-7xl px-4 pb-6 pt-2 lg:px-6">
+      <header className="flex items-end justify-between gap-2 pt-2">
+        <div className="min-w-0">
+          <p className="text-subhead text-text-secondary">{dateLabel}</p>
+          <h1 className="text-large-title text-text [overflow-wrap:anywhere]">Hi, {user.username}</h1>
+        </div>
+        <HomeHeaderActions user={user} />
+      </header>
 
-      <ConnectorLayer
-        containerRef={stageRef}
-        links={connectorLinks}
-        measureKey={measureKey}
-        onSceneLinks={setSceneConnectors}
-      />
-
-      <div className="relative mx-auto grid max-w-7xl gap-4 p-4 lg:grid-cols-[280px_minmax(0,1fr)_320px] lg:gap-6 lg:p-6">
-        {/* ===== Center: the avatar pillar (first in DOM on mobile). Bounded
-              canvas — framing is tuned per container; BayAmbience continues the
-              environment past its faded edges. ===== */}
-        <div className="relative order-1 lg:order-2 lg:row-span-2">
-          <div
-            className="relative h-[36dvh] min-h-64 max-h-[380px] sm:h-[40dvh] sm:max-h-[440px] lg:h-[calc(100dvh-14rem)] lg:min-h-[480px] lg:max-h-none"
-            data-connector-id="avatar-stage"
-          >
-            <AvatarStage
-              autoSpin={displaySettings.autoSpin}
-              connectors={sceneConnectors}
-              readiness={systemCharge}
-            />
-
+      <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
+        <div className="space-y-6">
+          {/* Desktop only: on phones the centre Workout tab starts or resumes (pulse or red dot). */}
+          <section aria-labelledby="start-title" className="hidden rounded-[var(--radius-card)] bg-surface p-4 lg:block">
             {activeWorkout ? (
-              <p className="label-caps absolute left-1/2 top-1 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded border border-cyan/40 bg-void/80 px-3 py-1.5 text-cyan sm:top-3">
-                <span aria-hidden className="status-dot animate-pulse-slow bg-cyan shadow-glow-cyan" />
-                In progress · {shortDate(activeWorkout.startedAt)}
-              </p>
-            ) : null}
-          </div>
-          <HudButton
-            className="mt-3 w-full lg:hidden"
-            data-testid="mobile-session-cta"
-            disabled={isStarting}
-            onClick={() => void start()}
-            variant="primary"
-          >
-            {isStarting ? "OPENING…" : activeWorkout ? "RESUME WORKOUT" : "START WORKOUT"}
-          </HudButton>
-        </div>
+              <>
+                <h2 className="text-headline text-text" id="start-title">Workout in progress</h2>
+                <p className="mt-0.5 text-subhead text-text-secondary">Started {formatDayTime(activeWorkout.startedAt)}</p>
+                <Button className="mt-4 w-full" disabled={isStarting} onClick={() => void start()}>
+                  {isStarting ? "Opening…" : "Resume workout"}
+                </Button>
+              </>
+            ) : (
+              <>
+                <h2 className="text-headline text-text" id="start-title">Ready to train?</h2>
+                <p className="mt-0.5 text-subhead text-text-secondary">Pick a template or start from scratch.</p>
+                <Link className={`${buttonClass("primary")} mt-4 w-full`} href="/workout">Start workout</Link>
+              </>
+            )}
+            {startError ? <div className="mt-4"><ErrorState message="Check your connection and try again." title="Couldn't open the workout" /></div> : null}
+          </section>
 
-        {/* ===== Left column ===== */}
-        <div className="order-2 space-y-4 lg:order-1">
-          <TiltCard>
-            <Panel accent="none" className="glass-cyan" data-connector-id="card-identity" eyebrow="Signed in as">
-              <h1 className="min-w-0 break-words font-display text-2xl font-bold uppercase tracking-tight text-fg [overflow-wrap:anywhere]">
-                {user.username}
-              </h1>
-              <IdentityRows />
-            </Panel>
-          </TiltCard>
-
-          <TiltCard>
-            <Panel
-              accent="green"
-              data-connector-id="card-performance"
-              eyebrow="Personal bests"
-              right={<IconBolt className="text-green-dim" />}
-            >
-              <PerformanceRows
-                exercises={topExercises}
-                hasPins={hasPins}
-                isLoading={completedExercises.isLoading || summaryA.isLoading}
-                summaries={summaries}
-              />
-            </Panel>
-          </TiltCard>
-
-          {startError ? <ErrorState message={startError} title="Could not start a workout" /> : null}
-        </div>
-
-        {/* ===== Right column ===== */}
-        <div className="order-3 space-y-4">
-          <TiltCard>
-            <Panel accent="none" className="glass-cyan chamfer" data-connector-id="card-sessions" eyebrow="Recent workouts">
-              <SessionRows isLoading={workouts.isLoading} sessions={completedSessions.slice(0, 3)} />
-              <Link
-                className="mt-2 block text-center text-[10px] uppercase tracking-[0.1em] text-outline transition-colors hover:text-cyan"
-                href="/workout"
-              >
-                See all workouts →
-              </Link>
-            </Panel>
-          </TiltCard>
-
-          <nav aria-label="Analytics quick views" className="space-y-1">
-            <QuickLink href="/progress" icon={<IconChart />} label="Progress" />
-            <QuickLink href="/weekly-volume" icon={<IconVolume />} label="Muscle volume" />
-          </nav>
-
-          <TiltCard>
-            <Panel accent="lavender" data-connector-id="card-biometrics" eyebrow="Body profile">
-              <BiometricRows systemCharge={systemCharge} />
-            </Panel>
-          </TiltCard>
-        </div>
-
-        {/* ===== Bottom rail ===== */}
-        <div className="order-4 hidden lg:col-span-3 lg:order-3 lg:block">
-          <Panel accent="none" className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <div className="min-w-0 flex-1">
-              <p className="label-caps text-outline">Latest workouts</p>
-              <LatestLogs isLoading={workouts.isLoading} sessions={completedSessions.slice(0, 4)} />
+          <section aria-labelledby="week-title">
+            <h2 className="mb-2 px-1 text-title-3 text-text" id="week-title">This week</h2>
+            <div className="overflow-hidden rounded-[var(--radius-card)] bg-surface">
+              {/* Dark stage in both themes. Ambience and canvas stay inside this card. */}
+              <div className="relative isolate h-60 overflow-hidden bg-stage">
+                <BayAmbience contained />
+                <div className="relative z-10 h-full">
+                  <AvatarStage autoSpin={displaySettings.autoSpin} readiness={systemCharge} />
+                </div>
+              </div>
+              <dl className="grid grid-cols-3 divide-x divide-line">
+                <div className="px-4 py-3.5"><StatTile label="Workouts" value={week.workouts} /></div>
+                <div className="px-4 py-3.5"><StatTile label="Sets" value={week.sets} /></div>
+                <div className="px-4 py-3.5"><StatTile label="Volume" unit="kg" value={formatCompactNumber(week.volumeKg)} /></div>
+              </dl>
             </div>
-            <HudButton
-              className="sm:w-56"
-              disabled={isStarting}
-              onClick={() => void start()}
-              size="lg"
-            >
-              {activeWorkout ? "RESUME WORKOUT" : "START WORKOUT"}
-            </HudButton>
-          </Panel>
+          </section>
+        </div>
+
+        <div className="space-y-6">
+          <section aria-labelledby="pr-title">
+            <div className="mb-2 flex items-baseline justify-between px-1">
+              <h2 className="text-title-3 text-text" id="pr-title">Personal bests</h2>
+              <Link className="inline-flex min-h-11 items-center text-body text-accent" href="/settings">Edit</Link>
+            </div>
+            <PerformanceRows
+              exercises={topExercises}
+              isLoading={completedExercises.isLoading || summaryA.isLoading}
+              summaries={summaries}
+            />
+          </section>
+
+          <section aria-labelledby="recent-title">
+            <div className="mb-2 flex items-baseline justify-between px-1">
+              <h2 className="text-title-3 text-text" id="recent-title">Recent workouts</h2>
+              <Link className="inline-flex min-h-11 items-center text-body text-accent" href="/workouts">See all</Link>
+            </div>
+            <SessionRows isLoading={workouts.isLoading} sessions={completedSessions.slice(0, 3)} />
+          </section>
         </div>
       </div>
     </div>

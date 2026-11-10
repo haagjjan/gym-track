@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { LegalPage, Section, legalContacts } from "../../features/legal/legal-page";
 
-export const metadata = { title: "Privacy Notice" };
+export const metadata = { title: "Privacy notice" };
 
 // See legal-page.tsx: contact details are read from server environment per
 // request, so this route must not be statically prerendered.
@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default function PrivacyPage(): ReactNode {
   const contact = legalContacts();
-  return <LegalPage eyebrow="Privacy" title="Privacy Notice">
+  return <LegalPage eyebrow="Privacy" title="Privacy notice">
     <Section title="Controller and contact"><p>{contact.controller}, {contact.address}, controls the processing described here. Privacy requests: {contact.privacyEmail}. Support: {contact.supportEmail}.</p><p>This notice is written for the Swiss Federal Act on Data Protection. The service is offered only to adults who live in Switzerland.</p></Section>
     <Section title="Data we process"><p>We process account email, username, password hash and authentication records; the age, residence and policy confirmations given at signup; workout sessions, exercises, sets, notes, templates and calculated progress; privacy and tutorial preferences; your answers to optional in-app messages; and, only after opt-in, account-linked first-party product events.</p><p>Waitlist requests and invitations from the closed beta are kept only until their retention period below ends. They are included in your data export and deleted with your account. No new records of this kind are created.</p><p>Body profile, favorite lifts, display settings, active set drafts and filters may be stored in your browser and scoped to the signed-in user. Active-set drafts use local storage for recovery and expire no later than 24 hours after their most recent edit. The app does not use advertising or third-party analytics trackers.</p></Section>
     <Section title="Purposes"><p>Data is used to operate and secure accounts, provide workout logging and analysis, recover access, answer support requests, send service notices and optional in-app messages, improve the product where consent was given, and meet security/legal obligations.</p></Section>

@@ -4,7 +4,7 @@ import { getCurrentUser } from "../../../features/auth/server-auth";
 import { AppShell } from "../../../features/shell/app-shell";
 import { TemplatesScreen } from "../../../features/templates/templates-screen";
 
-export const metadata = { title: "Workout Templates" };
+export const metadata = { title: "Workout templates" };
 
 export default async function TemplatesPage({ searchParams }: { searchParams: Promise<{ template?: string }> }): Promise<ReactNode> {
   const user = await getCurrentUser();

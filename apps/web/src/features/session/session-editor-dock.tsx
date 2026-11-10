@@ -48,14 +48,15 @@ export function SessionEditorDock({
     <div
       aria-label={label}
       className={isMobile
-        ? "fixed inset-x-0 z-50 overflow-y-auto rounded-t-2xl border border-cyan/30 bg-surface p-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] shadow-2xl"
-        : "static overflow-visible bg-transparent p-0"}
+        ? "fixed inset-x-0 z-50 overflow-y-auto overscroll-contain rounded-t-[var(--radius-card)] bg-surface-raised px-4 pb-[max(env(safe-area-inset-bottom),1rem)] pt-2"
+        : "static mt-3 overflow-visible rounded-[var(--radius-card)] bg-surface-raised p-4"}
       aria-modal={isMobile || undefined}
       ref={dialogRef}
       role="dialog"
       style={isMobile ? { bottom: viewport.bottom, maxHeight: viewport.maxHeight || "82dvh" } : undefined}
       tabIndex={isMobile ? -1 : undefined}
     >
+      {isMobile ? <div aria-hidden className="mx-auto mb-3 h-1 w-9 rounded-full bg-control-line" /> : null}
       <div className="mx-auto max-w-2xl">{children}</div>
     </div>
   );
@@ -66,14 +67,7 @@ export function SessionEditorDock({
     if (event.target === event.currentTarget) onClose();
   }
 
-  return createPortal(<div className="fixed inset-0 z-40 bg-void/70 backdrop-blur-sm" onMouseDown={closeFromBackdrop}>{editor}</div>, document.body);
-}
-
-export function SessionTimerDock({ children }: { children: ReactNode }): ReactNode {
-  const isMobile = useMobileViewport();
-  if (isMobile === null) return null;
-  const timer = <div className={isMobile ? "fixed inset-x-0 bottom-0 z-40 p-3 pb-[max(env(safe-area-inset-bottom),0.75rem)]" : "static mt-4 p-0"}><div className="mx-auto max-w-2xl">{children}</div></div>;
-  return isMobile ? createPortal(timer, document.body) : timer;
+  return createPortal(<div className="fixed inset-0 z-40 bg-black/50" onMouseDown={closeFromBackdrop}>{editor}</div>, document.body);
 }
 
 function useMobileViewport(): boolean | null {

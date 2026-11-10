@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { apiFetch, errorMessage } from "../../shared/api/client";
+import { Button } from "../../shared/ui/button";
 import { useModalBehavior } from "../../shared/ui/use-modal-behavior";
 
 interface UserMessage {
@@ -38,7 +39,7 @@ export function MessageCenter({ inline = false }: { inline?: boolean }): ReactNo
       setMessage(null);
       await load();
     } catch (caught) {
-      setError(errorMessage(caught, "The message could not be dismissed."));
+      setError(errorMessage(caught, "Couldn't dismiss the message. Check your connection and try again."));
     } finally { setBusy(false); }
   }
 
@@ -53,7 +54,7 @@ export function MessageCenter({ inline = false }: { inline?: boolean }): ReactNo
       setMessage(null); setText(""); setChoice(""); setRating(0); setError(null);
       await load();
     } catch (caught) {
-      setError(errorMessage(caught, "The response could not be saved."));
+      setError(errorMessage(caught, "Couldn't save your answer. Check your connection and try again."));
     } finally { setBusy(false); }
   }
 
@@ -63,35 +64,36 @@ export function MessageCenter({ inline = false }: { inline?: boolean }): ReactNo
   });
 
   if (!message) {
-    return inline ? <p className="rounded border border-outline-dim/50 p-5 text-sm text-outline">You have no new messages.</p> : null;
+    return inline ? <p className="text-body text-text-secondary">You have no new messages.</p> : null;
   }
 
   const content = (
-    <article className="w-full max-w-lg rounded border border-cyan/40 bg-surface p-5 shadow-2xl">
+    <article className={inline ? "w-full rounded-[var(--radius-card)] bg-surface p-4" : "max-h-[85dvh] w-full max-w-lg overflow-y-auto rounded-t-[var(--radius-card)] bg-surface-raised px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 sm:rounded-[var(--radius-card)] sm:pt-4"}>
+      {inline ? null : <div aria-hidden className="mx-auto mb-3 h-1 w-9 rounded-full bg-control-line sm:hidden" />}
       <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0"><p className="label-caps text-cyan">{message.essential ? "Service notice" : "Message"}</p><h2 className="mt-2 break-words font-display text-xl font-bold text-fg">{message.title}</h2></div>
-        <button aria-label="Dismiss message" className="min-h-11 shrink-0 px-3 text-outline hover:text-fg" data-modal-initial-focus disabled={busy} onClick={() => void dismiss()} type="button">Close</button>
+        <div className="min-w-0">{message.essential ? <p className="text-footnote text-warning">Service notice</p> : null}<h2 className="break-words text-title-3 text-text">{message.title}</h2></div>
+        <button aria-label="Dismiss message" className="min-h-11 shrink-0 px-3 text-body text-accent disabled:text-text-muted" data-modal-initial-focus disabled={busy} onClick={() => void dismiss()} type="button">Close</button>
       </div>
-      <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-6 text-fg-muted">{message.body}</p>
-      {message.actionUrl ? <a className="mt-3 inline-flex min-h-11 items-center break-all text-cyan underline" href={message.actionUrl} rel="noreferrer" target="_blank">Open related link ↗</a> : null}
+      <p className="mt-2 whitespace-pre-wrap break-words text-body text-text-secondary">{message.body}</p>
+      {message.actionUrl ? <a className="mt-1 inline-flex min-h-11 items-center break-all text-body text-accent" href={message.actionUrl} rel="noreferrer" target="_blank">Open related link</a> : null}
       <form className="mt-5 space-y-3" onSubmit={(event) => void respond(event)}>
         <ResponseInput message={message} choice={choice} rating={rating} setChoice={setChoice} setRating={setRating} setText={setText} text={text} />
-        {error ? <p className="text-sm text-red" role="alert">{error}</p> : null}
-        <p className="text-xs leading-5 text-outline">Answering is optional. Closing puts this message away for good.</p>
-        <button className="min-h-11 rounded border border-cyan/60 px-4 font-display text-xs font-bold uppercase tracking-wider text-cyan disabled:opacity-50" disabled={busy} type="submit">{busy ? "SAVING…" : responseLabel(message.responseType)}</button>
+        {error ? <p className="text-subhead text-danger" role="alert">{error}</p> : null}
+        <p className="text-footnote text-text-secondary">Answering is optional. Closing puts this message away for good.</p>
+        <Button className="w-full" disabled={busy} type="submit">{busy ? "Saving…" : responseLabel(message.responseType)}</Button>
       </form>
     </article>
   );
 
-  return inline ? content : <div aria-label="Message" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-void/80 p-4" ref={dialogRef} role="dialog" tabIndex={-1}>{content}</div>;
+  return inline ? content : <div aria-label="Message" aria-modal="true" className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50 sm:items-center sm:p-4" ref={dialogRef} role="dialog" tabIndex={-1}>{content}</div>;
 }
 
 function ResponseInput(props: { message: UserMessage; choice: string; rating: number; text: string; setChoice(value: string): void; setRating(value: number): void; setText(value: string): void }): ReactNode {
   const { message } = props;
-  if (message.responseType === "ACKNOWLEDGEMENT") return <p className="text-sm text-fg">Select acknowledge to confirm you saw this message.</p>;
-  if (message.responseType === "RATING") return <fieldset><legend className="label-caps text-outline">Your rating</legend><div className="mt-2 flex gap-2">{[1, 2, 3, 4, 5].map((value) => <button aria-pressed={props.rating === value} className={`size-11 rounded border ${props.rating === value ? "border-cyan bg-cyan/10 text-cyan" : "border-outline-dim text-fg"}`} key={value} onClick={() => props.setRating(value)} type="button">{value}</button>)}</div></fieldset>;
-  if (message.responseType === "SINGLE_CHOICE") return <fieldset><legend className="label-caps text-outline">Your answer</legend><div className="mt-2 grid gap-2">{message.responseOptions.map((option) => <label className="flex min-h-11 items-center gap-3 rounded border border-outline-dim px-3 text-sm text-fg" key={option}><input checked={props.choice === option} name={`choice-${message.id}`} onChange={() => props.setChoice(option)} type="radio" /><span className="min-w-0 break-words">{option}</span></label>)}</div></fieldset>;
-  return <label className="block"><span className="label-caps text-outline">Your feedback (optional)</span><textarea className="mt-2 min-h-28 w-full rounded border border-outline-dim bg-surface-low p-3 text-fg" maxLength={1_000} onChange={(event) => props.setText(event.currentTarget.value)} value={props.text} /><span className="text-xs text-outline">{props.text.length}/1000</span></label>;
+  if (message.responseType === "ACKNOWLEDGEMENT") return <p className="text-body text-text">Tap Acknowledge to confirm you saw this message.</p>;
+  if (message.responseType === "RATING") return <fieldset><legend className="text-subhead text-text-secondary">Your rating</legend><div className="mt-2 flex gap-2">{[1, 2, 3, 4, 5].map((value) => <button aria-pressed={props.rating === value} className={`num size-11 rounded-full ${props.rating === value ? "bg-accent text-on-accent" : "bg-surface text-text"}`} key={value} onClick={() => props.setRating(value)} type="button">{value}</button>)}</div></fieldset>;
+  if (message.responseType === "SINGLE_CHOICE") return <fieldset><legend className="text-subhead text-text-secondary">Your answer</legend><div className="mt-2 divide-y divide-line overflow-hidden rounded-[var(--radius-card)] bg-surface">{message.responseOptions.map((option) => <label className="flex min-h-11 items-center gap-3 px-4 py-2 text-body text-text" key={option}><input checked={props.choice === option} name={`choice-${message.id}`} onChange={() => props.setChoice(option)} type="radio" /><span className="min-w-0 break-words">{option}</span></label>)}</div></fieldset>;
+  return <label className="block"><span className="text-subhead text-text-secondary">Your feedback (optional)</span><textarea className="mt-2 min-h-28 w-full rounded-[var(--radius-control)] border border-control-line bg-surface-raised p-3 text-body text-text" maxLength={1_000} onChange={(event) => props.setText(event.currentTarget.value)} value={props.text} /><span className="num text-footnote text-text-muted">{props.text.length}/1000</span></label>;
 }
 
 function buildResponse(type: UserMessage["responseType"], value: { choice: string; rating: number; text: string }): Record<string, unknown> | null {

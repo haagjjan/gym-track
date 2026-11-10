@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 import {
   expectModalContract,
   expectNoSeriousAccessibilityViolations,
@@ -40,10 +40,10 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
 
   const onboarding = page.getByRole("region", { name: "Try the example" });
   await expect(onboarding).toBeVisible();
-  await onboarding.getByRole("button", { name: "Skip", exact: true }).click();
+  await onboarding.getByRole("button", { name: "Not now", exact: true }).click();
   await expect(onboarding).toHaveCount(0);
   const storageChoice = page.getByRole("dialog", { name: "Device storage choice" });
-  await storageChoice.getByRole("button", { name: "ALLOW FUNCTIONAL" }).click();
+  await storageChoice.getByRole("button", { name: "Save settings on this device" }).click();
   await expect(storageChoice).toHaveCount(0);
   await expectNoHorizontalScroll(page);
 
@@ -82,16 +82,16 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   await expect(messageDialog).toHaveCount(0);
   await page.unroute("**/api/messages**");
 
-  // Fresh accounts are unverified → pending badge on the settings icon, and a
+  // Fresh accounts are unverified → pending badge on the Settings entry, and a
   // resend affordance inside Settings (not a persistent top-of-app banner).
-  await expect(page.getByLabel("Settings")).toBeVisible();
+  await expect(page.getByRole("link", { name: /settings.*email not confirmed/i })).toBeVisible();
   await page.goto("/settings");
-  await expect(page.getByText("Email not confirmed")).toBeVisible();
+  await expect(page.getByText("Email not confirmed", { exact: true })).toBeVisible();
   await expectNoSeriousAccessibilityViolations(page);
 
-  await page.getByRole("link", { name: "Contact support & service status" }).click();
-  await expect(page.getByRole("heading", { name: "Support & Service Status" })).toBeVisible();
-  await page.getByRole("link", { name: "Back to Settings" }).click();
+  await page.getByRole("link", { name: "Contact support" }).click();
+  await expect(page.getByRole("heading", { name: "Support", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Back to Settings" }).click();
   await expect(page).toHaveURL(/\/settings$/);
   await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
 
@@ -99,9 +99,13 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   // renderer choice at all.
   await expect(page.getByRole("radiogroup", { name: "Volume body map" })).toHaveCount(0);
 
-  await page.getByRole("spinbutton", { name: "Volume heat ceiling" }).fill("35");
-  await page.getByRole("button", { name: "SAVE HEAT CEILING" }).click();
-  await expect(page.getByRole("button", { name: "SAVED" })).toBeVisible();
+  // The weekly-sets limit opens in a sheet from its row, saves on its own,
+  // then confirms with "Saved".
+  await page.getByRole("button", { name: /^Full color on body map/ }).click();
+  const heatCeiling = page.getByRole("spinbutton", { name: "Volume heat ceiling" });
+  await heatCeiling.fill("35");
+  await heatCeiling.blur();
+  await expect(page.getByRole("status").filter({ hasText: "Saved" }).first()).toBeVisible();
 
   // ---- Logout / login round-trip ----
   await page.request.post("/api/auth/logout", {
@@ -115,7 +119,7 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   await expect(page.getByRole("heading", { name: new RegExp(username, "i") })).toBeVisible();
 
   await page.goto("/settings");
-  await expect(page.getByRole("spinbutton", { name: "Volume heat ceiling" })).toHaveValue("35");
+  await expect(page.getByRole("button", { name: /^Full color on body map\s*35 sets/ })).toBeVisible();
 
   // The heat-ceiling preference survives navigation and auth. The 3D body is
   // now the only Volume renderer, so neither the flat map nor any renderer
@@ -127,10 +131,12 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
 
   // ---- Start a session from the launch screen ----
   await page.goto("/workout");
-  await expect(page.getByRole("heading", { name: "Start a workout" })).toBeVisible();
-  const startFromScratch = page.getByRole("button", { name: "START", exact: true });
+  await expect(page.getByRole("heading", { name: "Workout", exact: true })).toBeVisible();
+  const startFromScratch = page.getByRole("button", { name: "Start empty workout", exact: true });
   await expect(startFromScratch).toBeVisible();
-  await expect(page.getByText("Use a template", { exact: true })).toBeVisible();
+  // Templates and the exercise library live under the Workout tab.
+  await expect(page.getByRole("link", { name: /^Templates/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /^Exercise library/ })).toBeVisible();
   await startFromScratch.click();
   await expect(page).toHaveURL(/\/workouts\/[0-9a-f-]+\?focusName=1$/);
   const workoutId = page.url().match(/\/workouts\/([0-9a-f-]+)/)?.[1];
@@ -140,15 +146,12 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   await workoutName.fill("Gym Smoke");
   await workoutName.press("Enter");
   await expect(workoutName).toHaveValue("Gym Smoke");
-  const liveStatus = page.getByText(/^LIVE · \d{2}:\d{2}:\d{2}$/);
-  await expect(liveStatus).toBeVisible();
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await expect.poll(() => liveStatus.locator(".status-dot").evaluate((element) => getComputedStyle(element).animationName)).toBe("none");
-  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await expect(page.getByTestId("workout-elapsed")).toHaveText(/^\d+:\d{2}$/);
+  await expect(page.getByRole("button", { name: "Minimize workout" })).toBeVisible();
 
   // ---- Add an exercise via the sheet ----
   await expect(page.getByRole("list", { name: "Workout exercises" })).toHaveCount(0);
-  const chooseExercises = page.getByRole("button", { name: "Choose exercises" });
+  const chooseExercises = page.getByRole("button", { name: "Add exercises" });
   await chooseExercises.click();
   const initialPicker = page.getByRole("dialog", { name: "Choose exercises" });
   await expect(initialPicker.getByRole("button", { name: "Close exercise picker" })).toBeFocused();
@@ -165,14 +168,14 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
     .click();
   await page.getByRole("button", { name: "Add selected exercises (1)" }).click();
   await expect(page.getByRole("heading", { name: "Bench Press" })).toBeVisible();
-  await expect(page.getByRole("navigation", { name: "Set mode exercise navigation" })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Exercise navigation" })).toBeVisible();
   await expect(page.getByRole("list", { name: "Workout exercises" })).toHaveCount(0);
   await page.getByRole("button", { name: "Exercises" }).click();
-  await expect(page.getByText("Tap an exercise to log sets.")).toBeVisible();
-  await page.getByRole("button", { name: /Bench Press \d+ sets$/ }).click();
+  await expect(page.getByRole("list", { name: "Workout exercises" })).toBeVisible();
+  await page.getByRole("button", { name: /^Bench Press (No sets yet|\d+ sets?)$/ }).click();
 
   // ---- Preserve an unfinished set locally, then log it ----
-  await page.getByRole("button", { name: "Add Set" }).click();
+  await page.getByRole("button", { name: "Add set" }).click();
   const newSetDialog = page.getByRole("dialog", { name: "New set" });
   await expect(newSetDialog).toBeVisible();
   await expect(newSetDialog).toBeFocused();
@@ -192,69 +195,76 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   await expect(weightInput).not.toBeFocused();
 
   await weightInput.fill("60");
-  await newSetDialog.getByRole("button", { name: "Increase WEIGHT" }).click();
+  await newSetDialog.getByRole("button", { name: "Increase weight" }).click();
   await expect(weightInput).not.toBeFocused();
   await expect(weightInput).toHaveValue("60");
-  await newSetDialog.getByRole("button", { name: "Increase WEIGHT" }).click();
+  await newSetDialog.getByRole("button", { name: "Increase weight" }).click();
   await expect(weightInput).toHaveValue("62.5");
   await weightInput.fill("60");
   await page.reload();
-  await page.getByRole("button", { name: /Bench Press \d+ sets$/ }).click();
-  await page.getByRole("button", { name: "Add Set" }).click();
+  // A reload reopens the exercise you were on (remembered per workout for the session).
+  await expect(page.getByRole("heading", { name: "Bench Press", level: 2 })).toBeVisible();
+  await page.getByRole("button", { name: "Add set" }).click();
   await expect(page.locator('input[inputmode="decimal"]').first()).toHaveValue("60");
-  await page.getByRole("button", { name: "SAVE SET" }).click();
+  await page.getByRole("button", { name: "Save set" }).click();
   await expect(page.getByText(/60 kg × 8/)).toBeVisible();
-  await expect(page.getByText("Working", { exact: true })).toBeVisible();
-  await expect(page.getByText("Resting", { exact: true })).toBeVisible();
-  const timerDock = page.locator("div.fixed.inset-x-0.bottom-0").filter({ hasText: "Resting" });
+  await expect(page.getByRole("button", { name: /^Set 1: 60 kg × 8/ })).toBeVisible();
+  const timerDock = page.getByRole("timer", { name: "Rest timer" });
   await expect(timerDock).toBeVisible();
-  const timerBeforeEdit = await timerDock.locator("p.font-mono").textContent();
+  // The rest timer sits in the bottom bar, in the thumb zone, next to Finish.
+  await expect(page.getByRole("button", { name: "Finish workout", exact: true })).toBeVisible();
+  const timerBeforeEdit = await timerDock.getByTestId("rest-remaining").textContent();
   await page.getByRole("button", { name: /60 kg × 8/ }).click();
   const editSetDialog = page.getByRole("dialog", { name: "Edit set 1" });
   await expect(editSetDialog).toBeVisible();
-  await expect(page.getByText("Resting", { exact: true })).toHaveCount(0);
   await expect(editSetDialog.locator('input[inputmode="decimal"]')).not.toBeFocused();
-  await editSetDialog.getByRole("radio", { name: "warmup" }).click();
+  await editSetDialog.getByRole("radio", { name: "Warm-up" }).click();
   await editSetDialog.getByLabel("Note").fill("Smoke edit");
-  await editSetDialog.getByRole("button", { name: "SAVE", exact: true }).click();
+  await editSetDialog.getByRole("button", { name: "Save", exact: true }).click();
   await expect(editSetDialog).toHaveCount(0);
-  await expect(page.getByText("Warmup", { exact: true })).toBeVisible();
+  await expect(page.getByText("Warm-up", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: /60 kg × 8/ }).click();
   const restoreWorkingDialog = page.getByRole("dialog", { name: "Edit set 1" });
-  await restoreWorkingDialog.getByRole("radio", { name: "working" }).click();
-  await restoreWorkingDialog.getByRole("button", { name: "SAVE", exact: true }).click();
-  await expect(page.getByText("Working", { exact: true })).toBeVisible();
+  await restoreWorkingDialog.getByRole("radio", { name: "Working" }).click();
+  await restoreWorkingDialog.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByText("Warm-up", { exact: true })).toHaveCount(0);
   await expect(timerDock).toBeVisible();
   await page.waitForTimeout(1_100);
-  const timerAfterEdit = await timerDock.locator("p.font-mono").textContent();
+  const timerAfterEdit = await timerDock.getByTestId("rest-remaining").textContent();
   expect(timerSeconds(timerAfterEdit)).toBeLessThan(timerSeconds(timerBeforeEdit));
   await expectNoHorizontalScroll(page);
 
   // ---- Complete (two-tap confirm) ----
-  await page.getByRole("button", { name: "FINISH", exact: true }).click();
-  await page.getByRole("button", { name: "CONFIRM FINISH", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Session saved successfully" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "View History" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Dashboard" })).toBeVisible();
+  await page.getByRole("button", { name: "Finish workout", exact: true }).click();
+  await page.getByRole("button", { name: "Tap again to finish", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Workout complete" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Save as template", exact: true })).toBeVisible();
+  // The time is edited from the pencil next to Duration, in a sheet.
+  await page.getByRole("button", { name: /^Duration .*Change workout time$/ }).click();
+  const timeSheet = page.getByRole("dialog", { name: "Workout time" });
+  await expect(timeSheet.getByLabel("Start")).toBeVisible();
+  await expect(timeSheet.getByLabel("Finish")).toBeVisible();
+  await timeSheet.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(timeSheet).toHaveCount(0);
 
   // The next workout shows and prefills the latest earlier best working set.
   await page.goto("/workout");
-  await page.getByRole("button", { name: "START", exact: true }).click();
-  await page.getByRole("button", { name: "Choose exercises" }).click();
+  await page.getByRole("button", { name: "Start empty workout", exact: true }).click();
+  await page.getByRole("button", { name: "Add exercises" }).click();
   const secondPicker = page.getByRole("dialog", { name: "Choose exercises" });
   await expect(secondPicker.getByRole("searchbox")).not.toBeFocused();
   await secondPicker.getByRole("searchbox").fill("Bench Press");
   await secondPicker.getByRole("button", { name: /^Bench Press\b/ }).first().click();
   await secondPicker.getByRole("button", { name: "Add selected exercises (1)" }).click();
-  await expect(page.getByText(/^Gym Smoke ·/)).toBeVisible();
+  await expect(page.getByText(/^Gym Smoke, /)).toBeVisible();
   await expect(page.getByText(/60 kg × 8/)).toBeVisible();
-  await page.getByRole("button", { name: "Add Set" }).click();
+  await page.getByRole("button", { name: "Add set" }).click();
   await expect(page.locator('input[inputmode="decimal"]').first()).toHaveValue("60");
   await expect(page.locator('input[inputmode="decimal"]').first()).not.toBeFocused();
   await page.getByRole("button", { name: "Cancel" }).click();
   await page.getByRole("button", { name: "Workout actions" }).click();
   await page.getByRole("menuitem", { name: "Discard workout" }).click();
-  await page.getByRole("alertdialog", { name: "Discard this workout?" }).getByRole("button", { name: "DISCARD WORKOUT" }).click();
+  await page.getByRole("alertdialog", { name: "Discard this workout?" }).getByRole("button", { name: "Discard workout" }).click();
   await expect(page).toHaveURL(/\/workouts$/);
   await page.goto(`/workouts/${workoutId}`);
 
@@ -270,7 +280,7 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
 
   // ---- History shows the session with its set detail ----
   await page.goto("/workouts");
-  await expect(page.getByRole("heading", { name: "Workout history" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "History", exact: true })).toBeVisible();
   const csvTrigger = page.getByRole("button", { name: "View CSV format" });
   await csvTrigger.click();
   const csvGuide = page.getByRole("dialog", { name: "Workout CSV guide" });
@@ -283,21 +293,31 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   await expect(csvGuide.getByText("workout_started_at", { exact: true })).toBeVisible();
   await expect(csvGuide.getByRole("link", { name: "Download sample CSV" })).toBeVisible();
   await csvGuide.getByRole("button", { name: "Close", exact: true }).click();
-  await page.getByRole("button", { name: /GYM_SMOKE/ }).first().click();
+  // A history row opens a quick view of the sets; "Open workout" opens the full page.
+  await page.getByRole("button", { name: /^Gym Smoke/ }).first().click();
+  await expect(page.getByRole("list", { name: "Sets for Bench Press" }).getByText("60 kg × 8").first()).toBeVisible();
+  await page.getByRole("link", { name: "Open workout", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Workout complete" })).toBeVisible();
+  await page.getByRole("button", { name: /^Bench Press (No sets|\d+ sets?)$/ }).click();
   await expect(page.getByText(/60 kg × 8/)).toBeVisible();
   await expectNoHorizontalScroll(page);
 
   // ---- Progress renders the lift's signal ----
   await page.goto("/progress");
-  await expect(page.getByRole("heading", { name: "Progress analytics" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Bench Press" })).toBeVisible();
-  await expect(page.getByRole("radio", { name: "Est. 1RM" })).toBeVisible();
-  await expect(metricValue(page, "Total sets")).toHaveText("0");
-  await expect(metricValue(page, "Total tonnage")).toHaveText("0 KG");
-  await expect(metricValue(page, "Best set")).toHaveText("60×8");
+  await expect(page.getByRole("heading", { name: "Progress", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Exercise: Bench Press. Change exercise" })).toBeVisible();
+  const summary = page.getByRole("region", { name: "Summary" });
+  await expect(metricValue(summary, "Sets, 1M")).toHaveText("0");
+  await expect(metricValue(summary, "Volume, 1M")).toHaveText("0");
+  await expect(metricValue(summary, "Best est. 1RM")).toHaveText("76");
+  // The chart always holds every logged day; the window only sets how much is on screen.
+  await expect(page.getByRole("button", { name: "Weight, kg" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Reps" })).toBeVisible();
+  await expect(page.getByText("60 kg × 8, est. 1RM 76 kg", { exact: false })).toBeVisible();
   await page.getByRole("radio", { name: "MAX" }).click();
-  await expect(metricValue(page, "Total sets")).toHaveText("1");
-  await expect(metricValue(page, "Total tonnage")).toHaveText("480 KG");
+  await expect(page.getByRole("radio", { name: "Est. 1RM" })).toBeVisible();
+  await expect(metricValue(summary, "Sets, all")).toHaveText("1");
+  await expect(metricValue(summary, "Volume, all")).toHaveText("480");
   await page.getByRole("button", { name: "How estimated 1RM is calculated" }).click();
   const estimatedHelp = page.getByRole("tooltip");
   await expect(estimatedHelp).toContainText("e1RM = weight × (1 + reps ÷ 30)");
@@ -308,34 +328,38 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
 
   // ---- Completed logs can be removed everywhere ----
   await page.goto("/workouts");
-  await page.getByRole("button", { name: /GYM_SMOKE/ }).first().click();
-  const deleteTrigger = page.getByRole("button", { name: "Delete" });
-  await deleteTrigger.click();
-  const deleteDialog = page.getByRole("alertdialog", { name: "Delete this workout log?" });
+  await page.getByRole("button", { name: /^Gym Smoke/ }).first().click();
+  await page.getByRole("link", { name: "Open workout", exact: true }).click();
+  // A finished workout is deleted from its detail page menu.
+  const actions = page.getByRole("button", { name: "Workout actions" });
+  await actions.click();
+  await page.getByRole("menuitem", { name: "Delete workout" }).click();
+  const deleteDialog = page.getByRole("alertdialog", { name: "Delete this workout?" });
   await expect(deleteDialog).toBeVisible();
-  await expect(deleteDialog.getByRole("button", { name: "CANCEL" })).toBeFocused();
+  await expect(deleteDialog.getByRole("button", { name: "Cancel" })).toBeFocused();
   await expectModalContract(page, deleteDialog);
   await page.keyboard.press("Escape");
   await expect(deleteDialog).toHaveCount(0);
-  await expect(deleteTrigger).toBeFocused();
-  await deleteTrigger.click();
-  await deleteDialog.getByRole("button", { name: "DELETE LOG" }).click();
-  await expect(deleteDialog).toHaveCount(0);
-  await expect(page.getByRole("button", { name: /GYM_SMOKE/ })).toHaveCount(0);
+  await expect(actions).toBeFocused();
+  await actions.click();
+  await page.getByRole("menuitem", { name: "Delete workout" }).click();
+  await deleteDialog.getByRole("button", { name: "Delete workout" }).click();
+  await expect(page).toHaveURL(/\/workouts$/);
+  await expect(page.getByRole("button", { name: /^Gym Smoke/ })).toHaveCount(0);
 
   // ---- Accidental active workouts can be discarded and restarted ----
   await page.goto("/workout");
-  await page.getByRole("button", { name: "START", exact: true }).click();
+  await page.getByRole("button", { name: "Start empty workout", exact: true }).click();
   await page.getByRole("button", { name: "Workout actions" }).click();
   await page.getByRole("menuitem", { name: "Discard workout" }).click();
   const discardDialog = page.getByRole("alertdialog", { name: "Discard this workout?" });
-  await discardDialog.getByRole("button", { name: "DISCARD WORKOUT" }).click();
+  await discardDialog.getByRole("button", { name: "Discard workout" }).click();
   await expect(page).toHaveURL(/\/workouts$/);
   await page.goto("/workout");
-  await expect(page.getByRole("button", { name: "START", exact: true })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Start empty workout", exact: true })).toBeEnabled();
 
   await page.goto("/help");
-  await expect(page.getByRole("link", { name: "Try the example", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Take the tour", exact: true })).toBeVisible();
   await expect(page.getByText("Working and warmup sets", { exact: true })).toBeVisible();
   await expectNoSeriousAccessibilityViolations(page);
 
@@ -405,8 +429,8 @@ async function expectNoHorizontalScroll(page: Page): Promise<void> {
   expect(hasOverflow, "page must not scroll horizontally on mobile").toBe(false);
 }
 
-function metricValue(page: Page, label: string) {
-  return page.getByText(label, { exact: true }).locator("..").locator("p").nth(1);
+function metricValue(page: Page | Locator, label: string) {
+  return page.getByText(label, { exact: true }).locator("..").locator(".num");
 }
 
 function timerSeconds(value: string | null): number {

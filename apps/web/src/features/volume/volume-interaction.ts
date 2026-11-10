@@ -7,18 +7,22 @@ const COARSE_POINTER_QUERY = "(pointer: coarse)";
 export interface VolumeOrbitPolicy {
   enableZoom: boolean;
   hint: string;
-  touchAction: "none" | "pan-y";
+  /** Phones: TouchRotate splits each touch into rotate (sideways) or page scroll (vertical). */
+  touchRotate: boolean;
+  touchAction: "none";
 }
 
 const COARSE_POLICY: VolumeOrbitPolicy = {
   enableZoom: false,
-  hint: "SWIPE SIDEWAYS TO ROTATE · SWIPE UP/DOWN TO SCROLL",
-  touchAction: "pan-y"
+  hint: "Swipe sideways to rotate the figure.",
+  touchRotate: true,
+  touchAction: "none"
 };
 
 const FINE_POLICY: VolumeOrbitPolicy = {
   enableZoom: true,
-  hint: "DRAG TO ORBIT · SCROLL TO ZOOM",
+  hint: "Drag to rotate the figure. Scroll to zoom.",
+  touchRotate: false,
   touchAction: "none"
 };
 

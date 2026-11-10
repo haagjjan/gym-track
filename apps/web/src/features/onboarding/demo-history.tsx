@@ -1,9 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { HistoryRow } from "../history/history-row";
-import { Panel } from "../../shared/ui/ui";
 import { formatKgValue } from "../../shared/format";
 import { workoutSummary } from "./demo-data";
 import { useDemo, useDemoWorkouts } from "./demo-provider";
@@ -11,21 +9,26 @@ import { useDemo, useDemoWorkouts } from "./demo-provider";
 export function DemoHistory({ workoutId }: { workoutId?: string | undefined }): ReactNode {
   const { record } = useDemo();
   const workouts = useDemoWorkouts();
-  const [expanded, setExpanded] = useState<string | null>(null);
   const selected = workouts.find((workout) => workout.id === workoutId);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   // Opening a detail is an action; a bare visit to History never completes a lesson.
   useEffect(() => { if (selected) record("opened"); }, [selected, record]);
-  if (workoutId) return <div className="mx-auto max-w-5xl space-y-4 p-4 lg:p-6">
-    <Link className="inline-flex min-h-11 items-center text-cyan" href="/help/demo/history">← Example history</Link>
+  if (workoutId) return <div className="mx-auto max-w-3xl space-y-6 px-4 py-4 lg:px-6">
     {selected ? <>
-      <h1 className="font-display text-2xl font-bold text-fg">{selected.title}</h1>
-      {selected.exercises.map((entry) => <Panel key={entry.id}><h2 className="font-display text-lg font-bold text-fg">{entry.exercise.name}</h2><ul className="mt-3 space-y-2 text-sm text-fg-muted">{entry.sets.map((set) => <li className="rounded border border-outline-dim p-3" key={set.id}>{set.setOrder}. {formatKgValue(set.weightKg)} kg × {set.reps} reps · RIR {set.rir} · {set.setType}</li>)}</ul>{!entry.sets.length ? <p className="text-sm text-outline">No sets recorded.</p> : null}</Panel>)}
-    </> : <p className="text-sm text-fg">This practice was reset. Choose one of the example logs from History.</p>}
+      <h1 className="text-title-1 text-text">{selected.title}</h1>
+      {selected.exercises.map((entry) => <section key={entry.id}>
+        <h2 className="mb-2 px-4 text-headline text-text">{entry.exercise.name}</h2>
+        {entry.sets.length ? <ul className="divide-y divide-line overflow-hidden rounded-[var(--radius-card)] bg-surface">{entry.sets.map((set) => <li className="flex min-h-11 items-center justify-between gap-3 px-4 py-2 text-body text-text" key={set.id}><span className="num">Set {set.setOrder}: {formatKgValue(set.weightKg)} kg × {set.reps}</span><span className="text-subhead text-text-secondary">RIR {set.rir}{set.setType === "warmup" ? ", warmup" : ""}</span></li>)}</ul> : <p className="px-4 text-body text-text-secondary">No sets recorded.</p>}
+      </section>)}
+    </> : <>
+      <h1 className="text-title-1 text-text">Example workout</h1>
+      <p className="text-body text-text-secondary">This example was reset. Go back to the example history and choose a workout.</p>
+    </>}
   </div>;
-  return <div className="mx-auto max-w-5xl space-y-4 p-4 lg:p-6">
-    <h1 className="font-display text-2xl font-bold text-fg">Workout history</h1>
-    <p className="text-sm text-fg-muted">{workouts.length} example workouts. Expand a row to see its sets.</p>
-    <ul className="space-y-3">{workouts.map((workout) => <HistoryRow key={workout.id} detail={workout} detailHref={`/help/demo/history/${workout.id}`} isExpanded={expanded === workout.id}
-      onToggle={() => { setExpanded((current) => current === workout.id ? null : workout.id); if (expanded !== workout.id) record("expanded"); }} workout={workoutSummary(workout)} />)}</ul>
+  return <div className="mx-auto max-w-3xl space-y-4 px-4 py-4 lg:px-6">
+    <h1 className="text-title-1 text-text">Workout history</h1>
+    <p className="text-body text-text-secondary">{workouts.length} example workouts. Tap one to see its sets.</p>
+    <ul className="divide-y divide-line overflow-hidden rounded-[var(--radius-card)] bg-surface">{workouts.map((workout) => <HistoryRow detail={workout} detailHref={`/help/demo/history/${workout.id}`} isExpanded={expandedId === workout.id} key={workout.id}
+      onToggle={() => { record("expanded"); setExpandedId((current) => current === workout.id ? null : workout.id); }} workout={workoutSummary(workout)} />)}</ul>
   </div>;
 }

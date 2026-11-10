@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { HudButton, Panel } from "../../shared/ui/ui";
+import { Button, buttonClass } from "../../shared/ui/button";
+import { IconForward } from "../../shared/ui/icons";
 import { WorkoutLaunchChoices } from "../launch/launch-screen";
 import { demoTemplate, practiceWorkout } from "./demo-data";
 import { demoLessons } from "./demo-lessons";
@@ -27,33 +28,35 @@ export function DemoScreen({ page, workoutId, lesson, explore }: {
   function begin(index: number): void {
     void mark("demoInvitationHandled");
     setState((current) => prepareLesson(current, index));
-    router.push(index === 0 ? "/help/demo" : `/help/demo/${demoLessons[index]?.path ?? ""}`);
+    router.push(`/help/demo/${demoLessons[index]?.path ?? ""}`);
   }
   function start(template: boolean): void {
     setState((current) => ({ ...current, practice: practiceWorkout(Date.now(), template) }));
     record("started");
     router.push("/help/demo/session");
   }
-  if (!state.entered) return <div className="mx-auto max-w-3xl space-y-4 p-4 lg:p-6">
-    <p className="text-sm text-cyan">Example data — separate from your account</p>
-    <h1 className="font-display text-2xl font-bold text-fg">Learn by trying it</h1>
-    <p className="text-sm text-fg-muted">Use the workout controls, then see what your logs reveal in Progress and Volume. Take it one step at a time.</p>
-    <Panel accent="cyan"><h2 className="font-display text-lg font-bold text-fg">{lesson ? demoLessons[targetLesson]!.title : "A workout, from start to insight"}</h2>
-      <p className="mt-2 text-sm text-fg-muted">Eight example logs are ready to explore. Practice resets when you reload or exit; you can restart here any time.</p>
-      <div className="mt-4 flex flex-wrap gap-2"><HudButton onClick={() => begin(targetLesson)}>{lesson ? "Start this lesson" : "Start guided example"}</HudButton><HudButton onClick={() => { void mark("demoInvitationHandled"); setState((current) => ({ ...current, entered: true, lesson: null })); router.push(`/help/demo/${exploreTarget}`); }} variant="outline">Explore freely</HudButton></div>
-    </Panel>
-    <Link className="inline-flex min-h-11 items-center text-sm text-fg-muted" href="/">Exit example →</Link>
+  if (!state.entered) return <div className="mx-auto max-w-3xl space-y-4 px-4 py-4 lg:px-6">
+    <h1 className="text-large-title text-text">{lesson ? demoLessons[targetLesson]!.title : "See how it works"}</h1>
+    <section className="rounded-[var(--radius-card)] bg-surface p-4">
+      <p className="text-body text-text">{lesson ? "Try this step in an example workout." : "Log one set in an example workout and see it show up in Progress and Volume. Takes about a minute."}</p>
+      <p className="mt-1 text-subhead text-text-secondary">Example data only. Your account isn&apos;t touched.</p>
+      <Button className="mt-4 w-full" onClick={() => begin(targetLesson)}>{lesson ? "Start this step" : "Start the tour"}</Button>
+      <Button className="mt-2 w-full" onClick={() => { void mark("demoInvitationHandled"); setState((current) => ({ ...current, entered: true, lesson: null })); router.push(`/help/demo/${exploreTarget}`); }} variant="plain">Explore on my own</Button>
+    </section>
   </div>;
+  const finished = state.lesson === demoLessons.length;
   return <><DemoGuide />
-    {page === "home" ? <div className="mx-auto max-w-3xl space-y-4 p-4 lg:p-6">
-      {state.lesson === 0 ? <Panel accent="cyan"><h1 className="font-display text-2xl font-bold text-fg">Start with Workout</h1><p className="mt-2 text-sm text-fg-muted">Workout is in the center of the mobile tabs or at the bottom of the desktop sidebar.</p><Link className="mt-3 inline-flex min-h-11 items-center rounded border border-cyan px-4 text-sm text-cyan" href="/help/demo/workout">Open Workout →</Link></Panel> : <>
-        <h1 className="font-display text-2xl font-bold text-fg">{state.lesson === demoLessons.length ? "Example walkthrough finished" : "Explore the example"}</h1>
-        <p className="text-sm text-fg-muted">Try any feature again. Your example logs stay here until you exit.</p><DemoCopyTemplate />
-        <div className="flex flex-wrap gap-4">{["history", "progress", "volume"].map((path) => <Link className="inline-flex min-h-11 items-center text-sm capitalize text-cyan" href={`/help/demo/${path}`} key={path}>{path} →</Link>)}</div>
-        <HudButton onClick={() => begin(0)} variant="outline">Replay guided example</HudButton>
-      </>}
-    </div> : page === "workout" ? <div className="mx-auto max-w-3xl space-y-4 p-4 lg:p-6"><h1 className="font-display text-2xl font-bold text-fg">Start a workout</h1>
-      {state.practice?.isOpen ? <Link className="inline-flex min-h-11 items-center text-cyan" href="/help/demo/session">Resume example workout →</Link> :
+    {page === "home" ? <div className="mx-auto max-w-3xl space-y-4 px-4 py-4 lg:px-6">
+      <h1 className="text-large-title text-text">{finished ? "You’re set" : "Example"}</h1>
+      {finished ? <p className="text-body text-text-secondary">That&apos;s the loop: log sets, finish, and Progress and Volume update by themselves.</p> : null}
+      <DemoCopyTemplate />
+      <section>
+        <h2 className="mb-2 px-4 text-subhead text-text-secondary">Look around the example</h2>
+        <ul className="divide-y divide-line overflow-hidden rounded-[var(--radius-card)] bg-surface">{[["history", "History"], ["progress", "Progress"], ["volume", "Volume"]].map(([path, label]) => <li key={path}><Link className="flex min-h-11 items-center gap-3 px-4 py-2 text-body text-text active:bg-surface-raised" href={`/help/demo/${path}`}><span className="min-w-0 flex-1">{label}</span><IconForward className="shrink-0 text-text-muted" /></Link></li>)}</ul>
+      </section>
+      <Button className="w-full" onClick={() => begin(0)} variant="plain">Take the tour again</Button>
+    </div> : page === "workout" ? <div className="mx-auto max-w-3xl space-y-4 px-4 py-4 lg:px-6"><h1 className="text-title-1 text-text">Start a workout</h1>
+      {state.practice?.isOpen ? <Link className={buttonClass("primary")} href="/help/demo/session">Resume example workout</Link> :
         <WorkoutLaunchChoices templatesHref={null} templates={[demoTemplate]} error={null} isLoading={false} onRetry={() => undefined} onScratch={() => start(false)} onStart={() => start(true)} pendingChoice={null} />}
     </div> : page === "session" ? <DemoSession /> : page === "history" ? <DemoHistory workoutId={workoutId} /> : page === "progress" ? <DemoProgressScreen /> : <DemoVolumeScreen />}
   </>;

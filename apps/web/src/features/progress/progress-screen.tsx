@@ -1,19 +1,20 @@
 "use client";
 
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction, type ReactNode } from "react";
+import { useSearchParams } from "next/navigation";
 import type { CompletedExercise, ExerciseProgressItem, ExerciseSummaryPayload } from "../../shared/api/types";
 import type { ProgressViewPreferences } from "./progress-preferences";
-import { EmptyState, ErrorState, Panel, Skeleton } from "../../shared/ui/ui";
+import { ErrorState, Skeleton } from "../../shared/ui/ui";
 import { errorMessage } from "../../shared/api/client";
 import {
   useCompletedExercises,
   useExerciseProgress,
   useExerciseSummary
 } from "../../shared/api/hooks";
-import { shortDate } from "../../shared/format";
+import { formatDay } from "../../shared/format";
 import { ProgressChart, type ChartWindow } from "./progress-chart";
 import { ProgressExerciseSelector } from "./progress-exercise-selector";
-import { RecentLogs } from "./progress-panels";
+import { Segmented } from "./progress-segmented";
 import {
   initialProgressViewPreferences,
   updateProgressViewPreferences
@@ -25,16 +26,18 @@ const timeWindows: { label: string; value: ChartWindow }[] = [
   { label: "1W", value: "7" },
   { label: "1M", value: "30" },
   { label: "3M", value: "90" },
-  { label: "MAX", value: "all" }
+  { label: "Max", value: "all" }
 ];
 
 /**
- * Single-exercise strength analysis: pick one lift, read the trend, decide
+ * Single-exercise strength analysis: pick one exercise, read the trend, decide
  * what to load next time. Working sets drive the signal.
  */
 export function ProgressScreen(): ReactNode {
   const completedExercises = useCompletedExercises();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // `?exercise=<id>` opens that exercise (the shortcut from the workout logger).
+  const requestedId = useSearchParams().get("exercise");
+  const [selectedId, setSelectedId] = useState<string | null>(requestedId);
   const [view, setView] = useState(initialProgressViewPreferences);
   const { window } = view;
 
@@ -46,12 +49,14 @@ export function ProgressScreen(): ReactNode {
     [completedExercises.data]
   );
 
-  // Auto-select the most recently trained lift once data lands.
+  // Auto-select the most recently trained exercise once data lands, or when
+  // the requested one has no logged sets yet.
   useEffect(() => {
-    if (selectedId === null && exercises.length > 0) {
+    if (exercises.length === 0) return;
+    if (selectedId === null || (completedExercises.isSuccess && !exercises.some((exercise) => exercise.id === selectedId))) {
       setSelectedId(exercises[0]?.id ?? null);
     }
-  }, [exercises, selectedId]);
+  }, [completedExercises.isSuccess, exercises, selectedId]);
 
   const progress = useExerciseProgress(selectedId);
   const summaryRange = useMemo(() => progressSummaryRange(window), [window]);
@@ -74,78 +79,60 @@ export function ProgressView({ completedExercises, exercises, selectedId, onSele
   const { window, mode: chartMode, showWeight, showReps } = view;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-4 p-4 lg:p-6">
-      <header>
-        <p className="label-caps text-outline">Analytics</p>
-        <h1 className="font-display text-2xl font-bold tracking-tight text-fg">
-          Progress analytics
-        </h1>
-      </header>
+    <div className="mx-auto max-w-5xl space-y-4 px-4 pb-8 pt-4 lg:px-6">
+      <h1 className="text-large-title text-text">Progress</h1>
 
       {completedExercises.isError ? (
         <ErrorState
           message={errorMessage(
             completedExercises.error,
-            "Tracked exercises could not be loaded."
+            "Couldn't load your exercises. Check your connection and try again."
           )}
           retry={() => void completedExercises.refetch()}
         />
       ) : null}
 
-      <div className="lg:grid lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start lg:gap-4">
-        <ProgressExerciseSelector autoCollapse={autoCollapseSelector} exercises={exercises} isLoading={completedExercises.isLoading} onSelect={onSelect} selectedId={selectedId} />
+      <div className="-mt-3 space-y-3 lg:mt-0 lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start lg:gap-6 lg:space-y-0">
+        <ProgressExerciseSelector exercises={exercises} inline={!autoCollapseSelector} isLoading={completedExercises.isLoading} onSelect={onSelect} selectedId={selectedId} />
 
-        {/* ===== Analysis stack ===== */}
-        <div className="space-y-4">
-          <Panel
-            accent="cyan"
-            className="glass-cyan"
-            eyebrow="Working sets over time"
-            right={
-              <div className="flex gap-1" role="radiogroup" aria-label="Time window">
-                {timeWindows.map((item) => (
-                  <button
-                    aria-checked={window === item.value}
-                    className={`min-h-11 cursor-pointer rounded border px-2.5 font-display text-[10px] font-bold tracking-[0.08em] transition-colors ${
-                      window === item.value
-                        ? "border-cyan bg-cyan/15 text-cyan"
-                        : "border-outline-dim text-outline"
-                    }`}
-                    key={item.value}
-                    onClick={() =>
-                      setView((current) =>
-                        updateProgressViewPreferences(current, { window: item.value })
-                      )
-                    }
-                    role="radio"
-                    type="button"
-                  >
-                    {item.label}
-                  </button>
-                ))}
+        <div className="space-y-3">
+          {/* Summary first: always on screen without scrolling. */}
+          {selected ? (
+            <>
+              <ProgressSummaryMetrics
+                allTime={allTimeSummary.data}
+                allTimeLoading={allTimeSummary.isLoading}
+                range={rangeSummary.data}
+                rangeLoading={rangeSummary.isLoading}
+                window={window}
+              />
+
+            </>
+          ) : null}
+          <section>
+            {selected ? (
+              <div className="mb-3 hidden px-1 lg:block">
+                <h2 className="break-words text-title-2 text-text">{selected.name}</h2>
+                <p className="text-subhead text-text-secondary">
+                  {selected.primaryMuscleGroup.name}, last trained {formatDay(selected.lastDoneAt)}
+                </p>
               </div>
-            }
-          >
-            <h2 className="break-words font-display text-lg font-bold tracking-tight text-fg">
-              {selected?.name ?? "No lift selected"}
-            </h2>
-            <p className="text-[11px] uppercase tracking-[0.08em] text-outline">
-              {selected
-                ? `${selected.primaryMuscleGroup.name} // last trained ${shortDate(selected.lastDoneAt)}`
-                : "Choose a lift from the selector."}
-            </p>
+            ) : null}
 
-            <div className="mt-4">
+            <div>
+              <Segmented label="Time window" onChange={(next: ChartWindow) => setView((current) => updateProgressViewPreferences(current, { window: next }))} options={timeWindows} value={window} />
+            </div>
+
+            <div className="mt-3 rounded-[var(--radius-card)] bg-surface px-4 py-3">
               {!selected ? (
-                <EmptyState
-                  message="Choose a lift above to see how it has progressed."
-                  title="No lift selected"
-                />
+                completedExercises.isLoading ? <Skeleton className="h-64" /> : (
+                  <p className="py-6 text-center text-body text-text-secondary">Choose an exercise to see how it has progressed.</p>
+                )
               ) : progress.isLoading ? (
                 <Skeleton className="h-64" />
               ) : progress.isError ? (
                 <ErrorState
-                  message={errorMessage(progress.error, "Progress could not be loaded.")}
+                  message={errorMessage(progress.error, "Couldn't load progress. Check your connection and try again.")}
                   retry={() => void progress.refetch()}
                 />
               ) : (
@@ -172,23 +159,8 @@ export function ProgressView({ completedExercises, exercises, selectedId, onSele
                 />
               )}
             </div>
-          </Panel>
+          </section>
 
-          {selected ? (
-            <>
-              <ProgressSummaryMetrics
-                allTime={allTimeSummary.data}
-                allTimeLoading={allTimeSummary.isLoading}
-                range={rangeSummary.data}
-                rangeLoading={rangeSummary.isLoading}
-                window={window}
-              />
-
-              <Panel accent="none" eyebrow="Recent sets">
-                <RecentLogs isLoading={progress.isLoading} items={progress.data ?? []} mode={chartMode} window={window} />
-              </Panel>
-            </>
-          ) : null}
         </div>
       </div>
     </div>

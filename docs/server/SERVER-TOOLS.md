@@ -4,7 +4,7 @@ This document explains the deliberately managed administration, diagnostics, acc
 
 ## General administration and file handling
 
-- **`git`** — Retrieves and inspects source repositories and provides version-control tooling. It will be relevant when the deployment workflow is established, but no application repository has been deployed to the server yet.
+- **`git`** — Retrieves and inspects source repositories and provides version-control tooling. The production and staging deployments fetch exact release commits with it (see `ops/production/README.md`).
 - **`curl`** — Makes HTTP and HTTPS requests from the command line. It is useful for downloading small resources and testing service health endpoints.
 - **`wget`** — Downloads files over HTTP, HTTPS, and FTP, with convenient support for resumable and recursive transfers.
 - **`ca-certificates`** — Supplies the trusted certificate-authority bundle used to validate TLS certificates for HTTPS downloads and package repositories.

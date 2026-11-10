@@ -2,11 +2,13 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { ConfirmDialog } from "../../shared/ui/confirm-dialog";
-import { HudButton, Panel, Skeleton } from "../../shared/ui/ui";
+import { Button } from "../../shared/ui/button";
+import { Skeleton } from "../../shared/ui/ui";
 import { errorMessage } from "../../shared/api/client";
 import { useCompletedExercises, useExerciseSearch, useMergeExercises } from "../../shared/api/hooks";
 import type { MergeExercisesResult } from "../../shared/api/types";
-import { IconClose, IconPlus } from "../shell/icons";
+import { IconClose, IconPlus } from "../../shared/ui/icons";
+import { Group, Row, inputClass } from "./settings-ui";
 
 interface MergeCandidate { id: string; name: string }
 
@@ -29,7 +31,7 @@ export function MergeExercisesPanel(): ReactNode {
       setSource(null);
       setTarget(null);
     } catch (caught) {
-      setError(errorMessage(caught, "The exercises could not be merged."));
+      setError(errorMessage(caught, "Couldn't replace the exercise. Check your connection and try again."));
     } finally {
       setConfirming(false);
     }
@@ -37,24 +39,25 @@ export function MergeExercisesPanel(): ReactNode {
 
   return (
     <>
-      <Panel accent="red" eyebrow="Merge duplicate exercises">
-        <p className="mb-3 text-[11px] leading-relaxed text-fg-muted">Replace a duplicate or misnamed exercise in your workout and template references. This cannot be undone.</p>
-        <div className="space-y-3">
-          <ExercisePicker excludeId={target?.id ?? null} label="MERGE_AWAY (duplicate)" onClear={() => setSource(null)} onSelect={(candidate) => { setSource(candidate); setResult(null); }} selected={source} />
-          <ExercisePicker excludeId={source?.id ?? null} label="MERGE_INTO (keep)" onClear={() => setTarget(null)} onSelect={(candidate) => { setTarget(candidate); setResult(null); }} selected={target} />
-          {ready ? <HudButton className="w-full" onClick={() => setConfirming(true)} variant="outline">REVIEW_MERGE</HudButton> : null}
-          {result ? <MergeResult result={result} /> : null}
-          {error ? <p className="text-[11px] text-red">{error}</p> : null}
-        </div>
-      </Panel>
+      <Group>
+        <Row>
+          <p className="text-footnote text-text-secondary">Swap a duplicate or misnamed exercise for the one you want to keep, in your workouts and templates. This can’t be undone.</p>
+        </Row>
+        <Row><ExercisePicker excludeId={target?.id ?? null} label="Duplicate to replace" onClear={() => setSource(null)} onSelect={(candidate) => { setSource(candidate); setResult(null); }} selected={source} /></Row>
+        <Row><ExercisePicker excludeId={source?.id ?? null} label="Exercise to keep" onClear={() => setTarget(null)} onSelect={(candidate) => { setTarget(candidate); setResult(null); }} selected={target} /></Row>
+        {ready ? <Row><Button className="w-full" onClick={() => setConfirming(true)} variant="secondary">Review replacement</Button></Row> : null}
+        {result ? <Row><MergeResult result={result} /></Row> : null}
+        {error ? <Row><p className="text-footnote text-danger" role="alert">{error}</p></Row> : null}
+      </Group>
       <ConfirmDialog
-        confirmLabel="MERGE EXERCISES"
+        confirmLabel="Replace exercise"
         isOpen={confirming && source !== null && target !== null}
         isPending={merge.isPending}
-        message={source && target ? `Replace “${source.name}” with “${target.name}” in your workout and template references, including ${sourceSets} logged ${sourceSets === 1 ? "set" : "sets"}. This cannot be undone.` : "This cannot be undone."}
+        message={source && target ? `Replace “${source.name}” with “${target.name}” in your workouts and templates, including ${sourceSets} logged ${sourceSets === 1 ? "set" : "sets"}. This can’t be undone.` : "This can’t be undone."}
         onCancel={() => setConfirming(false)}
         onConfirm={() => void commit()}
-        title="Merge these exercises?"
+        pendingLabel="Replacing…"
+        title="Replace this exercise?"
       />
     </>
   );
@@ -62,10 +65,10 @@ export function MergeExercisesPanel(): ReactNode {
 
 function MergeResult({ result }: { result: MergeExercisesResult }): ReactNode {
   return (
-    <div className="rounded-lg border border-green/40 bg-green/5 p-3 text-xs text-fg">
-      <p className="label-caps text-green">MERGE_COMPLETE</p>
-      <p className="mt-1.5">
-        {result.affectedSets} sets across {result.affectedWorkouts} sessions and {result.reassignedTemplateExercises} references across {result.affectedTemplates} templates moved from “{result.source.name}” to “{result.target.name}”.
+    <div role="status">
+      <p className="text-headline text-success">Exercise replaced</p>
+      <p className="mt-1 text-subhead text-text-secondary">
+        {result.affectedSets} sets across {result.affectedWorkouts} workouts and {result.reassignedTemplateExercises} references across {result.affectedTemplates} templates moved from “{result.source.name}” to “{result.target.name}”.
         {result.source.retired ? " The duplicate was removed from the catalog." : ""}
       </p>
     </div>
@@ -81,17 +84,33 @@ function ExercisePicker({ excludeId, label, onClear, onSelect, selected }: { exc
     return () => window.clearTimeout(timeout);
   }, [search]);
 
-  if (selected) return <SelectedCandidate label={label} onClear={onClear} selected={selected} />;
+  if (selected) {
+    return (
+      <div>
+        <p className="mb-1 text-subhead text-text-secondary">{label}</p>
+        <div className="flex min-h-11 items-center gap-2">
+          <span className="min-w-0 flex-1 truncate text-body text-text">{selected.name}</span>
+          <button aria-label={`Clear ${label}`} className="flex size-11 shrink-0 items-center justify-center rounded-full text-text-secondary active:opacity-70" onClick={onClear} type="button"><IconClose /></button>
+        </div>
+      </div>
+    );
+  }
   const candidates = (results.data ?? []).filter((exercise) => exercise.id !== excludeId);
   return (
     <div>
-      <p className="label-caps mb-1 text-outline">{label}</p>
-      <input aria-label={`Search ${label}`} className="min-h-11 w-full rounded border border-outline-dim bg-surface-low/60 px-3 font-mono text-sm text-fg placeholder:text-outline focus:border-cyan focus:outline-none" onChange={(event) => setSearch(event.currentTarget.value)} placeholder="Search exercise catalog…" type="search" value={search} />
-      {search.trim() ? <div className="mt-2 max-h-52 space-y-1 overflow-y-auto">{results.isLoading ? <Skeleton className="h-11" /> : candidates.length === 0 ? <p className="text-[11px] text-outline">Nothing found</p> : candidates.map((exercise) => <button className="flex min-h-11 w-full items-center justify-between rounded border border-outline-dim/60 px-3 text-left hover:border-cyan/60" key={exercise.id} onClick={() => { onSelect({ id: exercise.id, name: exercise.name }); setSearch(""); }} type="button"><span className="min-w-0"><span className="block break-words text-sm text-fg">{exercise.name}</span><span className="block break-words text-[9px] uppercase text-outline">{exercise.primaryMuscleGroup.name}</span></span><IconPlus className="shrink-0 text-cyan-dim" /></button>)}</div> : null}
+      <label className="block">
+        <span className="mb-1 block text-subhead text-text-secondary">{label}</span>
+        <input aria-label={`Search ${label}`} className={inputClass} onChange={(event) => setSearch(event.currentTarget.value)} placeholder="Search exercises" type="search" value={search} />
+      </label>
+      {search.trim() ? (
+        <div className="mt-2 max-h-56 overflow-y-auto">
+          {results.isLoading ? <Skeleton className="h-11" /> : candidates.length === 0 ? <p className="py-2 text-subhead text-text-secondary">No exercises found.</p> : candidates.map((exercise) => (
+            <button className="flex min-h-11 w-full items-center justify-between gap-3 py-2 text-left active:opacity-70" key={exercise.id} onClick={() => { onSelect({ id: exercise.id, name: exercise.name }); setSearch(""); }} type="button">
+              <span className="min-w-0"><span className="block break-words text-body text-text">{exercise.name}</span><span className="block break-words text-footnote text-text-secondary">{exercise.primaryMuscleGroup.name}</span></span><IconPlus className="shrink-0 text-accent" />
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
-}
-
-function SelectedCandidate({ label, onClear, selected }: { label: string; onClear: () => void; selected: MergeCandidate }): ReactNode {
-  return <div><p className="label-caps mb-1 text-outline">{label}</p><div className="flex min-h-11 items-center gap-3 rounded border border-cyan/30 bg-surface-low/40 px-3"><span className="min-w-0 flex-1 truncate text-sm text-fg">{selected.name}</span><button aria-label={`Clear ${label}`} className="flex size-9 shrink-0 items-center justify-center rounded text-outline hover:text-red" onClick={onClear} type="button"><IconClose /></button></div></div>;
 }

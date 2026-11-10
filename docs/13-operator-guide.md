@@ -49,9 +49,11 @@ support), Campaigns (publishing switch, drafts, publish/pause/end, answers) and 
 is open while `REGISTRATION_MODE=ENABLED`. Direct SQL remains an
 emergency support escape hatch, not the routine user-management interface.
 
-Stage 1 production is single-owner and uses an existing account. It must run with
-`REGISTRATION_MODE=DISABLED`; there is no public or administrator account-creation endpoint.
-Local development and test stacks explicitly use `REGISTRATION_MODE=ENABLED`.
+Production runs public v0 with `REGISTRATION_MODE=ENABLED` (ADR 0022). Set it to `DISABLED` on
+both API and web to pause signup (kill switch); during a fresh deployment keep it `DISABLED`
+until verification passes, as described in `ops/production/README.md`. Local development and test
+stacks use `ENABLED`. There is no administrator account-creation endpoint; promote an existing
+account with `apps/api/scripts/promote-admin.mjs`.
 
 ### Development signup flow
 
@@ -68,9 +70,8 @@ Local development and test stacks explicitly use `REGISTRATION_MODE=ENABLED`.
    Copy that URL into your browser to complete verification during local testing.
    Recipient, subject, body and action link appear only in this explicit local log transport;
    public-production logs and metrics never contain them.
-3. Until verified, the dashboard shows an `EMAIL_UNVERIFIED` banner with a `RESEND_LINK`
-   button — nothing else is blocked. This is intentional (see `docs/12`): don't lock users out
-   over an unverified email at this stage.
+3. Until verified, Settings shows "Email not confirmed" with a resend button, and the profile
+   icon in the Home header carries a small dot. Nothing else is blocked (ADR 0022).
 
 Each explicit verification resend invalidates unused earlier verification tokens. The UI
 distinguishes `SENT`, `NOT_REQUIRED`, and `FAILED`; after a failure, use the explicit resend
@@ -324,17 +325,17 @@ template: `.env.example`.
 | `RESEND_API_KEY` | Enables Resend transactional delivery | required in public production; unset uses log transport only in development/test/local/private-LAN |
 | `LOG_LEVEL` | API log verbosity | `info` |
 
-### Stage 1 production application values
+### Production application values
 
-The reviewed non-secret application values for the active home-server release are:
+The reviewed non-secret application values for the home-server production release are:
 
 ```dotenv
 NODE_ENV=production
 APP_ENV=production
-REGISTRATION_MODE=DISABLED
+REGISTRATION_MODE=ENABLED
 APP_BASE_URL=https://app.gymtrack.ch
-APP_ALLOWED_HOSTS=app.gymtrack.ch,192.168.1.57
-APP_ALLOWED_ORIGINS=https://app.gymtrack.ch,http://192.168.1.57
+APP_ALLOWED_HOSTS=app.gymtrack.ch,<server-lan-ip>
+APP_ALLOWED_ORIGINS=https://app.gymtrack.ch,http://<server-lan-ip>
 HSTS_ENABLED=false
 AUTH_COOKIE_SECURE=true
 API_TRUST_PROXY=false
@@ -343,7 +344,7 @@ API_TRUST_PROXY=false
 The LAN entries preserve page reachability and same-origin request validation where
 possible. The production session cookie is Secure, so authenticated use must use
 `https://app.gymtrack.ch`; browsers will not send that cookie over
-`http://192.168.1.57`.
+`http://<server-lan-ip>`.
 
 The Next.js ingress rejects unexpected Host headers with `421`, rejects missing or
 unapproved Origins on state-changing `/api` requests with `403`, and rejects CORS
@@ -363,8 +364,9 @@ curl -i -X POST \
   http://127.0.0.1/api/auth/signup
 ```
 
-The second command must return `403 REGISTRATION_DISABLED`. Do not use a real personal
-email in verification payloads.
+While registration is still `DISABLED` during first verification, the second command must
+return `403 REGISTRATION_DISABLED`. Once `ENABLED`, don't send it against production: it would
+create a real account. Do not use a real personal email in verification payloads.
 
 After the external hostname, certificate, Access policy, tunnel recovery, and rollback path
 have been verified, set `HSTS_ENABLED=true`, restart only the web service through the
@@ -458,10 +460,9 @@ credentials, internal hostnames, and exploit detail out of every update.
 
 ---
 
-## 9. Public-beta lifecycle cleanup and email alerts
+## 9. Lifecycle cleanup and email alerts
 
-The API process owns one single-flight lifecycle runner for the accepted single-process,
-50-account beta topology. It runs once during API startup and then hourly. Do not add a second
+The API process owns one single-flight lifecycle runner, which assumes a single API process. It runs once during API startup and then hourly. Do not add a second
 API replica without first replacing this assumption with coordinated scheduling.
 
 Each run isolates these phases so one error does not skip later work or the next run:
@@ -469,7 +470,7 @@ Each run isolates these phases so one error does not skip later work or the next
 1. expired authentication records;
 2. every account deletion that is due;
 3. deletion-completion notifications; and
-4. account retention cleanup, including campaign answers and the remaining closed-beta waitlist records.
+4. account retention cleanup, including campaign answers and the leftover waitlist records from the closed beta.
 
 One completion-email failure does not stop later due deletions. The operational metrics are:
 

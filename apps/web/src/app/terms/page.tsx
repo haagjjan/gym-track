@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { LegalPage, Section, legalContacts } from "../../features/legal/legal-page";
 import { PUBLIC_TERMS_VERSION } from "../../shared/public-policy";
 
-export const metadata = { title: "Terms of Use" };
+export const metadata = { title: "Terms of use" };
 
 // See legal-page.tsx: contact details are read from server environment per
 // request, so this route must not be statically prerendered.
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export default function TermsPage(): ReactNode {
   const contact = legalContacts();
-  return <LegalPage eyebrow="Terms" title="Terms of Use" version={PUBLIC_TERMS_VERSION}>
+  return <LegalPage eyebrow="Terms" title="Terms of use" version={PUBLIC_TERMS_VERSION}>
     <Section title="Eligibility"><p>You must be at least 18 and live in Switzerland. You confirm both when you create an account. The service is offered only in Switzerland and is governed by Swiss law. The operator may suspend an account for security reasons, abuse, legal requirements, or a material breach of these terms.</p></Section>
     <Section title="Early product"><p>This is an early public version (v0) provided on a best-effort basis. Maintenance, defects, feature changes and service interruptions may occur. No contractual availability guarantee or training outcome is promised.</p></Section>
     <Section title="Not medical advice"><p>The service records information you enter and provides calculations for personal training review. It does not diagnose, treat or prevent injury or disease and is not a substitute for professional medical or coaching advice.</p><p>Every figure shown — including estimated one-rep maxima, training volume and progress trends — is a calculation derived from sets you have already recorded. It describes what you did; it is not a target, a prescription, or a recommendation to attempt any particular lift. Decide what is safe for you to lift with your own judgement, and seek qualified advice where appropriate.</p></Section>

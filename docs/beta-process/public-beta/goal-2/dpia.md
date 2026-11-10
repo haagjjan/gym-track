@@ -1,8 +1,15 @@
 # Data Protection Impact Assessment — Founding Beta
 
+> **Status after ADR 0022 (note added 2026-11-09, needs the controller's review).** This document
+> was written for the closed Founding Beta. Since public v0, signup is open to adults who live in
+> Switzerland, and there is no waitlist, approval, invitation or 50-seat cap. The beta tables
+> (`beta_access_requests`, `users.beta_cohort`) are no longer written but stay covered by export,
+> erasure and retention until a follow-up migration drops them. Statements below that rely on
+> manual admission or a small invited group have not been re-assessed for open signup.
+
 Version 1.2 · prepared 2026-08-08 · amended and reaffirmed 2026-08-19;
 supersedes nothing; completes
-[dpia-screening.md](../goal-1/dpia-screening.md)
+[dpia-screening.md](../../../archive/beta-process/public-beta/goal-1/dpia-screening.md)
 
 **Status: the original assessment was approved by the controller, Jan Haag, on 2026-08-10. A
 2026-08-19 correction records that Cloudflare terminates public TLS and processes application
@@ -295,7 +302,7 @@ form of monetisation is a trigger.
 
 These are the points where independent advice could reduce uncertainty, ordered by what it
 costs to be wrong. The controller chose the documented positions in
-[legal-risk-acceptance.md](legal-risk-acceptance.md) and approved them on 2026-08-10 instead of
+[legal-risk-acceptance.md](../../../archive/beta-process/public-beta/goal-2/legal-risk-acceptance.md) and approved them on 2026-08-10 instead of
 engaging counsel for this bounded beta. The controller reaffirmed the 2026-08-19 Cloudflare scope
 correction; all positions are accepted. A qualified adviser should
 revisit them if any recorded review trigger fires. The provider transfer mechanisms themselves

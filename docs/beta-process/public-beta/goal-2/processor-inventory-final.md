@@ -1,6 +1,13 @@
 # Provider and Processor Inventory
 
-Item 4 of the [Goal 2 decision record](goal-2-decision-record.md). Supersedes the unresolved
+> **Status after ADR 0022 (note added 2026-11-09, needs the controller's review).** This document
+> was written for the closed Founding Beta. Since public v0, signup is open to adults who live in
+> Switzerland, and there is no waitlist, approval, invitation or 50-seat cap. The beta tables
+> (`beta_access_requests`, `users.beta_cohort`) are no longer written but stay covered by export,
+> erasure and retention until a follow-up migration drops them. Statements below that rely on
+> manual admission or a small invited group have not been re-assessed for open signup.
+
+Item 4 of the [Goal 2 decision record](../../../archive/beta-process/public-beta/goal-2/goal-2-decision-record.md). Supersedes the unresolved
 cells in [data-processing-inventory.md](../goal-1/data-processing-inventory.md), which remains
 authoritative for *what data exists*; this document covers *who touches it*.
 
@@ -76,7 +83,7 @@ because vendors revise these and what counts is the version relied on.
 **What this does and does not settle.** Each provider's mechanism is now recorded rather than
 assumed, which was the open action. Whether each is *sufficient* for this processing remains a
 judgement the controller originally accepted under Q3 of
-[legal-risk-acceptance.md](legal-risk-acceptance.md) rather than one confirmed by a qualified
+[legal-risk-acceptance.md](../../../archive/beta-process/public-beta/goal-2/legal-risk-acceptance.md) rather than one confirmed by a qualified
 adviser. The controller reaffirmed the corrected Cloudflare payload scope on 2026-08-19. Re-check
 on any DPA version change — that is a recorded re-screen trigger.
 

@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ErrorState, Metric, Skeleton } from "../../shared/ui/ui";
+import { ErrorState, Skeleton } from "../../shared/ui/ui";
+import { StatTile } from "../../shared/ui/stat-tile";
 import { errorMessage } from "../../shared/api/client";
 import type { SessionExercise } from "../../shared/api/types";
-import { formatNumber } from "../../shared/format";
+import { formatCompactNumber } from "../../shared/format";
 
 export interface SessionTotals { sets: number; workingSets: number; volume: number }
 
@@ -21,7 +22,16 @@ export function calculateSessionTotals(exercises: SessionExercise[]): SessionTot
 }
 
 export function SessionStats({ exercises, totals }: { exercises: number; totals: SessionTotals }): ReactNode {
-  return <aside className="hidden lg:block"><div className="glass sticky top-20 rounded-xl p-4"><div className="grid grid-cols-2 gap-3"><Metric label="EXERCISES" value={exercises} /><Metric label="SETS" value={totals.sets} /><Metric label="WORKING" tone="lavender" value={totals.workingSets} /><Metric detail="kg total" label="TONNAGE" value={formatNumber(totals.volume)} /></div></div></aside>;
+  return (
+    <aside aria-label="Workout totals" className="hidden lg:block">
+      <dl className="sticky top-20 grid grid-cols-2 gap-4 rounded-[var(--radius-card)] bg-surface p-4">
+        <StatTile label="Exercises" value={exercises} />
+        <StatTile label="Sets" value={totals.sets} />
+        <StatTile label="Working sets" value={totals.workingSets} />
+        <StatTile label="Volume" unit="kg" value={formatCompactNumber(totals.volume)} />
+      </dl>
+    </aside>
+  );
 }
 
 export function SessionSkeleton(): ReactNode {
@@ -29,5 +39,11 @@ export function SessionSkeleton(): ReactNode {
 }
 
 export function SessionError({ error, retry }: { error: unknown; retry: () => void }): ReactNode {
-  return <main className="mx-auto max-w-3xl p-4"><ErrorState message={errorMessage(error, "This workout could not be loaded.")} retry={retry} title="WORKOUT_UNREACHABLE" /><Link className="label-caps mt-4 inline-block text-cyan" href="/workouts">← Back to workouts</Link></main>;
+  return (
+    <main className="mx-auto max-w-3xl space-y-4 p-4 pt-[max(1rem,env(safe-area-inset-top))]">
+      <h1 className="text-title-1 text-text">Workout</h1>
+      <ErrorState message={errorMessage(error, "Check your connection and try again.")} retry={retry} title="Couldn't load this workout" />
+      <Link className="inline-flex min-h-11 items-center text-body text-accent" href="/workouts">Go to history</Link>
+    </main>
+  );
 }

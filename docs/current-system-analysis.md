@@ -6,6 +6,17 @@
 
 **Production evidence cutoff:** 2026-08-27 11:42 UTC
 
+> **Update 2026-11-09.** The operations, security and verification evidence below is still the
+> August snapshot. Product facts that changed since then are corrected in place:
+>
+> - Production is public v0 with open signup for adults in Switzerland (ADR 0022). The waitlist,
+>   invitations, approvals and the 50-seat cap are gone; `REGISTRATION_MODE` is `ENABLED` or
+>   `DISABLED`.
+> - The phone apps will be Capacitor shells around the web UI (ADR 0021). The web UI is being
+>   reworked for that (`docs/DESIGN.md`); the 2D volume view was removed.
+> - For the current code map read `CODEBASE.md`; for the current state and next steps read
+>   `docs/99-current-project-state.md`.
+
 ## Purpose of this document
 
 This is my current technical and operational summary of Gym Progress Tracker. I use it to explain
@@ -29,15 +40,14 @@ operations repository containing:
 - the Fastify API and PostgreSQL schema;
 - owned authentication, account recovery, privacy, export and deletion workflows;
 - workout sessions, templates, a reviewed exercise catalog, CSV transfer and analytics;
-- invitation-only beta admission, administrator containment and member messaging;
+- open signup with an age and residence attestation, administrator containment and member messaging;
 - local, production-shaped staging and hardened production definitions;
 - CI, unit, integration, performance, browser and accessibility checks;
 - private monitoring, structured logs, alerting, encrypted backups and tested restoration;
 - the legal, security, privacy, deployment and beta-verification record.
 
-Goal 5 of the Founding Beta process is complete. Every launch gate is checked. Production remains
-invitation-only, and Goal 6—the first deliberately observed cohort—still requires a separate
-recorded go/no-go decision.
+Goal 5 of the Founding Beta process is complete and every launch gate is checked. The beta has
+since ended: production now runs public v0 with open signup (ADR 0022).
 
 ## What I am building
 
@@ -62,7 +72,7 @@ coach.
 - Email/username/password accounts with Argon2id password hashing.
 - Opaque database-backed sessions in secure, HttpOnly, SameSite cookies.
 - Login lockout, email verification, password reset and generic enumeration-resistant recovery.
-- Invitation-only signup for production and open registration for local development.
+- Open signup with an 18+ and Swiss-residence attestation; `REGISTRATION_MODE=DISABLED` is the kill switch.
 - Dashboard, onboarding, contextual help and an in-app message inbox.
 - Live workout creation, renaming, exercise ordering, set creation/editing/deletion and finish
   summary.
@@ -72,22 +82,21 @@ coach.
 - A reviewed catalog of 820 system exercises plus controlled custom-exercise creation, editing,
   ownership rules, aliases, typo-tolerant search, facets and merge support.
 - Exercise Progress with range-aware totals, tonnage, best set and estimated one-repetition max.
-- Weekly muscle volume with account-synced heat thresholds and 2D/3D body-map presentation.
+- Weekly muscle volume with an account-synced heat ceiling on an interactive 3D body map.
 - Display, favorite-lift, privacy, onboarding and volume preferences.
 - JSON account export, password-confirmed deletion scheduling, cancellation and final erasure.
 
-### Administrator and beta operations
+### Administrator operations
 
-- Public email-only beta requests with a deliberately generic response.
-- Manual approval, rejection, blocking, invitation reissue and seat accounting.
-- A 50-seat cap, rolling daily approval limit and independent waitlist, invitation and campaign
-  controls.
+- An overview with exact counts and per-account activity (added with ADR 0022, replacing the
+  beta admission queue, cap and approval limits).
+- A campaign publishing switch.
 - Explicit operator bootstrap for the first administrator; no email-based implicit promotion.
 - User suspension/reactivation, session revocation and deletion-cancellation support.
 - Cursor-paginated audit records for administrative actions.
 - Plain-text, trigger-based member campaigns with pause, resume, end, dismissal and bounded
   responses.
-- A startup-and-hourly lifecycle runner for expired authentication state, beta state, deletion
+- A startup-and-hourly lifecycle runner for expired authentication state, deletion
   finalization and retention work.
 
 ## Codebase analysis
@@ -126,14 +135,14 @@ The browser does not call Fastify directly in production. It calls the same-orig
 The BFF normalizes the request boundary and signs the edge-derived client address; Fastify rejects
 ordinary non-health requests without that proof. PostgreSQL and the API have no public listener.
 
-API code is organized into feature slices: `admin`, `analytics`, `auth`, `beta`, `exercises`,
-`health`, `lifecycle`, `messages`, `templates`, `users` and `workouts`. Routes delegate business
+API code is organized into feature slices: `admin`, `analytics`, `auth`, `exercises`,
+`health`, `lifecycle`, `messages`, `status`, `templates`, `users` and `workouts`. Routes delegate business
 rules to services and persistence to repositories. The web application uses parallel
 feature-owned modules for the member and administrator surfaces.
 
 ### Data model
 
-PostgreSQL is the durable source of truth. The nine SQL migrations cover:
+PostgreSQL is the durable source of truth. The ten SQL migrations cover:
 
 - users, opaque sessions and hashed action tokens;
 - workouts, ordered exercises and ordered sets;
@@ -141,7 +150,8 @@ PostgreSQL is the durable source of truth. The nine SQL migrations cover:
 - templates and template exercises;
 - account and display/privacy preferences;
 - first-party product events;
-- beta settings, access requests and invitations;
+- beta settings and access requests (unused since ADR 0022 except the campaign switch; scheduled for removal);
+- the onboarding example invitation flag;
 - administrator audit events;
 - account-deletion tokens and external erasure tombstones;
 - campaigns, materialized targets and message deliveries;
@@ -159,7 +169,7 @@ user-scoped:
 - optional device-local biometrics and favorite-lift presentation;
 - a versioned unfinished-set draft with a hard 24-hour maximum;
 - per-surface filter state for the current tab session;
-- a device preference for the volume visualization.
+- device-local display and rest-timer preferences.
 
 The storage choice is explicit, device data can be cleared from Settings, logout clears active-set
 drafts, and no advertising or third-party browser analytics library is used.
@@ -168,7 +178,7 @@ drafts, and no advertising or third-party browser analytics library is used.
 
 The main security boundary is defense in depth rather than one outer gate:
 
-- production admission is enforced by hashed, expiring, single-use invitations;
+- signup is open but rate-limited, with `REGISTRATION_MODE=DISABLED` and admin suspension as the controls;
 - Argon2id is used for passwords, including a dummy verification path for unknown usernames;
 - session and action tokens are stored as hashes where later lookup is required;
 - route-level authentication and ownership checks are authoritative;
@@ -267,8 +277,8 @@ The application is publicly reached as browser → Cloudflare edge/Tunnel → Ca
 Fastify → PostgreSQL. Caddy is the only application ingress. Grafana is loopback-only, and the API,
 database, Prometheus, Alertmanager and exporters remain on internal networks.
 
-The member hostname is public, but registration is `INVITE_ONLY`. Cloudflare Access is not used as
-the product admission control. Remote SSH administration is separate and owner-only through
+The member hostname is public and registration is open (ADR 0022). Cloudflare Access is not used
+for the member app. Remote SSH administration is separate and owner-only through
 Cloudflare Access, with pinned host keys and private-LAN recovery paths.
 
 ### Production hardware
@@ -368,7 +378,7 @@ resolve and archive rehearsal passed on 2026-08-27.
 - Staging is intentionally excluded from production monitoring and backup; synthetic staging data
   is disposable.
 - The capacity result supports a small beta only. It is not evidence for large or hostile traffic.
-- Raw single-use invitation/action links necessarily exist in delivered email and may appear in a
+- Raw single-use action links (verification, reset, deletion cancellation) necessarily exist in delivered email and may appear in a
   recipient browser history or the contracted mail provider. Application storage retains hashes;
   the remaining control is short expiry, one-time use, access discipline and provider retention.
 - Full screen-reader coverage was not claimed for the Founding Beta and is required before the
@@ -380,9 +390,8 @@ resolve and archive rehearsal passed on 2026-08-27.
 
 ## Current conclusion
 
-I consider the repository and production setup ready for the decision between Goal 5 and Goal 6.
-The application, admission controls, security-quality gates, production operations and recovery
-path are implemented and evidenced for a small invitation-only Founding Beta.
+In August I considered the repository and production setup ready to start the first Founding
+Beta cohort. The beta has since run and ended; production is public v0 (ADR 0022).
 
 That does not mean the system is finished forever or hardened for arbitrary public scale. It means
 the defined Goal 5 bar is met, the known limits are explicit, and the next step is an operational

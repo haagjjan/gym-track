@@ -1,6 +1,9 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Panel } from "../../shared/ui/ui";
+import { IconForward } from "../../shared/ui/icons";
+import { Group } from "./settings-ui";
+
+const rowClass = "flex min-h-11 items-center justify-between gap-3 px-4 py-3 text-body text-text active:bg-surface-raised";
 
 /**
  * `supportUrl` arrives as a prop rather than being read here. This component
@@ -10,19 +13,24 @@ import { Panel } from "../../shared/ui/ui";
  */
 export function HelpSupportPanel({ supportUrl }: { supportUrl?: string | undefined }): ReactNode {
   return (
-    <Panel accent="cyan" eyebrow="Help, support, and policies">
-      <nav className="grid gap-2 text-sm">
-        <SettingsLink href="/help">Help, tutorial & practice workout</SettingsLink>
-        <SettingsLink href="/support">Contact support & service status</SettingsLink>
-        <SettingsLink href="/privacy">Privacy Notice & data rights</SettingsLink>
-        <SettingsLink href="/cookies">Cookie & device storage notice</SettingsLink>
+    <nav aria-label="Help and legal">
+      <Group>
+        <SettingsLink href="/help">Help and example workout</SettingsLink>
+        <SettingsLink href="/support">Contact support</SettingsLink>
+        <SettingsLink href="/privacy">Privacy notice</SettingsLink>
+        <SettingsLink href="/cookies">Cookies and storage</SettingsLink>
         <SettingsLink href="/terms">Terms</SettingsLink>
-        {supportUrl ? <a className="min-h-11 rounded border border-lavender/40 px-3 py-3 text-lavender hover:bg-lavender/5" href={supportUrl} rel="noreferrer" target="_blank">Support the project ↗<span className="block text-[10px] text-outline">Voluntary; no extra access or priority. The external provider’s terms apply.</span></a> : null}
-      </nav>
-    </Panel>
+        {supportUrl ? (
+          <a className={rowClass} href={supportUrl} rel="noreferrer" target="_blank">
+            <span className="min-w-0">Support the project<span className="block text-footnote text-text-secondary">Voluntary, with no extra access or priority. The external provider’s terms apply.</span></span>
+            <IconForward aria-hidden className="shrink-0 text-text-muted" />
+          </a>
+        ) : null}
+      </Group>
+    </nav>
   );
 }
 
 function SettingsLink({ children, href }: { children: ReactNode; href: string }): ReactNode {
-  return <Link className="flex min-h-11 items-center rounded border border-outline-dim/60 px-3 text-fg hover:border-cyan/50 hover:text-cyan" href={href}>{children}</Link>;
+  return <Link className={rowClass} href={href}><span className="min-w-0">{children}</span><IconForward aria-hidden className="shrink-0 text-text-muted" /></Link>;
 }

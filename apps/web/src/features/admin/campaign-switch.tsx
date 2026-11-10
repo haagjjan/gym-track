@@ -38,19 +38,19 @@ export function CampaignSwitch(): ReactNode {
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded border border-outline-dim/60 bg-surface/60 p-4">
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-card)] bg-surface p-4">
       <div>
-        <p className="text-sm font-medium text-fg">Publishing new campaigns</p>
-        <p className="mt-1 text-xs leading-5 text-fg-muted">
+        <p className="text-callout font-medium text-text">Publishing new campaigns</p>
+        <p className="mt-1 text-footnote   text-text-secondary">
           {settings === null ? "Loading…" : settings.campaignsOpen
             ? "On. Publishing a draft sends it to every active account (optional messages skip people who turned feedback prompts off)."
             : "Paused. Drafts can't be published until you turn this on."}
         </p>
-        {notice ? <p className="mt-1 text-xs text-outline" role="status">{notice}</p> : null}
+        {notice ? <p className="mt-1 text-footnote text-text-muted" role="status">{notice}</p> : null}
       </div>
       <button
         aria-pressed={settings?.campaignsOpen ?? false}
-        className={`min-h-11 rounded border px-4 text-sm ${settings?.campaignsOpen ? "border-green/60 text-green" : "border-outline-dim text-fg-muted"}`}
+        className={`min-h-11 rounded-[var(--radius-control)] bg-surface-raised px-4 text-callout ${settings?.campaignsOpen ? "text-success" : "text-text-secondary"}`}
         disabled={settings === null || isPending}
         onClick={() => void toggle()}
         type="button"

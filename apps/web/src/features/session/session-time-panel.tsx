@@ -1,123 +1,102 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { HudButton } from "../../shared/ui/ui";
 import { errorMessage } from "../../shared/api/client";
-import { formatDateTime, formatDuration } from "../../shared/format";
+import { formatMinutes } from "../../shared/format";
+import { Button } from "../../shared/ui/button";
+import { Sheet } from "../../shared/ui/sheet";
+import { MAX_WORKOUT_MINUTES, resolveWorkoutTime, toWorkoutTimeDraft, type WorkoutTimeDraft } from "./workout-time";
 
-export function SessionTimePanel({
+/**
+ * Edit a finished workout's time: one date, a start and a finish time. A
+ * finish before the start means it ran past midnight. Opens from the pencil
+ * next to Duration.
+ */
+export function WorkoutTimeSheet({
   endedAt,
+  isOpen,
   isSaving,
+  onClose,
   onSave,
   startedAt
 }: {
   endedAt: string;
+  isOpen: boolean;
   isSaving: boolean;
+  onClose: () => void;
   onSave: (startedAtIso: string, endedAtIso: string) => Promise<unknown>;
   startedAt: string;
 }): ReactNode {
-  const [expanded, setExpanded] = useState(false);
-  const [confirming, setConfirming] = useState(false);
-  const [startDraft, setStartDraft] = useState("");
-  const [endDraft, setEndDraft] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const nextStartedAt = fromDateTimeInputValue(startDraft);
-  const nextEndedAt = fromDateTimeInputValue(endDraft);
-  const valid = Boolean(
-    nextStartedAt &&
-    nextEndedAt &&
-    new Date(nextEndedAt).getTime() >= new Date(nextStartedAt).getTime()
+  return (
+    <Sheet isOpen={isOpen} labelledBy="workout-time-title" onClose={onClose} portal width="md">
+      {/* Remount per opening so the fields start from the saved times. */}
+      {isOpen ? <TimeForm endedAt={endedAt} isSaving={isSaving} onClose={onClose} onSave={onSave} startedAt={startedAt} /> : null}
+    </Sheet>
   );
+}
 
-  function open(): void {
-    setStartDraft(toDateTimeInputValue(startedAt));
-    setEndDraft(toDateTimeInputValue(endedAt));
+function TimeForm({ endedAt, isSaving, onClose, onSave, startedAt }: {
+  endedAt: string;
+  isSaving: boolean;
+  onClose: () => void;
+  onSave: (startedAtIso: string, endedAtIso: string) => Promise<unknown>;
+  startedAt: string;
+}): ReactNode {
+  const [draft, setDraft] = useState<WorkoutTimeDraft>(() => toWorkoutTimeDraft(startedAt, endedAt));
+  const [error, setError] = useState<string | null>(null);
+  const resolved = resolveWorkoutTime(draft);
+  const update = (patch: Partial<WorkoutTimeDraft>): void => setDraft((current) => ({ ...current, ...patch }));
+
+  async function save(): Promise<void> {
+    if (!resolved.ok) return;
     setError(null);
-    setConfirming(false);
-    setExpanded(true);
-  }
-
-  async function commit(): Promise<void> {
-    if (!nextStartedAt || !nextEndedAt) return;
-    setError(null);
-
     try {
-      await onSave(nextStartedAt, nextEndedAt);
-      setExpanded(false);
-      setConfirming(false);
+      await onSave(resolved.startedAt, resolved.endedAt);
+      onClose();
     } catch (caught) {
-      setError(errorMessage(caught, "The workout times could not be updated."));
+      setError(errorMessage(caught, "Couldn't change the time. Check your connection and try again."));
     }
   }
 
-  if (!expanded) {
-    return (
-      <section className="glass rounded-xl p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="label-caps text-outline">Workout time</p>
-            <p className="mt-1 font-mono text-xs text-fg-muted">
-              {formatDateTime(startedAt)} → {formatDateTime(endedAt)}
-              <span className="ml-2 text-outline">({formatDuration(startedAt, endedAt)})</span>
-            </p>
-          </div>
-          <HudButton onClick={open} size="sm" variant="outline">Adjust times</HudButton>
-        </div>
-      </section>
-    );
-  }
-
   return (
-    <section className="glass rounded-xl border border-lavender/40 p-4">
-      <p className="label-caps text-lavender">Adjust workout times</p>
-      {confirming && valid && nextStartedAt && nextEndedAt ? (
-        <div className="mt-3 space-y-3">
-          <div className="rounded border border-lavender/40 bg-lavender/5 p-3 text-xs">
-            <p className="text-fg-muted">From {formatDateTime(startedAt)} → {formatDateTime(endedAt)}</p>
-            <p className="mt-1.5 text-fg">To {formatDateTime(nextStartedAt)} → {formatDateTime(nextEndedAt)}</p>
-          </div>
-          <div className="flex gap-2">
-            <HudButton className="flex-1" disabled={isSaving} onClick={() => void commit()} size="sm" variant="danger">
-              {isSaving ? "SAVING…" : "CONFIRM TIME EDIT"}
-            </HudButton>
-            <HudButton onClick={() => setConfirming(false)} size="sm" variant="ghost">Back</HudButton>
-          </div>
+    <>
+      {/* Focus the title, not the date field: focusing a date input on iOS can open its picker at once. */}
+      <h2 className="mt-1 text-title-3 text-text outline-none" data-modal-initial-focus id="workout-time-title" tabIndex={-1}>Workout time</h2>
+      <div className="mt-4 space-y-3">
+        <TimeField label="Date" onChange={(date) => update({ date })} type="date" value={draft.date} />
+        <div className="grid grid-cols-2 gap-3">
+          <TimeField label="Start" onChange={(start) => update({ start })} type="time" value={draft.start} />
+          <TimeField label="Finish" onChange={(end) => update({ end })} type="time" value={draft.end} />
         </div>
-      ) : (
-        <div className="mt-3 space-y-3">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <DateTimeField label="Started at" onChange={setStartDraft} value={startDraft} />
-            <DateTimeField label="Ended at" onChange={setEndDraft} value={endDraft} />
-          </div>
-          {!valid ? <p className="text-xs text-red">The end must not be before the start.</p> : null}
-          <div className="flex gap-2">
-            <HudButton className="flex-1" disabled={!valid} onClick={() => setConfirming(true)} size="sm">Review changes</HudButton>
-            <HudButton onClick={() => setExpanded(false)} size="sm" variant="ghost">Cancel</HudButton>
-          </div>
-        </div>
-      )}
-      {error ? <p className="mt-2 text-xs text-red">{error}</p> : null}
-    </section>
+      </div>
+      <p aria-live="polite" className={`mt-3 text-subhead ${resolved.ok ? "text-text-secondary" : "text-danger"}`} role={resolved.ok ? undefined : "alert"}>
+        {resolved.ok
+          ? `${formatMinutes(resolved.startedAt, resolved.endedAt)}${resolved.nextDay ? ", finishing the next day" : ""}`
+          : resolved.reason === "too-long"
+            ? `A workout can be at most ${MAX_WORKOUT_MINUTES / 60} hours.`
+            : "Enter a date, a start and a finish."}
+      </p>
+      {error ? <p className="mt-2 text-subhead text-danger" role="alert">{error}</p> : null}
+      <div className="mt-4 grid gap-2">
+        <Button disabled={!resolved.ok || isSaving} onClick={() => void save()}>{isSaving ? "Saving…" : "Save"}</Button>
+        <Button onClick={onClose} variant="plain">Cancel</Button>
+      </div>
+    </>
   );
 }
 
-function DateTimeField({ label, onChange, value }: { label: string; onChange: (value: string) => void; value: string }): ReactNode {
+function TimeField({ label, onChange, type, value }: { label: string; onChange: (value: string) => void; type: "date" | "time"; value: string }): ReactNode {
   return (
-    <label className="block">
-      <span className="label-caps text-outline">{label}</span>
-      <input className="mt-1 min-h-11 w-full rounded border border-outline-dim bg-surface-low/60 px-3 font-mono text-sm text-fg focus:border-cyan focus:outline-none" onChange={(event) => onChange(event.currentTarget.value)} type="datetime-local" value={value} />
+    <label className="block min-w-0">
+      <span className="text-subhead text-text-secondary">{label}</span>
+      {/* min-w-0 + w-full: iOS gives date/time inputs a wide intrinsic size that overflowed the card. */}
+      <input
+        className="time-field num mt-1.5 block h-[3.125rem] w-full min-w-0 appearance-none rounded-[var(--radius-control)] border border-control-line bg-surface-raised px-3 text-left text-body text-text"
+        onChange={(event) => onChange(event.currentTarget.value)}
+        required
+        type={type}
+        value={value}
+      />
     </label>
   );
-}
-
-function toDateTimeInputValue(iso: string): string {
-  const date = new Date(iso);
-  const pad = (value: number): string => String(value).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-
-function fromDateTimeInputValue(value: string): string | null {
-  if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }

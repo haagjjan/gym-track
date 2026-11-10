@@ -1,16 +1,17 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { WorkoutDetail } from "../../shared/api/types";
-import { formatDuration, formatNumber } from "../../shared/format";
-import { Metric } from "../../shared/ui/ui";
+import { formatCompactNumber, formatMinutes } from "../../shared/format";
+import { StatTile } from "../../shared/ui/stat-tile";
 import { CompletionTemplateActions } from "../templates/completion-template-actions";
 import type { SessionTotals } from "./session-screen-support";
-import { SessionTimePanel } from "./session-time-panel";
+import { WorkoutTimeSheet } from "./session-time-panel";
 import { useOnboarding } from "../onboarding/use-onboarding";
 import { MessageCenter } from "../messages/message-center";
+import { IconCheck24, IconPencil } from "../../shared/ui/icons";
 
+/** Top of a finished workout: the summary card, with the time editable from Duration. */
 export function SessionCompletionSummary({
   isSavingTime,
   onSaveTime,
@@ -23,59 +24,76 @@ export function SessionCompletionSummary({
   workout: WorkoutDetail & { endedAt: string };
 }): ReactNode {
   const { mark } = useOnboarding();
+  const [editingTime, setEditingTime] = useState(false);
   useEffect(() => { void mark("finishWorkout"); }, [mark]);
-  return <><CompletedWorkoutSummary totals={totals} workout={workout}>
-      <details className="mt-4 rounded-lg border border-outline-dim/60 bg-surface-low/30">
-        <summary className="flex min-h-11 cursor-pointer items-center px-3 font-display text-xs font-bold uppercase tracking-[0.1em] text-fg-muted">
-          Secondary post-workout actions
-        </summary>
-        <div className="space-y-3 border-t border-outline-dim/50 p-3">
-          <CompletionTemplateActions workout={workout} />
-          <SessionTimePanel
-            endedAt={workout.endedAt}
-            isSaving={isSavingTime}
-            onSave={onSaveTime}
-            startedAt={workout.startedAt}
-          />
-        </div>
-      </details>
-  </CompletedWorkoutSummary><MessageCenter /></>;
+  return (
+    <>
+      <CompletedWorkoutSummary onEditTime={() => setEditingTime(true)} totals={totals} workout={workout} />
+      <WorkoutTimeSheet
+        endedAt={workout.endedAt}
+        isOpen={editingTime}
+        isSaving={isSavingTime}
+        onClose={() => setEditingTime(false)}
+        onSave={onSaveTime}
+        startedAt={workout.startedAt}
+      />
+    </>
+  );
 }
 
-export function CompletedWorkoutSummary({ totals, workout, children, example = false }: {
-  totals: SessionTotals; workout: WorkoutDetail & { endedAt: string }; children?: ReactNode; example?: boolean;
-}): ReactNode {
+/** Bottom of a finished workout, under the exercises. */
+export function SessionCompletionFooter({ workout }: { workout: WorkoutDetail }): ReactNode {
   return (
-    <section
-      aria-labelledby="workout-complete-title"
-      className="rounded-xl border border-green/45 bg-green/5 p-4"
-    >
-      <p className="label-caps text-green">WORKOUT_COMPLETE</p>
-      <h2 className="mt-1 font-display text-2xl font-bold text-fg" id="workout-complete-title">
-        {example ? "Example workout complete" : "Session saved successfully"}
-      </h2>
-      <p className="mt-1 text-xs text-fg-muted">
-        {example ? "Your example History, Progress and Volume now include this practice. Your account is unchanged." : "Your sets are in History and your analytics have been updated."}
+    <>
+      <CompletionTemplateActions workout={workout} />
+      <MessageCenter />
+    </>
+  );
+}
+
+export function CompletedWorkoutSummary({ totals, workout, example = false, onEditTime }: {
+  totals: SessionTotals; workout: WorkoutDetail & { endedAt: string }; example?: boolean; onEditTime?: () => void;
+}): ReactNode {
+  const duration = formatMinutes(workout.startedAt, workout.endedAt);
+  return (
+    <section aria-labelledby="workout-complete-title" className="rounded-[var(--radius-card)] bg-surface p-4">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="min-w-0 text-title-1 text-text" id="workout-complete-title">
+          {example ? "Example workout complete" : "Workout complete"}
+        </h2>
+        <p className="flex shrink-0 items-center gap-1 text-subhead font-semibold text-success">
+          <IconCheck24 className="size-5" /> Saved
+        </p>
+      </div>
+      <p className="mt-1 text-subhead text-text-secondary">
+        {example
+          ? "The example History, Progress and Volume now include this workout. Your account is unchanged."
+          : "Shown in History, Progress and Volume."}
       </p>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 rounded-lg border border-outline-dim/50 bg-void/35 p-3 sm:grid-cols-4">
-        <Metric label="DURATION" tone="green" value={formatDuration(workout.startedAt, workout.endedAt)} />
-        <Metric label="EXERCISES" value={workout.exercises.length} />
-        <Metric label="SETS" tone="lavender" value={totals.sets} />
-        <Metric detail="kg total" label="TONNAGE" value={formatNumber(totals.volume)} />
-      </div>
-
-      <div className="mt-4 grid gap-2 sm:grid-cols-2">
-        <Link className="flex min-h-11 items-center justify-center rounded bg-cyan px-4 font-display text-xs font-bold uppercase tracking-[0.1em] text-on-cyan" href={example ? "/help/demo/history" : "/workouts"}>
-          View History
-        </Link>
-        <Link className="flex min-h-11 items-center justify-center rounded border border-cyan/50 px-4 font-display text-xs font-bold uppercase tracking-[0.1em] text-cyan" href={example ? "/help/demo" : "/"}>
-          Dashboard
-        </Link>
-      </div>
-
-      {children}
-
+      <dl className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        {onEditTime ? (
+          <div className="min-w-0">
+            <dt className="text-subhead text-text-secondary">Duration</dt>
+            <dd className="mt-0.5">
+              <button
+                aria-label={`Duration ${duration}. Change workout time`}
+                className="-mx-1 -my-1.5 inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-[var(--radius-control)] px-1 text-left active:bg-surface-raised"
+                onClick={onEditTime}
+                type="button"
+              >
+                <span className="num truncate text-title-2 text-text">{duration}</span>
+                <IconPencil className="size-[18px] shrink-0 text-accent" />
+              </button>
+            </dd>
+          </div>
+        ) : (
+          <StatTile label="Duration" value={duration} />
+        )}
+        <StatTile label="Exercises" value={workout.exercises.length} />
+        <StatTile label="Sets" value={totals.sets} />
+        <StatTile label="Volume" unit="kg" value={formatCompactNumber(totals.volume)} />
+      </dl>
     </section>
   );
 }

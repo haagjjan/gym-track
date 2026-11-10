@@ -1,8 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Panel, Skeleton } from "../../shared/ui/ui";
-import { IconMinus, IconPlus } from "../shell/icons";
+import { Skeleton } from "../../shared/ui/ui";
+import { IconMinus, IconPlus } from "../../shared/ui/icons";
 import {
   REST_MAX_SECONDS,
   REST_MIN_SECONDS,
@@ -10,6 +10,7 @@ import {
   formatRestSeconds,
   useRestPreference
 } from "../session/use-rest-preferences";
+import { Group, Row, SavedStatus, useSavedFlash } from "./settings-ui";
 
 /**
  * Rest length between sets: 0 to 10 minutes in quarter-minute steps.
@@ -19,23 +20,23 @@ import {
  * controls cannot reproduce.
  */
 export function RestTimerPanel(): ReactNode {
-  const { restSeconds, save, isLoaded } = useRestPreference();
+  const { restSeconds, save: saveRest, isLoaded } = useRestPreference();
+  const { flash, saved } = useSavedFlash();
+  const save = (seconds: number): void => { saveRest(seconds); flash(); };
 
   return (
-    <Panel accent="cyan" eyebrow="Rest between sets">
+    <div className="space-y-2"><Group><Row>
       {!isLoaded ? (
-        <Skeleton className="h-28" />
+        <Skeleton className="h-24" />
       ) : (
         <>
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <p className="text-sm text-fg">Rest countdown</p>
-              <p className="mt-1 text-[11px] leading-relaxed text-fg-muted">
-                Starts automatically after each set you save. Set it to zero to turn the
-                countdown off. Stored on this device.
+              <p className="text-footnote text-text-secondary">
+                Starts after each set you save. Set it to 0 to turn the countdown off.
               </p>
             </div>
-            <p aria-live="polite" className="shrink-0 font-mono text-2xl text-cyan">
+            <p aria-live="polite" className="shrink-0 num text-title-2 text-accent">
               {formatRestSeconds(restSeconds)}
             </p>
           </div>
@@ -52,7 +53,7 @@ export function RestTimerPanel(): ReactNode {
             <input
               aria-label="Rest countdown length"
               aria-valuetext={formatRestSeconds(restSeconds)}
-              className="min-h-11 min-w-0 flex-1 accent-cyan"
+              className="min-h-11 min-w-0 flex-1 accent-accent"
               max={REST_MAX_SECONDS}
               min={REST_MIN_SECONDS}
               onChange={(event) => save(Number(event.currentTarget.value))}
@@ -70,13 +71,13 @@ export function RestTimerPanel(): ReactNode {
             </StepButton>
           </div>
 
-          <div className="mt-1 flex justify-between text-[10px] text-outline">
+          <div className="mt-1 flex justify-between text-caption text-text-muted">
             <span>Off</span>
             <span>10:00</span>
           </div>
         </>
       )}
-    </Panel>
+    </Row></Group><SavedStatus saved={saved} /></div>
   );
 }
 
@@ -94,7 +95,7 @@ function StepButton({
   return (
     <button
       aria-label={label}
-      className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded border border-outline-dim text-cyan transition-colors hover:border-cyan disabled:cursor-not-allowed disabled:border-outline-dim/50 disabled:text-outline"
+      className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--text)_9%,transparent)] text-accent active:opacity-70 disabled:cursor-not-allowed disabled:text-text-muted"
       disabled={disabled}
       onClick={onClick}
       type="button"

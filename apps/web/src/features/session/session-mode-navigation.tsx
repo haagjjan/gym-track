@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { IconChevronRight } from "../shell/icons";
+import { IconBack, IconChevronDown } from "../../shared/ui/icons";
 
 interface SessionModeNavigationProps {
   exerciseName: string;
@@ -12,21 +12,23 @@ interface SessionModeNavigationProps {
   total: number;
 }
 
+const stepButton = "flex size-11 flex-none items-center justify-center rounded-full bg-surface text-accent active:bg-surface-raised disabled:text-text-muted disabled:opacity-50";
+
+/** Back to the exercise list, plus previous and next exercise. */
 export function SessionModeNavigation(props: SessionModeNavigationProps): ReactNode {
   return (
-    <nav aria-label="Set mode exercise navigation" className="glass flex min-h-14 items-center gap-2 rounded-xl p-2">
-      <button className="flex min-h-11 items-center gap-1 rounded px-2 font-display text-xs font-bold text-cyan hover:bg-cyan/10" onClick={props.onBack} type="button">
-        <IconChevronRight className="rotate-180" /> Exercises
+    <nav aria-label="Exercise navigation" className="mb-4 flex items-center gap-2">
+      <button className="flex min-h-11 items-center gap-0.5 rounded-full pr-3 text-body text-accent active:bg-surface-raised" onClick={props.onBack} type="button">
+        <IconBack /> Exercises
       </button>
-      <div className="min-w-0 flex-1 text-center">
-        <p className="break-words text-xs font-semibold leading-4 text-fg">{props.exerciseName}</p>
-        <p className="label-caps text-outline">SET MODE · {props.position + 1}/{props.total}</p>
-      </div>
-      <button aria-label="Previous exercise" className="flex size-11 items-center justify-center rounded border border-outline-dim text-cyan disabled:opacity-30" disabled={props.position <= 0} onClick={props.onPrevious} type="button">
-        <IconChevronRight className="-rotate-90" />
+      <p className="num min-w-0 flex-1 text-center text-footnote text-text-secondary">
+        Exercise {props.position + 1} of {props.total}
+      </p>
+      <button aria-label="Previous exercise" className={stepButton} disabled={props.position <= 0} onClick={props.onPrevious} type="button">
+        <IconChevronDown className="rotate-180" />
       </button>
-      <button aria-label="Next exercise" className="flex size-11 items-center justify-center rounded border border-outline-dim text-cyan disabled:opacity-30" disabled={props.position >= props.total - 1} onClick={props.onNext} type="button">
-        <IconChevronRight className="rotate-90" />
+      <button aria-label="Next exercise" className={stepButton} disabled={props.position >= props.total - 1} onClick={props.onNext} type="button">
+        <IconChevronDown />
       </button>
     </nav>
   );

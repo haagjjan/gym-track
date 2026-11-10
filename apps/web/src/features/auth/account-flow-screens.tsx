@@ -3,61 +3,17 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
-import { HudButton } from "../../shared/ui/ui";
+import { Button, buttonClass } from "../../shared/ui/button";
 import { ApiError, apiFetch } from "../../shared/api/client";
+import { IconCheck24 } from "../../shared/ui/icons";
+import { AuthFrame, FormError, PasswordField, TextField, inlineLinkClass } from "./auth-frame";
 
-function FlowCard({
-  children,
-  eyebrow,
-  title
-}: {
-  children: ReactNode;
-  eyebrow: string;
-  title: string;
-}): ReactNode {
+function SuccessNote({ children }: { children: ReactNode }): ReactNode {
   return (
-    <main className="hud-grid relative flex min-h-dvh items-center justify-center bg-void p-5">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,219,231,0.07),transparent_60%)]"
-      />
-      <div className="relative w-full max-w-md">
-        <p className="mb-6 text-center font-display text-sm font-bold uppercase tracking-[0.1em] text-fg">
-          Gym Progress Tracker
-        </p>
-        <section className="glass-cyan chamfer rounded-xl p-6 sm:p-8">
-          <p className="label-caps text-outline">{eyebrow}</p>
-          <h1 className="mt-2 font-display text-2xl font-bold tracking-tight text-fg">
-            {title}
-          </h1>
-          {children}
-        </section>
-      </div>
-    </main>
-  );
-}
-
-function FlowField({
-  autoComplete,
-  label,
-  name,
-  type
-}: {
-  autoComplete: string;
-  label: string;
-  name: string;
-  type: string;
-}): ReactNode {
-  return (
-    <label className="block">
-      <span className="label-caps text-outline">{label}</span>
-      <input
-        autoComplete={autoComplete}
-        className="mt-1.5 block min-h-11 w-full rounded-sm border-b border-outline-dim bg-surface-low/60 px-3 font-mono text-sm text-fg transition-colors focus:border-cyan focus:bg-surface-low focus:shadow-glow-cyan focus:outline-none"
-        name={name}
-        type={type}
-      />
-    </label>
+    <div className="flex items-start gap-2 rounded-[var(--radius-card)] bg-surface p-3 text-body text-text" role="status">
+      <IconCheck24 className="flex-none text-success" />
+      <p>{children}</p>
+    </div>
   );
 }
 
@@ -83,48 +39,44 @@ export function ForgotPasswordScreen(): ReactNode {
       await apiFetch("/api/auth/forgot-password", { method: "POST", body: { email } });
       setIsRequested(true);
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : "That request did not go through. Try again.");
+      setError(caught instanceof ApiError ? caught.message : "Couldn't send the reset link. Check your connection and try again.");
       setIsPending(false);
     }
   }
 
   return (
-    <FlowCard eyebrow="Account recovery" title="Reset your password">
+    <AuthFrame backHref="/login" title="Reset your password">
       {isRequested ? (
-        <div className="mt-4">
-          <p className="rounded border border-green/40 bg-green/5 px-3 py-3 text-xs leading-relaxed text-green-bright">
+        <div className="mt-6 space-y-4">
+          <SuccessNote>
             If an account exists for that address, a reset link is on its way. The link
             works once and expires in 60 minutes.
-          </p>
-          <Link className="label-caps mt-5 inline-block text-cyan-dim hover:text-cyan" href="/login">
-            ← Back to sign in
+          </SuccessNote>
+          <Link className={buttonClass("secondary")} href="/login">
+            Back to sign in
           </Link>
         </div>
       ) : (
         <>
-          <p className="mt-2 text-xs leading-relaxed text-fg-muted">
+          <p className="mt-2 text-body text-text-secondary">
             Enter the email on your account and we will send you a single-use reset link.
           </p>
-          <form className="mt-6 space-y-4" noValidate onSubmit={(event) => void handleSubmit(event)}>
-            <FlowField autoComplete="email" label="Email address" name="email" type="email" />
-            {error ? (
-              <p className="rounded border border-red/40 bg-red/5 px-3 py-2 text-xs text-red" role="alert">
-                {error}
-              </p>
-            ) : null}
-            <HudButton className="w-full" disabled={isPending} size="lg" type="submit">
-              {isPending ? "SENDING…" : "SEND RESET LINK"}
-            </HudButton>
+          <form className="mt-6 space-y-5" noValidate onSubmit={(event) => void handleSubmit(event)}>
+            <TextField autoComplete="email" inputMode="email" label="Email address" name="email" type="email" />
+            {error ? <FormError>{error}</FormError> : null}
+            <Button className="w-full" disabled={isPending} type="submit">
+              {isPending ? "Sending…" : "Send reset link"}
+            </Button>
           </form>
-          <p className="mt-5 text-center text-xs text-fg-muted">
-            Remembered it?{" "}
-            <Link className="font-display font-bold tracking-[0.08em] text-cyan hover:text-cyan-bright" href="/login">
-              SIGN IN
+          <p className="mt-4 flex flex-wrap items-center justify-center gap-x-2 text-body text-text-secondary">
+            Remembered it?
+            <Link className={`${inlineLinkClass} px-1`} href="/login">
+              Sign in
             </Link>
           </p>
         </>
       )}
-    </FlowCard>
+    </AuthFrame>
   );
 }
 
@@ -148,7 +100,7 @@ export function ResetPasswordScreen(): ReactNode {
     }
 
     if (password !== confirm) {
-      setError("Both password fields must match.");
+      setError("The two passwords don't match. Type the same password in both fields.");
       return;
     }
 
@@ -165,7 +117,7 @@ export function ResetPasswordScreen(): ReactNode {
       setError(
         caught instanceof ApiError
           ? caught.message
-          : "Your password could not be reset. Try again."
+          : "Couldn't reset your password. Check your connection and try again."
       );
       setIsPending(false);
     }
@@ -173,55 +125,45 @@ export function ResetPasswordScreen(): ReactNode {
 
   if (!token) {
     return (
-      <FlowCard eyebrow="Account recovery" title="This link is incomplete">
-        <p className="mt-2 text-xs leading-relaxed text-fg-muted">
-          This reset link is missing its token. Open the link from the email directly, or
-          request a fresh one.
+      <AuthFrame backHref="/login" title="This link is incomplete">
+        <p className="mt-2 text-body text-text-secondary">
+          This reset link is missing part of its address. Open the link from your email
+          again, or request a new one.
         </p>
-        <Link className="label-caps mt-5 inline-block text-cyan-dim hover:text-cyan" href="/forgot-password">
-          Request a new link →
+        <Link className={`${buttonClass("primary")} mt-6 w-full`} href="/forgot-password">
+          Request a new link
         </Link>
-      </FlowCard>
+      </AuthFrame>
     );
   }
 
   return (
-    <FlowCard eyebrow="Account recovery" title="Choose a new password">
+    <AuthFrame backHref="/login" title="Choose a new password">
       {isDone ? (
-        <div className="mt-4">
-          <p className="rounded border border-green/40 bg-green/5 px-3 py-3 text-xs leading-relaxed text-green-bright">
+        <div className="mt-6 space-y-4">
+          <SuccessNote>
             Your password is updated, and you were signed out everywhere else. Sign in
             with the new password.
-          </p>
-          <Link className="label-caps mt-5 inline-block text-cyan-dim hover:text-cyan" href="/login">
-            → Go to sign in
+          </SuccessNote>
+          <Link className={`${buttonClass("primary")} w-full`} href="/login">
+            Go to sign in
           </Link>
         </div>
       ) : (
-        <form className="mt-6 space-y-4" noValidate onSubmit={(event) => void handleSubmit(event)}>
-          <FlowField
+        <form className="mt-6 space-y-5" noValidate onSubmit={(event) => void handleSubmit(event)}>
+          <PasswordField
             autoComplete="new-password"
             label="New password (at least 10 characters)"
             name="password"
-            type="password"
           />
-          <FlowField
-            autoComplete="new-password"
-            label="Confirm new password"
-            name="confirm"
-            type="password"
-          />
-          {error ? (
-            <p className="rounded border border-red/40 bg-red/5 px-3 py-2 text-xs text-red" role="alert">
-              {error}
-            </p>
-          ) : null}
-          <HudButton className="w-full" disabled={isPending} size="lg" type="submit">
-            {isPending ? "SAVING…" : "RESET PASSWORD"}
-          </HudButton>
+          <PasswordField autoComplete="new-password" label="Confirm new password" name="confirm" />
+          {error ? <FormError>{error}</FormError> : null}
+          <Button className="w-full" disabled={isPending} type="submit">
+            {isPending ? "Saving…" : "Reset password"}
+          </Button>
         </form>
       )}
-    </FlowCard>
+    </AuthFrame>
   );
 }
 
@@ -260,31 +202,31 @@ export function VerifyEmailScreen(): ReactNode {
     verifying: {
       title: "Confirming your email…",
       body: "This only takes a moment.",
-      tone: "text-fg-muted"
+      tone: "text-text-secondary"
     },
     verified: {
       title: "Email confirmed",
       body: "Your account is confirmed. You can close this page and carry on.",
-      tone: "text-green-bright"
+      tone: "text-text-secondary"
     },
     failed: {
       title: "This link has expired",
       body: "This confirmation link is no longer valid. Request a new one from Settings.",
-      tone: "text-red"
+      tone: "text-danger"
     },
     missing: {
       title: "This link is incomplete",
-      body: "Open the link straight from the email rather than retyping it.",
-      tone: "text-fg-muted"
+      body: "Open the link straight from your email instead of typing it in.",
+      tone: "text-text-secondary"
     }
   };
 
   return (
-    <FlowCard eyebrow="Email confirmation" title={copy[state].title}>
-      <p className={`mt-2 text-xs leading-relaxed ${copy[state].tone}`}>{copy[state].body}</p>
-      <Link className="label-caps mt-5 inline-block text-cyan-dim hover:text-cyan" href="/">
-        → Open the app
+    <AuthFrame backHref="/" backLabel="Back to the app" title={copy[state].title}>
+      <p className={`mt-2 text-body ${copy[state].tone}`} role="status">{copy[state].body}</p>
+      <Link className={`${buttonClass("primary")} mt-6 w-full`} href="/">
+        Open the app
       </Link>
-    </FlowCard>
+    </AuthFrame>
   );
 }

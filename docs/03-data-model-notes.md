@@ -101,15 +101,15 @@ Draft rules for the first schema pass. These notes capture business rules and da
 - Previous performance is computed on read from owned, non-deleted, completed workouts strictly before the current workout. The latest workout containing an active working set qualifies; its best set is highest weight, then higher reps, then lower set order.
 - Exercise progress selects one strongest working set per user-local calendar day across all sessions on that day. Load/Reps uses weight, reps, then lower RIR; EST 1RM uses Epley output with deterministic ties.
 
-### Public-beta email and account lifecycle
+### Email and account lifecycle
 
 - Public production requires a configured transactional-email provider, valid sender, and the published support address as reply-to. Log transport is limited to development, test, and explicit local/private-LAN deployments.
 - Email delivery is synchronous and reports only a bounded mail kind, outcome, provider status, optional provider message ID, and duration. Recipients, message bodies, action links, and tokens are not log or metric fields.
-- Raw verification, reset, invitation, and deletion-cancellation tokens are sent only in action links; PostgreSQL stores their hashes. Issuing a new verification, reset, or invitation link supersedes unused older tokens of the same purpose.
-- No mail outbox or retry payload is stored. Invitation issuance remains durable if delivery fails and exposes an explicit resend state. Deletion scheduling instead depends on provider acceptance and compensates back to `ACTIVE` with the cancellation token invalidated when delivery fails.
+- Raw verification, reset, and deletion-cancellation tokens are sent only in action links; PostgreSQL stores their hashes. Issuing a new verification or reset link supersedes unused older tokens of the same purpose.
+- No mail outbox or retry payload is stored. Deletion scheduling instead depends on provider acceptance and compensates back to `ACTIVE` with the cancellation token invalidated when delivery fails.
 - Deletion cancellation remains committed if its informational email fails. Completion email is best effort after erasure because the recipient address cannot be retained solely for retry.
-- One API-process scheduler runs lifecycle cleanup during startup and hourly thereafter. Runs are single-flight; auth, invitation, deletion, retention, and notification failures are isolated so later phases and future runs continue.
-- The scheduler is sufficient only for the accepted single-process, 50-account beta. Multi-process coordination or a durable work queue requires a later decision.
+- One API-process scheduler runs lifecycle cleanup during startup and hourly thereafter. Runs are single-flight; auth, deletion, retention, and notification failures are isolated so later phases and future runs continue.
+- The scheduler assumes a single API process, which is how production runs. Multiple API processes would need coordination or a durable work queue, and a later decision.
 
 ### Administrator containment
 

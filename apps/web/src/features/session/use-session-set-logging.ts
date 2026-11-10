@@ -114,7 +114,7 @@ export function useSessionSetLogging(options: SessionSetLoggingOptions) {
       options.onStatus(`Set ${saved.setOrder} logged.`);
       return true;
     } catch (caught) {
-      options.onError(errorMessage(caught, "The set could not be saved."));
+      options.onError(errorMessage(caught, "Couldn't save this set. Check your connection and try again."));
       return false;
     }
   }

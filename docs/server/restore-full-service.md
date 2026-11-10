@@ -15,7 +15,7 @@ Use a replacement x86_64 Ubuntu host that can run the recorded T2-compatible ker
 7. Restore the latest snapshot into an isolated root-owned directory.
 8. Validate the staged inventory and run the configuration restore checks before copying files.
 9. Install Compose, environment, proxy, monitoring, scripts, state, and secrets with their recorded permissions.
-10. Create a new PostgreSQL volume and restore the custom-format dump using [`restore-postgresql.md`](./restore-postgresql.md).
+10. Create a new PostgreSQL volume and restore the custom-format dump using [`restore-postgresql.md`](restore-postgresql.md).
 11. Recreate production login roles with the protected credentials. Do not promote restore-test passwords.
 12. Run migrations only when the restored migration ledger is behind the recorded application commit.
 13. Build or load the recorded API and web release, then validate the rendered Compose model.
@@ -39,7 +39,7 @@ Confirm:
 
 ## Address and routing changes
 
-The current private Ethernet endpoint is reserved outside this document's recovery logic. If replacement hardware receives a different private address, update the router reservation, SSH alias, Caddy/LAN checks, and documentation deliberately. Public DNS, port forwarding, public HTTPS, or an external tunnel require a separate future decision.
+The current private Ethernet endpoint is reserved outside this document's recovery logic. If replacement hardware receives a different private address, update the router reservation, SSH alias, Caddy/LAN checks, and documentation deliberately. Public access runs through the existing Cloudflare Tunnel (ADR 0011); after a hardware swap, confirm `cloudflared` is active and the tunnel reaches the new Caddy. Port forwarding stays off.
 
 ## Rollback during recovery
 

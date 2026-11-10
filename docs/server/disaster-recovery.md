@@ -2,7 +2,7 @@
 
 ## Scope and objectives
 
-This runbook covers recovery of the private `gym-prod` service from an application, database, configuration, or primary-host loss.
+This runbook covers recovery of the production service on `gym-prod` (public v0 at `app.gymtrack.ch`) from an application, database, configuration, or primary-host loss.
 
 ```text
 Recovery Point Objective: 24 hours
@@ -30,7 +30,7 @@ Backups exclude Docker images, container writable layers, the live PostgreSQL da
 
 - The server attempts an encrypted backup four times daily to accommodate MacBook sleep periods.
 - A warning fires after 30 hours without a successful snapshot and a critical alert after 48 hours.
-- Public-beta policy strictly removes snapshots older than 30 wall-clock days and prunes the repository; ADR 0013 supersedes the earlier tiered retention.
+- The retention policy strictly removes snapshots older than 30 wall-clock days and prunes the repository; ADR 0013 supersedes the earlier tiered retention.
 - Before a restored database is reopened, replay the newest protected erasure ledger so an older snapshot cannot resurrect deleted accounts.
 - Weekly maintenance applies retention and checks 10% of repository data.
 - Local unencrypted dumps are retained for 7 days but are not treated as independent backups.
@@ -80,7 +80,7 @@ The owner is the incident lead and credential custodian. Codex may diagnose and 
 
 ### Primary host or SSD lost
 
-Follow [`restore-full-service.md`](./restore-full-service.md). Preserve the failed disk for investigation and do not reinitialize it merely to speed up recovery.
+Follow [`restore-full-service.md`](restore-full-service.md). Preserve the failed disk for investigation and do not reinitialize it merely to speed up recovery.
 
 ### MacBook repository unavailable
 
@@ -92,10 +92,10 @@ The authoritative latest test date and evidence are recorded in:
 
 ```text
 /srv/gym-tracker/backups/reports/
-docs/server/reports/11-backup-restore-and-disaster-recovery-report.md
+docs/archive/server/reports/11-backup-restore-and-disaster-recovery-report.md
 ```
 
-The public-beta erasure drill must select a snapshot that predates an unexpired tombstone and
+The erasure drill must select a snapshot that predates an unexpired tombstone and
 must obtain the newest ledger from a different snapshot:
 
 ```bash
@@ -113,4 +113,4 @@ connects the restore database to the application network and does not print user
 - The writable SFTP repository is encrypted but not immutable.
 - The spare Mac mini has not been configured or tested as a recovery host.
 - Logical dumps provide an RPO-based recovery point, not point-in-time recovery.
-- Public failover, DNS, and external routing are outside this private stage.
+- There is no automatic public failover. Public routing is the Cloudflare Tunnel; after a host swap, re-check `cloudflared` and DNS as in `restore-full-service.md`.

@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { SortableItem, SortableList } from "../../shared/ui/sortable-list";
 import { ConfirmDialog } from "../../shared/ui/confirm-dialog";
-import { HudButton, Panel } from "../../shared/ui/ui";
+import { Button } from "../../shared/ui/button";
 import { errorMessage } from "../../shared/api/client";
 import type { Exercise, WorkoutTemplate, WorkoutTemplateExercise } from "../../shared/api/types";
 import { ExercisePicker } from "../exercises/exercise-picker";
+import { IconClose } from "../../shared/ui/icons";
 
 interface DraftEntry {
   key: string;
@@ -66,31 +67,28 @@ export function TemplateEditor({
 
   async function save(): Promise<void> {
     if (!name.trim()) {
-      setError("Template name is required.");
+      setError("Give the template a name.");
       return;
     }
     setError(null);
     try {
       await onSave(name.trim(), entries.map((entry) => entry.exercise.id));
     } catch (caught) {
-      setError(errorMessage(caught, "Template could not be saved."));
+      setError(errorMessage(caught, "Couldn't save the template. Check your connection and try again."));
     }
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 p-4 lg:p-6">
-      <header>
-        <p className="label-caps text-outline">Template</p>
-        <h1 className="font-display text-2xl font-bold text-fg">
-          {initial ? "Edit Template" : "New Workout Template"}
-        </h1>
-      </header>
-      <Panel accent="cyan">
-        <label className="block">
-          <span className="label-caps text-outline">Template name</span>
-          <input className="mt-1 min-h-12 w-full rounded border border-outline-dim bg-surface-low px-3 font-mono text-base text-fg focus:border-cyan focus:outline-none" maxLength={120} onChange={(event) => setName(event.currentTarget.value)} value={name} />
-        </label>
-        <div className="mt-4 space-y-2" role="list">
+    <div className="mx-auto max-w-3xl space-y-4 px-4 pb-6 pt-4 lg:px-6">
+      <h1 className="text-title-1 text-text">{initial ? "Edit template" : "New template"}</h1>
+      <label className="block">
+        <span className="text-subhead text-text-secondary">Template name</span>
+        <input className="mt-1.5 min-h-[3.125rem] w-full rounded-[var(--radius-control)] border border-control-line bg-surface-raised px-3 text-body text-text" maxLength={120} onChange={(event) => setName(event.currentTarget.value)} value={name} />
+      </label>
+      <section aria-labelledby="template-exercises-title">
+        <h2 className="mb-2 text-title-2 text-text" id="template-exercises-title">Exercises</h2>
+        {entries.length === 0 ? <p className="rounded-[var(--radius-card)] bg-surface p-4 text-subhead text-text-secondary">No exercises yet. Choose the exercises this template should start with.</p> : null}
+        {entries.length > 0 ? <div className="divide-y divide-line overflow-hidden rounded-[var(--radius-card)] bg-surface" role="list">
           <SortableList disabled={isSaving} ids={entries.map((entry) => entry.key)} onReorder={reorder}>
             {entries.map((entry, index) => (
               <SortableItem disabled={isSaving} id={entry.key} key={entry.key} label={entry.exercise.name}>
@@ -106,13 +104,16 @@ export function TemplateEditor({
               </SortableItem>
             ))}
           </SortableList>
-        </div>
-        <HudButton className="mt-3 w-full" disabled={isSaving} onClick={() => { setSelectedExercises([]); setPickerOpen(true); }} variant="outline">Choose exercises</HudButton>
-        {error ? <p className="mt-2 text-[11px] text-red" role="alert">{error}</p> : null}
-        <div className="mt-4 flex gap-2"><HudButton className="flex-1" disabled={isSaving || !dirty} onClick={() => void save()}>{isSaving ? "SAVING…" : "SAVE TEMPLATE"}</HudButton><HudButton onClick={close} variant="ghost">CANCEL</HudButton></div>
-      </Panel>
+        </div> : null}
+        <Button className="mt-3 w-full" disabled={isSaving} onClick={() => { setSelectedExercises([]); setPickerOpen(true); }} variant="secondary">Choose exercises</Button>
+      </section>
+      {error ? <p className="text-subhead text-danger" role="alert">{error}</p> : null}
+      <div className="grid gap-2">
+        <Button disabled={isSaving || !dirty} onClick={() => void save()}>{isSaving ? "Saving…" : "Save template"}</Button>
+        <Button onClick={close} variant="plain">Cancel</Button>
+      </div>
       <ExercisePicker
-        footer={<HudButton className="w-full" disabled={selectedExercises.length === 0 || isSaving} onClick={addSelectedExercises}>Add selected exercises ({selectedExercises.length})</HudButton>}
+        footer={<Button className="w-full" disabled={selectedExercises.length === 0 || isSaving} onClick={addSelectedExercises}>Add selected exercises ({selectedExercises.length})</Button>}
         isOpen={pickerOpen}
         isSubmitting={isSaving}
         onClose={() => setPickerOpen(false)}
@@ -122,12 +123,12 @@ export function TemplateEditor({
         title="Choose template exercises"
       />
       <ConfirmDialog
-        confirmLabel="DISCARD CHANGES"
+        confirmLabel="Discard changes"
         isOpen={confirmDiscard}
-        message="Your unsaved template name, exercise order, and exercise changes will be lost."
+        message="Your changes to this template will be lost."
         onCancel={() => setConfirmDiscard(false)}
         onConfirm={onCancel}
-        title="Discard unsaved template changes?"
+        title="Discard changes?"
       />
     </div>
   );
@@ -151,7 +152,17 @@ export function TemplateEditor({
 function TemplateExerciseRow({ dragHandle, entry, index, isSaving, onRemove }: { dragHandle: ReactNode; entry: DraftEntry; index: number; isSaving: boolean; onRemove: () => void }): ReactNode {
   const name = entry.exercise.name;
   const muscles = entry.exercise.muscleGroups.filter((muscle) => muscle.role === "PRIMARY").map((muscle) => muscle.name).join(", ");
-  return <div className="flex min-h-14 items-center gap-2 rounded border border-outline-dim/60 bg-surface-low/40 p-2" role="listitem"><span className="w-6 shrink-0 text-center font-mono text-xs text-outline">{index + 1}</span><div className="min-w-0 flex-1"><div className="flex min-w-0 items-center gap-1"><p className="min-w-0 flex-1 truncate text-sm text-fg">{name}</p><button aria-label={`Remove ${name}`} className="flex size-11 shrink-0 items-center justify-center rounded text-xl text-red hover:bg-red/10" disabled={isSaving} onClick={onRemove} type="button">×</button></div><p className="truncate text-[9px] uppercase text-outline">{muscles}</p></div>{dragHandle}</div>;
+  return (
+    <div className="flex min-h-[3.75rem] items-center gap-2 py-1 pl-4 pr-1">
+      <span className="num w-5 shrink-0 text-center text-subhead text-text-muted">{index + 1}</span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-headline text-text">{name}</p>
+        {muscles ? <p className="truncate text-subhead text-text-secondary">{muscles}</p> : null}
+      </div>
+      <button aria-label={`Remove ${name}`} className="flex size-11 shrink-0 items-center justify-center rounded-full text-danger active:bg-surface-raised" disabled={isSaving} onClick={onRemove} type="button"><IconClose /></button>
+      {dragHandle}
+    </div>
+  );
 }
 
 function exerciseIds(entries: DraftEntry[]): string {

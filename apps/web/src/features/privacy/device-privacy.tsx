@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { apiFetch } from "../../shared/api/client";
+import { Button } from "../../shared/ui/button";
 import { clearUserSetDrafts, purgeExpiredSetDrafts } from "../session/set-draft-storage";
 
 interface PrivacyPreferences {
@@ -74,12 +75,20 @@ const LEGACY_FUNCTIONAL_KEYS = [
   "body-cockpit.display.v1"
 ];
 
+const SHEET_CLASS = "fixed inset-x-0 bottom-0 z-[60] mx-auto w-full max-w-2xl rounded-t-[var(--radius-card)] bg-surface-raised px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_32px_rgba(0,0,0,0.35)]";
+
+function SheetGrabber(): ReactNode {
+  return <div aria-hidden className="mx-auto mb-3 h-1 w-9 rounded-full bg-control-line" />;
+}
+
+// Sheets, not floating cards: they stack above the tab bar and the workout mini bar.
 function LegacyStorageChoice({ onDiscard, onImport }: { onDiscard(): void; onImport(): void }): ReactNode {
   return (
-    <aside aria-label="Legacy device data" className="fixed inset-x-3 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-[60] mx-auto max-w-2xl rounded-xl border border-lavender/50 bg-surface p-4 shadow-2xl lg:bottom-4" role="dialog">
-      <p className="font-display text-sm font-bold text-fg">OLDER DEVICE DATA FOUND</p>
-      <p className="mt-2 text-xs leading-relaxed text-fg-muted">This browser has body profile or display data saved before per-account isolation was added. Import it into this account, or remove it. It will never be imported automatically.</p>
-      <div className="mt-4 grid grid-cols-2 gap-3"><button className="min-h-11 rounded border border-outline-dim text-xs font-bold text-fg" onClick={onDiscard} type="button">REMOVE OLD DATA</button><button className="min-h-11 rounded border border-lavender text-xs font-bold text-lavender" onClick={onImport} type="button">IMPORT TO THIS ACCOUNT</button></div>
+    <aside aria-label="Legacy device data" className={SHEET_CLASS} role="dialog">
+      <SheetGrabber />
+      <h2 className="text-title-3 text-text">Older device data found</h2>
+      <p className="mt-2 text-subhead text-text-secondary">This browser has profile or display data saved before settings were kept per account. Import it into this account or remove it. It is never imported automatically.</p>
+      <div className="mt-4 grid gap-2"><Button onClick={onImport}>Import to this account</Button><Button onClick={onDiscard} variant="secondary">Remove old data</Button></div>
     </aside>
   );
 }
@@ -100,6 +109,14 @@ function importLegacyKeys(keys: string[], userId: string): void {
   removeLegacyKeys(keys);
 }
 
+/**
+ * For components that also render outside the provider (the hands-on example
+ * has none, on purpose): null there, which callers treat as storage off.
+ */
+export function useOptionalDevicePrivacy(): DevicePrivacyContextValue | null {
+  return useContext(DevicePrivacyContext);
+}
+
 export function useDevicePrivacy(): DevicePrivacyContextValue {
   const value = useContext(DevicePrivacyContext);
   if (!value) throw new Error("Device privacy context is unavailable.");
@@ -108,11 +125,12 @@ export function useDevicePrivacy(): DevicePrivacyContextValue {
 
 function StorageChoice({ onChoose }: { onChoose: (enabled: boolean) => void }): ReactNode {
   return (
-    <aside aria-label="Device storage choice" className="fixed inset-x-3 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-50 mx-auto max-w-2xl rounded-xl border border-cyan/50 bg-surface p-4 shadow-2xl lg:bottom-4" role="dialog">
-      <p className="font-display text-sm font-bold text-fg">COOKIE & DEVICE STORAGE</p>
-      <p className="mt-2 text-xs leading-relaxed text-fg-muted">We always use one essential sign-in cookie and active-set recovery storage. Functional storage remembers body profile, favorite lifts, and display choices on this device. We use no advertising cookies.</p>
-      <p className="mt-2 text-[11px]"><Link className="text-cyan" href="/cookies">Read the Cookie & Device Storage Notice</Link></p>
-      <div className="mt-4 grid grid-cols-2 gap-3"><button className="min-h-11 rounded border border-outline-dim text-xs font-bold text-fg" onClick={() => onChoose(false)} type="button">ESSENTIAL ONLY</button><button className="min-h-11 rounded border border-cyan bg-cyan/10 text-xs font-bold text-cyan" onClick={() => onChoose(true)} type="button">ALLOW FUNCTIONAL</button></div>
+    <aside aria-label="Device storage choice" className={SHEET_CLASS} role="dialog">
+      <SheetGrabber />
+      <h2 className="text-title-3 text-text">Cookies and device storage</h2>
+      <p className="mt-2 text-subhead text-text-secondary">We always use one sign-in cookie and storage that recovers an unsaved set. You can also let us save your body profile, pinned lifts and display choices on this device. No advertising cookies.</p>
+      <p className="mt-2"><Link className="inline-flex min-h-11 items-center text-subhead text-accent" href="/cookies">Read the cookie and storage notice</Link></p>
+      <div className="mt-2 grid gap-2"><Button onClick={() => onChoose(true)}>Save settings on this device</Button><Button onClick={() => onChoose(false)} variant="secondary">Essential only</Button></div>
     </aside>
   );
 }

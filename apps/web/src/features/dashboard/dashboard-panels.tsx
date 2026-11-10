@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { EmptyState, Skeleton } from "../../shared/ui/ui";
+import { Skeleton } from "../../shared/ui/ui";
 import type { ExerciseSummaryPayload, WorkoutSummary } from "../../shared/api/types";
-import { cockpitLabel, formatDuration, formatKgValue, shortDate } from "../../shared/format";
-import { IconChevronRight } from "../shell/icons";
-import { useBiometrics } from "./use-biometrics";
+import { formatDay, formatKgValue, formatMinutes } from "../../shared/format";
+import { IconForward } from "../../shared/ui/icons";
 
 export interface PerformanceRowItem {
   id: string;
@@ -14,95 +13,97 @@ export interface PerformanceRowItem {
   totalSets: number;
 }
 
+const groupClass = "divide-y divide-line overflow-hidden rounded-[var(--radius-card)] bg-surface";
+const inlineLinkClass = "inline-flex min-h-11 items-center text-body text-accent";
+
 export function AvatarFallback({ label }: { label: string }): ReactNode {
   return (
     <div className="flex h-full items-center justify-center">
-      <p className="label-caps animate-pulse-slow text-cyan-dim">{label}</p>
+      <p className="text-subhead text-text-secondary">{label}</p>
     </div>
   );
 }
 
-export function IdentityRows(): ReactNode {
-  const { biometrics, isLoaded } = useBiometrics();
-  const rows = [
-    { label: "Height", value: biometrics.heightCm ? `${biometrics.heightCm} cm` : "—" },
-    { label: "Weight", value: biometrics.weightKg ? `${biometrics.weightKg} kg` : "—" }
-  ];
-  if (!isLoaded) return <Skeleton className="mt-3 h-10" />;
-
+function TrophyIcon(): ReactNode {
   return (
-    <dl className="mt-3 space-y-1.5">
-      {rows.map((row) => (
-        <div className="flex items-baseline justify-between gap-2" key={row.label}>
-          <dt className="text-xs text-fg-muted">{row.label}</dt>
-          <dd className="font-mono text-sm tracking-[0.05em] text-fg">{row.value}</dd>
-        </div>
-      ))}
-      {!biometrics.heightCm && !biometrics.weightKg ? (
-        <Link className="label-caps mt-1 inline-block text-cyan-dim hover:text-cyan" href="/settings">
-          Add yours in Settings →
-        </Link>
-      ) : null}
-    </dl>
+    <svg aria-hidden fill="none" height="20" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.75" viewBox="0 0 24 24" width="20">
+      <path d="M8 4h8v5a4 4 0 0 1-8 0z" />
+      <path d="M8 6H5v1a3 3 0 0 0 3 3M16 6h3v1a3 3 0 0 1-3 3M12 13v4M8.5 20h7" />
+    </svg>
+  );
+}
+
+function EmptyCard({ action, children }: { action?: ReactNode; children: ReactNode }): ReactNode {
+  return (
+    <div className="rounded-[var(--radius-card)] bg-surface p-4">
+      <p className="text-subhead text-text-secondary">{children}</p>
+      {action}
+    </div>
   );
 }
 
 export function PerformanceRows({
   exercises,
-  hasPins,
   isLoading,
   summaries
 }: {
   exercises: PerformanceRowItem[];
-  hasPins: boolean;
   isLoading: boolean;
   summaries: ExerciseSummaryPayload[];
 }): ReactNode {
   if (isLoading) {
-    return <div className="space-y-2"><Skeleton className="h-9" /><Skeleton className="h-9" /><Skeleton className="h-9" /></div>;
+    return <div className="space-y-px overflow-hidden rounded-[var(--radius-card)]"><Skeleton className="h-[60px]" /><Skeleton className="h-[60px]" /><Skeleton className="h-[60px]" /></div>;
   }
   if (exercises.length === 0) {
-    return <EmptyState action={<Link className="label-caps text-cyan-dim hover:text-cyan" href="/settings">Pin lifts in Settings →</Link>} message="Pin your favourite lifts in Settings, or log working sets and they will appear here." title="No lifts tracked yet" />;
+    return (
+      <EmptyCard action={<Link className={inlineLinkClass} href="/settings">Pin lifts in Settings</Link>}>
+        Log some working sets, or pin your favourite lifts, and your personal bests will show up here.
+      </EmptyCard>
+    );
   }
 
   return (
     <>
-      <ul className="space-y-2.5">
+      <ul className={groupClass}>
         {exercises.map((exercise) => {
           const topSet = summaries.find((item) => item.exerciseId === exercise.id)?.bestTopSet;
           return (
-            <li className="flex items-baseline justify-between gap-2" key={exercise.id}>
-              <div className="min-w-0">
-                <p className="truncate text-xs font-medium text-fg">{exercise.name}</p>
-                <p className="truncate text-[10px] uppercase tracking-[0.08em] text-outline">
-                  {topSet ? `${formatKgValue(topSet.weightKg)}kg × ${topSet.reps} // ${shortDate(topSet.sessionDate)}` : exercise.totalSets > 0 ? `${exercise.totalSets} sets logged` : "No sets yet"}
+            <li className="flex min-h-[60px] items-center gap-3 px-4 py-2.5" key={exercise.id}>
+              <span aria-hidden className="grid size-8 flex-none place-items-center rounded-lg bg-surface-raised text-text"><TrophyIcon /></span>
+              <div className="min-w-0 flex-1">
+                <p className="line-clamp-2 text-headline text-text">{exercise.name}</p>
+                <p className="text-subhead text-text-secondary">
+                  {topSet
+                    ? `Est. 1RM, from ${formatKgValue(topSet.weightKg)} kg × ${topSet.reps}`
+                    : exercise.totalSets > 0
+                      ? `${exercise.totalSets} sets logged`
+                      : "No sets yet :("}
                 </p>
               </div>
-              <p className="whitespace-nowrap font-mono text-base font-medium tracking-[0.05em] text-green">
-                {topSet ? `${formatKgValue(topSet.estimatedOneRepMaxKg)} KG` : "—"}
+              <p className="num whitespace-nowrap text-headline text-text">
+                {topSet ? <>{formatKgValue(topSet.estimatedOneRepMaxKg)} <span className="font-medium text-text-secondary">kg</span></> : "—"}
               </p>
             </li>
           );
         })}
       </ul>
-      {!hasPins ? <Link className="mt-2.5 block text-[10px] uppercase tracking-[0.08em] text-outline transition-colors hover:text-cyan" href="/settings">Auto-derived — pin your own in Settings →</Link> : null}
     </>
   );
 }
 
 export function SessionRows({ isLoading, sessions }: { isLoading: boolean; sessions: WorkoutSummary[] }): ReactNode {
-  if (isLoading) return <div className="space-y-2"><Skeleton className="h-11" /><Skeleton className="h-11" /><Skeleton className="h-11" /></div>;
-  if (sessions.length === 0) return <EmptyState message="Finished workouts collect here, one tap from a full review." title="No workouts yet" />;
+  if (isLoading) return <div className="space-y-px overflow-hidden rounded-[var(--radius-card)]"><Skeleton className="h-[60px]" /><Skeleton className="h-[60px]" /><Skeleton className="h-[60px]" /></div>;
+  if (sessions.length === 0) return <EmptyCard>No finished workouts yet. Your first one will show up here.</EmptyCard>;
   return (
-    <ul className="space-y-1.5">
+    <ul className={groupClass}>
       {sessions.map((session) => (
         <li key={session.id}>
-          <Link className="flex min-h-11 items-center justify-between gap-2 rounded border border-cyan/20 bg-surface-low/50 px-3 py-2 transition-colors hover:border-cyan/60 hover:bg-surface-low" href={`/workouts/${session.id}`}>
-            <span className="min-w-0">
-              <span className="block truncate font-display text-xs font-bold uppercase tracking-[0.1em] text-fg">{sessionTitle(session)}</span>
-              <span className="block text-[10px] uppercase tracking-[0.08em] text-outline">{`${shortDate(session.startedAt)} // ${session.totalSets} sets // ${formatDuration(session.startedAt, session.endedAt)}`}</span>
+          <Link className="flex min-h-[60px] items-center gap-3 px-4 py-2.5" href={`/workouts/${session.id}`}>
+            <span className="min-w-0 flex-1">
+              <span className="line-clamp-2 block text-headline text-text">{sessionTitle(session)}</span>
+              <span className="block text-subhead text-text-secondary">{`${formatDay(session.startedAt)}, ${session.totalSets} sets, ${formatMinutes(session.startedAt, session.endedAt)}`}</span>
             </span>
-            <IconChevronRight className="shrink-0 text-outline" />
+            <IconForward className="flex-none text-text-muted" />
           </Link>
         </li>
       ))}
@@ -110,55 +111,11 @@ export function SessionRows({ isLoading, sessions }: { isLoading: boolean; sessi
   );
 }
 
-export function QuickLink({ href, icon, label }: { href: string; icon: ReactNode; label: string }): ReactNode {
-  return (
-    <Link className="flex min-h-11 items-center gap-3 rounded px-3 text-fg-muted transition-colors hover:bg-surface-low hover:text-cyan" href={href}>
-      <span aria-hidden className="flex text-cyan-dim"><IconChevronRight /><IconChevronRight className="-ml-2.5" /></span>
-      {icon}<span className="label-caps">{label}</span>
-    </Link>
-  );
-}
-
-export function BiometricRows({ systemCharge }: { systemCharge: number }): ReactNode {
-  const { biometrics, isLoaded } = useBiometrics();
-  if (!isLoaded) return <Skeleton className="h-28" />;
-  const rows = [
-    { label: "Age", value: biometrics.age !== null ? String(biometrics.age) : "—", unit: "" },
-    { label: "Height", value: biometrics.heightCm !== null ? String(biometrics.heightCm) : "—", unit: "CM" },
-    { label: "Weight", value: biometrics.weightKg !== null ? String(biometrics.weightKg) : "—", unit: "KG" },
-    { label: "Body fat", value: biometrics.bodyFatPct !== null ? String(biometrics.bodyFatPct) : "—", unit: "%" }
-  ];
-  return (
-    <div>
-      <dl className="space-y-1.5">
-        {rows.map((row) => <div className="flex items-baseline justify-between gap-2" key={row.label}><dt className="label-caps text-outline">{row.label}</dt><dd className="font-mono text-sm tracking-[0.05em] text-fg">{row.value}{row.unit ? <span className="ml-1 text-[10px] text-outline">{row.unit}</span> : null}</dd></div>)}
-      </dl>
-      <div className="mt-4">
-        <div className="flex items-baseline justify-between"><p className="label-caps text-outline">Weekly volume</p><p className="font-mono text-sm text-lavender">{systemCharge}%</p></div>
-        <div aria-hidden className="mt-1.5 h-1 rounded-full bg-surface-high"><div className="h-full rounded-full bg-lavender shadow-glow-lavender transition-all duration-700" style={{ width: `${systemCharge}%` }} /></div>
-        <p className="mt-1 text-[10px] text-outline">Weekly working sets vs 48-set target.</p>
-      </div>
-    </div>
-  );
-}
-
-export function LatestLogs({ isLoading, sessions }: { isLoading: boolean; sessions: WorkoutSummary[] }): ReactNode {
-  if (isLoading) return <Skeleton className="mt-2 h-9" />;
-  if (sessions.length === 0) return <p className="mt-2 text-xs text-fg-muted">No workouts logged yet — your first one will show up here.</p>;
-  return (
-    <div className="mt-2 flex flex-wrap gap-x-6 gap-y-2">
-      {sessions.map((session) => (
-        <Link className="group min-w-0" href={`/workouts/${session.id}`} key={session.id}>
-          <span className="block text-[10px] uppercase tracking-[0.08em] text-outline">{shortDate(session.startedAt)}</span>
-          <span className="block truncate font-display text-xs font-bold uppercase tracking-[0.1em] text-fg-muted transition-colors group-hover:text-cyan">{sessionTitle(session)}</span>
-        </Link>
-      ))}
-    </div>
-  );
-}
-
-function sessionTitle(session: WorkoutSummary): string {
-  if (session.title) return cockpitLabel(session.title);
-  if (session.workoutType) return cockpitLabel(session.workoutType);
-  return `SESSION_${shortDate(session.startedAt).replace(/\s+/g, "_")}`;
+export function sessionTitle(session: WorkoutSummary): string {
+  if (session.title) return session.title;
+  if (session.workoutType) {
+    const words = session.workoutType.trim().replace(/[_-]+/g, " ").toLowerCase();
+    return words.charAt(0).toUpperCase() + words.slice(1);
+  }
+  return `Workout on ${formatDay(session.startedAt)}`;
 }

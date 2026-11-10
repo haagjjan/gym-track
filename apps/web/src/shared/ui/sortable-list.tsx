@@ -84,7 +84,7 @@ export function SortableItem({
       {...sortable.attributes}
       {...sortable.listeners}
       aria-label={`Drag to reorder ${label}. Use the arrow keys while focused to move it.`}
-      className="flex size-11 touch-none items-center justify-center rounded text-outline transition-colors hover:bg-cyan/10 hover:text-cyan focus-visible:bg-cyan/10 focus-visible:text-cyan focus-visible:outline-none disabled:opacity-40"
+      className="flex size-11 flex-none touch-none items-center justify-center rounded-[var(--radius-sm)] text-text-muted active:bg-surface-raised disabled:opacity-40"
       disabled={disabled}
       ref={sortable.setActivatorNodeRef}
       type="button"
@@ -99,9 +99,10 @@ export function SortableItem({
 
   return (
     <div
-      className={sortable.isDragging ? "opacity-70 shadow-glow-cyan" : ""}
+      className={sortable.isDragging ? "relative opacity-80 shadow-lg" : ""}
       ref={sortable.setNodeRef}
-      role="presentation"
+      // Callers wrap the list in role="list"; each item must be a listitem.
+      role="listitem"
       style={style}
     >
       {children({ dragHandle, isDragging: sortable.isDragging })}

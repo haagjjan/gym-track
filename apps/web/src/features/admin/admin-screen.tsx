@@ -48,34 +48,31 @@ export function AdminScreen(): ReactNode {
 
   return (
     <>
-      <div className="mx-auto max-w-md p-6 py-16 lg:hidden">
-        <p className="label-caps text-lavender">Administration</p>
-        <h1 className="mt-2 font-display text-2xl font-bold text-fg">Open this on a desktop</h1>
-        <p className="mt-3 text-sm leading-6 text-fg-muted">
-          The administration console is only available on a large screen. Its tables are wide and
-          its actions cannot be undone, so it is not offered on phones. Everything else in the app
-          works here as usual.
+      <div className="mx-auto max-w-md px-4 py-16 lg:hidden">
+        <h1 className="text-title-1 text-text">Open this on a desktop</h1>
+        <p className="mt-3 text-body text-text-secondary">
+          The administration console needs a large screen. Its tables are wide and its actions
+          cannot be undone, so it is not offered on phones. Everything else in the app works here as usual.
         </p>
       </div>
 
       <div className="mx-auto hidden max-w-6xl space-y-6 p-4 py-8 sm:p-8 lg:block">
         <header>
-          <p className="label-caps text-lavender">Administrators only</p>
-          <h1 className="mt-2 font-display text-3xl font-bold text-fg">Administration</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-fg-muted">
+          <h1 className="text-title-1 text-text">Administration</h1>
+          <p className="mt-2 max-w-2xl text-callout text-text-secondary">
             See how the app is used, manage accounts, send in-app messages, and review every
             privileged action.
           </p>
         </header>
 
-        <nav aria-label="Administration sections" className="flex flex-wrap gap-1 border-b border-outline-dim/50">
+        <nav aria-label="Administration sections" className="flex flex-wrap gap-1 border-b border-line">
           {sections.map((item) => (
             <button
               aria-current={item.id === section ? "page" : undefined}
-              className={`min-h-11 cursor-pointer rounded-t border-b-2 px-4 font-display text-xs font-bold uppercase tracking-[0.1em] transition-colors ${
+              className={`min-h-11 cursor-pointer border-b-2 px-4 text-callout font-semibold ${
                 item.id === section
-                  ? "border-cyan bg-cyan/10 text-cyan"
-                  : "border-transparent text-fg-muted hover:bg-surface-low hover:text-fg"
+                  ? "border-accent text-accent"
+                  : "border-transparent text-text-secondary active:opacity-70"
               }`}
               key={item.id}
               onClick={() => setSection(item.id)}
@@ -86,7 +83,7 @@ export function AdminScreen(): ReactNode {
           ))}
         </nav>
 
-        <p className="text-sm text-fg-muted">{active?.description}</p>
+        <p className="text-callout text-text-secondary">{active?.description}</p>
 
         {section === "overview" ? <OverviewPanel /> : null}
         {section === "members" ? (

@@ -38,7 +38,7 @@ includes everything needed to run the stack locally.
 
 **In scope:** the application at `app.gymtrack.ch`, and the source code here —
 particularly authentication, session handling, authorisation and cross-account
-isolation, the invitation and admission flow, and account export and deletion.
+isolation, signup and account recovery, and account export and deletion.
 
 **Out of scope:** third-party providers (Cloudflare, Resend, Infomaniak — report
 those to them directly), findings that require physical access to the operator's
@@ -46,7 +46,8 @@ hardware, and missing hardening that carries no demonstrable impact.
 
 ## Status
 
-The application is in an invitation-only beta. It is self-hosted on a single
+The application is a public v0 with open signup for adults who live in
+Switzerland (ADR 0022). It is self-hosted on a single
 machine and is not built to withstand a determined attacker at scale. Known gaps
 are tracked deliberately rather than hidden — if a report matches something
 already known, you will be told so plainly.
