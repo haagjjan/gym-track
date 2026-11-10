@@ -123,7 +123,7 @@ export function ProgressView({ completedExercises, exercises, selectedId, onSele
               <Segmented label="Time window" onChange={(next: ChartWindow) => setView((current) => updateProgressViewPreferences(current, { window: next }))} options={timeWindows} value={window} />
             </div>
 
-            <div className="mt-3 rounded-[var(--radius-card)] bg-surface px-4 py-3">
+            <div className="mt-3 rounded-[var(--radius-card)] bg-surface px-2 py-2">
               {!selected ? (
                 completedExercises.isLoading ? <Skeleton className="h-64" /> : (
                   <p className="py-6 text-center text-body text-text-secondary">Choose an exercise to see how it has progressed.</p>

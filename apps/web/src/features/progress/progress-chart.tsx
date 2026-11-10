@@ -26,7 +26,7 @@ import {
   type ChartRow
 } from "./progress-chart-data";
 import {
-  CHART_HEIGHT,
+  CHART_HEIGHT_CSS,
   PinnedAxis,
   X_AXIS_HEIGHT,
   Y_AXIS_WIDTH
@@ -134,7 +134,7 @@ export function ProgressChart({
       )}
 
       {inspected ? (
-        <div className="mt-2 flex items-center gap-1">
+        <div className="mt-1 flex items-center gap-1 px-1">
           <button
             aria-label="Previous day"
             className="flex size-11 shrink-0 items-center justify-center rounded-full text-accent disabled:text-text-muted"
@@ -233,14 +233,14 @@ function ChartPlot({ marked, mode, onTapDay, rows, showReps, showWeight, window 
   }, [marked?.date]);
 
   return (
-    <div className="relative">
+    <div className="relative" style={{ height: CHART_HEIGHT_CSS }}>
       {showWeight ? <PinnedAxis color={WEIGHT_COLOR} dataKey={mode === "estimated" ? "est1rm" : "weight"} rows={rows} side="left" /> : null}
       {showReps ? <PinnedAxis color={REPS_COLOR} dataKey="reps" rows={rows} side="right" /> : null}
 
       {/* rtl: the newest data starts in view. pan-x/pan-y keep native swiping;
           a tap is a pointer that barely moved, so swiping never picks a day. */}
       <div
-        className="overflow-x-auto overscroll-x-contain pb-1 [scrollbar-gutter:stable] [touch-action:pan-x_pan-y]"
+        className="h-full overflow-x-auto overflow-y-hidden overscroll-x-contain [touch-action:pan-x_pan-y]"
         dir="rtl"
         onPointerDown={(event) => { pointerRef.current = { x: event.clientX, y: event.clientY, moved: false }; }}
         onPointerMove={(event) => {
@@ -264,9 +264,9 @@ function ChartPlot({ marked, mode, onTapDay, rows, showReps, showWeight, window 
             });
             if (row) onTapDay(row.date);
           }}
-          style={{ width: innerWidth || "100%" }}
+          style={{ height: "100%", width: innerWidth || "100%" }}
         >
-          <ResponsiveContainer height={CHART_HEIGHT} width="100%">
+          <ResponsiveContainer height="100%" width="100%">
             <LineChart data={rows} margin={CHART_MARGIN}>
               <CartesianGrid stroke="var(--line)" vertical={false} />
               {yearBoundaries.map((boundaryTime) => (

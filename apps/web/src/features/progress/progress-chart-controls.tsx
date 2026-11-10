@@ -18,7 +18,7 @@ export function ProgressChartControls({ mode, onModeChange, onViewChange, view }
   view: "chart" | "table";
 }): ReactNode {
   return (
-    <div className="relative mb-2 flex items-center gap-1">
+    <div className="relative flex items-center gap-1 px-1">
       <div className="min-w-0 flex-1"><Segmented label="Chart mode" onChange={onModeChange} options={modes} value={mode} /></div>
       <InfoHint label="How estimated 1RM is calculated">
         <span className="block">Estimated 1RM projects the weight you could lift once from a working set. It becomes less reliable at high rep counts.</span>
@@ -49,10 +49,10 @@ export function SeriesLegend({ mode, onShowRepsChange, onShowWeightChange, showR
   showWeight: boolean;
 }): ReactNode {
   if (mode === "estimated") {
-    return <p className="mb-1 flex min-h-11 items-center gap-2 text-subhead font-semibold text-accent"><Swatch className="bg-accent" isActive /> Est. 1RM, kg</p>;
+    return <p className="flex min-h-11 items-center gap-2 px-2 text-subhead font-semibold text-accent"><Swatch className="bg-accent" isActive /> Est. 1RM, kg</p>;
   }
   return (
-    <div className="mb-1 flex items-center justify-between gap-2">
+    <div className="flex items-center justify-between gap-2 px-2">
       <SeriesChip colorClass="bg-accent" isActive={showWeight} label="Weight, kg" onClick={() => { if (showWeight && !showReps) return; onShowWeightChange(!showWeight); }} textClass="text-accent" />
       <SeriesChip colorClass="bg-chart-reps" isActive={showReps} label="Reps" onClick={() => { if (showReps && !showWeight) return; onShowRepsChange(!showReps); }} reverse textClass="text-chart-reps" />
     </div>
