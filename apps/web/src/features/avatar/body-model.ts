@@ -3,12 +3,14 @@
 import { useGLTF } from "@react-three/drei";
 import { useMemo } from "react";
 import * as THREE from "three";
+import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 
 /**
  * The shared body figure: one mesh per muscle region and side
  * (`muscle_<slug>_<L|R>`), plus neutral meshes for untracked muscle, bone and
- * skin. Built from BodyParts3D by tools/body-model (see its README for the
- * licence and credit). Meshopt-compressed; the decoder ships with three.
+ * skin, all bound to one 19-bone skeleton so the figure can be posed. Built
+ * from BodyParts3D by tools/body-model (see its README for the licence and
+ * credit). Meshopt-compressed; the decoder ships with three.
  */
 export const BODY_MODEL_URL = "/models/body/body.glb";
 
@@ -48,7 +50,8 @@ export function useBodyModel(): BodyModel {
   const gltf = useGLTF(BODY_MODEL_URL, false, true);
 
   return useMemo(() => {
-    const figure = gltf.scene.clone(true);
+    // Skinned meshes need their own skeleton per copy; a plain clone would share bones.
+    const figure = cloneSkinned(gltf.scene);
     const size = new THREE.Box3().setFromObject(figure).getSize(new THREE.Vector3());
     const scale = BODY_HEIGHT / Math.max(size.y, 1e-6);
 
@@ -62,7 +65,10 @@ export function useBodyModel(): BodyModel {
 
     const parts: BodyPart[] = [];
     figure.traverse((child) => {
-      if (child instanceof THREE.Mesh) parts.push(partOf(child));
+      if (!(child instanceof THREE.Mesh)) return;
+      // A posed limb leaves its bind-pose bounds, so never cull by them.
+      child.frustumCulled = false;
+      parts.push(partOf(child));
     });
 
     return {
