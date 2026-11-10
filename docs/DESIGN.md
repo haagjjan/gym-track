@@ -36,14 +36,14 @@ These rules come first because the shipped app runs in a full-screen WebView.
 | Slot | Label | Root | Contains |
 |---|---|---|---|
 | 1 | Home | `/` | Today's summary, figure, resume or start, personal bests, recent workouts |
-| 2 | History | `/workouts` | Past workouts only |
+| 2 | History | `/workouts` | Past workouts, plus an open one marked In progress |
 | 3 | Workout (centre, raised) | `/workout` | Start empty, templates, exercise library; resumes an open workout |
 | 4 | Progress | `/progress` | Lift charts |
 | 5 | Volume | `/weekly-volume` | Muscle-volume map |
 
 - Tab labels are sentence case, 11 px (the one exception to the 12 px minimum, as on iOS), icon above. The active tab uses `--accent` for icon and label. Inactive tabs use `--text-muted`.
-- **Settings and Messages** are not tabs. On Home, the large-title header has a profile button (opens Settings) and an inbox button with an unread dot (opens Messages). Both screens are pushed and have a back control.
-- **Templates and the exercise library** move from History to the Workout tab. History holds only past workouts.
+- **Settings and Messages** are not tabs. On Home, the profile button (opens Settings) and the inbox button with an unread dot (opens Messages) sit on the same row as the large-title greeting, aligned to its bottom; there is no separate icon row above it. Both screens are pushed and have a back control.
+- **Templates and the exercise library** move from History to the Workout tab. History holds past workouts; an open workout is listed too, marked In progress.
 - **Pushed screens** (workout detail, settings sections, help, legal, support) have a top bar with a back chevron and the previous screen's title, then the screen title.
 - **Back contract:**
   - The shell keeps its own in-app history list in session storage, appending on each route change.
@@ -70,7 +70,7 @@ These rules come first because the shipped app runs in a full-screen WebView.
   - The top bar has Minimize, the elapsed time and a menu with "Discard workout", which confirms in a sheet. Minimize returns to the screen the workout was opened from.
   - The bottom bar holds Finish and the rest timer.
 - **While a workout is open:**
-  - The Home and Workout tab roots show a resume card at the top (one primary "Resume workout" button).
+  - The Workout tab root shows a resume card at the top (one primary "Resume workout" button). Home on phones has no start or resume card: the centre Workout tab carries a red dot while a workout is open, and a slow pulse ring on Home while none is (off with reduced motion). Desktop Home keeps the card, since it has no centre tab.
   - Every other tab shows a 56 px mini bar above the tab bar (title, elapsed time, chevron). Tapping it opens the live workout, and page padding includes it.
   - The centre Workout tab always opens the launcher, never the session directly. Templates and the exercise library stay visible there under the resume card.
 - **Android back** works through these steps in order:
@@ -158,7 +158,7 @@ Rules:
 
 ### Data colors
 
-- **The 3D bay stays a dark stage in both themes.** The figure card keeps its dark background in light mode, like a lit display case. So one validated heat ramp serves both themes, and light mode needs no second lighting setup.
+- **3D stages follow the theme** (`--stage`, mirrored in `STAGE_COLOR`): `#0f1317` dark, `#dfe5ec` light. The figure itself stays dark in both, so the one heat ramp still works; on the light stage it reads as a dark silhouette. In dark mode the Volume figure gets a camera-relative slate rim (`uRim`) so it never melts into the background. The Home bay switches to a pale room in light mode (lifted floor, light wall), keeping figure and pedestal unchanged until the 3D rework.
 - **Muscle-volume heat ramp** (sequential, one hue). On a dark figure it runs from dim to bright, so the most-trained muscle is the most visible. The current ramp does the opposite: its top stage is only 1.6:1 against the figure.
 
   | Untrained | Stage 1 | 2 | 3 | 4 | Stage 5 |
@@ -166,7 +166,7 @@ Rules:
   | `#2f353c` | `#7048c0` | `#8a5ce6` | `#a47cff` | `#c2a6ff` | `#e2d6ff` |
 
   Contrast against the figure (`#171a20`) rises from 2.8:1 to 12.7:1. Stage 1 is 2.0:1 against "untrained". Neighbouring stages are close (about 1.4:1), so the legend with set ranges is always visible, and tapping a muscle names its stage and set count in words. Because the stage stays dark, the same ramp is used in the light theme.
-- **Charts** (Progress): one series per chart in `--accent`. A comparison series uses `--text-secondary`. There is never a second y-axis. Grid lines in `--line`, axes in `caption` and `--text-muted`. Line charts have a crosshair and tooltip. A table view of the same data sits one tap away.
+- **Charts** (Progress): weight (or est. 1RM) in `--accent` on the left axis, reps in `--chart-reps` on a right axis; each axis's ticks and its legend chip take the series color, so it's clear which line a scale belongs to. Grid lines in `--line`. The chart always holds every logged day; 1W/1M/3M/Max set how much fits on screen, newest at the right, and the plot swipes back in time. No hover tooltip: a short tap picks a day (a pan never does), shown as a dashed marker and a readout with previous/next day buttons under the chart. A table view of the same data sits one tap away.
 - **Stat tiles:** label (sentence case, `subhead`, `--text-secondary`), value (`--font-numeric`, `title-1`, `--text`), unit in `callout` next to the value, optional delta with direction word ("up 12% vs last week"). Tiles never hold a chart and a number at the same size.
 
 ## Space, shape and layout
@@ -247,7 +247,7 @@ Write like a friendly coach texting you, not like a terminal.
 ## 3D figure and volume map
 
 - **Home:** the figure sits in one card under the header, about 240 px tall on phones (not 36 dvh). Under it, three stat tiles for this week: workouts, sets, volume. The bay stays but is quieter: no connector beams, no motes, a softer floor glow.
-- **Volume:** the figure is the screen. Front and Back are a segmented control above it, and the time range is a second segmented control. The legend sits under the figure. Tapping a muscle opens a sheet with its weekly sets and the exercises that hit it. Show a one-time gesture hint, not a permanent label.
+- **Volume:** Front/Back and the time range sit above a compact stage (about 42% of the screen on phones, framed so the figure fills it). No summary tiles. Tapping a muscle turns the camera to it and shows its card directly under the stage (no page jump; a tap in the muscle list glides back up to the figure first). For 1W the card shows sets in the last 7 days and workouts; longer windows show per-week average and total. The legend is one strip of six outlined swatches with upper bounds and a link to the full-color setting. List bars have a neutral track and an outlined fill. On phones the canvas owns every touch: sideways drags rotate, vertical swipes scroll the page with momentum. Show a one-time gesture hint, not a permanent label.
 - The figure must stay readable with no data: when nothing is trained, raise its base light so the anatomy is visible.
 - Never let 3D push the primary action below the fold on a 390 × 844 screen.
 - The canvas must not cover UI. Overlays such as the guide card and sheets stack above the canvas and its ambience layers (fixes the step 6 guide defect).
@@ -276,10 +276,24 @@ Write like a friendly coach texting you, not like a terminal.
 - **2026-11-08: heat ramp flipped** to dim-to-bright on the dark figure. The current ramp hides the most-trained muscles.
 - **2026-11-08: Templates and Exercises move to the Workout tab, and Settings and Messages to the Home header.** History holds only history.
 - **2026-11-08: "template" stays** as the user-facing name. It matches the API and existing users. Hevy's "routine" was considered and can be revisited in Step 10.
-- **2026-11-08: the 3D bay stays dark in the light theme**, with one heat ramp for both. This came from Sol's review of light-mode 3D.
+- **2026-11-08: the 3D bay stays dark in the light theme**, with one heat ramp for both. This came from Sol's review of light-mode 3D. *Superseded 2026-11-09 (owner): stages follow the theme, see Data colors.*
 - **2026-11-08: the centre Workout tab always opens the launcher.** The resume card sits on top of it, so templates stay reachable during a workout (audit finding).
 - **2026-11-08: URLs stay; tab ownership comes from the route table.** Moving `/workouts/templates` under `/workout` would break links for no user gain.
-- **2026-11-09: a finished workout is deleted from its own screen** (menu, then a confirm sheet), not from the History list. History rows open the workout.
+- **2026-11-09: a finished workout is deleted from its own screen** (menu, then a confirm sheet), not from the History list.
 - **2026-11-09: settings that are one control save on their own** (weekly sets for full color, rest length, toggles, theme) and confirm with "Saved"; the body profile keeps one Save button.
 - **2026-11-09: Home shows this week's workouts, sets and volume** under the figure. Body measurements live in Settings only.
 - **2026-11-09: segmented controls behave like radio groups:** one tab stop, arrow keys move the selection (`shared/ui/radio-group.ts`).
+- **2026-11-09: History also lists an open workout**, marked In progress (owner decision at the Step 13 gate).
+- **2026-11-09: the 3D bay stays as built for now** (motes, pedestal glow, dark untrained figure). The Home and Volume 3D notes above describe the target for a later 3D rework, not the current state.
+- **2026-11-09: an open workout's elapsed time is a stopwatch for the first 24 h**, then "Since <day>". Volume hides its Start workout button while a workout is open; the mini bar resumes it.
+- **2026-11-09: no start/resume card on phone Home** (owner). The centre Workout tab is the one start point: a red dot while a workout is open, a soft pulse on Home while none is.
+- **2026-11-09: History rows open a quick view in place** (owner): tap shows each exercise with its sets as chips (W marks a warm-up), and "Open workout" opens the full page. One row open at a time. Double-tap was considered and rejected: it delays every single tap and nobody finds it.
+- **2026-11-09: finished workout layout** (owner): one summary card ("Workout complete" with Saved on the same row, Duration with a pencil that opens the time sheet, Exercises, Sets, Volume), then the exercises, then "Save as template" as a full-width primary button. No View history or Home buttons; the back bar does that.
+- **2026-11-09: workout time is edited as one date plus start and finish times** in a sheet; a finish before the start runs past midnight; at most 12 hours. Volume tiles switch to "12.4k" from 10,000 so they never truncate.
+- **2026-11-09: Progress chart rework** (owner): all data always plotted, the window is the visible span; a second, color-coded reps axis (`--chart-reps`, violet: #c4a7ff dark, #6d3fd6 light, both above 6:1 on the card); tap-to-inspect separated from panning; pinch zoom and the "Inspect plotted day" select removed; "Recent sets" removed (the table view covers it). On phones the exercise is one row that opens a picker sheet.
+- **2026-11-09: Progress shortcut in the logger:** each exercise in a live workout has a "Progress" link to `/progress?exercise=<id>`. The logger remembers the open exercise per workout for the browser session, so coming back (mini bar, Back, reload) lands on it. Finished workouts always open on their summary.
+- **2026-11-09: History set chips:** warm-ups get a faint `--warning` tint and a "W"; working sets stay neutral.
+- **2026-11-09: Progress fits one screen** (owner): the exercise is a subtitle line under the title, a 1×3 summary (sets and volume for the window, best est. 1RM all time) sits above the chart, the chart is 196 px tall, the readout is always two truncated lines, edge dots are padded inside the time range, and tapping the marked day again hides the marker.
+- **2026-11-09: Volume rework** (owner): see the Volume rule above. The touch split replaced native pan-y scrolling from the canvas, which Chromium ignored and WebKit fought with the hand-made scroll.
+- **2026-11-09: Settings is one short list** (owner): account card, then Training, Appearance, Privacy and data, Help and legal, and Sign out / Delete account. Each row shows its current value; editors (rest timer, pinned lifts, full-color sets, body profile, merge duplicates, privacy choices, data download, account deletion) open in a sheet with a title and Done. Theme and figure spin stay inline.
+- **2026-11-09: the guided example is a 4-step tour** (owner): Log a set, Finish the workout, Check your progress, See your muscle volume. It covers only the core loop; starting a workout, History rows and editing a set explain themselves. It opens straight in the example workout, each step completes on the action itself and moves on after a short check mark, and the only chrome is one line under the top bar (progress dots, the instruction, an End tour button). The example screens use the same components as the real ones. Lesson ids stay `log`, `finish`, `progress`, `volume`, so stored flags still match (ADR 0020); ending the tour mid-step records that step as skipped.

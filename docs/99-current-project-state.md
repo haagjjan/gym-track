@@ -11,7 +11,8 @@ A short handoff for someone (or a model) who can't look around the repository. L
   Caddy, with monitoring, alerting, encrypted off-machine backups and a public status page.
 - **Mobile apps** will be Capacitor shells around a bundled build of the web UI (ADR 0021,
   accepted with a spike gate). Nothing native ships yet.
-- **UX rework** (branch `ux-rework`) gets the web UI ready to ship as that app. Done so far:
+- **UX rework** (branch `ux-rework`) got the web UI ready to ship as that app. Done and signed
+  off on 2026-11-09:
   - a new design system in [DESIGN.md](DESIGN.md): system font, one cyan accent, light and dark
     themes, sentence-case copy
   - the new shell: tab bar on phones (Home, History, Workout, Progress, Volume), in-app back,
@@ -33,15 +34,26 @@ log.
 
 ## Next steps
 
-1. **Mobile readiness gate (UX rework Step 13):** a full pass in the iOS and Android shells,
-   independent review, and owner sign-off. Check that logging sets works with the keyboard open,
-   that back behaves right on both platforms, and the frame rate on real phones.
-2. **Mobile app plan:** written after Step 13, based on ADR 0021. The Capacitor spike decides
-   whether token auth, offline sync or native plugins are needed (each needs its own ADR).
-3. **Signup consent hotfix:** prepared in the `../gym-progress-tracker-hotfix` worktree, branch
-   `hotfix/signup-consent`, not merged yet. Rebase `ux-rework` after it lands on `main`.
-4. **Beta table cleanup:** drop `beta_access_requests` and `users.beta_cohort` and move
-   `campaigns_open` out of `beta_settings` (planned in ADR 0022).
+The UX rework is done (signed off 2026-11-09). The owner's list for what comes next, in order:
+
+1. Light version of the Home 3D scene (today it is only re-tinted for light mode).
+2. Touch gestures on the Volume 3D figure: rotation and page scrolling still misbehave on phones.
+3. Progress chart: a full-screen view.
+4. A new 3D body model (separate figure and pedestal), shared by Home and Volume.
+5. More specific muscles and better muscle picking (data model, catalog, region maps).
+6. Time-based exercises (sets with a duration instead of reps).
+7. Cardio (distance, duration, pace).
+8. Publishing the mobile app: Capacitor per ADR 0021, starting with the token-auth,
+   static-export and offline-sync ADRs and a spike on real phones.
+9. Testing: real-device checks plus wider automated coverage.
+10. Distribution: TestFlight, the Play closed test (12 testers, 14 days), store listings.
+
+Still open from earlier:
+
+- **Signup consent hotfix:** prepared in the `../gym-progress-tracker-hotfix` worktree, branch
+  `hotfix/signup-consent`, not merged yet. Rebase `ux-rework` after it lands on `main`.
+- **Beta table cleanup:** drop `beta_access_requests` and `users.beta_cohort` and move
+  `campaigns_open` out of `beta_settings` (planned in ADR 0022).
 
 ## Known gaps and risks
 
