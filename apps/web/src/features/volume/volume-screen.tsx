@@ -1,15 +1,13 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction, type ReactNode } from "react";
+import { useCallback, useMemo, useRef, useState, type Dispatch, type SetStateAction, type ReactNode } from "react";
 import type { WeeklyVolumePayload } from "../../shared/api/types";
 import Link from "next/link";
 import { buttonClass } from "../../shared/ui/button";
-import { StatTile } from "../../shared/ui/stat-tile";
 import { ErrorState, Skeleton } from "../../shared/ui/ui";
-/*import { useDisplaySettings } from "../dashboard/use-display-settings";*/
 import { errorMessage } from "../../shared/api/client";
-import { useUserPreferences, useWeeklyVolume } from "../../shared/api/hooks";
+import { useUserPreferences, useWeeklyVolume, useWorkouts } from "../../shared/api/hooks";
 import {
   HEAT_MAX_WEEKLY_SETS,
   type RegionSlug
@@ -53,9 +51,7 @@ export function VolumeView({ volume, heatCeiling = HEAT_MAX_WEEKLY_SETS, windowD
   onSelectMuscle?: (slug: RegionSlug) => void; workoutHref?: (id: string) => string;
 }): ReactNode {
   const [selectedSlug, setSelectedSlug] = useState<RegionSlug | null>(null);
-  /*const { settings: displaySettings, isLoaded: displaySettingsLoaded } =
-  useDisplaySettings();*/
-  const selectedCardRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
   const [debugRegions] = useState(
     () => typeof window !== "undefined" && window.location.search.includes("debugRegions")
   );
@@ -81,30 +77,30 @@ export function VolumeView({ volume, heatCeiling = HEAT_MAX_WEEKLY_SETS, windowD
     setSelectedSlug((current) => (slug !== null && current === slug ? null : slug));
   }, [onSelectMuscle]);
 
+  // From the list: glide back up to the figure so the turn to that muscle is
+  // visible, with its card right below. Taps on the figure don't scroll at all.
+  const handleListSelect = useCallback((slug: RegionSlug): void => {
+    handleSelect(slug);
+    const stage = stageRef.current;
+    if (!stage || stage.getBoundingClientRect().top >= 0) return;
+    const reduce = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    stage.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  }, [handleSelect]);
+
   const selected = selectedSlug ? aggregates.get(selectedSlug) ?? null : null;
   const windowTotal = [...aggregates.values()].reduce(
     (sum, aggregate) => sum + aggregate.totalSets,
     0
   );
-  const activeMuscles = [...aggregates.values()].filter(
-    (aggregate) => aggregate.totalSets > 0
-  ).length;
-  const latestWeekTotal = [...aggregates.values()].reduce(
-    (sum, aggregate) => sum + aggregate.latestWeekSets,
-    0
-  );
   const windowLabel =
     volumeWindows.find((item) => item.days === windowDays)?.words ?? `last ${windowDays} days`;
 
-  // On phones the detail card sits below the figure and legend: bring it into view.
-  useEffect(() => {
-    if (selectedSlug) selectedCardRef.current?.scrollIntoView({ block: "nearest" });
-  }, [selectedSlug]);
-
   const hasNoSets = !volume.isLoading && !volume.isError && windowTotal === 0;
+  // Same query as the shell's mini bar, which already resumes an open workout.
+  const hasOpenWorkout = useWorkouts(20).data?.items.some((workout) => workout.isOpen) ?? false;
 
   return (
-    <div className="mx-auto min-h-full max-w-6xl space-y-6 px-4 pb-8 pt-4 lg:px-6">
+    <div className="mx-auto min-h-full max-w-6xl space-y-4 px-4 pb-8 pt-4 lg:px-6">
       <h1 className="text-large-title text-text">Muscle volume</h1>
 
       {volume.isError ? (
@@ -114,20 +110,15 @@ export function VolumeView({ volume, heatCeiling = HEAT_MAX_WEEKLY_SETS, windowD
         />
       ) : null}
 
-      <dl className="grid grid-cols-2 gap-4 rounded-[var(--radius-card)] bg-surface p-4">
-        <StatTile label="Muscles trained" value={volume.isLoading ? "…" : activeMuscles} />
-        <StatTile label="This week" unit="sets" value={volume.isLoading ? "…" : latestWeekTotal} />
-      </dl>
-
       {hasNoSets ? (
         <div className="rounded-[var(--radius-card)] bg-surface p-4">
           <p className="text-body text-text">No sets in the {windowLabel} yet. Log a workout and your muscles light up.</p>
-          <Link className={`${buttonClass("primary")} mt-3 w-full`} href="/workout">Start workout</Link>
+          {hasOpenWorkout ? null : <Link className={`${buttonClass("primary")} mt-3 w-full`} href="/workout">Start workout</Link>}
         </div>
       ) : null}
 
-      <div className="space-y-6 lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-6 lg:space-y-0">
-        <div className="space-y-4">
+      <div className="space-y-4 lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-6 lg:space-y-0">
+        <div className="scroll-mt-4 space-y-3" ref={stageRef}>
           <VolumeBodyMap
             debugRegions={debugRegions}
             heatCeiling={heatCeiling}
@@ -137,23 +128,23 @@ export function VolumeView({ volume, heatCeiling = HEAT_MAX_WEEKLY_SETS, windowD
             weeklySetsBySlug={weeklySetsBySlug}
           />
 
+          {selected && !volume.isLoading ? (
+            <section aria-label="Selected muscle" className="rounded-[var(--radius-card)] bg-surface p-4">
+              <MuscleIntel
+                aggregate={selected}
+                heatCeiling={heatCeiling}
+                onClose={() => setSelectedSlug(null)}
+                windowDays={windowDays}
+                windowLabel={windowLabel}
+                workoutHref={workoutHref}
+              />
+            </section>
+          ) : null}
+
           <HeatLegend heatCeiling={heatCeiling} />
         </div>
 
-        <div className="space-y-6">
-          {volume.isLoading ? (
-            <Skeleton className="h-40 rounded-[var(--radius-card)]" />
-          ) : selected ? (
-            <section aria-label="Selected muscle" className="scroll-mb-24 rounded-[var(--radius-card)] bg-surface p-4" ref={selectedCardRef}>
-              <MuscleIntel
-                workoutHref={workoutHref}
-                aggregate={selected}
-                heatCeiling={heatCeiling}
-                windowLabel={windowLabel}
-              />
-              <button className="mt-3 min-h-11 text-body text-accent" onClick={() => setSelectedSlug(null)} type="button">Close</button>
-            </section>
-          ) : null}
+        <div className="space-y-4">
 
           {volume.isLoading ? (
             <div className="space-y-2">
@@ -168,7 +159,7 @@ export function VolumeView({ volume, heatCeiling = HEAT_MAX_WEEKLY_SETS, windowD
                 <DistributionMatrix
                   aggregates={aggregates}
                   heatCeiling={heatCeiling}
-                  onSelect={handleSelect}
+                  onSelect={handleListSelect}
                   selectedSlug={selectedSlug}
                 />
                 <div className="flex min-h-11 items-center justify-between border-t border-line px-4">
