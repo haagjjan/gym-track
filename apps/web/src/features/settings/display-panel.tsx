@@ -11,7 +11,7 @@ import {
   parseThemePreference,
   type ThemePreference
 } from "../shell/theme";
-import { Group, Row, SavedStatus, SwitchRow, useSavedFlash } from "./settings-ui";
+import { Group, Row, SwitchRow } from "./settings-ui";
 
 const THEME_OPTIONS: { label: string; value: ThemePreference }[] = [
   { label: "System", value: "system" },
@@ -31,7 +31,6 @@ function readStoredTheme(): ThemePreference {
 export function DisplayPanel(): ReactNode {
   const { settings, save, isLoaded } = useDisplaySettings();
   const [theme, setTheme] = useState<ThemePreference>(DEFAULT_THEME_PREFERENCE);
-  const { flash, saved } = useSavedFlash();
 
   // Read after mount so server and client markup match.
   useEffect(() => setTheme(readStoredTheme()), []);
@@ -39,33 +38,28 @@ export function DisplayPanel(): ReactNode {
   function choose(next: ThemePreference): void {
     setTheme(next);
     applyThemePreference(next);
-    flash();
   }
 
   return (
-    <div className="space-y-2">
-      <Group>
-        <Row>
-          <p className="text-body text-text" id="settings-theme-label">Theme</p>
-          <div aria-labelledby="settings-theme-label" className="mt-2 grid grid-cols-3 gap-1 rounded-full bg-bg p-1" onKeyDown={radioGroupKeyDown} role="radiogroup">
-            {THEME_OPTIONS.map((option) => (
-              <button aria-checked={theme === option.value} className={`min-h-11 rounded-full text-callout ${theme === option.value ? "bg-surface-raised font-semibold text-text" : "text-text-secondary"}`} key={option.value} onClick={() => choose(option.value)} role="radio"
-          tabIndex={(theme === option.value) ? 0 : -1} type="button">{option.label}</button>
-            ))}
-          </div>
-        </Row>
-        {!isLoaded ? (
-          <Row><Skeleton className="h-11" /></Row>
-        ) : (
-          <SwitchRow
-            checked={settings.autoSpin}
-            label="Spin the figure"
-            note="Slowly rotates the figure on Home. Dragging it always works."
-            onChange={(autoSpin) => { save({ ...settings, autoSpin }); flash(); }}
-          />
-        )}
-      </Group>
-      <SavedStatus saved={saved} />
-    </div>
+    <Group>
+      <Row className="flex items-center justify-between gap-3">
+        <p className="shrink-0 text-body text-text" id="settings-theme-label">Theme</p>
+        <div aria-labelledby="settings-theme-label" className="grid grid-cols-3 gap-1 rounded-full bg-bg p-1" onKeyDown={radioGroupKeyDown} role="radiogroup">
+          {THEME_OPTIONS.map((option) => (
+            <button aria-checked={theme === option.value} className={`min-h-11 rounded-full px-3 text-subhead ${theme === option.value ? "bg-surface-raised font-semibold text-text" : "text-text-secondary"}`} key={option.value} onClick={() => choose(option.value)} role="radio"
+              tabIndex={(theme === option.value) ? 0 : -1} type="button">{option.label}</button>
+          ))}
+        </div>
+      </Row>
+      {!isLoaded ? (
+        <Row><Skeleton className="h-11" /></Row>
+      ) : (
+        <SwitchRow
+          checked={settings.autoSpin}
+          label="Spin the figure on Home"
+          onChange={(autoSpin) => save({ ...settings, autoSpin })}
+        />
+      )}
+    </Group>
   );
 }
