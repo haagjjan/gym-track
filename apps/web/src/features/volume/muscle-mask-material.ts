@@ -45,6 +45,8 @@ export interface MuscleMaskUniforms {
   uCyan: { value: THREE.Color };
   uViolet: { value: THREE.Color };
   uLavender: { value: THREE.Color };
+  /** Camera-relative edge light; set per theme by the body. */
+  uRim: { value: THREE.Color };
   uStage1: { value: THREE.Color };
   uStage2: { value: THREE.Color };
   uStage3: { value: THREE.Color };
@@ -81,6 +83,7 @@ export function createMuscleMaskMaterial(
     uCyan: { value: linear("#00f2ff") },
     uViolet: { value: linear("#a852ff") },
     uLavender: { value: linear("#d9b9ff") },
+    uRim: { value: new THREE.Color(0, 0, 0) },
     uStage1: { value: linear("#7048c0") },
     uStage2: { value: linear("#8a5ce6") },
     uStage3: { value: linear("#a47cff") },
