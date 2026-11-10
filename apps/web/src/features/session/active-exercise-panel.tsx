@@ -6,7 +6,8 @@ import { ConfirmDialog } from "../../shared/ui/confirm-dialog";
 import { errorMessage } from "../../shared/api/client";
 import { useSessionMutations } from "../../shared/api/hooks";
 import type { SessionExercise } from "../../shared/api/types";
-import { IconPlus24 } from "../../shared/ui/icons";
+import Link from "next/link";
+import { IconPlus24, IconTrend } from "../../shared/ui/icons";
 import { SetComposer } from "./set-composer";
 import type { SetDraft } from "./set-draft-storage";
 import { SessionEditorDock } from "./session-editor-dock";
@@ -53,13 +54,23 @@ export function ActiveExercisePanel(props: ActiveExercisePanelProps): ReactNode 
 
   return (
     <section aria-labelledby="active-exercise-title">
-      <header>
-        <h2 className="break-words text-title-2 text-text" id="active-exercise-title">
-          {props.exercise.exercise.name}
-        </h2>
-        <p className="mt-0.5 text-subhead text-text-secondary">
-          {muscleList(props.exercise)}
-        </p>
+      <header className="flex items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <h2 className="break-words text-title-2 text-text" id="active-exercise-title">
+            {props.exercise.exercise.name}
+          </h2>
+          <p className="mt-0.5 text-subhead text-text-secondary">
+            {muscleList(props.exercise)}
+          </p>
+        </div>
+        {/* Shortcut to this exercise's chart. The open workout stays one tap away (mini bar, Back). */}
+        <Link
+          aria-label={`${props.exercise.exercise.name} progress`}
+          className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-full bg-surface px-3 text-subhead font-semibold text-accent active:bg-surface-raised"
+          href={`/progress?exercise=${encodeURIComponent(props.exercise.exercise.id)}`}
+        >
+          <IconTrend /> Progress
+        </Link>
       </header>
 
       <PreviousPerformance exercise={props.exercise} />
