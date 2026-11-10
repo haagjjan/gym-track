@@ -60,6 +60,17 @@ export function writeStoredValue<T>(
 }
 
 /**
+ * Some browsers throw on the `localStorage` getter itself when storage is
+ * blocked, so it is read lazily inside the helpers' try/catch.
+ */
+function deviceStorage(): StorageReader & StorageWriter {
+  return {
+    getItem: (key: string) => globalThis.localStorage.getItem(key),
+    setItem: (key: string, value: string) => globalThis.localStorage.setItem(key, value)
+  };
+}
+
+/**
  * A per-user, per-device preference in localStorage that honours the
  * functional-storage choice. `normalize` runs on every saved value. Pass a
  * stable `fallback` and `codec` (module constants), since they are effect
@@ -77,9 +88,7 @@ export function useScopedLocalStorage<T>(
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    setValue(
-      readStoredValue(globalThis.localStorage, storageKey, functionalStorageEnabled, fallback, codec)
-    );
+    setValue(readStoredValue(deviceStorage(), storageKey, functionalStorageEnabled, fallback, codec));
     setIsLoaded(true);
   }, [codec, fallback, functionalStorageEnabled, storageKey]);
 
@@ -88,7 +97,7 @@ export function useScopedLocalStorage<T>(
       const bounded = normalize ? normalize(next) : next;
 
       setValue(bounded);
-      writeStoredValue(globalThis.localStorage, storageKey, functionalStorageEnabled, bounded, codec);
+      writeStoredValue(deviceStorage(), storageKey, functionalStorageEnabled, bounded, codec);
     },
     [codec, functionalStorageEnabled, normalize, storageKey]
   );
