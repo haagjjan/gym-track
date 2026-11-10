@@ -26,7 +26,6 @@ const REGION_FOCUS: Record<string, { yn: number; side: "front" | "back" }> = {
   quads: { yn: 0.46, side: "front" },
   hamstrings: { yn: 0.4, side: "back" },
   calves: { yn: 0.23, side: "back" },
-  chest_upper: { yn: 0.8, side: "front" },
   delts_rear: { yn: 0.82, side: "back" },
   lats: { yn: 0.68, side: "back" },
   upper_back: { yn: 0.76, side: "back" },

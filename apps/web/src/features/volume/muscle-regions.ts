@@ -1,11 +1,10 @@
 /**
- * The 21 muscle regions of the body model and the muscle group each rolls up
+ * The 20 muscle regions of the body model and the muscle group each rolls up
  * to. The slugs match the mesh names in /models/body/body.glb
  * (`muscle_<slug>_<L|R>`) and the `muscle_regions` table.
  */
 export const MUSCLE_REGIONS = [
-  { slug: "chest_upper", name: "Upper chest", group: "chest" },
-  { slug: "chest_lower", name: "Lower chest", group: "chest" },
+  { slug: "chest", name: "Chest", group: "chest" },
   { slug: "delts_front", name: "Front delts", group: "shoulders" },
   { slug: "delts_side", name: "Side delts", group: "shoulders" },
   { slug: "delts_rear", name: "Rear delts", group: "shoulders" },

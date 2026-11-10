@@ -26,7 +26,7 @@ Draft rules for the first schema pass. These notes capture business rules and da
 - The deterministic system catalog is the reviewed union of the legacy 152 names and logging-compatible records from Free Exercise DB revision `b0eed061e1c832b3ed815fbaa4b45b3cdc14df49`. Only names/classifications are seeded; cardio, stretching, duration/distance-only movements, instructions, and media are excluded.
 - Catalog conflicts never rename, promote, or overwrite a user-owned exercise. The migration preserves the user row and reports the name for manual review.
 - Equipment additionally supports `EZ bar`, `medicine ball`, and `stability ball`. Detailed source muscles map into the existing 12-group taxonomy.
-- `muscle_regions` holds 21 finer regions, each belonging to exactly one of the 12 muscle groups (for example upper and lower chest; front, side and rear delts; lats, upper back and lower back). `exercise_muscle_regions` maps every system exercise to primary and secondary regions, and each region's group is one the exercise already has, so group totals are unchanged. Regions drive the Volume figure; filters, history and CSV keep using muscle groups.
+- `muscle_regions` holds 20 finer regions, each belonging to exactly one of the 12 muscle groups (for example front, side and rear delts; lats, upper back and lower back). `exercise_muscle_regions` maps every system exercise to primary and secondary regions, and each region's group is one the exercise already has, so group totals are unchanged. Regions drive the Volume figure; filters, history and CSV keep using muscle groups.
 - One region per group is flagged `is_group_default`. Exercises without region rows (user-created ones) count toward the default region of their primary group.
 
 ### Ordering
