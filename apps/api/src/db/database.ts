@@ -170,6 +170,22 @@ interface MuscleGroupsTable {
   sort_order: number;
 }
 
+interface MuscleRegionsTable {
+  id: ColumnType<string, string | undefined, string>;
+  slug: string;
+  name: string;
+  muscle_group_id: string;
+  sort_order: number;
+  is_group_default: ColumnType<boolean, boolean | undefined, boolean>;
+}
+
+interface ExerciseMuscleRegionsTable {
+  exercise_id: string;
+  muscle_region_id: string;
+  role: "PRIMARY" | "SECONDARY";
+  created_at: TimestampColumn;
+}
+
 interface ExercisesTable {
   id: string;
   name: string;
@@ -261,11 +277,13 @@ export interface AppDatabase {
   campaigns: CampaignsTable;
   campaign_targets: CampaignTargetsTable;
   exercise_muscle_groups: ExerciseMuscleGroupsTable;
+  exercise_muscle_regions: ExerciseMuscleRegionsTable;
   exercise_secondary_muscles: ExerciseSecondaryMusclesTable;
   exercises: ExercisesTable;
   erasure_tombstones: ErasureTombstonesTable;
   message_deliveries: MessageDeliveriesTable;
   muscle_groups: MuscleGroupsTable;
+  muscle_regions: MuscleRegionsTable;
   session_exercises: SessionExercisesTable;
   sets: SetsTable;
   users: UsersTable;

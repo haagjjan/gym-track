@@ -60,10 +60,25 @@ export interface WeeklyVolumeSetRecord {
   muscleGroup: AnalyticsMuscleGroupRecord;
 }
 
+export interface AnalyticsMuscleRegionRecord extends AnalyticsMuscleGroupRecord {
+  muscleGroupSlug: string;
+}
+
+export interface WeeklyVolumeRegionSetRecord {
+  workoutId: string;
+  sessionDate: Date;
+  exercise: {
+    id: string;
+    name: string;
+  };
+  muscleRegion: AnalyticsMuscleRegionRecord;
+}
+
 export interface AnalyticsRepository {
   findCompletedExercises(userId: string, timeZone: string): Promise<CompletedExerciseRecord[]>;
   findExerciseSets(filters: AnalyticsSetFilters): Promise<AnalyticsSetRecord[]>;
   findWeeklyVolumeSets(filters: WeeklyVolumeFilters): Promise<WeeklyVolumeSetRecord[]>;
+  findWeeklyVolumeRegionSets(filters: WeeklyVolumeFilters): Promise<WeeklyVolumeRegionSetRecord[]>;
 }
 
 export function createAnalyticsRepository(db: Kysely<AppDatabase>): AnalyticsRepository {
@@ -184,6 +199,83 @@ export function createAnalyticsRepository(db: Kysely<AppDatabase>): AnalyticsRep
           slug: row.muscleGroupSlug,
           name: row.muscleGroupName,
           sortOrder: row.muscleGroupSortOrder
+        }
+      }));
+    },
+    async findWeeklyVolumeRegionSets(filters) {
+      // One row per working set and primary region. An exercise with its own
+      // region rows uses them; one without (user-created) counts toward the
+      // default region of each primary muscle group.
+      const rows = await db
+        .selectFrom("sets")
+        .innerJoin("session_exercises", "session_exercises.id", "sets.session_exercise_id")
+        .innerJoin("workout_sessions", "workout_sessions.id", "session_exercises.workout_session_id")
+        .innerJoin("exercises", "exercises.id", "session_exercises.exercise_id")
+        .innerJoin("exercise_muscle_groups", (join) =>
+          join.onRef("exercise_muscle_groups.exercise_id", "=", "exercises.id")
+            .on("exercise_muscle_groups.role", "=", "PRIMARY")
+        )
+        .innerJoin("muscle_groups", "muscle_groups.id", "exercise_muscle_groups.muscle_group_id")
+        .innerJoin("muscle_regions", "muscle_regions.muscle_group_id", "muscle_groups.id")
+        .select([
+          "workout_sessions.id as workoutId",
+          "workout_sessions.started_at as sessionDate",
+          "exercises.id as exerciseId",
+          "exercises.name as exerciseName",
+          "muscle_regions.id as muscleRegionId",
+          "muscle_regions.slug as muscleRegionSlug",
+          "muscle_regions.name as muscleRegionName",
+          "muscle_regions.sort_order as muscleRegionSortOrder",
+          "muscle_groups.slug as muscleGroupSlug"
+        ])
+        .where("workout_sessions.user_id", "=", filters.userId)
+        .where("workout_sessions.deleted_at", "is", null)
+        .where("session_exercises.deleted_at", "is", null)
+        .where("sets.deleted_at", "is", null)
+        .where("sets.set_type", "=", "working")
+        .where((expression) => expression.or([
+          expression.exists(
+            expression.selectFrom("exercise_muscle_regions as own")
+              .select("own.exercise_id")
+              .whereRef("own.exercise_id", "=", "exercises.id")
+              .whereRef("own.muscle_region_id", "=", "muscle_regions.id")
+              .where("own.role", "=", "PRIMARY")
+          ),
+          expression.and([
+            expression("muscle_regions.is_group_default", "=", true),
+            expression.not(expression.exists(
+              expression.selectFrom("exercise_muscle_regions as anyRegion")
+                .select("anyRegion.exercise_id")
+                .whereRef("anyRegion.exercise_id", "=", "exercises.id")
+            ))
+          ])
+        ]))
+        .$if(filters.startDate !== undefined, (query) =>
+          query.where("workout_sessions.started_at", ">=", filters.startDate as Date)
+        )
+        .$if(filters.endDate !== undefined, (query) =>
+          query.where("workout_sessions.started_at", "<=", filters.endDate as Date)
+        )
+        .$if(filters.muscleGroupIds !== undefined, (query) =>
+          query.where("muscle_groups.id", "in", filters.muscleGroupIds as string[])
+        )
+        .orderBy("workout_sessions.started_at", "asc")
+        .orderBy("muscle_regions.sort_order", "asc")
+        .execute();
+
+      return rows.map((row) => ({
+        workoutId: row.workoutId,
+        sessionDate: row.sessionDate,
+        exercise: {
+          id: row.exerciseId,
+          name: row.exerciseName
+        },
+        muscleRegion: {
+          id: row.muscleRegionId,
+          slug: row.muscleRegionSlug,
+          name: row.muscleRegionName,
+          sortOrder: row.muscleRegionSortOrder,
+          muscleGroupSlug: row.muscleGroupSlug
         }
       }));
     }

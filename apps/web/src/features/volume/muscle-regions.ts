@@ -36,12 +36,10 @@ export function muscleGroupOf(slug: string): string {
   return groupByRegion.get(slug) ?? slug;
 }
 
-/** Weekly sets for a region: its own number when the data has one, else its group's. */
-export function weeklySetsForRegion(weeklySetsBySlug: Record<string, number>, region: string): number {
-  return weeklySetsBySlug[region] ?? weeklySetsBySlug[muscleGroupOf(region)] ?? 0;
-}
-
-/** True when the highlighted slug (a region or a whole group) covers this region. */
-export function regionMatches(selected: string | null, region: string): boolean {
-  return selected !== null && (selected === region || selected === muscleGroupOf(region));
+/**
+ * The slug a region answers to in the data on screen: its own when the numbers
+ * are per region, its muscle group's when they are per group (example data).
+ */
+export function dataSlugOf(region: string, byRegion: boolean): string {
+  return byRegion ? region : muscleGroupOf(region);
 }

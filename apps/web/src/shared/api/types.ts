@@ -136,11 +136,17 @@ export interface WeeklyVolumeWeekItem {
   recentSessions: { workoutId: string; sessionDate: string; workingSets: number }[];
 }
 
+export interface WeeklyVolumeWeekRegionItem extends Omit<WeeklyVolumeWeekItem, "muscleGroup"> {
+  muscleRegion: { id: string; slug: string; name: string; muscleGroupSlug: string };
+}
+
 export interface WeeklyVolumePayload {
   weeks: {
     weekStart: string;
     weekEnd: string;
     items: WeeklyVolumeWeekItem[];
+    /** The same sets by finer muscle region. Absent in example data. */
+    regionItems?: WeeklyVolumeWeekRegionItem[];
   }[];
 }
 

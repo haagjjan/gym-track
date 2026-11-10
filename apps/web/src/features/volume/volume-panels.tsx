@@ -10,9 +10,7 @@ import {
   heatBarWidth,
   heatBucket,
   heatRangeLabel,
-  REGION_SLUGS,
-  volumeRampCss,
-  type RegionSlug
+  volumeRampCss
 } from "./heatmap";
 import type { MuscleAggregate } from "./volume-aggregation";
 
@@ -217,7 +215,7 @@ export function DistributionMatrix({
 }: {
   aggregates: Map<string, MuscleAggregate>;
   heatCeiling: number;
-  onSelect: (slug: RegionSlug) => void;
+  onSelect: (slug: string) => void;
   selectedSlug: string | null;
 }): ReactNode {
   const rows = [...aggregates.values()].sort((left, right) => right.weeklyAvg - left.weeklyAvg);
@@ -238,11 +236,10 @@ export function DistributionMatrix({
   );
 }
 
-function DistributionRow({ heatCeiling, isSelected, onSelect, row }: { heatCeiling: number; isSelected: boolean; onSelect: (slug: RegionSlug) => void; row: MuscleAggregate }): ReactNode {
-  const isRegion = REGION_SLUGS.includes(row.slug as RegionSlug);
+function DistributionRow({ heatCeiling, isSelected, onSelect, row }: { heatCeiling: number; isSelected: boolean; onSelect: (slug: string) => void; row: MuscleAggregate }): ReactNode {
   return (
     <li>
-      <button aria-pressed={isSelected} className={`flex min-h-11 w-full cursor-pointer items-center gap-3 px-4 active:bg-surface-raised ${isSelected ? "bg-surface-raised" : ""}`} disabled={!isRegion} onClick={() => isRegion && onSelect(row.slug as RegionSlug)} type="button">
+      <button aria-pressed={isSelected} className={`flex min-h-11 w-full cursor-pointer items-center gap-3 px-4 active:bg-surface-raised ${isSelected ? "bg-surface-raised" : ""}`} onClick={() => onSelect(row.slug)} type="button">
         <span className={`w-24 shrink-0 truncate text-left text-body ${isSelected ? "font-semibold text-text" : "text-text"}`}>{row.name}</span>
         {/* Neutral track (no black bar in light mode); the fill carries the swatch outline. */}
         <span aria-hidden className="h-2.5 min-w-0 flex-1 rounded-full bg-surface-raised">

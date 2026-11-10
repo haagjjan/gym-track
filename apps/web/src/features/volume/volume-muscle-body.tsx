@@ -6,8 +6,8 @@ import * as THREE from "three";
 import { useBodyModel, type BodyPartKind } from "../avatar/body-model";
 import { createRadialGlowTexture } from "../avatar/bay-textures";
 import { RIM_CYAN } from "../avatar/statue-core";
-import { HEAT_STAGE_COLORS, heatBucket, type FigureFrame, type RegionSlug } from "./heatmap";
-import { MUSCLE_REGIONS, muscleGroupOf, regionMatches, weeklySetsForRegion } from "./muscle-regions";
+import { HEAT_STAGE_COLORS, heatBucket, type FigureFrame } from "./heatmap";
+import { dataSlugOf, MUSCLE_REGIONS } from "./muscle-regions";
 
 /** Resting colours per theme: a quiet body so only trained muscles carry colour. */
 const BODY_COLORS: Record<"dark" | "light", Record<BodyPartKind, string>> = {
@@ -23,6 +23,7 @@ const DEBUG_HUES = MUSCLE_REGIONS.map((_, index) => new THREE.Color().setHSL((in
  */
 export function VolumeMuscleBody({
   weeklySetsBySlug,
+  byRegion,
   heatCeiling,
   selectedSlug,
   onSelect,
@@ -31,9 +32,11 @@ export function VolumeMuscleBody({
   theme
 }: {
   weeklySetsBySlug: Record<string, number>;
+  /** The numbers and the selection are per region (true) or per muscle group. */
+  byRegion: boolean;
   heatCeiling: number;
   selectedSlug: string | null;
-  onSelect: (slug: RegionSlug | null) => void;
+  onSelect: (slug: string | null) => void;
   onFrame: (frame: FigureFrame) => void;
   debugRegions: boolean;
   theme: "dark" | "light";
@@ -75,8 +78,9 @@ export function VolumeMuscleBody({
       const material = materials.get(region.slug);
       if (!material) return;
 
-      const bucket = heatBucket(weeklySetsForRegion(weeklySetsBySlug, region.slug), heatCeiling);
-      const selected = regionMatches(selectedSlug, region.slug);
+      const dataSlug = dataSlugOf(region.slug, byRegion);
+      const bucket = heatBucket(weeklySetsBySlug[dataSlug] ?? 0, heatCeiling);
+      const selected = selectedSlug === dataSlug;
 
       if (debugRegions) {
         material.color.copy(DEBUG_HUES[index]!);
@@ -93,7 +97,7 @@ export function VolumeMuscleBody({
     });
 
     invalidate();
-  }, [debugRegions, heatCeiling, invalidate, materials, selectedSlug, theme, weeklySetsBySlug]);
+  }, [byRegion, debugRegions, heatCeiling, invalidate, materials, selectedSlug, theme, weeklySetsBySlug]);
 
   function handleClick(event: ThreeEvent<MouseEvent>): void {
     if (event.delta > 6) return;
@@ -101,8 +105,7 @@ export function VolumeMuscleBody({
 
     const region = event.object.userData.regionSlug as string | null | undefined;
     if (!region) return;
-    // Until the data carries region numbers, a tap selects the whole group.
-    onSelect((region in weeklySetsBySlug ? region : muscleGroupOf(region)) as RegionSlug);
+    onSelect(dataSlugOf(region, byRegion));
   }
 
   return (

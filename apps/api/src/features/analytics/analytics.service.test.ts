@@ -7,6 +7,7 @@ import type {
   AnalyticsSetRecord,
   CompletedExerciseRecord,
   WeeklyVolumeFilters,
+  WeeklyVolumeRegionSetRecord,
   WeeklyVolumeSetRecord
 } from "./analytics.repository.js";
 import { createAnalyticsService, estimatedOneRepMaxKg } from "./analytics.service.js";
@@ -22,7 +23,8 @@ class FakeAnalyticsRepository implements AnalyticsRepository {
   public constructor(
     private readonly completedExercises: CompletedExerciseRecord[] = completedExerciseRows(),
     private readonly exerciseSets: AnalyticsSetRecord[] = exerciseRows(),
-    private readonly weeklySets: WeeklyVolumeSetRecord[] = weeklyRows()
+    private readonly weeklySets: WeeklyVolumeSetRecord[] = weeklyRows(),
+    private readonly weeklyRegionSets: WeeklyVolumeRegionSetRecord[] = []
   ) {}
 
   public async findCompletedExercises(userId: string, timeZone: string): Promise<CompletedExerciseRecord[]> {
@@ -44,6 +46,10 @@ class FakeAnalyticsRepository implements AnalyticsRepository {
     this.weeklyVolumeFilters = filters;
 
     return this.weeklySets;
+  }
+
+  public async findWeeklyVolumeRegionSets(): Promise<WeeklyVolumeRegionSetRecord[]> {
+    return this.weeklyRegionSets;
   }
 }
 
@@ -128,7 +134,8 @@ describe("analytics service", () => {
               { workoutId: "workout-1", sessionDate: monday.toISOString(), workingSets: 1 }
             ]
           }
-        ]
+        ],
+        regionItems: []
       },
       {
         weekStart: "2026-05-25",
@@ -141,6 +148,34 @@ describe("analytics service", () => {
             recentSessions: [
               { workoutId: "workout-1", sessionDate: nextMonday.toISOString(), workingSets: 1 }
             ]
+          }
+        ],
+        regionItems: []
+      }
+    ]);
+  });
+
+  it("adds weekly volume by muscle region next to the groups", async () => {
+    const region = { id: "region-1", slug: "chest_upper", name: "Upper chest", sortOrder: 1, muscleGroupSlug: "chest" };
+    const exercise = { id: "exercise-1", name: "Incline Press" };
+    const repository = new FakeAnalyticsRepository([], [], [], [
+      { workoutId: "workout-1", sessionDate: monday, exercise, muscleRegion: region },
+      { workoutId: "workout-1", sessionDate: monday, exercise, muscleRegion: region }
+    ]);
+    const service = createAnalyticsService({ repository });
+    const result = await service.getWeeklyVolume("user-1", { startDate: monday, endDate: nextMonday, muscleGroupIds: undefined });
+
+    assert.deepEqual(result.weeks, [
+      {
+        weekStart: "2026-05-18",
+        weekEnd: "2026-05-24",
+        items: [],
+        regionItems: [
+          {
+            muscleRegion: { id: "region-1", slug: "chest_upper", name: "Upper chest", muscleGroupSlug: "chest" },
+            workingSets: 2,
+            exercises: [{ id: "exercise-1", name: "Incline Press", workingSets: 2 }],
+            recentSessions: [{ workoutId: "workout-1", sessionDate: monday.toISOString(), workingSets: 2 }]
           }
         ]
       }

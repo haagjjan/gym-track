@@ -1447,6 +1447,10 @@ Behavior:
 - Counts working sets only.
 - Counts each current primary muscle assignment for the exercise; secondary assignments do not receive volume.
 - Includes per-muscle exercise totals and recent contributing sessions for the Weekly Volume detail panel.
+- Each week also carries `regionItems`: the same working sets by finer muscle region. An item has the shape of a
+  group item with `muscleRegion: { id, slug, name, muscleGroupSlug }` in place of `muscleGroup`. A set counts once
+  per primary region of its exercise, so the regions of one group can add up to more than the group.
+- A user-created exercise has no region rows and counts toward the default region of its primary muscle group.
 - Excludes soft-deleted workouts, session exercises, and sets.
 
 ## Deferred Endpoints

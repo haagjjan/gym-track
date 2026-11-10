@@ -12,11 +12,7 @@ import {
 import { Segmented } from "./volume-panels";
 import { useAvatarSceneSupport } from "../avatar/use-avatar-scene";
 import { useOptionalDevicePrivacy } from "../privacy/device-privacy";
-import {
-  FRONT_AZIMUTH,
-  type FigureFrame,
-  type RegionSlug
-} from "./heatmap";
+import { FRONT_AZIMUTH, type FigureFrame } from "./heatmap";
 import {
   CameraDirector,
   DEFAULT_RADIUS,
@@ -31,8 +27,10 @@ import { useResolvedTheme } from "../shell/use-resolved-theme";
 export interface VolumeBodyMapProps {
   /** Weekly average working sets per muscle slug. */
   weeklySetsBySlug: Record<string, number>;
+  /** The numbers and the selection are per region (true) or per muscle group. */
+  byRegion: boolean;
   selectedSlug: string | null;
-  onSelect: (slug: RegionSlug | null) => void;
+  onSelect: (slug: string | null) => void;
   heatCeiling: number;
   /** Paints each region a distinct hue for map/alignment inspection. */
   debugRegions?: boolean;
@@ -76,6 +74,7 @@ function useGestureHint(): [boolean, () => void] {
  */
 export function VolumeBodyMap({
   weeklySetsBySlug,
+  byRegion,
   selectedSlug,
   onSelect,
   heatCeiling,
@@ -141,6 +140,7 @@ export function VolumeBodyMap({
             <directionalLight color="#ffffff" intensity={theme === "dark" ? 1.6 : 1.1} position={[-3.5, 4, -2.5]} />
 
             <VolumeMuscleBody
+              byRegion={byRegion}
               debugRegions={debugRegions}
               heatCeiling={heatCeiling}
               theme={theme}

@@ -8,10 +8,7 @@ import { buttonClass } from "../../shared/ui/button";
 import { ErrorState, Skeleton } from "../../shared/ui/ui";
 import { errorMessage } from "../../shared/api/client";
 import { useUserPreferences, useWeeklyVolume, useWorkouts } from "../../shared/api/hooks";
-import {
-  HEAT_MAX_WEEKLY_SETS,
-  type RegionSlug
-} from "./heatmap";
+import { HEAT_MAX_WEEKLY_SETS } from "./heatmap";
 import {
   DistributionMatrix,
   HeatLegend,
@@ -48,19 +45,26 @@ export function VolumeScreen(): ReactNode {
 export function VolumeView({ volume, heatCeiling = HEAT_MAX_WEEKLY_SETS, windowDays, setWindowDays, onSelectMuscle, workoutHref }: {
   volume: { data: WeeklyVolumePayload | undefined; isLoading: boolean; isError: boolean; error: Error | null; refetch: () => unknown };
   heatCeiling?: number; windowDays: VolumeWindowDays; setWindowDays: Dispatch<SetStateAction<VolumeWindowDays>>;
-  onSelectMuscle?: (slug: RegionSlug) => void; workoutHref?: (id: string) => string;
+  onSelectMuscle?: (slug: string) => void; workoutHref?: (id: string) => string;
 }): ReactNode {
-  const [selectedSlug, setSelectedSlug] = useState<RegionSlug | null>(null);
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const [debugRegions] = useState(
     () => typeof window !== "undefined" && window.location.search.includes("debugRegions")
   );
 
   const weeksCount = Math.max(1, Math.round(windowDays / 7));
-  const aggregates = useMemo(
+  const groupAggregates = useMemo(
     () => aggregateVolume(volume.data, weeksCount),
     [volume.data, weeksCount]
   );
+  const regionAggregates = useMemo(
+    () => aggregateVolume(volume.data, weeksCount, "region"),
+    [volume.data, weeksCount]
+  );
+  // Real data is per muscle region; the example only has muscle groups.
+  const byRegion = regionAggregates.size > 0;
+  const aggregates = byRegion ? regionAggregates : groupAggregates;
 
   const weeklySetsBySlug = useMemo(() => {
     const map: Record<string, number> = {};
@@ -72,14 +76,14 @@ export function VolumeView({ volume, heatCeiling = HEAT_MAX_WEEKLY_SETS, windowD
     return map;
   }, [aggregates]);
 
-  const handleSelect = useCallback((slug: RegionSlug | null): void => {
+  const handleSelect = useCallback((slug: string | null): void => {
     if (slug !== null) onSelectMuscle?.(slug);
     setSelectedSlug((current) => (slug !== null && current === slug ? null : slug));
   }, [onSelectMuscle]);
 
   // From the list: glide back up to the figure so the turn to that muscle is
   // visible, with its card right below. Taps on the figure don't scroll at all.
-  const handleListSelect = useCallback((slug: RegionSlug): void => {
+  const handleListSelect = useCallback((slug: string): void => {
     handleSelect(slug);
     const stage = stageRef.current;
     if (!stage || stage.getBoundingClientRect().top >= 0) return;
@@ -88,7 +92,8 @@ export function VolumeView({ volume, heatCeiling = HEAT_MAX_WEEKLY_SETS, windowD
   }, [handleSelect]);
 
   const selected = selectedSlug ? aggregates.get(selectedSlug) ?? null : null;
-  const windowTotal = [...aggregates.values()].reduce(
+  // Counted per muscle group: a set that works two regions of one group is still one set.
+  const windowTotal = [...groupAggregates.values()].reduce(
     (sum, aggregate) => sum + aggregate.totalSets,
     0
   );
@@ -120,6 +125,7 @@ export function VolumeView({ volume, heatCeiling = HEAT_MAX_WEEKLY_SETS, windowD
       <div className="space-y-4 lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-6 lg:space-y-0">
         <div className="scroll-mt-4 space-y-3" ref={stageRef}>
           <VolumeBodyMap
+            byRegion={byRegion}
             debugRegions={debugRegions}
             heatCeiling={heatCeiling}
             onSelect={handleSelect}

@@ -123,14 +123,18 @@ export function createAnalyticsService(options: AnalyticsServiceOptions): Analyt
       return toExerciseSummary(exerciseId, rows);
     },
     async getWeeklyVolume(userId, input) {
-      const rows = await options.repository.findWeeklyVolumeSets({
+      const filters = {
         userId,
         startDate: input.startDate,
         endDate: input.endDate,
         muscleGroupIds: input.muscleGroupIds
-      });
+      };
+      const [rows, regionRows] = await Promise.all([
+        options.repository.findWeeklyVolumeSets(filters),
+        options.repository.findWeeklyVolumeRegionSets(filters)
+      ]);
 
-      return toWeeklyVolume(rows);
+      return toWeeklyVolume(rows, regionRows);
     }
   };
 }
