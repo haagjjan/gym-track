@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { HistoryRow } from "../history/history-row";
 import { formatKgValue } from "../../shared/format";
 import { workoutSummary } from "./demo-data";
@@ -10,6 +10,7 @@ export function DemoHistory({ workoutId }: { workoutId?: string | undefined }): 
   const { record } = useDemo();
   const workouts = useDemoWorkouts();
   const selected = workouts.find((workout) => workout.id === workoutId);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   // Opening a detail is an action; a bare visit to History never completes a lesson.
   useEffect(() => { if (selected) record("opened"); }, [selected, record]);
   if (workoutId) return <div className="mx-auto max-w-3xl space-y-6 px-4 py-4 lg:px-6">
@@ -27,7 +28,7 @@ export function DemoHistory({ workoutId }: { workoutId?: string | undefined }): 
   return <div className="mx-auto max-w-3xl space-y-4 px-4 py-4 lg:px-6">
     <h1 className="text-title-1 text-text">Workout history</h1>
     <p className="text-body text-text-secondary">{workouts.length} example workouts. Tap one to see its sets.</p>
-    <ul className="divide-y divide-line overflow-hidden rounded-[var(--radius-card)] bg-surface">{workouts.map((workout) => <HistoryRow key={workout.id} detailHref={`/help/demo/history/${workout.id}`}
-      onToggle={() => record("expanded")} workout={workoutSummary(workout)} />)}</ul>
+    <ul className="divide-y divide-line overflow-hidden rounded-[var(--radius-card)] bg-surface">{workouts.map((workout) => <HistoryRow detail={workout} detailHref={`/help/demo/history/${workout.id}`} isExpanded={expandedId === workout.id} key={workout.id}
+      onToggle={() => { record("expanded"); setExpandedId((current) => current === workout.id ? null : workout.id); }} workout={workoutSummary(workout)} />)}</ul>
   </div>;
 }

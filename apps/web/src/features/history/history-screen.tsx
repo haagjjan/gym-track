@@ -8,7 +8,7 @@ import { ErrorState, Skeleton } from "../../shared/ui/ui";
 import { errorMessage } from "../../shared/api/client";
 import { useWorkoutsInfinite } from "../../shared/api/hooks";
 import type { WorkoutSummary } from "../../shared/api/types";
-import { formatNumber } from "../../shared/format";
+import { formatCompactNumber } from "../../shared/format";
 import { FacetFilters, type FacetFilterValue } from "../workouts/facet-filters";
 import { usePersistentFilters } from "../workouts/filter-persistence";
 import { CsvPanel } from "./csv-panel";
@@ -31,6 +31,7 @@ export function HistoryScreen({ userId }: { userId: string }): ReactNode {
     userId
   });
   const workouts = useWorkoutsInfinite({ search, ...filters, sort });
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setSearch(searchInput.trim()), 300);
@@ -52,7 +53,7 @@ export function HistoryScreen({ userId }: { userId: string }): ReactNode {
       ) : allTime ? (
         <dl className="grid grid-cols-3 gap-3 rounded-[var(--radius-card)] bg-surface p-4">
           <StatTile label="Workouts" value={String(allTime.totalSessions)} />
-          <StatTile label="Volume" unit="kg" value={formatNumber(Number(allTime.cumulativeTonnageKg))} />
+          <StatTile label="Volume" unit="kg" value={formatCompactNumber(Number(allTime.cumulativeTonnageKg))} />
           <StatTile
             label="Average"
             unit={allTime.averageCompletedDurationSeconds != null ? "min" : undefined}
@@ -87,7 +88,14 @@ export function HistoryScreen({ userId }: { userId: string }): ReactNode {
             <section key={group.label ?? "results"}>
               {group.label ? <h2 className="mb-2 px-4 text-subhead text-text-secondary">{group.label}</h2> : null}
               <ul className="divide-y divide-line overflow-hidden rounded-[var(--radius-card)] bg-surface">
-                {group.items.map((workout) => <HistoryRow key={workout.id} workout={workout} />)}
+                {group.items.map((workout) => (
+                  <HistoryRow
+                    isExpanded={expandedId === workout.id}
+                    key={workout.id}
+                    onToggle={() => setExpandedId((current) => (current === workout.id ? null : workout.id))}
+                    workout={workout}
+                  />
+                ))}
               </ul>
             </section>
           ))}
