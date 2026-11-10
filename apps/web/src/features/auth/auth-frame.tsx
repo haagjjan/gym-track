@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useId, useState, type ReactNode } from "react";
 import { IconAlert, IconBack } from "../../shared/ui/icons";
+import { StatusBarScrim } from "../../shared/ui/status-bar-scrim";
 
 /** Inline text link with a 44 px touch area. */
 export const inlineLinkClass = "inline-flex min-h-11 items-center text-body text-accent";
@@ -26,6 +27,7 @@ export function AuthFrame({
 }): ReactNode {
   return (
     <main className="min-h-dvh bg-bg px-4 pt-[calc(env(safe-area-inset-top)+0.5rem)] pb-[calc(env(safe-area-inset-bottom)+2rem)]">
+      <StatusBarScrim />
       <div className="mx-auto w-full sm:max-w-[26rem] sm:pt-12">
         {backHref ? (
           <Link className="-ml-2 inline-flex min-h-11 items-center gap-1 px-2 text-body text-accent" href={backHref}>

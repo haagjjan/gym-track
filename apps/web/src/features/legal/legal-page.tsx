@@ -7,9 +7,14 @@ import { LegalBack } from "./legal-back";
 export async function LegalPage({ children, title, version = PUBLIC_PRIVACY_VERSION }: { children: ReactNode; eyebrow?: string; title: string; version?: string }): Promise<ReactNode> {
   // Signed-out visitors (from signup) go back to signup, not to Settings.
   const signedIn = Boolean(await getCurrentUser());
-  return <main className="min-h-dvh bg-bg px-4 py-4 text-text">
-    <div className="mx-auto max-w-[65ch]">
-      <LegalBack signedIn={signedIn} />
+  return <main className="min-h-dvh bg-bg pb-[calc(env(safe-area-inset-bottom)+1rem)] text-text">
+    {/* Pushed-screen bar: stays visible while the text scrolls (no swipe-back in the app). */}
+    <header className="sticky top-0 z-30 border-b border-line bg-bg/90 pt-[env(safe-area-inset-top)] backdrop-blur-md">
+      <div className="mx-auto flex min-h-11 max-w-[65ch] items-center px-[max(1rem,env(safe-area-inset-left))]">
+        <LegalBack signedIn={signedIn} />
+      </div>
+    </header>
+    <div className="mx-auto max-w-[65ch] px-[max(1rem,env(safe-area-inset-left))]">
       <article className="pb-10 pt-4">
         <h1 className="text-title-1 text-text">{title}</h1>
         {!legalConfigComplete() ? <p className="mt-5 rounded-[var(--radius-card)] bg-surface p-3 text-subhead text-danger" role="alert">Contact details are incomplete, so this page can&apos;t be published yet. Set the controller and contact configuration first.</p> : null}
