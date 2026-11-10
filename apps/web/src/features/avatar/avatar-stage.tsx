@@ -23,6 +23,8 @@ import {
 } from "./stage-driver";
 import { createStatueMaterial, RIM_CYAN, Statue } from "./statue-core";
 import { useAvatarSceneSupport, useFrameloopGovernor } from "./use-avatar-scene";
+import { STAGE_COLOR } from "../shell/theme";
+import { useResolvedTheme } from "../shell/use-resolved-theme";
 
 /**
  * The FBX faces +x while the camera looks down −z, so untouched the camera
@@ -62,6 +64,7 @@ export function AvatarStage({
   autoSpin = true
 }: AvatarStageProps): ReactNode {
   const { support, reducedMotion, softwareRasterized } = useAvatarSceneSupport();
+  const theme = useResolvedTheme();
   const { hostRef, frameloop } = useFrameloopGovernor(reducedMotion);
   const stateRef = useRef<StageState>({ readiness, pulse: 0, burstProgress: 1 });
   const spinRef = useRef<SpinState>({
@@ -120,8 +123,8 @@ export function AvatarStage({
               fitStageCamera(camera, size.width / Math.max(size.height, 1))
             }
           >
-            <color attach="background" args={["#0a0a0a"]} />
-            <fog attach="fog" args={["#0a0a0a", 9, 22]} />
+            <color attach="background" args={[STAGE_COLOR[theme]]} />
+            <fog attach="fog" args={[STAGE_COLOR[theme], 9, 22]} />
 
             <ambientLight color="#22343c" intensity={0.45} />
             <directionalLight color="#d8f7fa" intensity={1.6} position={[3.5, 4.5, 2.5]} />
@@ -130,6 +133,7 @@ export function AvatarStage({
             <HologramBay
               reducedMotion={reducedMotion}
               softwareRasterized={softwareRasterized}
+              theme={theme}
             />
 
             <Suspense fallback={null}>

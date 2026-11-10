@@ -50,6 +50,8 @@ const FLOOR_TEXTURE_SIZE = 1024;
 const FLOOR_TEXTURE_SIZE_SOFTWARE = 256;
 
 export interface HologramBayProps {
+  /** Light theme: a pale room instead of the obsidian one; the figure and pedestal stay. */
+  theme?: "dark" | "light";
   /** Freeze the ambient pulse and drifting motes for reduced-motion users. */
   reducedMotion?: boolean;
   /** CPU rasterizer: draw the same bay, but skip the expensive prefiltering. */
@@ -58,7 +60,8 @@ export interface HologramBayProps {
 
 export function HologramBay({
   reducedMotion = false,
-  softwareRasterized = false
+  softwareRasterized = false,
+  theme = "dark"
 }: HologramBayProps): ReactNode {
   const gl = useThree((state) => state.gl);
   const glowTexture = useMemo(createRadialGlowTexture, []);
@@ -106,6 +109,13 @@ export function HologramBay({
       }),
     [environment, floorTextures]
   );
+  // The deck texture is dark; on the light stage an emissive lift turns it
+  // into a pale floor without new textures or a second scene.
+  useEffect(() => {
+    floorMaterial.emissive.set(theme === "light" ? "#b9c4cf" : "#000000");
+    floorMaterial.emissiveIntensity = theme === "light" ? 0.85 : 0;
+    floorMaterial.needsUpdate = true;
+  }, [floorMaterial, theme]);
   const padGlowMaterial = useMemo(
     () =>
       new THREE.MeshBasicMaterial({
@@ -138,6 +148,12 @@ export function HologramBay({
       }),
     []
   );
+  useEffect(() => {
+    wallMaterial.color.set(theme === "light" ? "#dfe5ec" : "#0a0d12");
+    wallMaterial.metalness = theme === "light" ? 0 : 0.55;
+    wallMaterial.emissive.set(theme === "light" ? "#c9d2dc" : "#000000");
+    wallMaterial.needsUpdate = true;
+  }, [theme, wallMaterial]);
   const spotTarget = useMemo(() => {
     const target = new THREE.Object3D();
 
