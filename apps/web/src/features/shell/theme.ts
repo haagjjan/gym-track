@@ -44,3 +44,6 @@ export function applyThemePreference(preference: ThemePreference): void {
   const prefersLight = globalThis.matchMedia?.("(prefers-color-scheme: light)").matches ?? false;
   globalThis.document.documentElement.dataset.theme = resolveTheme(preference, prefersLight);
 }
+
+/** Colors behind the 3D scenes, matching the stage token per theme. */
+export const STAGE_COLOR: Record<ResolvedTheme, string> = { dark: "#0f1317", light: "#dfe5ec" };
