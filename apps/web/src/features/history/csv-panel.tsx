@@ -99,7 +99,7 @@ export function CsvPanel({ onImported }: { onImported: () => void }): ReactNode 
       <div className="space-y-3">
         <a className={`${buttonClass("secondary")} w-full`} download href={CSV_EXPORT_URL}>Export CSV</a>
         <div className="flex items-center gap-3">
-          <label className={`${buttonClass("secondary", "compact")} shrink-0 cursor-pointer focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent`}>
+          <label className={`${buttonClass("secondary")} shrink-0 cursor-pointer focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent`}>
           <span>Choose CSV file</span>
           <input
             accept=".csv,text/csv"
