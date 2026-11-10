@@ -5,10 +5,10 @@ import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import * as THREE from "three";
 import { FRONT_AZIMUTH, type FigureFrame, type RegionSlug } from "./heatmap";
 
-export const ORBIT_TARGET = new THREE.Vector3(0, 1.15, 0);
-// Fills the shorter phone stage: feet near the bottom edge, hands near the top.
-const DEFAULT_RADIUS = 3.45;
-const FOCUS_RADIUS = 2.3;
+export const ORBIT_TARGET = new THREE.Vector3(0, 1.27, 0);
+// Fills the shorter phone stage: feet near the bottom edge, crown near the top.
+export const DEFAULT_RADIUS = 2.9;
+const FOCUS_RADIUS = 2.1;
 const FOCUS_DAMP = 3;
 
 const REGION_FOCUS: Partial<Record<RegionSlug, { yn: number; side: "front" | "back" }>> = {

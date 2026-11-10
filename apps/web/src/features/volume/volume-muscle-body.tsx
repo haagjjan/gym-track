@@ -11,8 +11,8 @@ import { MUSCLE_REGIONS, muscleGroupOf, regionMatches, weeklySetsForRegion } fro
 
 /** Resting colours per theme: a quiet body so only trained muscles carry colour. */
 const BODY_COLORS: Record<"dark" | "light", Record<BodyPartKind, string>> = {
-  dark: { muscle: "#3d4651", other: "#313943", bone: "#4a5360", skin: "#353d47" },
-  light: { muscle: "#aeb7c2", other: "#bfc7d0", bone: "#d3d9e0", skin: "#c6cdd6" }
+  dark: { muscle: "#56616f", other: "#3b444f", bone: "#69727e", skin: "#434c58" },
+  light: { muscle: "#e3e8ee", other: "#cfd6de", bone: "#f1f3f6", skin: "#d9dfe6" }
 };
 const DEBUG_HUES = MUSCLE_REGIONS.map((_, index) => new THREE.Color().setHSL((index * 0.381966) % 1, 0.7, 0.55));
 

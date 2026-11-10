@@ -19,6 +19,7 @@ import {
 } from "./heatmap";
 import {
   CameraDirector,
+  DEFAULT_RADIUS,
   ORBIT_TARGET,
   type OrbitControlsLike
 } from "./volume-camera-director";
@@ -91,7 +92,6 @@ export function VolumeBodyMap({
   const [view, setView] = useState<"front" | "back" | null>("front");
   const [hintVisible, dismissHint] = useGestureHint();
   // Lift the base light when nothing is trained so the bare anatomy stays readable.
-  const noSets = !Object.values(weeklySetsBySlug).some((sets) => sets > 0);
 
   const showView = (next: "front" | "back"): void => {
     setView(next);
@@ -119,7 +119,7 @@ export function VolumeBodyMap({
         // block the layout from ever shrinking (rotate/resize deadlock).
         <div className="absolute inset-0">
           <Canvas
-            camera={{ fov: 34, position: [3.45, 1.35, 0.001] }}
+            camera={{ fov: 34, position: [DEFAULT_RADIUS, 1.35, 0.001] }}
             // This scene is static between interactions. Demand rendering avoids
             // an always-on 120 Hz loop on high-refresh phones; the lower DPR cap
             // also bounds the mask shader's fragment cost during orbit/focus.
@@ -133,9 +133,12 @@ export function VolumeBodyMap({
 
             {/* Dark-body rig: the figure reads as a dim slate form, trained
                 muscles emit on top. Kept low so emissive contrast survives. */}
-            <hemisphereLight args={["#9aa6b5", "#1b2029", (noSets ? 1.8 : 1.1) + (theme === "dark" ? 0.4 : 0)]} />
-            <directionalLight color="#eaf6ff" intensity={noSets ? 1.5 : 1} position={[3, 5, 4]} />
-            <directionalLight color="#b9c6d0" intensity={0.35} position={[-4, 3, -3]} />
+            <hemisphereLight args={["#ffffff", "#5b6470", theme === "dark" ? 0.9 : 1.5]} />
+            {/* Key from the upper front left, a weaker fill, and a back light:
+                the side-on key is what makes muscle relief readable. */}
+            <directionalLight color="#ffffff" intensity={theme === "dark" ? 2.2 : 1.6} position={[3, 4.5, 3.5]} />
+            <directionalLight color="#cfe0f2" intensity={0.5} position={[3, 1.5, -4]} />
+            <directionalLight color="#ffffff" intensity={theme === "dark" ? 1.6 : 1.1} position={[-3.5, 4, -2.5]} />
 
             <VolumeMuscleBody
               debugRegions={debugRegions}
@@ -165,7 +168,7 @@ export function VolumeBodyMap({
               enableZoom={orbitPolicy.enableZoom}
               maxDistance={6}
               maxPolarAngle={1.62}
-              minDistance={2.1}
+              minDistance={1.8}
               minPolarAngle={0.6}
               onStart={() => {
                 // A user drag takes over — the focus ease must yield, not fight.
