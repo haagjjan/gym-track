@@ -12,6 +12,8 @@ interface SessionExerciseListProps {
   exercises: SessionExercise[];
   isReordering: boolean;
   onAdd: () => void;
+  /** Scroll the active row into view; false until the user picks an exercise. */
+  followActive: boolean;
   onReorder: (activeId: string, overId: string) => void;
   onSelect: (id: string) => void;
 }
@@ -21,10 +23,12 @@ export function SessionExerciseList(props: SessionExerciseListProps): ReactNode 
   const rows = useRef(new Map<string, HTMLButtonElement>());
   const empty = props.exercises.length === 0;
 
+  // Only after the user picked or added an exercise. Scrolling to the default
+  // selection on first load would open the screen part-way down.
   useEffect(() => {
-    if (!props.activeId) return;
+    if (!props.followActive || !props.activeId) return;
     rows.current.get(props.activeId)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  }, [props.activeId]);
+  }, [props.activeId, props.followActive]);
 
   return (
     <section aria-labelledby="workout-exercises-heading">

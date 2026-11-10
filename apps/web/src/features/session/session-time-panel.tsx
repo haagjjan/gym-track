@@ -1,108 +1,102 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { Button } from "../../shared/ui/button";
 import { errorMessage } from "../../shared/api/client";
-import { formatDayTime, formatMinutes } from "../../shared/format";
+import { formatMinutes } from "../../shared/format";
+import { Button } from "../../shared/ui/button";
+import { Sheet } from "../../shared/ui/sheet";
+import { MAX_WORKOUT_MINUTES, resolveWorkoutTime, toWorkoutTimeDraft, type WorkoutTimeDraft } from "./workout-time";
 
-export function SessionTimePanel({
+/**
+ * Edit a finished workout's time: one date, a start and a finish time. A
+ * finish before the start means it ran past midnight. Opens from the pencil
+ * next to Duration.
+ */
+export function WorkoutTimeSheet({
   endedAt,
+  isOpen,
   isSaving,
+  onClose,
   onSave,
   startedAt
 }: {
   endedAt: string;
+  isOpen: boolean;
   isSaving: boolean;
+  onClose: () => void;
   onSave: (startedAtIso: string, endedAtIso: string) => Promise<unknown>;
   startedAt: string;
 }): ReactNode {
-  const [expanded, setExpanded] = useState(false);
-  const [startDraft, setStartDraft] = useState("");
-  const [endDraft, setEndDraft] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const nextStartedAt = fromDateTimeInputValue(startDraft);
-  const nextEndedAt = fromDateTimeInputValue(endDraft);
-  const valid = Boolean(
-    nextStartedAt &&
-    nextEndedAt &&
-    new Date(nextEndedAt).getTime() >= new Date(nextStartedAt).getTime()
+  return (
+    <Sheet isOpen={isOpen} labelledBy="workout-time-title" onClose={onClose} portal width="md">
+      {/* Remount per opening so the fields start from the saved times. */}
+      {isOpen ? <TimeForm endedAt={endedAt} isSaving={isSaving} onClose={onClose} onSave={onSave} startedAt={startedAt} /> : null}
+    </Sheet>
   );
+}
 
-  function open(): void {
-    setStartDraft(toDateTimeInputValue(startedAt));
-    setEndDraft(toDateTimeInputValue(endedAt));
+function TimeForm({ endedAt, isSaving, onClose, onSave, startedAt }: {
+  endedAt: string;
+  isSaving: boolean;
+  onClose: () => void;
+  onSave: (startedAtIso: string, endedAtIso: string) => Promise<unknown>;
+  startedAt: string;
+}): ReactNode {
+  const [draft, setDraft] = useState<WorkoutTimeDraft>(() => toWorkoutTimeDraft(startedAt, endedAt));
+  const [error, setError] = useState<string | null>(null);
+  const resolved = resolveWorkoutTime(draft);
+  const update = (patch: Partial<WorkoutTimeDraft>): void => setDraft((current) => ({ ...current, ...patch }));
+
+  async function save(): Promise<void> {
+    if (!resolved.ok) return;
     setError(null);
-    setExpanded(true);
-  }
-
-  async function commit(): Promise<void> {
-    if (!nextStartedAt || !nextEndedAt) return;
-    setError(null);
-
     try {
-      await onSave(nextStartedAt, nextEndedAt);
-      setExpanded(false);
+      await onSave(resolved.startedAt, resolved.endedAt);
+      onClose();
     } catch (caught) {
-      setError(errorMessage(caught, "Couldn't change the times. Check your connection and try again."));
+      setError(errorMessage(caught, "Couldn't change the time. Check your connection and try again."));
     }
   }
 
   return (
-    <section aria-labelledby="workout-time-heading">
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="text-body text-text" id="workout-time-heading">Workout time</h3>
-          <p className="mt-0.5 text-subhead text-text-secondary">
-            {timeRange(startedAt, endedAt)}, {formatMinutes(startedAt, endedAt)}
-          </p>
+    <>
+      {/* Focus the title, not the date field: focusing a date input on iOS can open its picker at once. */}
+      <h2 className="mt-1 text-title-3 text-text outline-none" data-modal-initial-focus id="workout-time-title" tabIndex={-1}>Workout time</h2>
+      <div className="mt-4 space-y-3">
+        <TimeField label="Date" onChange={(date) => update({ date })} type="date" value={draft.date} />
+        <div className="grid grid-cols-2 gap-3">
+          <TimeField label="Start" onChange={(start) => update({ start })} type="time" value={draft.start} />
+          <TimeField label="Finish" onChange={(end) => update({ end })} type="time" value={draft.end} />
         </div>
-        {!expanded ? <Button onClick={open} size="compact" variant="plain">Change</Button> : null}
       </div>
-
-      {expanded ? (
-        <div className="mt-3 space-y-3">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <DateTimeField label="Started" onChange={setStartDraft} value={startDraft} />
-            <DateTimeField label="Finished" onChange={setEndDraft} value={endDraft} />
-          </div>
-          {!valid ? <p className="text-subhead text-danger" role="alert">The finish can&apos;t be before the start.</p> : null}
-          <p className="text-subhead text-text-secondary">Changing the times moves this workout in your history and stats.</p>
-          <div className="grid grid-cols-[1fr_auto] gap-2">
-            <Button disabled={!valid || isSaving} onClick={() => void commit()} variant="secondary">{isSaving ? "Saving…" : "Save times"}</Button>
-            <Button onClick={() => setExpanded(false)} variant="plain">Cancel</Button>
-          </div>
-        </div>
-      ) : null}
+      <p aria-live="polite" className={`mt-3 text-subhead ${resolved.ok ? "text-text-secondary" : "text-danger"}`} role={resolved.ok ? undefined : "alert"}>
+        {resolved.ok
+          ? `${formatMinutes(resolved.startedAt, resolved.endedAt)}${resolved.nextDay ? ", finishing the next day" : ""}`
+          : resolved.reason === "too-long"
+            ? `A workout can be at most ${MAX_WORKOUT_MINUTES / 60} hours.`
+            : "Enter a date, a start and a finish."}
+      </p>
       {error ? <p className="mt-2 text-subhead text-danger" role="alert">{error}</p> : null}
-    </section>
+      <div className="mt-4 grid gap-2">
+        <Button disabled={!resolved.ok || isSaving} onClick={() => void save()}>{isSaving ? "Saving…" : "Save"}</Button>
+        <Button onClick={onClose} variant="plain">Cancel</Button>
+      </div>
+    </>
   );
 }
 
-function timeRange(startedAt: string, endedAt: string): string {
-  const start = formatDayTime(startedAt);
-  const end = formatDayTime(endedAt);
-  const [startDay] = start.split(", ");
-  const [endDay, endTime] = end.split(", ");
-  return startDay === endDay ? `${start} to ${endTime ?? ""}` : `${start} to ${end}`;
-}
-
-function DateTimeField({ label, onChange, value }: { label: string; onChange: (value: string) => void; value: string }): ReactNode {
+function TimeField({ label, onChange, type, value }: { label: string; onChange: (value: string) => void; type: "date" | "time"; value: string }): ReactNode {
   return (
-    <label className="block">
+    <label className="block min-w-0">
       <span className="text-subhead text-text-secondary">{label}</span>
-      <input className="num mt-1.5 min-h-[3.125rem] w-full rounded-[var(--radius-control)] border border-control-line bg-surface-raised px-3 text-body text-text" onChange={(event) => onChange(event.currentTarget.value)} type="datetime-local" value={value} />
+      {/* min-w-0 + w-full: iOS gives date/time inputs a wide intrinsic size that overflowed the card. */}
+      <input
+        className="time-field num mt-1.5 block h-[3.125rem] w-full min-w-0 appearance-none rounded-[var(--radius-control)] border border-control-line bg-surface-raised px-3 text-left text-body text-text"
+        onChange={(event) => onChange(event.currentTarget.value)}
+        required
+        type={type}
+        value={value}
+      />
     </label>
   );
-}
-
-function toDateTimeInputValue(iso: string): string {
-  const date = new Date(iso);
-  const pad = (value: number): string => String(value).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-
-function fromDateTimeInputValue(value: string): string | null {
-  if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }

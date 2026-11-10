@@ -15,7 +15,7 @@ import { SessionBottomBar } from "./session-bottom-bar";
 import { SessionHeader } from "./session-header";
 import { RestTimer } from "./rest-timer";
 import { SessionModeNavigation } from "./session-mode-navigation";
-import { SessionCompletionSummary } from "./session-completion-summary";
+import { SessionCompletionFooter, SessionCompletionSummary } from "./session-completion-summary";
 import { calculateSessionTotals, resolveActiveExercise, SessionError, SessionSkeleton, SessionStats } from "./session-screen-support";
 import { useSessionSetLogging } from "./use-session-set-logging";
 import { useOnboarding } from "../onboarding/use-onboarding";
@@ -36,6 +36,7 @@ export function SessionScreen({
   const workoutMutations = useWorkoutMutations();
   const [activeExerciseId, setActiveExerciseId] = useState<string | null>(null);
   const [sessionMode, setSessionMode] = useState<"exercises" | "sets">("exercises");
+  const [followActive, setFollowActive] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -45,6 +46,32 @@ export function SessionScreen({
   const exercises = useMemo(() => workout?.exercises ?? [], [workout]);
   const activeExercise = resolveActiveExercise(exercises, activeExerciseId);
   const totals = useMemo(() => calculateSessionTotals(exercises), [exercises]);
+
+  // While logging, remember the open exercise for this browser session, so
+  // leaving for the Progress shortcut (or a reload) comes back to it. A
+  // finished workout always opens on its summary.
+  const viewRestored = useRef(false);
+  useEffect(() => {
+    if (!workout || viewRestored.current) return;
+    viewRestored.current = true;
+    try {
+      const saved = JSON.parse(globalThis.sessionStorage.getItem(`gymtrack.session-view.${workoutId}`) ?? "null") as { exerciseId?: unknown; mode?: unknown } | null;
+      if (workout.isOpen && saved && saved.mode === "sets" && workout.exercises.some((item) => item.id === saved.exerciseId)) {
+        setActiveExerciseId(saved.exerciseId as string);
+        setSessionMode("sets");
+      }
+    } catch {
+      // Storage blocked or corrupt: start on the list.
+    }
+  }, [workout, workoutId]);
+  useEffect(() => {
+    if (!viewRestored.current) return;
+    try {
+      globalThis.sessionStorage.setItem(`gymtrack.session-view.${workoutId}`, JSON.stringify({ exerciseId: activeExerciseId, mode: sessionMode }));
+    } catch {
+      // Not critical.
+    }
+  }, [activeExerciseId, sessionMode, workoutId]);
   const logging = useSessionSetLogging({ activeExercise, mutations, onError: setActionError, onStatus: setStatus, userId, workoutId });
   const { closeEditors } = logging;
 
@@ -70,7 +97,10 @@ export function SessionScreen({
         added.push(await mutations.addExercise.mutateAsync({ clientMutationId, exerciseId }));
       }
       const lastAdded = added.at(-1);
-      if (lastAdded) setActiveExerciseId(lastAdded.id);
+      if (lastAdded) {
+        setFollowActive(true);
+        setActiveExerciseId(lastAdded.id);
+      }
       closeEditors();
       setSheetOpen(false);
       setSessionMode("sets");
@@ -122,7 +152,7 @@ export function SessionScreen({
         title={workout.title}
       />
 
-      <main className={`mx-auto grid w-full flex-1 content-start gap-6 overflow-x-clip px-4 pb-6 pt-4 ${isOpen ? "max-w-5xl lg:grid-cols-[minmax(0,1fr)_17rem]" : "max-w-3xl"}`}>
+      <main className={`mx-auto grid w-full flex-1 content-start gap-6 overflow-x-clip px-4 pt-4 ${isOpen ? "max-w-5xl pb-6 lg:grid-cols-[minmax(0,1fr)_17rem]" : "max-w-3xl pb-[calc(env(safe-area-inset-bottom)+1.5rem)]"}`}>
         <div className="min-w-0 space-y-6">
           {actionError ? <ErrorState message={actionError} title="Something went wrong" /> : null}
           <p aria-live="polite" className="sr-only">{status}</p>
@@ -142,10 +172,12 @@ export function SessionScreen({
                 activeId={activeExercise?.id ?? null}
                 canEdit={isOpen}
                 exercises={exercises}
+                followActive={followActive}
                 isReordering={mutations.reorderExercises.isPending}
                 onAdd={() => setSheetOpen(true)}
                 onReorder={reorderExercises}
                 onSelect={(id) => {
+                  setFollowActive(true);
                   setActiveExerciseId(id);
                   closeEditors();
                   setSessionMode("sets");
@@ -179,6 +211,8 @@ export function SessionScreen({
               </>
             )}
           </div>
+
+          {!isOpen ? <SessionCompletionFooter workout={workout} /> : null}
         </div>
 
         {isOpen ? <SessionStats exercises={exercises.length} totals={totals} /> : null}

@@ -60,7 +60,7 @@ export function DemoSession(): ReactNode {
             onNext={() => selectRelative(1)} onPrevious={() => selectRelative(-1)} position={workout.exercises.indexOf(active)} total={workout.exercises.length} />
           <DemoSetPanel exercise={active} key={active.id} onSave={(input, setId) => saveSet(active.id, input, setId)} workout={workout}
             onDelete={(setId) => update((current) => ({ ...current, exercises: current.exercises.map((entry) => entry.id !== active.id ? entry : { ...entry, sets: entry.sets.filter((set) => set.id !== setId).map((set, index) => ({ ...set, setOrder: index + 1 })) }) }))} />
-        </> : <SessionExerciseList activeId={null} canEdit={workout.isOpen} exercises={workout.exercises} isReordering={false} onAdd={() => setAdding(true)} onReorder={reorder} onSelect={setActiveId} />}
+        </> : <SessionExerciseList activeId={null} canEdit={workout.isOpen} exercises={workout.exercises} followActive={false} isReordering={false} onAdd={() => setAdding(true)} onReorder={reorder} onSelect={(id) => { setActiveId(id); record("openedExercise"); }} />}
         {adding ? <section aria-label="Example exercises" className="rounded-[var(--radius-card)] bg-surface p-4"><h2 className="text-title-3 text-text">Example exercises</h2><p className="mb-3 mt-1 text-subhead text-text-secondary">Try these exercises in this example.</p>{demoExercises.map((exercise) => <Button className="mb-2 w-full" key={exercise.id} onClick={() => {
           const entry: SessionExercise = { id: crypto.randomUUID(), position: workout.exercises.length + 1, exercise, sets: [], previousPerformance: null };
           update((current) => ({ ...current, exercises: [...current.exercises, entry] })); setActiveId(entry.id); setAdding(false);
