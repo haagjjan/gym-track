@@ -2,6 +2,18 @@ export function formatNumber(value: number): string {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }).format(value);
 }
 
+/**
+ * Large totals in a stat tile: "6,243" up to 9,999, then "12.4k" and "1.2M",
+ * so the value never gets cut off on a phone.
+ */
+export function formatCompactNumber(value: number): string {
+  const abs = Math.abs(value);
+  if (abs < 10_000) return formatNumber(Math.round(value));
+  const [divisor, suffix] = abs < 1_000_000 ? [1_000, "k"] : [1_000_000, "M"];
+  const scaled = value / divisor;
+  return `${new Intl.NumberFormat("en-US", { maximumFractionDigits: Math.abs(scaled) < 100 ? 1 : 0 }).format(scaled)}${suffix}`;
+}
+
 export function formatKgValue(value: string | number): string {
   const parsed = typeof value === "number" ? value : Number(value);
 
@@ -27,6 +39,17 @@ export function formatClock(totalSeconds: number): string {
   const pad = (value: number): string => String(value).padStart(2, "0");
 
   return hours > 0 ? `${hours}:${pad(minutes)}:${pad(seconds)}` : `${minutes}:${pad(seconds)}`;
+}
+
+/**
+ * Elapsed time of an open workout. A stopwatch for the first day; after that
+ * the start day ("Since Mon 31 Aug"), because "1685:13:40" says nothing.
+ */
+export function formatElapsed(startedAt: string, now: number = Date.now()): string {
+  const seconds = (now - new Date(startedAt).getTime()) / 1_000;
+  if (seconds < 86_400) return formatClock(seconds);
+  const day = formatDay(startedAt, new Date(now));
+  return `Since ${day === "Yesterday" ? "yesterday" : day}`;
 }
 
 /** Workout length in words (DESIGN.md, Voice): "45 min", "1 h 12 min", "2 h". */

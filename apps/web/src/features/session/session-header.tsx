@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { formatClock, formatDayTime } from "../../shared/format";
+import { formatDayTime, formatElapsed } from "../../shared/format";
 import { useAppBack } from "../shell/app-history";
 import { IconBack, IconChevronDown, IconMore } from "../../shared/ui/icons";
 
@@ -173,5 +173,5 @@ function ElapsedTime({ startedAt }: { startedAt: string }): ReactNode {
     return () => window.clearInterval(interval);
   }, []);
 
-  return <span className="num" data-testid="workout-elapsed">{formatClock((now - new Date(startedAt).getTime()) / 1_000)}</span>;
+  return <span className="num" data-testid="workout-elapsed">{formatElapsed(startedAt, now)}</span>;
 }

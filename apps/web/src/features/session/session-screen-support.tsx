@@ -6,7 +6,7 @@ import { ErrorState, Skeleton } from "../../shared/ui/ui";
 import { StatTile } from "../../shared/ui/stat-tile";
 import { errorMessage } from "../../shared/api/client";
 import type { SessionExercise } from "../../shared/api/types";
-import { formatNumber } from "../../shared/format";
+import { formatCompactNumber } from "../../shared/format";
 
 export interface SessionTotals { sets: number; workingSets: number; volume: number }
 
@@ -28,7 +28,7 @@ export function SessionStats({ exercises, totals }: { exercises: number; totals:
         <StatTile label="Exercises" value={exercises} />
         <StatTile label="Sets" value={totals.sets} />
         <StatTile label="Working sets" value={totals.workingSets} />
-        <StatTile label="Volume" unit="kg" value={formatNumber(totals.volume)} />
+        <StatTile label="Volume" unit="kg" value={formatCompactNumber(totals.volume)} />
       </dl>
     </aside>
   );

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { formatClock, formatDate, formatDay, formatMinutes, formatTimestamp } from "./format";
+import { formatClock, formatCompactNumber, formatDate, formatDay, formatElapsed, formatMinutes, formatTimestamp } from "./format";
 
 test("formatClock reads like a stopwatch", () => {
   assert.equal(formatClock(0), "0:00");
@@ -29,4 +29,20 @@ test("formatDate and formatTimestamp always show the year", () => {
 
   assert.equal(formatDate(local), "9 Nov 2026");
   assert.equal(formatTimestamp(local), "9 Nov 2026, 14:03");
+});
+
+test("formatElapsed is a stopwatch for a day, then names the start day", () => {
+  const start = "2026-08-31T08:00:00";
+  const at = (hours: number): number => new Date(start).getTime() + hours * 3_600_000;
+  assert.equal(formatElapsed(start, at(0.5)), "30:00");
+  assert.equal(formatElapsed(start, at(23.5)), "23:30:00");
+  assert.equal(formatElapsed(start, at(24)), "Since yesterday");
+  assert.match(formatElapsed(start, at(1685)), /^Since Mon 31 Aug$/);
+});
+
+test("formatCompactNumber keeps tile values short", () => {
+  assert.equal(formatCompactNumber(6243.4), "6,243");
+  assert.equal(formatCompactNumber(12_430), "12.4k");
+  assert.equal(formatCompactNumber(254_000), "254k");
+  assert.equal(formatCompactNumber(1_240_000), "1.2M");
 });
