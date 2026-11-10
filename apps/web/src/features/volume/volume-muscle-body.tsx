@@ -1,28 +1,26 @@
 "use client";
 
-import { useFBX } from "@react-three/drei";
 import { useThree, type ThreeEvent } from "@react-three/fiber";
 import { useEffect, useMemo, type ReactNode } from "react";
 import * as THREE from "three";
-import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
+import { useBodyModel, type BodyPartKind } from "../avatar/body-model";
 import { createRadialGlowTexture } from "../avatar/bay-textures";
-import {
-  AVATAR_MODEL_URL,
-  boundsAboveHeight,
-  RIM_CYAN,
-  STATUE_HEIGHT
-} from "../avatar/statue-core";
-import {
-  heatT,
-  measureFigureFrame,
-  regionIndexBySlug,
-  REGION_SLUGS,
-  type FigureFrame,
-  type RegionSlug
-} from "./heatmap";
-import { createMuscleMaskMaterial } from "./muscle-mask-material";
-import { getRegionMaps } from "./region-map";
+import { RIM_CYAN } from "../avatar/statue-core";
+import { HEAT_STAGE_COLORS, heatBucket, type FigureFrame, type RegionSlug } from "./heatmap";
+import { MUSCLE_REGIONS, muscleGroupOf, regionMatches, weeklySetsForRegion } from "./muscle-regions";
 
+/** Resting colours per theme: a quiet body so only trained muscles carry colour. */
+const BODY_COLORS: Record<"dark" | "light", Record<BodyPartKind, string>> = {
+  dark: { muscle: "#3d4651", other: "#313943", bone: "#4a5360", skin: "#353d47" },
+  light: { muscle: "#aeb7c2", other: "#bfc7d0", bone: "#d3d9e0", skin: "#c6cdd6" }
+};
+const DEBUG_HUES = MUSCLE_REGIONS.map((_, index) => new THREE.Color().setHSL((index * 0.381966) % 1, 0.7, 0.55));
+
+/**
+ * The muscle-volume figure. Every region is its own mesh with its own
+ * material, so a region's heat or selection colours exactly that muscle and
+ * nothing around it, and a tap picks the mesh that was hit.
+ */
 export function VolumeMuscleBody({
   weeklySetsBySlug,
   heatCeiling,
@@ -40,126 +38,84 @@ export function VolumeMuscleBody({
   debugRegions: boolean;
   theme: "dark" | "light";
 }): ReactNode {
-  const fbx = useFBX(AVATAR_MODEL_URL);
+  const body = useBodyModel();
   const invalidate = useThree((state) => state.invalidate);
-  const regionMaps = useMemo(getRegionMaps, []);
-  const mask = useMemo(
-    () =>
-      createMuscleMaskMaterial(
-        regionMaps.frontTexture,
-        regionMaps.backTexture,
-        regionMaps.sideTexture
-      ),
-    [regionMaps]
-  );
-  // Dark stage: a cool slate rim so the dark body never melts into the
-  // background. Light stage: the body already reads dark on light, no rim.
-  useEffect(() => {
-    mask.uniforms.uRim.value.set(theme === "dark" ? "#8fb3cf" : "#000000").convertSRGBToLinear().multiplyScalar(theme === "dark" ? 0.75 : 0);
-    invalidate();
-  }, [invalidate, mask, theme]);
-
   const glowTexture = useMemo(createRadialGlowTexture, []);
 
-  const { statue, frame } = useMemo(() => {
-    const instance = cloneSkeleton(fbx);
+  // One material per region (shared by its left and right mesh) and per neutral part.
+  const materials = useMemo(() => {
+    const byKey = new Map<string, THREE.MeshStandardMaterial>();
 
-    instance.scale.setScalar(1);
-    instance.position.set(0, 0, 0);
-    instance.updateMatrixWorld(true);
+    for (const part of body.parts) {
+      const key = part.slug ?? part.kind;
+      let material = byKey.get(key);
+      if (!material) {
+        material = new THREE.MeshStandardMaterial({ metalness: 0, roughness: part.kind === "muscle" ? 0.62 : 0.8 });
+        byKey.set(key, material);
+      }
+      part.mesh.material = material;
+      part.mesh.userData.regionSlug = part.slug;
+    }
 
-    const rawSize = new THREE.Box3().setFromObject(instance).getSize(new THREE.Vector3());
+    return byKey;
+  }, [body]);
 
-    instance.scale.setScalar(STATUE_HEIGHT / rawSize.y);
-    instance.updateMatrixWorld(true);
+  useEffect(() => () => materials.forEach((material) => material.dispose()), [materials]);
 
-    const scaledBox = new THREE.Box3().setFromObject(instance);
-    const figureBounds = boundsAboveHeight(
-      instance,
-      scaledBox.min.y + (scaledBox.max.y - scaledBox.min.y) * 0.4
-    );
-    const figureCenter = figureBounds.getCenter(new THREE.Vector3());
+  useEffect(() => {
+    onFrame(body.frame);
+  }, [body, onFrame]);
 
-    instance.position.set(-figureCenter.x, -scaledBox.min.y, -figureCenter.z);
-    instance.updateMatrixWorld(true);
-    instance.traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-        child.material = mask.material;
-        child.frustumCulled = false;
+  useEffect(() => {
+    const rest = BODY_COLORS[theme];
+
+    for (const kind of ["other", "bone", "skin"] as const) materials.get(kind)?.color.set(rest[kind]);
+
+    MUSCLE_REGIONS.forEach((region, index) => {
+      const material = materials.get(region.slug);
+      if (!material) return;
+
+      const bucket = heatBucket(weeklySetsForRegion(weeklySetsBySlug, region.slug), heatCeiling);
+      const selected = regionMatches(selectedSlug, region.slug);
+
+      if (debugRegions) {
+        material.color.copy(DEBUG_HUES[index]!);
+        material.emissive.set("#000000");
+      } else if (bucket > 0) {
+        material.color.set(HEAT_STAGE_COLORS[bucket - 1]!);
+        material.emissive.set(HEAT_STAGE_COLORS[bucket - 1]!);
+        material.emissiveIntensity = selected ? 0.55 : 0.22;
+      } else {
+        material.color.set(rest.muscle);
+        material.emissive.set(selected ? RIM_CYAN : "#000000");
+        material.emissiveIntensity = selected ? 0.35 : 0;
       }
     });
 
-    const nextFrame = measureFigureFrame(instance);
-
-    mask.uniforms.uFeetY.value = nextFrame.feetY;
-    mask.uniforms.uInvHeight.value = 1 / Math.max(nextFrame.headY - nextFrame.feetY, 1e-6);
-    mask.uniforms.uInvHalf.value = 1 / Math.max(nextFrame.halfWidth, 1e-6);
-
-    return { statue: instance, frame: nextFrame };
-  }, [fbx, mask]);
-
-  useEffect(() => {
-    onFrame(frame);
-  }, [frame, onFrame]);
-
-  useEffect(() => {
-    let active = true;
-
-    // A map that never decodes leaves the body rendering untrained, which is the
-    // intended fallback — but the rejection must not escape uncaught.
-    void regionMaps.ready
-      .then(() => {
-        if (active) invalidate();
-      })
-      .catch(() => undefined);
-
-    return () => {
-      active = false;
-    };
-  }, [regionMaps, invalidate]);
-
-  useEffect(() => {
-    mask.setMode(debugRegions ? "debug" : "holo");
-    const heat = mask.uniforms.uHeat.value;
-
-    heat.fill(0);
-    for (const [slug, weeklySets] of Object.entries(weeklySetsBySlug)) {
-      const regionIndex = regionIndexBySlug.get(slug);
-      if (regionIndex !== undefined && regionIndex > 0) {
-        heat[regionIndex] = heatT(weeklySets, heatCeiling);
-      }
-    }
-
-    mask.uniforms.uSelected.value = selectedSlug ? regionIndexBySlug.get(selectedSlug) ?? 0 : 0;
     invalidate();
-  }, [debugRegions, heatCeiling, invalidate, mask, selectedSlug, weeklySetsBySlug]);
+  }, [debugRegions, heatCeiling, invalidate, materials, selectedSlug, theme, weeklySetsBySlug]);
 
   function handleClick(event: ThreeEvent<MouseEvent>): void {
-    if (event.delta > 6 || !(event.object instanceof THREE.Mesh)) return;
-    const localNormal = event.normal ?? event.face?.normal;
-    if (!localNormal) return;
-
+    if (event.delta > 6) return;
     event.stopPropagation();
-    const normal = localNormal.clone().transformDirection(event.object.matrixWorld);
-    const xn = event.point.x / frame.halfWidth;
-    const yn = (event.point.y - frame.feetY) / (frame.headY - frame.feetY);
-    const zn = event.point.z / frame.halfWidth;
-    const region = regionMaps.getRegionAt({ xn, zn, yn, nx: normal.x, nz: normal.z });
 
-    if (region > 0) onSelect(REGION_SLUGS[region] ?? null);
+    const region = event.object.userData.regionSlug as string | null | undefined;
+    if (!region) return;
+    // Until the data carries region numbers, a tap selects the whole group.
+    onSelect((region in weeklySetsBySlug ? region : muscleGroupOf(region)) as RegionSlug);
   }
 
   return (
     <group>
-      <primitive object={statue} onClick={handleClick} />
-      <mesh position={[0, frame.feetY + 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <primitive object={body.root} onClick={handleClick} />
+      <mesh position={[0, body.frame.feetY + 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[0.95, 48]} />
         <meshBasicMaterial
           blending={THREE.AdditiveBlending}
           color={RIM_CYAN}
           depthWrite={false}
           map={glowTexture}
-          opacity={0.4}
+          opacity={theme === "dark" ? 0.4 : 0}
           toneMapped={false}
           transparent
         />
