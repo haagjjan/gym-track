@@ -1,21 +1,30 @@
+/**
+ * The tour covers only what the screens don't already say: the core loop of
+ * logging a set, finishing (a two-tap confirm), and seeing that set show up
+ * in Progress and Volume. Starting a workout (the pulsing centre tab), opening
+ * History rows and editing a set explain themselves.
+ *
+ * Ids match the flags stored since the first tour (`demo_<id>_completed`).
+ */
 export const demoLessons = [
-  { id: "start", title: "Start a workout", path: "workout", instruction: "Use the Example full-body template to start an example workout." },
-  { id: "log", title: "Log a set", path: "session", instruction: "Select an exercise, add a set and enter weight, reps and RIR." },
-  { id: "finish", title: "Edit and finish", path: "session", instruction: "Open your saved set, change its weight, save, then finish the workout." },
-  { id: "history", title: "Find your log", path: "history", instruction: "Open a workout to inspect its recorded sets." },
-  { id: "progress", title: "Explore Progress", path: "progress", instruction: "Choose a lift, inspect a plotted day and change the time window." },
-  { id: "volume", title: "Explore Volume", path: "volume", instruction: "Select a trained muscle on the body or in All muscles to see its working sets." }
+  { id: "log", title: "Log a set", path: "session" },
+  { id: "finish", title: "Finish the workout", path: "session" },
+  { id: "progress", title: "Check your progress", path: "progress" },
+  { id: "volume", title: "See your muscle volume", path: "volume" }
 ] as const;
 export type DemoLessonId = typeof demoLessons[number]["id"];
 export function lessonFlag(id: DemoLessonId, skipped = false): string { return `demo_${id}_${skipped ? "skipped" : "completed"}`; }
 
+/** One short instruction for where the user is in the step right now. */
 export function currentInstruction(id: DemoLessonId, events: string[]): string {
-  if (id === "finish") return events.includes("edited") ? "Now tap Finish, then Confirm finish, to complete the example workout." : "Tap a saved set, change its weight and save the edit.";
-  if (id === "history") return events.includes("expanded") ? "Open a workout to inspect its recorded sets." : "Open a workout from the list to find its exercises and sets.";
-  if (id === "progress") {
-    if (!events.includes("selectedLift")) return "Choose a lift from the exercise list.";
-    if (!events.includes("inspectedPoint")) return "Tap a chart point, or use Inspect plotted day, to see its values.";
-    return "Change the time window above the chart to compare a different range.";
+  switch (id) {
+    case "log":
+      return events.includes("openedExercise") ? "Tap Add set, enter weight and reps, then save." : "Tap Barbell Bench Press to open it.";
+    case "finish":
+      return "Tap Finish workout at the bottom, then tap it again to confirm.";
+    case "progress":
+      return "Tap a day on the chart to see that session's best set.";
+    case "volume":
+      return "Tap a colored muscle to see how many sets it got.";
   }
-  return demoLessons.find((lesson) => lesson.id === id)!.instruction;
 }

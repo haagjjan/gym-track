@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import type { SessionExercise, SetInput, WorkoutDetail } from "../../shared/api/types";
 import { Button } from "../../shared/ui/button";
@@ -25,12 +24,11 @@ export function DemoSetPanel({ exercise, workout, onSave, onDelete }: {
     if (result.input) { onSave(result.input); close(); }
   }
   return <section>
-    <h2 className="text-title-2 text-text">{exercise.exercise.name}</h2>
-    <p className="mt-1 text-subhead text-text-secondary">Tap a saved set to edit it. Working sets contribute to the chart and muscle map.</p>
+    <h2 className="break-words text-title-2 text-text">{exercise.exercise.name}</h2>
+    <p className="mt-0.5 text-subhead text-text-secondary">{exercise.exercise.primaryMuscleGroups.map((muscle) => muscle.name).join(", ")}</p>
     <ul aria-label="Logged sets" className="mt-3 divide-y divide-line overflow-hidden rounded-[var(--radius-card)] bg-surface">{exercise.sets.map((set) => <SessionSetRow key={set.id} onEdit={() => { setEditingId(set.id); setAdding(false); }} set={set} workoutEndedAt={workout.endedAt} />)}</ul>
     {workout.isOpen ? <Button className="mt-3 w-full" onClick={() => { setDraft(suggestedDraft(exercise)); setAdding(true); setEditingId(null); }}>Add set</Button> : null}
     {adding || editing ? <SessionEditorDock label={editing ? "Edit set" : "New set"} onClose={close}>
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2"><p className="text-footnote text-accent">Example data, separate from your account</p><Link className="inline-flex min-h-11 items-center text-xs text-fg-muted" href="/">Exit example →</Link></div>
       {error ? <p className="mb-2 text-subhead text-danger" role="alert">{error}</p> : null}
       {editing ? <SetEditor isHistorical={!workout.isOpen} isSaving={false} isDeleting={false} set={editing} onClose={close} onError={setError}
         onSave={async (input) => onSave(input, editing.id)} onDelete={async () => onDelete(editing.id)} /> : <SetComposer guidance draft={draft} isSaving={false} onCancel={close} onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))} onSave={save} savedFlash={null} />}

@@ -34,8 +34,8 @@ export function DemoCopyTemplate(): ReactNode {
     } catch (caught) { setError(caught instanceof Error ? caught.message : errorMessage(caught, "Couldn't copy the template. Check your connection and try again.")); }
     finally { copyingRef.current = false; setCopying(false); }
   }
-  return <section className="rounded-[var(--radius-card)] bg-surface p-4"><h2 className="text-title-3 text-text">Ready for your own workout?</h2>
-    <p className="mt-2 text-body text-text-secondary">Keep the example exercise list if it suits you. Example weights and history are never copied.</p>
+  return <section className="rounded-[var(--radius-card)] bg-surface p-4"><h2 className="text-title-3 text-text">Your first real workout</h2>
+    <p className="mt-1 text-subhead text-text-secondary">Start empty, or keep the example&apos;s exercises as a template. Example weights and history are never copied.</p>
     <div className="mt-4 flex flex-col gap-2"><Button disabled={isPending} onClick={() => void start()}>Start my workout</Button><Button disabled={copying || copied} onClick={() => void copy()} variant="secondary">{copied ? "Template copied" : copying ? "Copying…" : "Copy example template"}</Button></div>
     {copied ? <p className="mt-3 text-body text-success" role="status">Exercise list copied. <Link className="underline" href={`/workouts/templates?template=${state.copiedTemplateId}`}>View saved template</Link></p> : null}
     {error || startError ? <p className="mt-3 text-body text-danger" role="alert">{error ?? startError}</p> : null}
