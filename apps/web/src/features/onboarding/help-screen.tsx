@@ -16,16 +16,16 @@ export function HelpScreen(): ReactNode {
   return <div className="mx-auto max-w-3xl space-y-8 px-4 py-4 lg:px-6">
     <header>
       <h1 className="text-title-1 text-text">Help</h1>
-      <p className="mt-2 text-body text-text-secondary">Learn by trying the controls. Example workouts stay separate from your account.</p>
+      <p className="mt-2 text-body text-text-secondary">Everything here uses example data. Your account isn&apos;t touched.</p>
     </header>
     {error ? <div className="rounded-[var(--radius-card)] bg-surface p-4" role="status"><p className="text-body text-text">{error}</p><Button className="mt-3" onClick={() => void retry()} size="compact" variant="secondary">Retry sync</Button></div> : null}
     <section className="rounded-[var(--radius-card)] bg-surface p-4">
-      <h2 className="text-title-3 text-text">Log a workout and follow it through</h2>
-      <p className="mt-1 text-body text-text-secondary">Log a set, edit it, finish, then look at History, Progress and Volume.</p>
-      <Link className={`${buttonClass("primary")} mt-4 w-full`} href="/help/demo">Try the example</Link>
+      <h2 className="text-title-3 text-text">Take the tour</h2>
+      <p className="mt-1 text-body text-text-secondary">Log a set in an example workout, finish it, and see it in Progress and Volume. About a minute.</p>
+      <Link className={`${buttonClass("primary")} mt-4 w-full`} href="/help/demo">Take the tour</Link>
     </section>
     <section>
-      <h2 className={groupTitle}>Pick a lesson</h2>
+      <h2 className={groupTitle}>Or try one step</h2>
       <ul className={listClass}>{demoLessons.map((lesson, index) => {
         const done = onboarding?.steps[lessonFlag(lesson.id)];
         const skipped = onboarding?.steps[lessonFlag(lesson.id, true)];

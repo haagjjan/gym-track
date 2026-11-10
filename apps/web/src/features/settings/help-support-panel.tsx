@@ -15,10 +15,10 @@ export function HelpSupportPanel({ supportUrl }: { supportUrl?: string | undefin
   return (
     <nav aria-label="Help and legal">
       <Group>
-        <SettingsLink href="/help">Help, tutorial & practice workout</SettingsLink>
-        <SettingsLink href="/support">Contact support & service status</SettingsLink>
-        <SettingsLink href="/privacy">Privacy notice & data rights</SettingsLink>
-        <SettingsLink href="/cookies">Cookie & device storage notice</SettingsLink>
+        <SettingsLink href="/help">Help and example workout</SettingsLink>
+        <SettingsLink href="/support">Contact support</SettingsLink>
+        <SettingsLink href="/privacy">Privacy notice</SettingsLink>
+        <SettingsLink href="/cookies">Cookies and storage</SettingsLink>
         <SettingsLink href="/terms">Terms</SettingsLink>
         {supportUrl ? (
           <a className={rowClass} href={supportUrl} rel="noreferrer" target="_blank">
