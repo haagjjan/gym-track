@@ -32,7 +32,6 @@ export function RestTimerPanel(): ReactNode {
         <>
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <p className="text-body text-text">Rest between sets</p>
               <p className="text-footnote text-text-secondary">
                 Starts after each set you save. Set it to 0 to turn the countdown off.
               </p>

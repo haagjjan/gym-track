@@ -41,7 +41,6 @@ export function MergeExercisesPanel(): ReactNode {
     <>
       <Group>
         <Row>
-          <p className="text-body text-text">Replace a duplicate exercise</p>
           <p className="text-footnote text-text-secondary">Swap a duplicate or misnamed exercise for the one you want to keep, in your workouts and templates. This can’t be undone.</p>
         </Row>
         <Row><ExercisePicker excludeId={target?.id ?? null} label="Duplicate to replace" onClear={() => setSource(null)} onSelect={(candidate) => { setSource(candidate); setResult(null); }} selected={source} /></Row>

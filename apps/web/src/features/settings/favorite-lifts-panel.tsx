@@ -42,8 +42,7 @@ export function FavoriteLiftsPanel(): ReactNode {
     <div className="space-y-2">
       <Group>
         <Row>
-          <p className="text-body text-text">Pinned lifts</p>
-          <p className="text-footnote text-text-secondary">Pin up to {MAX_FAVORITE_LIFTS} lifts for the progress panel on Home.</p>
+          <p className="text-footnote text-text-secondary">Pin up to {MAX_FAVORITE_LIFTS} lifts for Personal bests on Home.</p>
         </Row>
         {!isLoaded ? <Row><Skeleton className="h-11" /></Row> : (
           <>

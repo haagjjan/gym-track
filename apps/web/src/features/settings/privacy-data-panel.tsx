@@ -10,7 +10,8 @@ import { Group, Row, SwitchRow, inputClass, useSavedFlash, SavedStatus } from ".
 
 type Confirming = "clear" | "delete" | null;
 
-export function PrivacyDataPanel(): ReactNode {
+/** One part of privacy and data, each opened from its own Settings row. */
+export function PrivacyDataPanel({ section }: { section: "choices" | "download" | "delete" }): ReactNode {
   const router = useRouter();
   const { preferences, update, userId } = useDevicePrivacy();
   const [password, setPassword] = useState("");
@@ -67,7 +68,7 @@ export function PrivacyDataPanel(): ReactNode {
 
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
+      {section === "choices" ? <div className="space-y-2">
         <Group>
           <SwitchRow checked={preferences?.functionalStorageEnabled ?? false} disabled={!preferences} label="Save settings on this device" note="Remembers your body profile, pinned lifts and display choices here." onChange={(value) => void setPreference({ functionalStorageEnabled: value })} />
           <SwitchRow checked={preferences?.analyticsEnabled ?? false} disabled={!preferences} label="Share usage to improve the app" note="Linked to your account and kept for 90 days." onChange={(value) => void setPreference({ analyticsEnabled: value })} />
@@ -75,20 +76,18 @@ export function PrivacyDataPanel(): ReactNode {
           <Row><Button className="w-full" onClick={() => setConfirming("clear")} variant="destructive">Clear data on this device</Button></Row>
         </Group>
         <SavedStatus saved={saved} />
-      </div>
+      </div> : null}
 
-      <Group label="Download your data">
+      {section === "download" ? <Group label="Download your data">
         <Row>
-          <p className="text-body text-text">Download your data</p>
           <p className="text-footnote text-text-secondary">Get a JSON copy of your account data. Workout CSV export is in History. Enter your password to confirm it’s you.</p>
           <PasswordField onChange={setPassword} value={password} />
           <Button className="mt-3 w-full" disabled={!password} onClick={() => void exportAccount()} variant="secondary">Download account data</Button>
         </Row>
-      </Group>
+      </Group> : null}
 
-      <Group label="Delete your account">
+      {section === "delete" ? <Group label="Delete your account">
         <Row>
-          <p className="text-body text-text">Delete your account</p>
           <p className="text-footnote text-text-secondary">Access ends right away. Your account and workout data are deleted for good after seven days. Download your data first. You can cancel from the emailed link or by contacting support before then.</p>
           {!showDelete ? <Button className="mt-3 w-full" onClick={() => setShowDelete(true)} variant="destructive">Review account deletion</Button> : (
             <div className="mt-3">
@@ -100,7 +99,7 @@ export function PrivacyDataPanel(): ReactNode {
             </div>
           )}
         </Row>
-      </Group>
+      </Group> : null}
       {state ? <p className="px-4 text-footnote text-text-secondary" role="status">{state}</p> : null}
 
       <ConfirmDialog

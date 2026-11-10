@@ -75,10 +75,7 @@ export function HeatCeilingPanel(): ReactNode {
       <Group>
         <Row>
           <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0">
-              <p className="text-body text-text">Weekly sets for full color</p>
-              <p className="text-footnote text-text-secondary">How many sets in a week turn a muscle fully colored on the body map. Follows your account.</p>
-            </div>
+            <p className="min-w-0 text-footnote text-text-secondary">Weekly sets that turn a muscle fully colored on the body map. Saved to your account.</p>
             <label className="shrink-0"><span className="sr-only">Volume heat ceiling</span><input className={`${inputClass} num w-20 text-center`} inputMode="numeric" max={50} min={5} onBlur={() => void save()} onChange={(event) => change(Number(event.currentTarget.value))} type="number" value={value} /></label>
           </div>
           <input aria-label="Volume heat ceiling slider" className="mt-3 min-h-11 w-full accent-accent" max={50} min={5} onBlur={() => void save()} onChange={(event) => change(Number(event.currentTarget.value))} onPointerUp={() => void save()} step={1} type="range" value={value} />
