@@ -18,7 +18,7 @@ test("creates, filters, edits, and launches a workout template", async ({ page }
   await expect(page.getByRole("heading", { name: new RegExp(username, "i") })).toBeVisible();
   const onboarding = page.getByRole("region", { name: "Try the example" });
   await expect(onboarding).toBeVisible();
-  await onboarding.getByRole("button", { name: "Skip", exact: true }).click();
+  await onboarding.getByRole("button", { name: "Not now", exact: true }).click();
   await expect(onboarding).toHaveCount(0);
   const storageChoice = page.getByRole("dialog", { name: "Device storage choice" });
   await storageChoice.getByRole("button", { name: "Save settings on this device" }).click();

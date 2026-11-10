@@ -109,8 +109,8 @@ export function TemplatesScreen({ userId, initialTemplateId }: { userId: string;
             <li className="flex min-h-[3.75rem] items-center gap-2 py-2 pl-4 pr-2" data-testid="template-card" key={template.id}>
               <div className="min-w-0 flex-1">
                 <h2 className="truncate text-headline text-text">{template.name}</h2>
-                <p className="mt-0.5 truncate text-subhead text-text-secondary">
-                  <span className="num">{template.exercises.length}</span> {template.exercises.length === 1 ? "exercise" : "exercises"}, {template.lastUsedAt ? `last used ${formatDay(template.lastUsedAt)}` : "not used yet"}
+                <p className="mt-0.5 text-subhead text-text-secondary">
+                  <span className="num">{template.exercises.length}</span> {template.exercises.length === 1 ? "exercise" : "exercises"}, <span className="whitespace-nowrap">{template.lastUsedAt ? `last used ${formatDay(template.lastUsedAt)}` : "not used yet"}</span>
                 </p>
                 {template.exercises.length > 0 ? (
                   <p className="truncate text-footnote text-text-muted">{template.exercises.slice(0, 4).map((entry) => entry.exercise.name).join(", ")}</p>
