@@ -8,7 +8,7 @@ import { errorMessage } from "../../shared/api/client";
 import type { SessionExercise } from "../../shared/api/types";
 import { formatCompactNumber } from "../../shared/format";
 
-export interface SessionTotals { sets: number; workingSets: number; volume: number }
+export interface SessionTotals { timeExercises?: number; cardioEntries?: number; sets: number; workingSets: number; volume: number }
 
 export function resolveActiveExercise(
   exercises: SessionExercise[],
