@@ -16,6 +16,7 @@ import { Sheet } from "../../shared/ui/sheet";
 import { DisplayPanel } from "./display-panel";
 import { FavoriteLiftsPanel } from "./favorite-lifts-panel";
 import { HeatCeilingPanel } from "./heat-ceiling-panel";
+import { BodyCredits } from "./body-credits";
 import { HelpSupportPanel } from "./help-support-panel";
 import { MergeExercisesPanel } from "./merge-exercises-panel";
 import { PrivacyDataPanel } from "./privacy-data-panel";
@@ -80,6 +81,7 @@ export function SettingsScreen({ supportUrl, user }: { supportUrl?: string | und
 
       <Section title="Help and legal">
         <HelpSupportPanel supportUrl={supportUrl} />
+        <Group><SheetRow label="Credits"><BodyCredits /></SheetRow></Group>
       </Section>
 
       <Group>
