@@ -49,6 +49,7 @@ export interface ExerciseService {
 }
 
 interface ExerciseServiceOptions {
+  extendedTracking?: boolean;
   repository: ExerciseRepository;
   now?: () => Date;
 }
@@ -113,17 +114,17 @@ export function createExerciseService(options: ExerciseServiceOptions): Exercise
       return result.items.map(toExerciseShape);
     },
     createExercise: (userId, input) =>
-      createExerciseMutation({ repository: options.repository, now }, userId, input),
+      createExerciseMutation({ repository: options.repository, now, extendedTracking: options.extendedTracking ?? false }, userId, input),
     updateExercise: (userId, exerciseId, input) =>
       updateExerciseMutation(
-        { repository: options.repository, now },
+        { repository: options.repository, now, extendedTracking: options.extendedTracking ?? false },
         userId,
         exerciseId,
         input
       ),
     mergeExercises: (userId, sourceExerciseId, input) =>
       mergeExercisesMutation(
-        { repository: options.repository, now },
+        { repository: options.repository, now, extendedTracking: options.extendedTracking ?? false },
         userId,
         sourceExerciseId,
         input

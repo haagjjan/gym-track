@@ -23,14 +23,19 @@ A short handoff for someone (or a model) who can't look around the repository. L
 
   The owner commits each step; check `git status` for what is still uncommitted.
 
-The active implementation plan is `~/.agents/plans/gym-next-features.md`. The current
-worktree continues Batch B without commits. Home and Volume use the local GLB, shared
-lighting and a simple pedestal; the old room, FBX and SVG projection runtime are removed.
-Vertical Volume swipes use native scrolling. Settings → Credits names the anatomy source.
-Batch C is implemented, uncommitted, in `../gym-progress-tracker-set-types` on
-`next/c-set-types`: time sets, cardio, CSV and progress, off by default behind
-`ENABLE_EXTENDED_TRACKING`. It has not shipped. Offline sync is a proposed ADR,
-not a built client. See that worktree’s `docs/next-tracking-verification.md`.
+The execution record is `~/.agents/plans/gym-next-features.md`. Branch `next/b-body` now
+holds all of backlog items 1–7, committed (2026-11-13):
+
+- Home and Volume use the local GLB, shared lighting and a simple pedestal; the old room,
+  FBX and SVG projection runtime are removed. Vertical Volume swipes use native scrolling.
+  Settings → Credits names the anatomy source.
+- `next/c-set-types` is merged in: time sets, cardio, CSV and progress, off by default
+  behind `ENABLE_EXTENDED_TRACKING`. Setup and gates are in
+  [next-tracking-verification.md](next-tracking-verification.md).
+- Sets accept 0 kg for bodyweight work, and History links to Templates and Exercises.
+
+None of this has shipped. Offline sync is a proposed ADR (0025), not a built client; ADRs
+0026 and 0027 are proposed too.
 
 ## What the product does
 
@@ -50,8 +55,8 @@ The UX rework is done (signed off 2026-11-09). The owner's list for what comes n
 3. Progress chart: enlarge the plot inside the existing card (implemented on `next/a-ui`).
 4. Shared rigged body model and simple pedestal: runtime implemented on `next/b-body`; final anatomy and device verification remain open.
 5. Twenty muscle regions, catalog mapping and per-region volume are implemented; chest/lat picking has a mobile browser regression test.
-6. Time sets, timer, progress and CSV implemented in the separate C worktree; flag defaults off.
-7. Cardio duration, distance, pace and optional heart rate implemented in C; excluded from muscle volume.
+6. Time sets, timer, progress and CSV implemented merged from `next/c-set-types`; flag defaults off.
+7. Cardio duration, distance, pace and optional heart rate implemented, same flag; excluded from muscle volume.
 8. Publishing the mobile app: Capacitor per ADR 0021, starting with the token-auth,
    static-export and offline-sync ADRs and a spike on real phones.
 9. Testing: real-device checks plus wider automated coverage.

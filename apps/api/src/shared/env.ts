@@ -36,6 +36,7 @@ const rawEnvSchema = z.object({
   EMAIL_FROM: optionalEnvironmentValue(senderSchema),
   EMAIL_RECIPIENT_ALLOWLIST: optionalEnvironmentValue(emailRecipientAllowlistSchema),
   LOG_LEVEL: logLevelSchema.default("info"),
+  ENABLE_EXTENDED_TRACKING: z.enum(["true", "false"]).default("false"),
   METRICS_ENABLED: z.enum(["true", "false"]).optional(),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   REGISTRATION_MODE: z.enum(["ENABLED", "DISABLED"]).optional(),
@@ -134,6 +135,7 @@ const envSchema = rawEnvSchema
         ? env.NODE_ENV === "production"
         : env.AUTH_COOKIE_SECURE === "true",
     EMAIL_FROM: env.EMAIL_FROM ?? "Gym Progress Tracker <onboarding@resend.dev>",
+    ENABLE_EXTENDED_TRACKING: env.ENABLE_EXTENDED_TRACKING === "true",
     METRICS_ENABLED: env.METRICS_ENABLED === "true",
     REGISTRATION_MODE:
       env.REGISTRATION_MODE ?? (env.NODE_ENV === "production" ? "DISABLED" : "ENABLED")

@@ -22,6 +22,7 @@ export interface MuscleGroupRecord {
 }
 
 export interface ExerciseRecord {
+  trackingMode?: "reps" | "time";
   id: string;
   name: string;
   equipment: string | null;
@@ -54,6 +55,7 @@ export interface ExerciseListFilters {
 }
 
 export interface NewExercise {
+  trackingMode?: "reps" | "time";
   id: string;
   name: string;
   equipment: string | null;
@@ -182,6 +184,7 @@ export function createExerciseRepository(db: Kysely<AppDatabase>): ExerciseRepos
               equipment: input.equipment,
               exercise_type: input.exerciseType,
               primary_muscle_group_id: input.primaryMuscleGroupIds[0]!,
+              tracking_mode: input.trackingMode ?? "reps",
               created_by_user_id: input.createdByUserId
             })
             .returning("id")

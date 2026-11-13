@@ -51,6 +51,7 @@ export async function findSelectableExercise(
     ])
     .where("exercises.id", "=", exerciseId)
     .where("exercises.deleted_at", "is", null)
+    .where("exercises.tracking_mode", "=", "reps")
     .executeTakeFirst();
 
   return row

@@ -15,7 +15,7 @@ export default async function ProgressPage(): Promise<ReactNode> {
 
   return (
     <AppShell user={user}>
-      <ProgressScreen />
+      <ProgressScreen extendedTracking={process.env.ENABLE_EXTENDED_TRACKING === "true"} />
     </AppShell>
   );
 }

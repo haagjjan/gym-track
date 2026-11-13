@@ -1,5 +1,9 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
+import { apiFetch } from "../../shared/api/client";
+import type { TrackingPayload } from "../tracking/tracking-types";
+import { WorkoutTracking } from "../tracking/workout-tracking";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ConfirmDialog } from "../../shared/ui/confirm-dialog";
@@ -21,10 +25,12 @@ import { useSessionSetLogging } from "./use-session-set-logging";
 import { useOnboarding } from "../onboarding/use-onboarding";
 
 export function SessionScreen({
+  extendedTracking = false,
   focusName = false,
   userId,
   workoutId
 }: {
+  extendedTracking?: boolean;
   focusName?: boolean;
   userId: string;
   workoutId: string;
@@ -45,7 +51,16 @@ export function SessionScreen({
   const workout = workoutQuery.data ?? null;
   const exercises = useMemo(() => workout?.exercises ?? [], [workout]);
   const activeExercise = resolveActiveExercise(exercises, activeExerciseId);
-  const totals = useMemo(() => calculateSessionTotals(exercises), [exercises]);
+  const tracking = useQuery({ queryKey: ["tracking", workoutId], enabled: extendedTracking,
+    queryFn: () => apiFetch<TrackingPayload>(`/api/tracking/workouts/${workoutId}`) });
+  const totals = useMemo(() => {
+    const total = calculateSessionTotals(exercises);
+    if (!extendedTracking || !tracking.data) return total;
+    return { ...total, sets: total.sets + tracking.data.timedSets.length,
+      workingSets: total.workingSets + tracking.data.timedSets.filter((entry) => entry.setType === "working").length,
+      timeExercises: new Set(tracking.data.timedSets.map((entry) => entry.exerciseId)).size,
+      cardioEntries: tracking.data.cardioEntries.length };
+  }, [exercises, extendedTracking, tracking.data]);
 
   // While logging, remember the open exercise for this browser session, so
   // leaving for the Progress shortcut (or a reload) comes back to it. A
@@ -212,10 +227,11 @@ export function SessionScreen({
             )}
           </div>
 
+          {extendedTracking ? <WorkoutTracking workoutId={workoutId} /> : null}
           {!isOpen ? <SessionCompletionFooter workout={workout} /> : null}
         </div>
 
-        {isOpen ? <SessionStats exercises={exercises.length} totals={totals} /> : null}
+        {isOpen ? <SessionStats exercises={exercises.length + (totals.timeExercises ?? 0)} totals={totals} /> : null}
       </main>
 
       {isOpen ? (

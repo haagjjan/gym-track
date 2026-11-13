@@ -174,6 +174,8 @@ export function useWorkoutMutations(): WorkoutMutations {
     void queryClient.invalidateQueries({ queryKey: ["exercise-summary"] });
     void queryClient.invalidateQueries({ queryKey: ["exercise-progress"] });
     void queryClient.invalidateQueries({ queryKey: ["weekly-volume"] });
+    void queryClient.invalidateQueries({ queryKey: ["tracking"] });
+    void queryClient.invalidateQueries({ queryKey: ["tracking-progress"] });
   };
 
   const createWorkout = useMutation({
@@ -253,6 +255,8 @@ export function useMergeExercises(): UseMutationResult<
       void queryClient.invalidateQueries({ queryKey: ["exercise-summary"] });
       void queryClient.invalidateQueries({ queryKey: ["exercise-progress"] });
       void queryClient.invalidateQueries({ queryKey: ["weekly-volume"] });
+    void queryClient.invalidateQueries({ queryKey: ["tracking"] });
+    void queryClient.invalidateQueries({ queryKey: ["tracking-progress"] });
       void queryClient.invalidateQueries({ queryKey: ["workouts"] });
       void queryClient.invalidateQueries({ queryKey: ["workouts-infinite"] });
       void queryClient.invalidateQueries({ queryKey: ["workout"] });

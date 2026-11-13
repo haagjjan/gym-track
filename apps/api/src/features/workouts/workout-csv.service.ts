@@ -1,3 +1,4 @@
+import { TimeExerciseCsvError } from "./workout-csv-errors.js";
 import {
   parseWorkoutCsv,
   unparseWorkoutCsv,
@@ -64,6 +65,11 @@ export function createWorkoutCsvService(options: WorkoutCsvServiceOptions): Work
       return { ok: false, errors: parsed.errors };
     }
 
+    const timeNames = new Set((await options.repository.listTimeExerciseNames?.() ?? []).map((name) => name.toLowerCase()));
+    const timeErrors = parsed.workouts.flatMap((workout) => workout.exercises)
+      .filter((exercise) => timeNames.has(exercise.name.toLowerCase()))
+      .map((exercise) => ({ row: exercise.row, field: "exercise_name", message: "This exercise records time. Use the time/cardio CSV." }));
+    if (timeErrors.length) return { ok: false, errors: timeErrors };
     const muscleGroupErrors = await findMuscleGroupErrors(options.repository, parsed.workouts);
 
     if (muscleGroupErrors.length > 0) {
@@ -114,7 +120,11 @@ export function createWorkoutCsvService(options: WorkoutCsvServiceOptions): Work
         return { ok: false, errors: parsed.errors };
       }
 
-      await options.repository.importWorkouts(userId, parsed.workouts, now());
+      try { await options.repository.importWorkouts(userId, parsed.workouts, now()); }
+      catch (error) {
+        if (error instanceof TimeExerciseCsvError) return { ok: false, errors: [{ row: error.row, field: "exercise_name", message: error.message }] };
+        throw error;
+      }
 
       return {
         ok: true,

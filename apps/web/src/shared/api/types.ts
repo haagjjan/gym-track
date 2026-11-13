@@ -9,6 +9,7 @@ export interface ExerciseMuscleGroup extends MuscleGroup {
 }
 
 export interface Exercise {
+  trackingMode?: "time";
   id: string;
   name: string;
   equipment: string | null;
@@ -58,6 +59,7 @@ export interface SessionExercise {
 }
 
 export interface WorkoutSummary {
+  cardioEntries?: number;
   id: string;
   title: string | null;
   workoutType: string | null;

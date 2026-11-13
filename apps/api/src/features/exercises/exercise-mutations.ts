@@ -14,6 +14,7 @@ import type {
 import { toExerciseShape, type ExerciseShape } from "./exercise-shapes.js";
 
 interface ExerciseMutationContext {
+  extendedTracking?: boolean;
   repository: ExerciseRepository;
   now: () => Date;
 }
@@ -23,11 +24,13 @@ export async function createExerciseMutation(
   userId: string,
   input: CreateExerciseRequest
 ): Promise<ExerciseResult<ExerciseShape>> {
+  if (input.trackingMode === "time" && !context.extendedTracking) return { ok: false, reason: "exercise_forbidden" };
   const evaluation = evaluateExerciseName(input.name);
   const nameFailure = reviewName(evaluation, input.confirmNameWarning ?? false);
   if (nameFailure) return nameFailure;
 
   const existing = await context.repository.findExerciseByName(evaluation.normalizedName);
+  if (input.trackingMode === "time" && existing) return { ok: false, reason: "name_conflict" };
   if (existing?.deletedAt === null) return { ok: false, reason: "name_conflict" };
 
   if (!(await muscleGroupsExist(context.repository, input))) {
@@ -57,6 +60,7 @@ export async function updateExerciseMutation(
 ): Promise<ExerciseResult<ExerciseShape>> {
   const existing = await context.repository.findActiveExerciseById(exerciseId);
   if (!existing) return { ok: false, reason: "exercise_not_found" };
+  if (existing.trackingMode === "time" && !context.extendedTracking) return { ok: false, reason: "exercise_forbidden" };
   if (existing.createdByUserId !== userId) return { ok: false, reason: "exercise_forbidden" };
 
   const evaluation = evaluateExerciseName(input.name);
@@ -95,6 +99,7 @@ export async function mergeExercisesMutation(
     context.repository.findActiveExerciseById(input.targetExerciseId)
   ]);
   if (!source || !target) return { ok: false, reason: "exercise_not_found" };
+  if (source.trackingMode === "time" || target.trackingMode === "time") return { ok: false, reason: "exercise_forbidden" };
 
   const merged = await context.repository.mergeExerciseHistory(
     userId,
@@ -149,6 +154,7 @@ function toNewExercise(
     exerciseType: input.exerciseType ?? null,
     primaryMuscleGroupIds: input.primaryMuscleGroupIds,
     secondaryMuscleGroupIds: input.secondaryMuscleGroupIds,
+    trackingMode: input.trackingMode ?? "reps",
     createdByUserId: userId
   };
 }

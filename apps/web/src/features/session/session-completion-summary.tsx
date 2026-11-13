@@ -90,10 +90,11 @@ export function CompletedWorkoutSummary({ totals, workout, example = false, onEd
         ) : (
           <StatTile label="Duration" value={duration} />
         )}
-        <StatTile label="Exercises" value={workout.exercises.length} />
+        <StatTile label="Exercises" value={workout.exercises.length + (totals.timeExercises ?? 0)} />
         <StatTile label="Sets" value={totals.sets} />
         <StatTile label="Volume" unit="kg" value={formatCompactNumber(totals.volume)} />
       </dl>
+      {totals.cardioEntries ? <p className="mt-3 text-subhead text-text-secondary">{totals.cardioEntries} cardio {totals.cardioEntries === 1 ? "entry" : "entries"} logged.</p> : null}
     </section>
   );
 }

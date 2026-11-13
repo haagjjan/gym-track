@@ -1,5 +1,6 @@
 "use client";
 
+import { TrackingCsvPanel } from "../tracking/tracking-csv-panel";
 import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Button, buttonClass } from "../../shared/ui/button";
@@ -21,7 +22,7 @@ const historySortOptions = [
 ];
 const historySortValues = ["newest", "oldest", "name"] as const;
 
-export function HistoryScreen({ userId }: { userId: string }): ReactNode {
+export function HistoryScreen({ userId, extendedTracking = false }: { userId: string; extendedTracking?: boolean }): ReactNode {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const { clear, filters, setFilters, setSort, sort } = usePersistentFilters({
@@ -94,6 +95,7 @@ export function HistoryScreen({ userId }: { userId: string }): ReactNode {
               <ul className="divide-y divide-line overflow-hidden rounded-[var(--radius-card)] bg-surface">
                 {group.items.map((workout) => (
                   <HistoryRow
+                    extendedTracking={extendedTracking}
                     isExpanded={expandedId === workout.id}
                     key={workout.id}
                     onToggle={() => setExpandedId((current) => (current === workout.id ? null : workout.id))}
@@ -112,6 +114,7 @@ export function HistoryScreen({ userId }: { userId: string }): ReactNode {
         </Button>
       ) : null}
       <CsvPanel onImported={() => void workouts.refetch()} />
+      {extendedTracking ? <TrackingCsvPanel /> : null}
     </div>
   );
 }
