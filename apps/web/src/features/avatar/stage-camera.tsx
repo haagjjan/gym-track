@@ -5,14 +5,14 @@ import { useEffect, type ReactNode } from "react";
 import * as THREE from "three";
 
 /** Ambient render cap — display refresh (120Hz+) buys nothing here but heat. */
-const MAX_FPS = 60;
-export const BASE_CAMERA_HEIGHT = 1.62;
-export const BASE_CAMERA_Z = 4.35;
+const MAX_FPS = 30;
+export const BASE_CAMERA_HEIGHT = 1.5;
+export const BASE_CAMERA_Z = 3.65;
 /** Pull-back ceiling: beyond this the figure drowns in the bay fog (starts at 9). */
 const MAX_CAMERA_Z = 6.5;
-const LOOK_TARGET = new THREE.Vector3(0, 1.05, 0);
+const LOOK_TARGET = new THREE.Vector3(0, 1.25, 0);
 /** World half-width (arms included) that must stay in frame at any aspect. */
-const FRAME_HALF_WIDTH = 0.9;
+const FRAME_HALF_WIDTH = 0.62;
 
 /**
  * Aspect-aware framing: the base distance is tuned for the wide desktop

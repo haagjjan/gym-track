@@ -9,14 +9,14 @@ export interface VolumeOrbitPolicy {
   hint: string;
   /** Phones: TouchRotate splits each touch into rotate (sideways) or page scroll (vertical). */
   touchRotate: boolean;
-  touchAction: "none";
+  touchAction: "none" | "pan-y";
 }
 
 const COARSE_POLICY: VolumeOrbitPolicy = {
   enableZoom: false,
   hint: "Swipe sideways to rotate the figure.",
   touchRotate: true,
-  touchAction: "none"
+  touchAction: "pan-y"
 };
 
 const FINE_POLICY: VolumeOrbitPolicy = {

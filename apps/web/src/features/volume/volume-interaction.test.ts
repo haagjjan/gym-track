@@ -8,7 +8,7 @@ describe("volume body-map pointer policy", () => {
       enableZoom: false,
       hint: "Swipe sideways to rotate the figure.",
       touchRotate: true,
-      touchAction: "none"
+      touchAction: "pan-y"
     });
   });
 

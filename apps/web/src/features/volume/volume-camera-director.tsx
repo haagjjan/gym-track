@@ -8,7 +8,7 @@ import { muscleGroupOf } from "./muscle-regions";
 
 export const ORBIT_TARGET = new THREE.Vector3(0, 1.27, 0);
 // Fills the shorter phone stage: feet near the bottom edge, crown near the top.
-export const DEFAULT_RADIUS = 2.9;
+export const DEFAULT_RADIUS = 3.35;
 const FOCUS_RADIUS = 2.1;
 const FOCUS_DAMP = 3;
 

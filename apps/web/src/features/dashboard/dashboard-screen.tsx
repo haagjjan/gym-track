@@ -15,7 +15,6 @@ import {
 import type { AuthUser } from "../auth/auth-types";
 import type { ExerciseSummaryPayload } from "../../shared/api/types";
 import { formatDayTime, formatCompactNumber } from "../../shared/format";
-import { BayAmbience } from "../avatar/bay-ambience";
 import { useStartSession } from "../session/use-start-session";
 import { HomeHeaderActions } from "../shell/home-header-actions";
 import {
@@ -178,9 +177,7 @@ export function DashboardScreen({ user }: { user: AuthUser }): ReactNode {
           <section aria-labelledby="week-title">
             <h2 className="mb-2 px-1 text-title-3 text-text" id="week-title">This week</h2>
             <div className="overflow-hidden rounded-[var(--radius-card)] bg-surface">
-              {/* Dark stage in both themes. Ambience and canvas stay inside this card. */}
-              <div className="relative isolate h-60 overflow-hidden bg-stage">
-                <BayAmbience contained />
+              <div className="home-stage relative isolate h-60 overflow-hidden">
                 <div className="relative z-10 h-full">
                   <AvatarStage autoSpin={displaySettings.autoSpin} readiness={systemCharge} />
                 </div>

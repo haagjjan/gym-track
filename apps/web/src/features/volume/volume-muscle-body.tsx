@@ -4,7 +4,6 @@ import { useThree, type ThreeEvent } from "@react-three/fiber";
 import { useEffect, useMemo, type ReactNode } from "react";
 import * as THREE from "three";
 import { useBodyModel, type BodyPartKind } from "../avatar/body-model";
-import { createRadialGlowTexture } from "../avatar/bay-textures";
 import { RIM_CYAN } from "../avatar/statue-core";
 import { HEAT_STAGE_COLORS, heatBucket, type FigureFrame } from "./heatmap";
 import { dataSlugOf, MUSCLE_REGIONS } from "./muscle-regions";
@@ -43,7 +42,6 @@ export function VolumeMuscleBody({
 }): ReactNode {
   const body = useBodyModel();
   const invalidate = useThree((state) => state.invalidate);
-  const glowTexture = useMemo(createRadialGlowTexture, []);
 
   // One material per region (shared by its left and right mesh) and per neutral part.
   const materials = useMemo(() => {
@@ -108,21 +106,5 @@ export function VolumeMuscleBody({
     onSelect(dataSlugOf(region, byRegion));
   }
 
-  return (
-    <group>
-      <primitive object={body.root} onClick={handleClick} />
-      <mesh position={[0, body.frame.feetY + 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[0.95, 48]} />
-        <meshBasicMaterial
-          blending={THREE.AdditiveBlending}
-          color={RIM_CYAN}
-          depthWrite={false}
-          map={glowTexture}
-          opacity={theme === "dark" ? 0.4 : 0}
-          toneMapped={false}
-          transparent
-        />
-      </mesh>
-    </group>
-  );
+  return <primitive object={body.root} dispose={null} onClick={handleClick} />;
 }

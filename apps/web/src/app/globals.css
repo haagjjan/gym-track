@@ -256,3 +256,9 @@
     animation: session-mode-back 200ms var(--ease-enter);
   }
 }
+
+.home-stage { --home-stage: var(--stage); background: var(--home-stage); }
+[data-theme="light"] .home-stage { --home-stage: var(--bg); }
+
+/* OrbitControls resets inline touch-action during reconnects. Keep native page pans. */
+.volume-touch-stage, .volume-touch-stage canvas { touch-action: pan-y !important; }

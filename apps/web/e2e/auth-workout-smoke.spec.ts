@@ -389,7 +389,7 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
 });
 
 /**
- * The dashboard boots its 3D avatar on the client: a dynamic chunk, a 1 MB FBX
+ * The dashboard boots its 3D avatar on the client: a dynamic chunk, a local rigged GLB
  * parse, then WebGL program links. On CI's software rasterizer that bootstrap
  * blocks the renderer main thread for several seconds, and an assertion issued
  * inside that window burns its whole timeout without the browser ever answering

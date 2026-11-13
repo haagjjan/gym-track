@@ -1,7 +1,7 @@
 "use client";
 
 import { useGLTF } from "@react-three/drei";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 
@@ -12,7 +12,7 @@ import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js
  * from BodyParts3D by tools/body-model (see its README for the licence and
  * credit). Meshopt-compressed; the decoder ships with three.
  */
-export const BODY_MODEL_URL = "/models/body/body.glb";
+export const BODY_MODEL_URL = "/models/body/body.glb?v=69f50e7da941";
 
 /** World height of the figure, feet to crown, and where the feet stand. */
 export const BODY_HEIGHT = 1.66;
@@ -49,7 +49,7 @@ function partOf(mesh: THREE.Mesh): BodyPart {
 export function useBodyModel(): BodyModel {
   const gltf = useGLTF(BODY_MODEL_URL, false, true);
 
-  return useMemo(() => {
+  const body = useMemo(() => {
     // Skinned meshes need their own skeleton per copy; a plain clone would share bones.
     const figure = cloneSkinned(gltf.scene);
     const size = new THREE.Box3().setFromObject(figure).getSize(new THREE.Vector3());
@@ -77,6 +77,14 @@ export function useBodyModel(): BodyModel {
       root
     };
   }, [gltf]);
-}
 
-useGLTF.preload(BODY_MODEL_URL, false, true);
+  useEffect(() => () => {
+    const skeletons = new Set<THREE.Skeleton>();
+    for (const part of body.parts) {
+      if (part.mesh instanceof THREE.SkinnedMesh) skeletons.add(part.mesh.skeleton);
+    }
+    skeletons.forEach((skeleton) => skeleton.dispose());
+  }, [body]);
+
+  return body;
+}

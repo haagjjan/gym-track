@@ -4,8 +4,8 @@ import { Canvas } from "@react-three/fiber";
 import { Suspense, useEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 import { CanvasEdgeFade } from "./bay-ambience";
-import { HologramBay } from "./hologram-bay";
-import { PEDESTAL_RADIUS, PEDESTAL_TOP_Y } from "./pedestal";
+import { BodyLighting, BodyPedestal, PEDESTAL_RADIUS, PEDESTAL_TOP_Y } from "./scene-kit";
+import { HomeBody } from "./home-body";
 import { PrBurst } from "./pr-burst";
 import {
   BASE_CAMERA_HEIGHT,
@@ -21,13 +21,13 @@ import {
   type SpinState,
   type StageState
 } from "./stage-driver";
-import { createStatueMaterial, RIM_CYAN, Statue } from "./statue-core";
+import { createStatueMaterial, RIM_CYAN } from "./statue-core";
 import { useAvatarSceneSupport, useFrameloopGovernor } from "./use-avatar-scene";
-import { STAGE_COLOR } from "../shell/theme";
+import { STAGE_COLOR, THEME_BACKGROUND } from "../shell/theme";
 import { useResolvedTheme } from "../shell/use-resolved-theme";
 
 /**
- * The FBX faces +x while the camera looks down −z, so untouched the camera
+ * The shared figure faces +x while the camera looks down −z, so untouched the camera
  * sees the figure's right side. −90° turns the front to the camera; the ~12°
  * offset keeps the pose reading as 3D instead of a flat mugshot.
  */
@@ -46,17 +46,7 @@ export interface AvatarStageProps {
   autoSpin?: boolean;
 }
 
-/**
- * Reusable dashboard avatar: static trophy statue on its sculpted pedestal,
- * slow turntable, data-reactive rim glow, standing in the shared hologram bay.
- * Render inside a sized container — the canvas is bounded on purpose; camera
- * framing is tuned for this container's aspect, and the page continues the
- * environment via static CSS (BayAmbience), not a bigger canvas.
- *
- * No postprocessing: the glow look is faked with emissive materials and
- * additive sprites (doc 14 REWORK — bloom was a thermal contributor).
- * Scene availability/reduced-motion reuse the doc-09 Home-avatar mechanism.
- */
+/** Shared local body on a quiet stage; rendering pauses when offscreen. */
 export function AvatarStage({
   readiness,
   pulseSignal = 0,
@@ -86,6 +76,8 @@ export function AvatarStage({
     []
   );
 
+  useEffect(() => () => { statue.material.dispose(); ringMaterial.dispose(); }, [ringMaterial, statue]);
+
   useEffect(() => {
     stateRef.current.readiness = readiness;
   }, [readiness]);
@@ -98,7 +90,7 @@ export function AvatarStage({
   }, [pulseSignal]);
 
   return (
-    <div className="relative h-full w-full" ref={hostRef}>
+    <div className="home-stage relative h-full w-full" ref={hostRef}>
       {support === "unavailable" ? (
         <StaticStageFallback />
       ) : support === "ready" ? (
@@ -112,8 +104,8 @@ export function AvatarStage({
             // with the buffer. Rendering below CSS resolution there keeps the
             // scene live (never gated off) at a fraction of the fill cost.
             dpr={softwareRasterized ? SOFTWARE_DPR : [1, 1.5]}
-            // Ambient rendering is capped at MAX_FPS: the loop runs on demand
-            // and FrameRateCap invalidates at most 60×/s while visible.
+            // Ambient rendering runs at 30 fps while visible.
+            flat
             frameloop={frameloop === "always" ? "demand" : frameloop}
             gl={{ antialias: true, powerPreference: "high-performance" }}
             // Fixed camera aimed once at init (no controls own it), before any
@@ -123,30 +115,14 @@ export function AvatarStage({
               fitStageCamera(camera, size.width / Math.max(size.height, 1))
             }
           >
-            <color attach="background" args={[STAGE_COLOR[theme]]} />
-            <fog attach="fog" args={[STAGE_COLOR[theme], 9, 22]} />
-
-            <ambientLight color="#22343c" intensity={0.45} />
-            <directionalLight color="#d8f7fa" intensity={1.6} position={[3.5, 4.5, 2.5]} />
-            <directionalLight color="#d9b9ff" intensity={0.7} position={[-3, 2.5, -3.5]} />
-
-            <HologramBay
-              reducedMotion={reducedMotion}
-              softwareRasterized={softwareRasterized}
-              theme={theme}
-            />
+            <color attach="background" args={[theme === "light" ? THEME_BACKGROUND.light : STAGE_COLOR.dark]} />
+            <BodyLighting theme={theme} />
+            <BodyPedestal theme={theme} />
 
             <Suspense fallback={null}>
-              {/* Only the FIGURE rides the turntable. The FBX's fused pedestal
-                  is not rendered at all anymore — its split geometry kept sole
-                  slices of the feet that ghosted in place while the figure
-                  turned; the bay's standalone pedestal replaces it. The 4mm lift
-                  keeps the sole cut line inside the pad's projector glow. */}
-              <group position={[0, 0.004, 0]} ref={turntableRef} rotation={[0, INITIAL_YAW, 0]}>
-                <Statue material={statue.material} part="figure" />
+              <group ref={turntableRef} rotation={[0, INITIAL_YAW, 0]}>
+                <HomeBody material={statue.material} theme={theme} />
               </group>
-              {/* Readiness ring rides the pedestal's standing surface, just
-                  outside the figure's feet, hugging the projector glow. */}
               <mesh
                 material={ringMaterial}
                 position={[0, PEDESTAL_TOP_Y + 0.006, 0]}
@@ -156,7 +132,7 @@ export function AvatarStage({
                   args={[PEDESTAL_RADIUS * 0.28, PEDESTAL_RADIUS * 0.34, 96]}
                 />
               </mesh>
-              <PrBurst stateRef={stateRef} />
+              {!reducedMotion ? <PrBurst stateRef={stateRef} /> : null}
             </Suspense>
 
             <CameraRig />

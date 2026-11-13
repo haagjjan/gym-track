@@ -1,11 +1,5 @@
 import { expect, test, type CDPSession } from "@playwright/test";
 
-test.use({
-  hasTouch: true,
-  isMobile: true,
-  viewport: { height: 900, width: 390 }
-});
-
 // A phone: touch, coarse pointer, and short enough that a new account's
 // Volume page (no data, compact stage) still has room to scroll.
 test.use({ hasTouch: true, isMobile: true, viewport: { height: 640, width: 390 } });
@@ -20,14 +14,18 @@ test("lets a mobile swipe scroll from the 3D Volume figure while sideways drag s
   await page.getByLabel(/Email address/i).fill(`volume_${tag}@example.com`);
   await page.getByLabel(/^Username$/i).fill(username);
   await page.getByLabel(/^Password \(at least 10 characters\)$/i).fill("volume-passphrase-1");
-  await page.getByRole("button", { name: "CREATE ACCOUNT" }).click();
+  await page.getByLabel(/at least 18 and live in Switzerland/i).check();
+  await page.getByLabel(/I accept the Terms/i).check();
+  await page.getByRole("button", { name: "Create account", exact: true }).click();
   await expect(page.getByRole("heading", { name: new RegExp(username, "i") })).toBeVisible();
 
+  await page.getByRole("button", { name: "Not now", exact: true }).click();
+  await page.getByRole("button", { name: "Save settings on this device" }).click();
   await page.goto("/weekly-volume");
   const canvas = page.locator("canvas").first();
   await expect(canvas).toBeVisible();
-  // The canvas owns every touch and scrolls the page itself on vertical swipes.
-  await expect.poll(() => canvas.evaluate((element) => getComputedStyle(element).touchAction)).toBe("none");
+  // Native vertical scrolling keeps browser momentum and cancellation.
+  await expect.poll(() => canvas.evaluate((element) => getComputedStyle(element).touchAction)).toBe("pan-y");
 
   const client = await page.context().newCDPSession(page);
   const initialBox = await canvas.boundingBox();
@@ -55,6 +53,35 @@ test("lets a mobile swipe scroll from the 3D Volume figure while sideways drag s
 
   expect(Math.abs(orbitScrollAfter - orbitScrollBefore)).toBeLessThan(8);
   expect(imageAfter.equals(imageBefore), "sideways drag should change the rendered camera view").toBe(false);
+
+  // A real skinned-mesh hit must select a region and show its count.
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.route("**/api/analytics/weekly-volume**", (route) => route.fulfill({ json: { data: {
+    weeks: [{ weekStart: "2026-11-09", weekEnd: "2026-11-15", items: [{
+      muscleGroup: { id: "chest", slug: "chest", name: "Chest" }, workingSets: 6, exercises: [], recentSessions: []
+    }], regionItems: ["chest", "lats"].map((slug) => ({
+      muscleRegion: { id: slug, slug, name: slug === "chest" ? "Chest" : "Lats", muscleGroupSlug: slug === "chest" ? "chest" : "back" },
+      workingSets: 6, exercises: [], recentSessions: []
+    })) }]
+  } } }));
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Chest 6", exact: true })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Muscle figure" })).toHaveAttribute("aria-busy", "false");
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  await canvas.scrollIntoViewIfNeeded();
+  const frontBox = (await canvas.boundingBox())!;
+  await page.touchscreen.tap(frontBox.x + frontBox.width * 0.46, frontBox.y + frontBox.height * 0.29);
+  const selected = page.getByRole("region", { name: "Selected muscle" });
+  await expect(selected.getByRole("heading", { name: "Chest", exact: true })).toBeVisible();
+  await expect(selected.getByRole("definition").filter({ hasText: /^6sets$/ })).toBeVisible();
+  await page.getByRole("button", { name: "Close Chest", exact: true }).click();
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  await page.getByRole("radio", { name: "Back", exact: true }).click();
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  const backBox = (await canvas.boundingBox())!;
+  await page.touchscreen.tap(backBox.x + backBox.width * 0.47, backBox.y + backBox.height * 0.35);
+  await expect(selected.getByRole("heading", { name: "Lats", exact: true })).toBeVisible();
+
 });
 
 async function swipe(
