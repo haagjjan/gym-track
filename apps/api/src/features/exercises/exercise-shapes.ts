@@ -11,6 +11,7 @@ interface ExerciseMuscleGroupShape extends MuscleGroupShape {
 }
 
 export interface ExerciseShape {
+  trackingMode?: "time";
   id: string;
   name: string;
   equipment: string | null;
@@ -40,6 +41,7 @@ export interface ExerciseList {
 export function toExerciseShape(record: ExerciseRecord): ExerciseShape {
   return {
     id: record.id,
+    ...(record.trackingMode === "time" ? { trackingMode: "time" as const } : {}),
     name: record.name,
     equipment: record.equipment,
     exerciseType: record.exerciseType,

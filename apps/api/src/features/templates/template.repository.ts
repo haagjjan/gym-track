@@ -134,6 +134,7 @@ export function createTemplateRepository(db: Kysely<AppDatabase>): TemplateRepos
         .select("id")
         .where("id", "in", [...new Set(exerciseIds)])
         .where("deleted_at", "is", null)
+        .where("tracking_mode", "=", "reps")
         .execute();
 
       return rows.map((row) => row.id);

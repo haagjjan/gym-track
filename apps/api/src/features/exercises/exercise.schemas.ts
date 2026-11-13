@@ -68,7 +68,7 @@ const exerciseWriteSchema = z
       value.primaryMuscleGroupIds ?? (primaryMuscleGroupId ? [primaryMuscleGroupId] : [])
   }));
 
-export const createExerciseRequestSchema = exerciseWriteSchema;
+export const createExerciseRequestSchema = exerciseWriteSchema.and(z.object({ trackingMode: z.enum(["reps", "time"]).optional() }));
 export const updateExerciseRequestSchema = exerciseWriteSchema;
 
 export const exerciseParamsSchema = z.object({

@@ -171,6 +171,7 @@ interface MuscleGroupsTable {
 }
 
 interface ExercisesTable {
+  tracking_mode: ColumnType<"reps" | "time", "reps" | "time" | undefined, "reps" | "time">;
   id: string;
   name: string;
   equipment: string | null;
@@ -251,7 +252,32 @@ interface SetsTable {
   deleted_at: NullableTimestampColumn;
 }
 
+interface ExtendedEntryColumns {
+  id: string;
+  workout_session_id: string;
+  duration_seconds: number;
+  note: string | null;
+  create_fingerprint: string;
+  revision: ColumnType<number, number | undefined, number>;
+  created_at: TimestampColumn;
+  updated_at: TimestampColumn;
+  deleted_at: NullableTimestampColumn;
+}
+interface TimedSetsTable extends ExtendedEntryColumns {
+  exercise_tracking_mode: ColumnType<"time", "time" | undefined, "time">;
+  exercise_id: string;
+  set_type: "warmup" | "working";
+  added_weight_kg: ColumnType<string | null, string | number | null, string | number | null>;
+}
+interface CardioEntriesTable extends ExtendedEntryColumns {
+  activity: string;
+  distance_metres: ColumnType<string | null, string | number | null, string | number | null>;
+  average_heart_rate: number | null;
+}
+
 export interface AppDatabase {
+  timed_sets: TimedSetsTable;
+  cardio_entries: CardioEntriesTable;
   account_deletion_tokens: AccountDeletionTokensTable;
   admin_audit_events: AdminAuditEventsTable;
   app_events: AppEventsTable;

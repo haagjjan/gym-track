@@ -24,6 +24,7 @@ const server = await buildServer(
     appBaseUrl: env.APP_BASE_URL,
     ...(env.BFF_CLIENT_IP_SECRET ? { clientIpSecret: env.BFF_CLIENT_IP_SECRET } : {}),
     ...(env.SUPPORT_EMAIL ? { supportEmail: env.SUPPORT_EMAIL } : {}),
+    extendedTracking: env.ENABLE_EXTENDED_TRACKING,
     trustProxy: env.API_TRUST_PROXY,
     ...(env.METRICS_ENABLED
       ? {

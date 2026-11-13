@@ -1,3 +1,4 @@
+import { TimeExerciseCsvError } from "./workout-csv-errors.js";
 import { randomUUID } from "node:crypto";
 import { sql, type Kysely, type Transaction } from "kysely";
 import type { AppDatabase } from "../../db/database.js";
@@ -26,6 +27,7 @@ export interface WorkoutCsvExportRow {
 }
 
 export interface WorkoutCsvRepository {
+  listTimeExerciseNames?(): Promise<string[]>;
   exportRows(userId: string): Promise<WorkoutCsvExportRow[]>;
   importWorkouts(userId: string, workouts: WorkoutCsvWorkout[], importedAt: Date): Promise<void>;
   listMuscleGroupSlugs(): Promise<string[]>;
@@ -33,6 +35,9 @@ export interface WorkoutCsvRepository {
 
 export function createWorkoutCsvRepository(db: Kysely<AppDatabase>): WorkoutCsvRepository {
   return {
+    async listTimeExerciseNames() {
+      return (await db.selectFrom("exercises").select("name").where("tracking_mode", "=", "time").execute()).map((row) => row.name);
+    },
     async exportRows(userId) {
       const rows = await db
         .selectFrom("workout_sessions")
@@ -164,11 +169,12 @@ async function findOrCreateExercise(
 ): Promise<string> {
   const existing = await db
     .selectFrom("exercises")
-    .select(["id", "deleted_at as deletedAt"])
+    .select(["id", "deleted_at as deletedAt", "tracking_mode as trackingMode"])
     .where(sql<string>`lower(name)`, "=", exercise.name.toLowerCase())
     .executeTakeFirst();
 
   if (existing) {
+    if (existing.trackingMode === "time") throw new TimeExerciseCsvError(exercise.row);
     if (existing.deletedAt) {
       await restoreExercise(db, existing.id, exercise, importedAt);
     }

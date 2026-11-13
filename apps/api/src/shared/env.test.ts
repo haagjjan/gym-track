@@ -23,6 +23,7 @@ describe("readEnv", () => {
       DATABASE_URL: databaseUrl,
       EMAIL_FROM: "Gym Progress Tracker <onboarding@resend.dev>",
       LOG_LEVEL: "info",
+      ENABLE_EXTENDED_TRACKING: false,
       METRICS_ENABLED: false,
       NODE_ENV: "development",
       REGISTRATION_MODE: "ENABLED"

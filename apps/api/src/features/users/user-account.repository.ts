@@ -96,7 +96,7 @@ export function createUserAccountRepository(db: Kysely<AppDatabase>): UserAccoun
       return row ? { version: row.version, steps: parseSteps(row.steps) } : null;
     },
     async exportAccount(userId) {
-      const [profile, loginHistory, workouts, sessionExercises, sets, templates, templateExercises, customExercises, events, access, messages] = await Promise.all([
+      const [profile, loginHistory, workouts, sessionExercises, sets, templates, templateExercises, customExercises, events, access, messages, timedSets, cardioEntries] = await Promise.all([
         db.selectFrom("users").select([
           "id", "email", "username", "email_verified_at as emailVerifiedAt", "role", "account_status as accountStatus",
           "beta_cohort as betaCohort", "volume_heat_ceiling as volumeHeatCeiling", "functional_storage_enabled as functionalStorageEnabled",
@@ -123,9 +123,16 @@ export function createUserAccountRepository(db: Kysely<AppDatabase>): UserAccoun
           .where("joined_user_id", "=", userId).execute(),
         db.selectFrom("message_deliveries").innerJoin("campaigns", "campaigns.id", "message_deliveries.campaign_id")
           .select(["campaigns.title", "message_deliveries.shown_at", "message_deliveries.dismissed_at", "message_deliveries.responded_at", "message_deliveries.response"])
-          .where("message_deliveries.user_id", "=", userId).execute()
+          .where("message_deliveries.user_id", "=", userId).execute(),
+        db.selectFrom("timed_sets").innerJoin("workout_sessions", "workout_sessions.id", "timed_sets.workout_session_id")
+          .selectAll("timed_sets").where("workout_sessions.user_id", "=", userId).execute(),
+        db.selectFrom("cardio_entries").innerJoin("workout_sessions", "workout_sessions.id", "cardio_entries.workout_session_id")
+          .selectAll("cardio_entries").where("workout_sessions.user_id", "=", userId).execute()
+
       ]);
       return {
+        timedSets,
+        cardioEntries,
         exportedAt: new Date().toISOString(),
         profile,
         accessHistory: loginHistory,
@@ -209,6 +216,8 @@ export function createUserAccountRepository(db: Kysely<AppDatabase>): UserAccoun
           .where("account_status", "=", "DELETION_PENDING").where("deletion_due_at", "<=", now).forUpdate().executeTakeFirst();
         if (!user) return false;
         const customExercises = await trx.selectFrom("exercises").select("id").where("created_by_user_id", "=", userId).execute();
+        await sql`DELETE FROM timed_sets USING workout_sessions ws WHERE timed_sets.workout_session_id = ws.id AND ws.user_id = ${userId}`.execute(trx);
+        await sql`DELETE FROM cardio_entries USING workout_sessions ws WHERE cardio_entries.workout_session_id = ws.id AND ws.user_id = ${userId}`.execute(trx);
         await sql`DELETE FROM sets USING session_exercises se, workout_sessions ws WHERE sets.session_exercise_id = se.id AND se.workout_session_id = ws.id AND ws.user_id = ${userId}`.execute(trx);
         await sql`DELETE FROM session_exercises USING workout_sessions ws WHERE session_exercises.workout_session_id = ws.id AND ws.user_id = ${userId}`.execute(trx);
         await trx.deleteFrom("workout_sessions").where("user_id", "=", userId).execute();
@@ -227,7 +236,8 @@ export function createUserAccountRepository(db: Kysely<AppDatabase>): UserAccoun
         }).onConflict((conflict) => conflict.column("user_id").doUpdateSet({ finalized_at: now })).execute();
         for (const exercise of customExercises) {
           const referenced = await trx.selectFrom("session_exercises").select("id").where("exercise_id", "=", exercise.id).limit(1).executeTakeFirst()
-            ?? await trx.selectFrom("workout_template_exercises").select("id").where("exercise_id", "=", exercise.id).limit(1).executeTakeFirst();
+            ?? await trx.selectFrom("workout_template_exercises").select("id").where("exercise_id", "=", exercise.id).limit(1).executeTakeFirst()
+            ?? await trx.selectFrom("timed_sets").select("id").where("exercise_id", "=", exercise.id).limit(1).executeTakeFirst();
           if (!referenced) {
             await trx.deleteFrom("exercise_secondary_muscles").where("exercise_id", "=", exercise.id).execute();
             await trx.deleteFrom("exercise_muscle_groups").where("exercise_id", "=", exercise.id).execute();
