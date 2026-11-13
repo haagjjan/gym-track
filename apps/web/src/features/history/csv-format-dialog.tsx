@@ -17,7 +17,7 @@ const columns = [
   ["exercise_position", "Required exercise order, starting at 1"],
   ["set_order", "Required set order within the exercise, starting at 1"],
   ["set_type", "Required: working or warmup"],
-  ["weight_kg", "Required: 0.01–9999.99, up to 2 decimals"],
+  ["weight_kg", "Required: 0–9999.99, up to 2 decimals; 0 for bodyweight"],
   ["reps", "Required positive whole number"],
   ["rir", "Required whole number from 0–10"],
   ["rest_time_seconds", "Optional non-negative whole number"],

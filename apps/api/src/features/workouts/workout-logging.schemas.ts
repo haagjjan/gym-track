@@ -15,10 +15,7 @@ const decimalStringSchema = z
   .union([z.string().trim(), z.number()])
   .transform((value) => String(value))
   .refine((value) => /^\d+(\.\d{1,2})?$/.test(value), {
-    message: "Expected a positive decimal with up to two decimal places."
-  })
-  .refine((value) => Number(value) > 0, {
-    message: "Expected a positive value."
+    message: "Expected a decimal of 0 or more with up to two decimal places."
   });
 
 export const workoutParamsSchema = z.object({

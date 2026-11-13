@@ -771,7 +771,7 @@ Validation response `422`:
     "code": "CSV_VALIDATION_ERROR",
     "message": "CSV could not be imported.",
     "fields": {
-      "row 2": ["weight_kg: Expected a positive kg value with up to 2 decimals."]
+      "row 2": ["weight_kg: Expected a kg value of 0 or more with up to 2 decimals."]
     }
   }
 }
@@ -1471,7 +1471,7 @@ Cardio is deferred from the MVP. Do not implement these endpoints in the first A
 - Login accepts 1-200 password characters so accounts created under the earlier minimum can still authenticate.
 - `clientMutationId` must be a UUID and is required for new session-exercise and set creates.
 - `setType` must be `warmup` or `working`.
-- `weightKg` must be positive and fit `numeric(6,2)`.
+- `weightKg` must be 0 or more and fit `numeric(6,2)`. Use `0` for bodyweight sets.
 - `reps` must be a positive integer.
 - `rir` must be an integer from 0 to 10.
 - `restTimeSeconds` must be omitted, null, or a non-negative integer.

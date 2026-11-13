@@ -265,7 +265,7 @@ Ordered sets inside a session exercise.
 | `client_mutation_id` | `uuid` | Nullable for historical rows; required by the API for new creates |
 | `set_order` | `integer` | Required, positive |
 | `set_type` | `text` | Required: `warmup` or `working` |
-| `weight_kg` | `numeric(6,2)` | Required, positive |
+| `weight_kg` | `numeric(6,2)` | Required, 0 or more (0 = bodyweight) |
 | `reps` | `integer` | Required, positive |
 | `rir` | `integer` | Required, 0-10 |
 | `rest_time_seconds` | `integer` | Nullable, non-negative |

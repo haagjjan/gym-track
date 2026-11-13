@@ -76,7 +76,7 @@ describe("workout CSV parsing", () => {
           exercise_position: "1",
           set_order: "1",
           set_type: "drop",
-          weight_kg: "0",
+          weight_kg: "-1",
           reps: "8",
           rir: "11",
           rest_time_seconds: "",

@@ -372,14 +372,14 @@ function parseSetType(
 
 function parseWeight(value: string, row: number, errors: WorkoutCsvError[]): string | null {
   if (!decimalPattern.test(value)) {
-    errors.push({ row, field: "weight_kg", message: "Expected a positive kg value with up to 2 decimals." });
+    errors.push({ row, field: "weight_kg", message: "Expected a kg value of 0 or more with up to 2 decimals." });
     return null;
   }
 
   const parsed = Number(value);
 
-  if (parsed <= 0 || parsed > 9999.99) {
-    errors.push({ row, field: "weight_kg", message: "Expected a kg value from 0.01 to 9999.99." });
+  if (parsed > 9999.99) {
+    errors.push({ row, field: "weight_kg", message: "Expected a kg value from 0 to 9999.99." });
     return null;
   }
 
