@@ -1,7 +1,7 @@
 # Current project state
 
 A short handoff for someone (or a model) who can't look around the repository. Last updated
-2026-11-09. For the code map read [CODEBASE.md](../CODEBASE.md); for the rules read
+2026-11-10. For the code map read [CODEBASE.md](../CODEBASE.md); for the rules read
 [ARCHITECTURE.md](../ARCHITECTURE.md).
 
 ## Where things stand
@@ -23,6 +23,15 @@ A short handoff for someone (or a model) who can't look around the repository. L
 
   The owner commits each step; check `git status` for what is still uncommitted.
 
+The active implementation plan is `~/.agents/plans/gym-next-features.md`. The current
+worktree continues Batch B without commits. Home and Volume use the local GLB, shared
+lighting and a simple pedestal; the old room, FBX and SVG projection runtime are removed.
+Vertical Volume swipes use native scrolling. Settings → Credits names the anatomy source.
+Batch C is implemented, uncommitted, in `../gym-progress-tracker-set-types` on
+`next/c-set-types`: time sets, cardio, CSV and progress, off by default behind
+`ENABLE_EXTENDED_TRACKING`. It has not shipped. Offline sync is a proposed ADR,
+not a built client. See that worktree’s `docs/next-tracking-verification.md`.
+
 ## What the product does
 
 Log strength workouts on a phone (sets with weight, reps, RIR, notes, a rest timer), reuse
@@ -36,13 +45,13 @@ log.
 
 The UX rework is done (signed off 2026-11-09). The owner's list for what comes next, in order:
 
-1. Light version of the Home 3D scene (today it is only re-tinted for light mode).
-2. Touch gestures on the Volume 3D figure: rotation and page scrolling still misbehave on phones.
-3. Progress chart: a full-screen view.
-4. A new 3D body model (separate figure and pedestal), shared by Home and Volume.
-5. More specific muscles and better muscle picking (data model, catalog, region maps).
-6. Time-based exercises (sets with a duration instead of reps).
-7. Cardio (distance, duration, pace).
+1. Light Home scene implemented with the shared figure; final look and device checks remain.
+2. Native Volume scrolling and sideways rotation implemented; real-phone feel remains to check.
+3. Progress chart: enlarge the plot inside the existing card (implemented on `next/a-ui`).
+4. Shared rigged body model and simple pedestal: runtime implemented on `next/b-body`; final anatomy and device verification remain open.
+5. Twenty muscle regions, catalog mapping and per-region volume are implemented; chest/lat picking has a mobile browser regression test.
+6. Time sets, timer, progress and CSV implemented in the separate C worktree; flag defaults off.
+7. Cardio duration, distance, pace and optional heart rate implemented in C; excluded from muscle volume.
 8. Publishing the mobile app: Capacitor per ADR 0021, starting with the token-auth,
    static-export and offline-sync ADRs and a spike on real phones.
 9. Testing: real-device checks plus wider automated coverage.
@@ -61,8 +70,9 @@ Still open from earlier:
   shells. Not built yet.
 - Device-local preferences (body profile, favourite lifts, display, rest timer) are not synced
   between devices.
-- Muscle-region art in `apps/web/public/volume/` is hand-drawn and still being refined by the
-  owner.
+- The new body model is 39,886 triangles (406,424 bytes); final anatomy
+  and visual sign-off remain open. Build scripts and validator are in `tools/body-model/`.
+- The independent runtime review did not produce a report because its CLI failed.
 - The simulator can't show heat or frame rate on real phones; those need device checks.
 - Production is a single home server: no high availability or automatic failover.
 

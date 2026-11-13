@@ -158,14 +158,14 @@ Rules:
 
 ### Data colors
 
-- **3D stages follow the theme** (`--stage`, mirrored in `STAGE_COLOR`): `#0f1317` dark, `#dfe5ec` light. The figure itself stays dark in both, so the one heat ramp still works; on the light stage it reads as a dark silhouette. In dark mode the Volume figure gets a camera-relative slate rim (`uRim`) so it never melts into the background. The Home bay switches to a pale room in light mode (lifted floor, light wall), keeping figure and pedestal unchanged until the 3D rework.
+- **3D stages follow the theme.** Volume uses `--stage` (`#0f1317` dark, `#dfe5ec` light). Home uses the dark stage in dark mode and the page's `--bg` in light mode, including its static edge fade. Both load the same neutral body, simple disc pedestal, and three-light rig; no reflective room or environment-map generation. Resting muscles are slate in dark mode and pale in light mode; trained regions use the same purple ramp in both themes. Each muscle region is a separate skinned mesh, so colour and picking use exactly its surface.
 - **Muscle-volume heat ramp** (sequential, one hue). On a dark figure it runs from dim to bright, so the most-trained muscle is the most visible. The current ramp does the opposite: its top stage is only 1.6:1 against the figure.
 
   | Untrained | Stage 1 | 2 | 3 | 4 | Stage 5 |
   |---|---|---|---|---|---|
   | `#2f353c` | `#7048c0` | `#8a5ce6` | `#a47cff` | `#c2a6ff` | `#e2d6ff` |
 
-  Contrast against the figure (`#171a20`) rises from 2.8:1 to 12.7:1. Stage 1 is 2.0:1 against "untrained". Neighbouring stages are close (about 1.4:1), so the legend with set ranges is always visible, and tapping a muscle names its stage and set count in words. Because the stage stays dark, the same ramp is used in the light theme.
+  Contrast against the figure (`#171a20`) rises from 2.8:1 to 12.7:1. Stage 1 is 2.0:1 against "untrained". Neighbouring stages are close (about 1.4:1), so the legend with set ranges is always visible, and tapping a muscle names its stage and set count in words. The same heat ramp is used in the light theme; the legend and selected-muscle readout carry the numerical meaning.
 - **Charts** (Progress): weight (or est. 1RM) in `--accent` on the left axis, reps in `--chart-reps` on a right axis; each axis's ticks and its legend chip take the series color, so it's clear which line a scale belongs to. Grid lines in `--line`. The chart always holds every logged day; 1W/1M/3M/Max set how much fits on screen, newest at the right, and the plot swipes back in time. No hover tooltip: a short tap picks a day (a pan never does), shown as a dashed marker and a readout with previous/next day buttons under the chart. A table view of the same data sits one tap away.
 - **Stat tiles:** label (sentence case, `subhead`, `--text-secondary`), value (`--font-numeric`, `title-1`, `--text`), unit in `callout` next to the value, optional delta with direction word ("up 12% vs last week"). Tiles never hold a chart and a number at the same size.
 
@@ -247,7 +247,7 @@ Write like a friendly coach texting you, not like a terminal.
 ## 3D figure and volume map
 
 - **Home:** the figure sits in one card under the header, about 240 px tall on phones (not 36 dvh). Under it, three stat tiles for this week: workouts, sets, volume. The bay stays but is quieter: no connector beams, no motes, a softer floor glow.
-- **Volume:** Front/Back and the time range sit above a compact stage (about 42% of the screen on phones, framed so the figure fills it). No summary tiles. Tapping a muscle turns the camera to it and shows its card directly under the stage (no page jump; a tap in the muscle list glides back up to the figure first). For 1W the card shows sets in the last 7 days and workouts; longer windows show per-week average and total. The legend is one strip of six outlined swatches with upper bounds and a link to the full-color setting. List bars have a neutral track and an outlined fill. On phones the canvas owns every touch: sideways drags rotate, vertical swipes scroll the page with momentum. Show a one-time gesture hint, not a permanent label.
+- **Volume:** Front/Back and the time range sit above a compact stage (about 42% of the screen on phones, framed so the figure fills it). No summary tiles. Tapping a muscle turns the camera to it and shows its card directly under the stage (no page jump; a tap in the muscle list glides back up to the figure first). For 1W the card shows sets in the last 7 days and workouts; longer windows show per-week average and total. The legend is one strip of six outlined swatches with upper bounds and a link to the full-color setting. List bars have a neutral track and an outlined fill. On phones sideways drags rotate; vertical swipes use native page scrolling, including momentum and cancellation. Show a one-time gesture hint, not a permanent label.
 - The figure must stay readable with no data: when nothing is trained, raise its base light so the anatomy is visible.
 - Never let 3D push the primary action below the fold on a 390 × 844 screen.
 - The canvas must not cover UI. Overlays such as the guide card and sheets stack above the canvas and its ambience layers (fixes the step 6 guide defect).
@@ -264,7 +264,7 @@ Write like a friendly coach texting you, not like a terminal.
 | Asset | Status | Note |
 |---|---|---|
 | 3D figure, pedestal, bay | Have | Restyle lighting and remove the decorative layers only |
-| Region maps for the volume mask | Have | The owner draws any new art |
+| Body model and muscle regions | Have | Shared local rigged GLB; named meshes replace SVG masks; source credit in Settings |
 | Icons | Partly (`shared/ui/icons.tsx`) | Extend to the full outline set needed by the new navigation |
 | App icon and splash | Missing | Needed for the mobile work, not this rework |
 
