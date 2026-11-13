@@ -311,3 +311,7 @@ Use `.env.example` for shared environment variable documentation. Do not commit 
 - `apps/web/e2e/onboarding-demo.spec.ts` covers the complete example and its isolation boundary.
   Captures, traces and disposable local verification data remain ignored in `test-results/`
   and `.cache/onboarding-review/`.
+
+## Optional tracking batch
+
+`apps/api/src/features/tracking/` owns time/cardio validation, authenticated routes, transactional writes, CSV and volume compatibility. The additive migrations are `20261110130000000_add_time_tracking.sql` and `20261110140000000_add_cardio_entries.sql`. `apps/web/src/features/tracking/` owns forms, timer, progress, history readout, practice and CSV controls. Its BFF is `apps/web/src/app/api/tracking/[...path]/route.ts`. `apps/api/scripts/check-tracking-migrations.ts` verifies disposable local migration fixtures.

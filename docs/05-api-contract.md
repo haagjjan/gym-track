@@ -1759,3 +1759,78 @@ The web client uses account-scoped query/pending caches, optimistic flags and ex
 from Help. Pending evidence is memory-only; a full reload can lose an unsynced flag, but never
 writes practice to real history. No demo workout/analytics API is introduced. Explicit template
 copy uses `POST /api/v1/workout-templates` with a name and resolved catalog exercise IDs only.
+
+## Optional time and cardio tracking (next-feature batch)
+
+Off by default. `ENABLE_EXTENDED_TRACKING=true` must be set for both the API and
+web server. When disabled, `/tracking/*` routes and the corresponding UI are
+unavailable; existing strength endpoints retain their request shapes. ADR 0026
+records the separate-table design; ADR 0025 proposes later offline sync.
+
+All routes below are authenticated under `/api/v1/tracking`; the web BFF uses
+`/api/tracking`. Ownership is derived from the authenticated account.
+
+| Method and path | Request / response |
+| --- | --- |
+| `GET /catalog` | `{ data: { items: [{ id, name }] } }` for active time exercises |
+| `GET /workouts/:workoutId` | `{ data: { timedSets: [...], cardioEntries: [...] } }` |
+| `POST /workouts/:workoutId/timed-sets` | Time values plus client-generated UUID `id` |
+| `PATCH /workouts/:workoutId/timed-sets/:id` | Complete time values plus expected `revision` |
+| `DELETE /workouts/:workoutId/timed-sets/:id?revision=N` | Soft delete at the expected revision |
+| `POST /workouts/:workoutId/cardio` | Cardio values plus client-generated UUID `id` |
+| `PATCH /workouts/:workoutId/cardio/:id` | Complete cardio values plus expected `revision` |
+| `DELETE /workouts/:workoutId/cardio/:id?revision=N` | Soft delete at the expected revision |
+| `GET /progress` | Owned non-deleted entries in completed workouts; time sets are working-only |
+| `GET /export.csv` | Completed time/cardio data as `gym-time-cardio.csv` |
+| `POST /import.csv` | `text/csv`; atomic import into new completed workouts |
+
+Time values: `exerciseId` (time-mode exercise UUID), `durationSeconds` (integer
+1–86,400), `setType` (`working`, default, or `warmup`), nullable/optional
+`addedWeightKg` (0–9,999.99), and nullable/optional `note` (1,000 characters).
+No synthetic repetitions or RIR are stored. An absent added load is `null`.
+
+Cardio values: `activity` (trimmed 1–100 characters), `durationSeconds` (integer
+1–86,400), nullable/optional positive `distanceMetres` (up to 1,000,000 with two
+decimals), nullable/optional `averageHeartRate` (integer 20–300), and note.
+Pace is derived as seconds per kilometre, never stored. Cardio does not enter
+strength tonnage or muscle-volume calculations.
+
+Writes return `{ data: { entry, replayed? } }`: 201 for a new create, 200 for an
+equivalent replay, update or delete. UUID spelling and decimal values are
+normalized before fingerprinting. The original create fingerprint survives
+edits and deletion, so replay cannot resurrect an entry. A different create using
+the same ID or a stale revision returns 409 `TRACKING_CONFLICT`. Missing or
+foreign resources return 404 `TRACKING_RESOURCE_NOT_FOUND`. Rows include `id`,
+`workoutId`, values, `revision`, creation/update timestamps, `deletedAt` and the
+workout's `sessionDate`; timed rows include `exerciseName`. This is online
+optimistic concurrency, not the future offline operation-receipt protocol.
+
+`POST /exercises` accepts optional `trackingMode: "time"` only when enabled;
+otherwise it returns 404 for that mode. It creates a new global exercise and uses
+the existing name and muscle validation. Mode cannot be changed on an existing
+exercise; a time create never restores/reclassifies an old name. Time exercises
+are listed in `/tracking/catalog`, separately from the repetition picker and
+templates. Merging time exercises is unavailable. New custom exercises use the
+normal primary-group volume rules; the body-region batch uses group defaults.
+
+History summaries count timed sets (including warmups) as sets and unique timed
+exercises as exercises; `cardioEntries` is present while enabled. Tonnage remains
+repetition-only. Weekly muscle volume adds timed working sets and excludes cardio
+and timed warmups. Full account export and erasure include both tables regardless
+of flag state, preserving shared custom time exercises referenced by another user.
+
+### Time/cardio CSV
+
+This file is separate from the existing strength CSV. History provides both.
+The header is `format_version,workout_key,workout_started_at,workout_ended_at,workout_title,workout_type,workout_notes,entry_kind,entry_recorded_at,exercise_name,activity,set_type,duration_seconds,added_weight_kg,distance_metres,average_heart_rate,note`.
+`format_version` is `gymtrack-tracking-v1`; kind is `time` or `cardio`. The entry recording timestamp preserves chronological order when importing. Dates are
+ISO instants with offsets and must describe a completed workout. Matching
+workout keys require identical dates/title/type/notes. Import creates fresh workout/entry
+UUIDs and does not merge with existing workouts. Create any named time exercises
+in the catalog first. A failed row prevents all writes and returns 422 `INVALID_TRACKING_CSV`.
+
+Free-text cells (`workout_key`, title, workout type/notes, exercise name, activity, note) are exported
+with one leading apostrophe for spreadsheet safety. Import removes exactly one,
+so original apostrophes, formula-like notes and maximum-length notes round-trip.
+Use an exported file as the template. The legacy strength importer rejects names
+that belong to time exercises rather than storing repetition sets against them.

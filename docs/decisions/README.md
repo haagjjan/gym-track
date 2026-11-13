@@ -54,3 +54,6 @@ Use sequential numbering and keep each record focused on one decision.
 - [ADR 0020 - Hands-on Onboarding Demo](0020-hands-on-onboarding-demo.md)
 - [ADR 0021 - Mobile App Stack](0021-mobile-app-stack.md)
 - [ADR 0022 - Open Public Registration (v0)](0022-open-public-registration.md)
+
+- [ADR 0025 - Local Workout Logging and Deferred Sync (proposed)](0025-offline-sync.md)
+- [ADR 0026 - Time Sets and Workout Cardio (proposed)](0026-time-and-cardio-tracking.md)

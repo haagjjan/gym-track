@@ -1,7 +1,7 @@
 # Current project state
 
 A short handoff for someone (or a model) who can't look around the repository. Last updated
-2026-11-09. For the code map read [CODEBASE.md](../CODEBASE.md); for the rules read
+2026-11-10. For the code map read [CODEBASE.md](../CODEBASE.md); for the rules read
 [ARCHITECTURE.md](../ARCHITECTURE.md).
 
 ## Where things stand
@@ -23,6 +23,15 @@ A short handoff for someone (or a model) who can't look around the repository. L
 
   The owner commits each step; check `git status` for what is still uncommitted.
 
+The next-feature work is split: body/runtime changes are in the original worktree
+on `next/b-body`; optional time/cardio changes are in the independent
+`../gym-progress-tracker-set-types` worktree on `next/c-set-types`. The canonical
+execution record is `~/.agents/plans/gym-next-features.md`. Changes in this
+worktree are uncommitted, behind `ENABLE_EXTENDED_TRACKING=false` by default, and
+have only been tested against isolated local databases. No offline client is
+built; ADRs 0025 and 0026 are proposed for owner review. See
+[next-tracking-verification.md](next-tracking-verification.md) for setup and gates.
+
 ## What the product does
 
 Log strength workouts on a phone (sets with weight, reps, RIR, notes, a rest timer), reuse
@@ -36,13 +45,13 @@ log.
 
 The UX rework is done (signed off 2026-11-09). The owner's list for what comes next, in order:
 
-1. Light version of the Home 3D scene (today it is only re-tinted for light mode).
-2. Touch gestures on the Volume 3D figure: rotation and page scrolling still misbehave on phones.
-3. Progress chart: a full-screen view.
-4. A new 3D body model (separate figure and pedestal), shared by Home and Volume.
-5. More specific muscles and better muscle picking (data model, catalog, region maps).
-6. Time-based exercises (sets with a duration instead of reps).
-7. Cardio (distance, duration, pace).
+1. Light Home scene implemented in the body worktree; final look and device checks remain.
+2. Native Volume scrolling and sideways rotation implemented in the body worktree; real-phone checks remain.
+3. Progress chart: enlarge the existing card plot (implemented on `next/a-ui`).
+4. Shared rigged figure and pedestal implemented on `next/b-body`; final anatomy sign-off remains.
+5. Twenty muscle regions and per-region volume implemented on `next/b-body`.
+6. Time sets, timer, progress and CSV implemented here; flag defaults off.
+7. Cardio logging, progress and CSV implemented here; excluded from muscle volume.
 8. Publishing the mobile app: Capacitor per ADR 0021, starting with the token-auth,
    static-export and offline-sync ADRs and a spike on real phones.
 9. Testing: real-device checks plus wider automated coverage.

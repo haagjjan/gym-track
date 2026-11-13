@@ -120,9 +120,7 @@ Draft rules for the first schema pass. These notes capture business rules and da
 
 ### Cardio
 
-- Cardio is deferred from the MVP.
-- Do not include cardio tables in the first schema pass.
-- Future cardio modeling should support both session-linked and standalone entries.
+- The public MVP has no cardio. The optional next-feature batch adds workout-linked entries behind a flag (ADR 0026). Standalone cardio remains deferred.
 
 ## Follow-Up Notes For Schema Draft
 
@@ -130,3 +128,25 @@ Draft rules for the first schema pass. These notes capture business rules and da
 - Decide whether soft-deleted global exercises can be recreated or must be restored.
 - Choose decimal precision for kg values.
 - Decide the exact representation of open/closed sessions, such as `ended_at IS NULL` or an explicit status.
+
+### Optional duration and cardio records (ADR 0026)
+
+The next-feature batch adds `exercises.tracking_mode` (`reps` by default, `time`
+for newly created time exercises), `timed_sets` and `cardio_entries`. It does not
+weaken the original strength-set constraints. Both new entry tables reference an
+owned workout, use a client UUID, preserve the initial create fingerprint, start
+at revision 1, and keep deletion tombstones. Updates/deletes check the expected
+revision under the parent workout lock. Full sync remains proposed in ADR 0025.
+
+Timed rows reference a time-mode exercise through a composite FK, record positive
+seconds and optional nonnegative added kg, and retain working/warmup semantics.
+Timed working sets count toward primary muscle volume; warmups and cardio do not.
+Cardio stores duration, optional positive metres, optional heart rate and note;
+pace is derived. No standalone cardio is implemented in this batch.
+
+The flag is off by default. Time exercises are a separate catalog/picker and are
+not template occurrences. A seed identity collision fails explicitly without
+reclassifying an existing exercise. Down migrations refuse logged data, custom
+time exercises or a changed seed; disabling the flag is the normal rollback.
+Account export and erasure include new entries even while disabled. Erasure
+preserves any shared time exercise referenced by another account.

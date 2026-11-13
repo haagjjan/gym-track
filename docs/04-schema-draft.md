@@ -339,3 +339,18 @@ Migration `20260929120000000_onboarding_demo_invitation.sql` merges
 flags, and raises their version to at least 2. New accounts default to version 2 with empty
 steps and receive the invitation. Rollback restores the version default only; it preserves
 recorded user choices. No example workout rows or new tables are introduced.
+
+## Optional time/cardio extension (ADR 0026)
+
+Migrations `20261110130000000_add_time_tracking.sql` and
+`20261110140000000_add_cardio_entries.sql` are additive and independent of the
+body-region migration. `exercises.tracking_mode` defaults to `reps`, with a unique
+`(id, tracking_mode)` key. `timed_sets` references `(exercise_id, 'time')` via a
+constant-mode composite FK, plus its workout; it stores set type, positive
+seconds, nullable added kg and note. `cardio_entries` references its workout and
+stores activity, seconds, nullable metres/heart rate and note.
+
+Both tables have client UUID primary keys, immutable create fingerprints,
+positive revisions, created/updated timestamps and nullable deletion timestamps.
+Active-list indexes cover workout/date order; full FK indexes support tombstones
+and erasure. No operation-receipt table or native outbox is implemented.

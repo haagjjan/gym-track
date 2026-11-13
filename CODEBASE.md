@@ -41,6 +41,7 @@ Features (`src/features/`), each with routes, schemas, services, repositories an
 | `templates` | workout templates and starting a workout from one |
 | `exercises` | catalog (about 820 system exercises), search, custom exercises, merge, muscle groups |
 | `analytics` | completed exercises, exercise progress and summaries, weekly volume |
+| `tracking` | gated time sets/cardio, revisions, progress, separate CSV, optional region compatibility |
 | `messages` | in-app messages, campaigns, deliveries, responses |
 | `admin` | overview, members, deletion support, campaigns, audit log |
 | `status` | aggregate numbers for the public status page |
@@ -49,12 +50,12 @@ Features (`src/features/`), each with routes, schemas, services, repositories an
 Routes are mounted under `/api/v1/*`. Errors use
 `{ "error": { "code", "message", "fields", "details" } }`.
 
-Database: 10 migrations in `db/migrations/` (core schema, muscle seed, auth hardening and
+Database: 12 migrations (the original 10 plus the optional time/cardio extension) in `db/migrations/` (core schema, muscle seed, auth hardening and
 events, exercise muscles and templates, canonical classifications, catalog expansion and search,
 public beta foundation, workout mutation safety, onboarding demo). Tables: `users`,
 `user_sessions`, `auth_action_tokens`, `account_deletion_tokens`, `erasure_tombstones`,
 `app_events`, `admin_audit_events`, `muscle_groups`, `exercises`, `exercise_muscle_groups`,
-`exercise_secondary_muscles`, `workout_sessions`, `session_exercises`, `sets`,
+`exercise_secondary_muscles`, `workout_sessions`, `session_exercises`, `sets`, `timed_sets`, `cardio_entries`,
 `workout_templates`, `workout_template_exercises`, `campaigns`, `campaign_targets`,
 `message_deliveries`, `beta_settings`, `beta_access_requests`. The last two are left over from
 the beta; ADR 0022 plans their cleanup.
@@ -155,3 +156,5 @@ green `main`.
 - Local auth and signup share one rate-limit bucket per IP, so parallel e2e runs hit `429`s.
   Run specs one at a time.
 - Device-local preferences are not synced to the API.
+
+Optional tracking UI lives in `apps/web/src/features/tracking/`; the BFF is `app/api/tracking/[...path]`. Enable `ENABLE_EXTENDED_TRACKING=true` on both servers to expose it. The migration guard check is `apps/api/scripts/check-tracking-migrations.ts`.
