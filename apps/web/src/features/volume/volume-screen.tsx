@@ -1,5 +1,6 @@
 "use client";
 
+import { formatNumber } from "../../shared/format";
 import dynamic from "next/dynamic";
 import { useCallback, useMemo, useRef, useState, type Dispatch, type SetStateAction, type ReactNode } from "react";
 import type { WeeklyVolumePayload } from "../../shared/api/types";
@@ -92,7 +93,7 @@ export function VolumeView({ volume, heatCeiling = HEAT_MAX_WEEKLY_SETS, windowD
   }, [handleSelect]);
 
   const selected = selectedSlug ? aggregates.get(selectedSlug) ?? null : null;
-  // Counted per muscle group: a set that works two regions of one group is still one set.
+  // Sum weighted group credits, not regions: several regions can belong to one group.
   const windowTotal = [...groupAggregates.values()].reduce(
     (sum, aggregate) => sum + aggregate.totalSets,
     0
@@ -169,8 +170,8 @@ export function VolumeView({ volume, heatCeiling = HEAT_MAX_WEEKLY_SETS, windowD
                   selectedSlug={selectedSlug}
                 />
                 <div className="flex min-h-11 items-center justify-between border-t border-line px-4">
-                  <span className="text-body text-text-secondary">Total, {windowLabel}</span>
-                  <span className="num text-body text-text">{windowTotal} sets</span>
+                  <span className="text-body text-text-secondary">Muscle sets, {windowLabel}</span>
+                  <span className="num text-body text-text">{formatNumber(windowTotal)} sets</span>
                 </div>
               </div>
             </section>

@@ -2,11 +2,11 @@
 export const HEAT_MAX_WEEKLY_SETS = 20;
 
 export const HEAT_STAGE_COLORS = [
-  "#7048c0",
-  "#8a5ce6",
-  "#a47cff",
+  "#e2d6ff",
   "#c2a6ff",
-  "#e2d6ff"
+  "#a47cff",
+  "#8a5ce6",
+  "#7048c0"
 ] as const;
 
 export function heatBucket(weeklySets: number, ceiling = HEAT_MAX_WEEKLY_SETS): number {

@@ -162,9 +162,9 @@ The database schema, constraints, and indexes will be designed to support these 
 ### Q16. Weekly sets per muscle group
 - Filter: user_id, time range
 - Output:
-  - average weekly woking sets for each muscle group
+  - average weekly weighted muscle sets for each muscle group (primary 1, secondary 0.5 per working set)
   - muscle_group
-  - total number of sets per muscle group
+  - total weighted muscle sets per group, with matching fractional exercise/workout breakdowns
 
 ---
 

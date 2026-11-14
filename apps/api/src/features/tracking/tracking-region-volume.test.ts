@@ -3,7 +3,7 @@ import { it } from "node:test";
 import { addTimedRegionVolume } from "./tracking-region-volume.js";
 
 it("adds timed facts to existing regional payloads and preserves legacy group-only payloads", () => {
-  const row = { workoutId: "workout", sessionDate: new Date("2026-11-10T10:00:00Z"), exercise: { id: "hang", name: "Dead hang" },
+  const row = { muscleRole: "PRIMARY" as const, workoutId: "workout", sessionDate: new Date("2026-11-10T10:00:00Z"), exercise: { id: "hang", name: "Dead hang" },
     muscleRegion: { id: "region", slug: "forearms", name: "Forearms", sortOrder: 1, muscleGroupSlug: "forearms" } };
   const legacy = { weeks: [{ weekStart: "2026-11-09", items: [] }] };
   assert.deepEqual(addTimedRegionVolume(legacy, [row]), legacy);

@@ -5,6 +5,9 @@
 Proposed for the pending body branch, 2026-11-10. Records the settled next-feature
 scope; owner review and merge remain outstanding.
 
+Muscle attribution is extended by [ADR 0028](0028-secondary-muscle-volume.md):
+secondary assignments now receive half credit for groups and regions.
+
 ## Context
 
 The original twelve muscle groups are useful reporting categories but too broad

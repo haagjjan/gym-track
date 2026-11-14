@@ -1,3 +1,4 @@
+import { volumeContribution, type VolumeMuscleRole } from "./analytics-volume-attribution.js";
 import type {
   AnalyticsMuscleGroupRecord,
   AnalyticsMuscleRegionRecord,
@@ -54,6 +55,7 @@ interface WeeklyVolumeSession {
 }
 
 interface VolumeSetRow {
+  muscleRole: VolumeMuscleRole;
   workoutId: string;
   sessionDate: Date;
   exercise: { id: string; name: string };
@@ -120,16 +122,17 @@ function accumulate<Row extends VolumeSetRow, Muscle extends AnalyticsMuscleGrou
     const exercise = current.exercises.get(row.exercise.id);
     const session = current.recentSessions.get(row.workoutId);
 
-    current.workingSets += 1;
+    const credit = volumeContribution(row.muscleRole);
+    current.workingSets += credit;
     current.exercises.set(row.exercise.id, {
       id: row.exercise.id,
       name: row.exercise.name,
-      workingSets: (exercise?.workingSets ?? 0) + 1
+      workingSets: (exercise?.workingSets ?? 0) + credit
     });
     current.recentSessions.set(row.workoutId, {
       workoutId: row.workoutId,
       sessionDate: row.sessionDate.toISOString(),
-      workingSets: (session?.workingSets ?? 0) + 1
+      workingSets: (session?.workingSets ?? 0) + credit
     });
     week.set(muscle.id, current);
     weeks.set(weekStart, week);

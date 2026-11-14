@@ -41,15 +41,19 @@ export function demoVolume(workouts: WorkoutDetail[], days: number, now: number)
     for (const entry of workout.exercises) {
       const workingSets = entry.sets.filter((set) => set.setType === "working").length;
       if (!workingSets) continue;
-      for (const muscle of entry.exercise.primaryMuscleGroups) {
+      const contributions = [
+        ...entry.exercise.primaryMuscleGroups.map((muscle) => ({ muscle, credit: workingSets })),
+        ...entry.exercise.secondaryMuscleGroups.map((muscle) => ({ muscle, credit: workingSets * 0.5 }))
+      ];
+      for (const { muscle, credit } of contributions) {
         const item = week.get(muscle.id) ?? { muscleGroup: muscle, workingSets: 0, exercises: [], recentSessions: [] };
-        item.workingSets += workingSets;
+        item.workingSets += credit;
         const exercise = item.exercises.find((value) => value.id === entry.exercise.id);
-        if (exercise) exercise.workingSets += workingSets;
-        else item.exercises.push({ id: entry.exercise.id, name: entry.exercise.name, workingSets });
+        if (exercise) exercise.workingSets += credit;
+        else item.exercises.push({ id: entry.exercise.id, name: entry.exercise.name, workingSets: credit });
         const session = item.recentSessions.find((value) => value.workoutId === workout.id);
-        if (session) session.workingSets += workingSets;
-        else item.recentSessions.push({ workoutId: workout.id, sessionDate: workout.startedAt, workingSets });
+        if (session) session.workingSets += credit;
+        else item.recentSessions.push({ workoutId: workout.id, sessionDate: workout.startedAt, workingSets: credit });
         week.set(muscle.id, item);
       }
     }

@@ -35,9 +35,11 @@ test("summary includes warmups but plotted days and volume count working sets", 
   const chestCount = demoVolume(samples, 30, now).weeks.flatMap((week) => week.items).filter((item) => item.muscleGroup.slug === "chest").reduce((n, item) => n + item.workingSets, 0);
   assert.equal(chestCount, sets.filter((set) => set.setType === "working").length);
   assert.equal(chestCount, 23);
-  assert.equal(demoVolume(samples, 7, now).weeks.flatMap((week) => week.items).reduce((total, item) => total + item.workingSets, 0), 18);
+  const tricepsCount = demoVolume(samples, 30, now).weeks.flatMap((week) => week.items).filter((item) => item.muscleGroup.slug === "triceps").reduce((total, item) => total + item.workingSets, 0);
+  assert.equal(tricepsCount, chestCount * 0.5);
+  assert.equal(demoVolume(samples, 7, now).weeks.flatMap((week) => week.items).reduce((total, item) => total + item.workingSets, 0), 37.5);
   assert.equal(demoSummary(samples, bench, "7", now).totalSets, samples.slice(0, 2).flatMap((workout) => workout.exercises[0]!.sets).length);
-  assert.equal(demoVolume(samples, 7, now).weeks.flatMap((week) => week.items).some((item) => item.muscleGroup.slug === "triceps"), false);
+  assert.equal(demoVolume(samples, 7, now).weeks.flatMap((week) => week.items).some((item) => item.muscleGroup.slug === "triceps"), true);
 });
 test("finished practice contributes once and weight edits change progress and tonnage", () => {
   const practice = practiceWorkout(now);
@@ -48,5 +50,5 @@ test("finished practice contributes once and weight edits change progress and to
   assert.equal(demoSummary(combined, bench, "all", now).bestTopSet?.weightKg, "80");
   assert.equal(workoutSummary(practice).tonnageKg, "400.00");
   const working = (logs: typeof samples) => demoVolume(logs, 7, now).weeks.flatMap((week) => week.items).reduce((n, item) => n + item.workingSets, 0);
-  assert.equal(working(combined), working(samples) + 1);
+  assert.equal(working(combined), working(samples) + 1.5);
 });

@@ -58,3 +58,5 @@ Use sequential numbering and keep each record focused on one decision.
 - [ADR 0025 - Local Workout Logging and Deferred Sync (proposed)](0025-offline-sync.md)
 - [ADR 0026 - Time Sets and Workout Cardio (proposed)](0026-time-and-cardio-tracking.md)
 - [ADR 0027 - Muscle Regions (proposed)](0027-muscle-regions.md)
+
+- [ADR 0028 - Half Credit for Secondary Muscle Volume](0028-secondary-muscle-volume.md)

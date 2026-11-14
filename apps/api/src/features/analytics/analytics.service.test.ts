@@ -159,8 +159,8 @@ describe("analytics service", () => {
     const region = { id: "region-1", slug: "chest_upper", name: "Upper chest", sortOrder: 1, muscleGroupSlug: "chest" };
     const exercise = { id: "exercise-1", name: "Incline Press" };
     const repository = new FakeAnalyticsRepository([], [], [], [
-      { workoutId: "workout-1", sessionDate: monday, exercise, muscleRegion: region },
-      { workoutId: "workout-1", sessionDate: monday, exercise, muscleRegion: region }
+      { muscleRole: "PRIMARY", workoutId: "workout-1", sessionDate: monday, exercise, muscleRegion: region },
+      { muscleRole: "PRIMARY", workoutId: "workout-1", sessionDate: monday, exercise, muscleRegion: region }
     ]);
     const service = createAnalyticsService({ repository });
     const result = await service.getWeeklyVolume("user-1", { startDate: monday, endDate: nextMonday, muscleGroupIds: undefined });
@@ -235,6 +235,7 @@ function weeklyRows(): WeeklyVolumeSetRecord[] {
 
 function weeklyRecord(overrides: Partial<WeeklyVolumeSetRecord>): WeeklyVolumeSetRecord {
   return {
+    muscleRole: "PRIMARY",
     workoutId: "workout-1",
     sessionDate: monday,
     exercise: {

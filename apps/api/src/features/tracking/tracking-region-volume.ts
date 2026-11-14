@@ -1,3 +1,4 @@
+import { findVolumeRegionSets } from "../analytics/analytics-volume-region.repository.js";
 import { sql, type Kysely } from "kysely";
 import type { AppDatabase } from "../../db/database.js";
 import type { WeeklyVolumeFilters, WeeklyVolumeSetRecord } from "../analytics/analytics.repository.js";
@@ -6,27 +7,10 @@ import { toWeeklyVolume } from "../analytics/analytics-weekly-volume.js";
 export interface TimedRegionSet extends Omit<WeeklyVolumeSetRecord, "muscleGroup"> {
   muscleRegion: WeeklyVolumeSetRecord["muscleGroup"] & { muscleGroupSlug: string };
 }
-interface RegionRow { workoutId: string; sessionDate: Date; exerciseId: string; exerciseName: string; id: string; name: string; slug: string; sortOrder: number; groupSlug: string }
-
-/** Batch C is independent of the optional region schema added by Batch B. */
+/** Remains compatible with a deployment that has not enabled the optional region schema. */
 export async function findTimedRegionSets(db: Kysely<AppDatabase>, filters: WeeklyVolumeFilters): Promise<TimedRegionSet[]> {
   const available = await sql<{ present: boolean }>`select to_regclass('public.muscle_regions') is not null as present`.execute(db);
-  if (!available.rows[0]?.present) return [];
-  // Time exercises are new catalog entries and have no region assignments.
-  // Match the accepted fallback for custom exercises: each primary group's default.
-  const result = await sql<RegionRow>`select ws.id as "workoutId", ws.started_at as "sessionDate", ex.id as "exerciseId", ex.name as "exerciseName",
-    region.id, region.name, region.slug, region.sort_order as "sortOrder", mg.slug as "groupSlug"
-    from timed_sets ts join workout_sessions ws on ws.id = ts.workout_session_id
-    join exercises ex on ex.id = ts.exercise_id
-    join exercise_muscle_groups emg on emg.exercise_id = ex.id and emg.role = 'PRIMARY'
-    join muscle_groups mg on mg.id = emg.muscle_group_id
-    join muscle_regions region on region.muscle_group_id = mg.id and region.is_group_default
-    where ws.user_id = ${filters.userId} and ws.deleted_at is null and ts.deleted_at is null and ts.set_type = 'working'
-      ${filters.startDate ? sql`and ws.started_at >= ${filters.startDate}` : sql``}
-      ${filters.endDate ? sql`and ws.started_at <= ${filters.endDate}` : sql``}
-      ${filters.muscleGroupIds ? sql`and mg.id in (${sql.join(filters.muscleGroupIds)})` : sql``}`.execute(db);
-  return result.rows.map((row) => ({ workoutId: row.workoutId, sessionDate: row.sessionDate,
-    exercise: { id: row.exerciseId, name: row.exerciseName }, muscleRegion: { id: row.id, name: row.name, slug: row.slug, sortOrder: row.sortOrder, muscleGroupSlug: row.groupSlug } }));
+  return available.rows[0]?.present ? findVolumeRegionSets(db, filters, "time") : [];
 }
 interface RegionItem {
   muscleRegion: { id: string; name: string; slug: string; muscleGroupSlug: string };
