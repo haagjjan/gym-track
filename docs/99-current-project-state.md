@@ -33,6 +33,18 @@ holds all of backlog items 1–7, committed (2026-11-13):
   behind `ENABLE_EXTENDED_TRACKING`. Setup and gates are in
   [next-tracking-verification.md](next-tracking-verification.md).
 - Sets accept 0 kg for bodyweight work, and History links to Templates and Exercises.
+- Time and cardio were reworked on 2026-11-13 (ADR 0026 revision): they are ordinary
+  exercises in the same picker, workout list and templates, logged in minutes and
+  seconds. The exercise picker and library filter by "logged by", and a live
+  workout lists cardio in its own section below the exercises.
+- Time/cardio Progress now shares the strength picker and time plot: one best
+  working entry per local day, 1W/1M/3M/Max visible spans, pan/tap inspection,
+  previous/next-day readout, window totals and an equivalent daily-winner table.
+- Muscle Volume gives primary assignments full credit and secondary assignments half
+  credit, including timed working sets, body regions, contributions and the guided
+  example (ADR 0028). Counts are derived on read; historical workouts update too.
+- A full audit of the 840 catalog exercises corrected the muscles of 125 of them
+  (migration `20261113140000000_correct_exercise_muscles.sql`).
 
 None of this has shipped. Offline sync is a proposed ADR (0025), not a built client; ADRs
 0026 and 0027 are proposed too.

@@ -133,8 +133,8 @@ In Tailwind v4, the raw values live as CSS variables on `:root` and `[data-theme
 | `--text` | `#f1f3f5` | `#0f1215` | Primary text |
 | `--text-secondary` | `#a7b0b9` | `#4a535c` | Secondary text |
 | `--text-muted` | `#8a949e` | `#5f6871` | Metadata, inactive tabs |
-| `--accent` | `#2dd4e6` | `#0b6f7c` | Primary buttons, active tab, links, focus ring |
-| `--on-accent` | `#04191c` | `#ffffff` | Text on accent fills |
+| `--accent` | `#2dd4e6` | `#2dd4e6` | Primary buttons, active tab, links, focus ring |
+| `--on-accent` | `#04191c` | `#04191c` | Text on accent fills |
 | `--success` | `#34d399` | `#15803d` | Completed, saved |
 | `--warning` | `#fbbf24` | `#b45309` | Needs attention |
 | `--danger` | `#f87171` | `#c81e1e` | Destructive actions, errors |
@@ -163,7 +163,7 @@ Rules:
 
   | Untrained | Stage 1 | 2 | 3 | 4 | Stage 5 |
   |---|---|---|---|---|---|
-  | `#2f353c` | `#7048c0` | `#8a5ce6` | `#a47cff` | `#c2a6ff` | `#e2d6ff` |
+  | `#2f353c` | `#e2d6ff` | `#c2a6ff` | `#a47cff` | `#8a5ce6` | `#7048c0` |
 
   Contrast against the figure (`#171a20`) rises from 2.8:1 to 12.7:1. Stage 1 is 2.0:1 against "untrained". Neighbouring stages are close (about 1.4:1), so the legend with set ranges is always visible, and tapping a muscle names its stage and set count in words. The same heat ramp is used in the light theme; the legend and selected-muscle readout carry the numerical meaning.
 - **Charts** (Progress): weight (or est. 1RM) in `--accent` on the left axis, reps in `--chart-reps` on a right axis; each axis's ticks and its legend chip take the series color, so it's clear which line a scale belongs to. Grid lines in `--line`. The chart always holds every logged day; 1W/1M/3M/Max set how much fits on screen, newest at the right, and the plot swipes back in time. No hover tooltip: a short tap picks a day (a pan never does), shown as a dashed marker and a readout with previous/next day buttons under the chart. A table view of the same data sits one tap away.
@@ -247,7 +247,7 @@ Write like a friendly coach texting you, not like a terminal.
 ## 3D figure and volume map
 
 - **Home:** the figure sits in one card under the header, about 240 px tall on phones (not 36 dvh). Under it, three stat tiles for this week: workouts, sets, volume. The bay stays but is quieter: no connector beams, no motes, a softer floor glow.
-- **Volume:** Front/Back and the time range sit above a compact stage (about 42% of the screen on phones, framed so the figure fills it). No summary tiles. Tapping a muscle turns the camera to it and shows its card directly under the stage (no page jump; a tap in the muscle list glides back up to the figure first). For 1W the card shows sets in the last 7 days and workouts; longer windows show per-week average and total. The legend is one strip of six outlined swatches with upper bounds and a link to the full-color setting. List bars have a neutral track and an outlined fill. On phones sideways drags rotate; vertical swipes use native page scrolling, including momentum and cancellation. Show a one-time gesture hint, not a permanent label.
+- **Volume:** Front/Back and the time range sit above a compact stage (about 42% of the screen on phones, framed so the figure fills it). No summary tiles. Tapping a muscle turns the camera to it and shows its card directly under the stage (no page jump; a tap in the muscle list glides back up to the figure first). For 1W the card shows sets in the last 7 days and workouts; longer windows show per-week average and total. Primary working sets count as 1 and secondary working sets as 0.5; the legend explains this, fractional counts remain visible, and the total is labeled "Muscle sets". The legend is one strip of six outlined swatches with upper bounds and a link to the full-color setting. List bars have a neutral track and an outlined fill. On phones sideways drags rotate; vertical swipes use native page scrolling, including momentum and cancellation. Show a one-time gesture hint, not a permanent label.
 - The figure must stay readable with no data: when nothing is trained, raise its base light so the anatomy is visible.
 - Never let 3D push the primary action below the fold on a 390 × 844 screen.
 - The canvas must not cover UI. Overlays such as the guide card and sheets stack above the canvas and its ambience layers (fixes the step 6 guide defect).
@@ -302,4 +302,22 @@ Write like a friendly coach texting you, not like a terminal.
 
 Behind the off-by-default extended-tracking flag, workout detail adds one Time and cardio section. Time sets use seconds, an optional added load and working/warmup type; a start/stop timer fills seconds. Cardio uses seconds, optional kilometres and heart rate. Editors use existing sheets, keep failed drafts, and require reopening a changed record before overwriting it. Cardio never appears in muscle volume.
 
-Progress adds a Strength / Time and cardio control. The latter shows duration or added load for a time exercise, or duration/distance for a cardio activity. Points represent logged entries, with a date/value picker and equivalent table; no full-screen chart. History quick views show both entry types. Its separate time/cardio CSV control explains that imports create completed workouts. Help offers local practice with no account writes.
+Progress adds a Strength / Time and cardio control. Both views use the same exercise
+picker (a subtitle opening a searchable sheet on phones, a list on desktop),
+1W/1M/3M/Max visible spans, pinned axes, native horizontal panning, tap-to-inspect,
+previous/next-day readout and chart/table toggle. Switching views retains the time
+window. Each chart plots one best working entry per local calendar day across all
+workouts; warm-ups are excluded. Older days remain plotted and can be reached by
+swiping, even with a short visible span. Changed values use filled dots; unchanged
+values use hollow dots.
+
+Time exercises compare duration or added weight. Cardio compares duration or
+distance. The highest selected measure wins; equal-duration entries favor more
+weight/distance, equal-weight holds favor a longer duration, and equal-distance
+cardio favors a shorter duration. The help control explains that longer duration
+measures endurance, not speed. Entries without distance remain available under
+duration and do not produce zero-distance points. Summary count and total time
+cover the selected window; the best selected measure covers all time. The table
+shows the same daily winners, newest first. History retains every logged entry.
+Its separate time/cardio CSV control explains that imports create completed
+workouts. Help offers local practice with no account writes.

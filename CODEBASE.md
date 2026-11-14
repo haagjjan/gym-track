@@ -39,7 +39,7 @@ Features (`src/features/`), each with routes, schemas, services, repositories an
 | `workouts` | workouts, session exercises, sets, retroactive edits, CSV import/export |
 | `templates` | workout templates and starting a workout from one |
 | `exercises` | catalog (about 820 system exercises), search, custom exercises, merge, muscle groups |
-| `analytics` | completed exercises, exercise progress and summaries, weekly volume |
+| `analytics` | completed exercises, exercise progress and summaries, weighted group/region volume (primary 1, secondary 0.5) |
 | `tracking` | gated time sets/cardio, revisions, progress, separate CSV, optional region compatibility |
 | `messages` | in-app messages, campaigns, deliveries, responses |
 | `admin` | overview, members, deletion support, campaigns, audit log |
@@ -49,7 +49,7 @@ Features (`src/features/`), each with routes, schemas, services, repositories an
 Routes are mounted under `/api/v1/*`. Errors use
 `{ "error": { "code", "message", "fields", "details" } }`.
 
-Database: 14 migrations in `db/migrations/` (core schema, muscle seed, auth hardening and
+Database: 16 migrations in `db/migrations/` (core schema, muscle seed, auth hardening and
 events, exercise muscles and templates, canonical classifications, catalog expansion and search,
 public beta foundation, workout mutation safety, onboarding demo). Tables: `users`,
 `user_sessions`, `auth_action_tokens`, `account_deletion_tokens`, `erasure_tombstones`,
@@ -97,7 +97,7 @@ Features (`src/features/`):
 | `launch` | Workout tab screen |
 | `dashboard` | Home screen and panels; device-local body profile, favourite lifts, display settings |
 | `history` | History list, rows, CSV panel and format guide |
-| `progress` | progress chart (pinned axes, zoom, table view) and controls |
+| `progress` | shared time plot (pinned axes, panning, daily inspection), exercise picker, time windows and strength controls |
 | `volume` | volume screen and panels, named muscle meshes, native touch scroll, camera director, region/group aggregation |
 | `avatar` | Home 3D scene: shared GLB loader and scene kit, camera, turntable driver, PR burst and rim material |
 | `templates`, `exercises`, `workouts` | template editor and list; exercise picker, editor and form; shared facet filters |
