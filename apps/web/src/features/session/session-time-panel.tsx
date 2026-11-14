@@ -74,7 +74,9 @@ function TimeForm({ endedAt, isSaving, onClose, onSave, startedAt }: {
           ? `${formatMinutes(resolved.startedAt, resolved.endedAt)}${resolved.nextDay ? ", finishing the next day" : ""}`
           : resolved.reason === "too-long"
             ? `A workout can be at most ${MAX_WORKOUT_MINUTES / 60} hours.`
-            : "Enter a date, a start and a finish."}
+            : resolved.reason === "same-time"
+              ? "Set a finish time after the start."
+              : "Enter a date, a start and a finish."}
       </p>
       {error ? <p className="mt-2 text-subhead text-danger" role="alert">{error}</p> : null}
       <div className="mt-4 grid gap-2">

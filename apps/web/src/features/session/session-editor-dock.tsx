@@ -48,7 +48,8 @@ export function SessionEditorDock({
     <div
       aria-label={label}
       className={isMobile
-        ? "fixed inset-x-0 z-50 overflow-y-auto overscroll-contain rounded-t-[var(--radius-card)] bg-surface-raised px-4 pb-[max(env(safe-area-inset-bottom),1rem)] pt-2"
+        // Save/Cancel rows (data-sheet-actions) stay pinned when the form is taller than a small phone.
+        ? "fixed inset-x-0 z-50 overflow-y-auto overscroll-contain rounded-t-[var(--radius-card)] bg-surface-raised px-4 pb-[max(env(safe-area-inset-bottom),1rem)] pt-2 [&_[data-sheet-actions]]:sticky [&_[data-sheet-actions]]:bottom-0 [&_[data-sheet-actions]]:z-10 [&_[data-sheet-actions]]:bg-surface-raised [&_[data-sheet-actions]]:py-2"
         : "static mt-3 overflow-visible rounded-[var(--radius-card)] bg-surface-raised p-4"}
       aria-modal={isMobile || undefined}
       ref={dialogRef}

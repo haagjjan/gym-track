@@ -108,7 +108,7 @@ function SheetRow({ children, danger = false, label, value }: { children: ReactN
         onClick={() => setOpen(true)}
         type="button"
       >
-        <span className={`min-w-0 flex-1 truncate text-body ${danger ? "text-danger" : "text-text"}`}>{label}</span>
+        <span className={`min-w-0 flex-1 text-body ${danger ? "text-danger" : "text-text"}`}>{label}</span>
         {value ? <span className="num shrink-0 text-body text-text-secondary">{value}</span> : null}
         <IconForward aria-hidden className="shrink-0 text-text-muted" />
       </button>

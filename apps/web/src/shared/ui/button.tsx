@@ -8,7 +8,7 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 export type ButtonVariant = "primary" | "secondary" | "destructive" | "plain";
 
 const variantClass: Record<ButtonVariant, string> = {
-  primary: "bg-accent text-on-accent disabled:bg-surface-raised disabled:text-text-muted",
+  primary: "bg-accent text-on-accent disabled:bg-[color-mix(in_srgb,var(--text)_9%,transparent)] disabled:text-text-muted",
   // A translucent tint of the text colour, so these stay visible on any surface,
   // including sheets, whose background is surface-raised itself.
   secondary: "bg-[color-mix(in_srgb,var(--text)_9%,transparent)] text-text disabled:text-text-muted",

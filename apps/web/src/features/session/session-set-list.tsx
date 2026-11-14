@@ -124,7 +124,7 @@ export function SetEditor({ isHistorical, isSaving, isDeleting, onSave, onDelete
           value={note}
         />
       </label>
-      <div className="mt-4 grid grid-cols-[1fr_auto] gap-2">
+      <div className="mt-4 grid grid-cols-[1fr_auto] gap-2" data-sheet-actions>
         <Button disabled={isSaving} onClick={isHistorical ? confirmSave.trigger : save}>
           {isSaving
             ? "Saving…"
