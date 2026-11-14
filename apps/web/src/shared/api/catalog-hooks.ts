@@ -22,6 +22,17 @@ import type {
   WorkoutTemplate
 } from "./types";
 
+export function useMuscleRegions(): UseQueryResult<MuscleGroup[]> {
+  return useQuery({
+    queryKey: ["muscle-regions"],
+    staleTime: Infinity,
+    queryFn: async ({ signal }) => {
+      const payload = await apiFetch<{ regions: MuscleGroup[] }>("/api/muscle-groups", { signal });
+      return payload.regions;
+    }
+  });
+}
+
 export function useMuscleGroups(): UseQueryResult<MuscleGroup[]> {
   return useQuery({
     queryKey: queryKeys.muscleGroups,
@@ -54,6 +65,7 @@ export type TrackingModeFilterValue = "" | "reps" | "time" | "cardio" | "strengt
 export interface ExerciseListOptions {
   search?: string;
   muscleGroupIds?: string[];
+  muscleRegionIds?: string[];
   equipment?: string;
   exerciseType?: string;
   ownership?: "editable" | "readOnly" | "";
@@ -153,6 +165,7 @@ export function useExerciseMutations(): ExerciseMutations {
 export interface TemplateListOptions {
   search?: string;
   muscleGroupIds?: string[];
+  muscleRegionIds?: string[];
   equipment?: string;
   exerciseType?: string;
   sort?: "lastUsed" | "name" | "lastEdited";

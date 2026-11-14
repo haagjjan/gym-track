@@ -24,6 +24,7 @@ export function appendExerciseFilters(
   options: {
     search?: string;
     muscleGroupIds?: string[];
+    muscleRegionIds?: string[];
     equipment?: string;
     exerciseType?: string;
     ownership?: string;
@@ -32,6 +33,7 @@ export function appendExerciseFilters(
   }
 ): void {
   if (options.search?.trim()) params.set("search", options.search.trim());
+  options.muscleRegionIds?.forEach((id) => params.append("muscleRegionIds", id));
   options.muscleGroupIds?.forEach((id) => params.append("muscleGroupIds", id));
   if (options.equipment) params.set("equipment", options.equipment);
   if (options.exerciseType) params.set("exerciseType", options.exerciseType);

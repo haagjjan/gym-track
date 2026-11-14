@@ -21,6 +21,7 @@ export interface Exercise {
   primaryMuscleGroups: MuscleGroup[];
   secondaryMuscleGroups: MuscleGroup[];
   muscleGroups: ExerciseMuscleGroup[];
+  muscleRegions?: ExerciseMuscleGroup[];
   createdByUserId: string | null;
   createdAt: string;
   updatedAt: string;
@@ -196,7 +197,7 @@ export type UpdateExerciseInput = CreateExerciseInput;
 export interface WorkoutTemplateExercise {
   id: string;
   position: number;
-  exercise: Pick<Exercise, "id" | "name" | "equipment" | "exerciseType" | "muscleGroups">;
+  exercise: Pick<Exercise, "id" | "name" | "equipment" | "exerciseType" | "muscleGroups" | "muscleRegions">;
 }
 
 export interface WorkoutTemplate {

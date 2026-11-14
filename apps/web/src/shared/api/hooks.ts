@@ -31,6 +31,7 @@ export const HISTORY_PAGE_SIZE = 20;
 export interface WorkoutListOptions {
   search?: string;
   muscleGroupIds?: string[];
+  muscleRegionIds?: string[];
   equipment?: string;
   exerciseType?: string;
   sort?: "newest" | "oldest" | "name";
