@@ -3,9 +3,10 @@ import type { ReactNode } from "react";
 import { NavigationTracker } from "../../../web/src/features/shell/app-history";
 import { THEME_BACKGROUND, themeBootstrapScript } from "../../../web/src/features/shell/theme";
 import { ExtendedTrackingProvider } from "../../../web/src/shared/extended-tracking";
-import { QueryProvider } from "../../../web/src/shared/query-provider";
 import { appConfig } from "../config";
 import { AndroidBack } from "../native/android-back";
+import { AppQueryProvider } from "../offline/app-query-provider";
+import { OutboxSync } from "../offline/outbox-sync";
 import "./globals.css";
 
 export const metadata: Metadata = { title: "GymTrack" };
@@ -29,9 +30,10 @@ export default function RootLayout({ children }: { children: ReactNode }): React
       <body>
         <NavigationTracker />
         <AndroidBack />
-        <QueryProvider>
+        <AppQueryProvider>
+          <OutboxSync />
           <ExtendedTrackingProvider enabled={appConfig.extendedTracking}>{children}</ExtendedTrackingProvider>
-        </QueryProvider>
+        </AppQueryProvider>
       </body>
     </html>
   );

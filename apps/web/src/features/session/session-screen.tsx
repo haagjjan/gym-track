@@ -37,7 +37,7 @@ export function SessionScreen({
   const router = useRouter();
   const { mark } = useOnboarding();
   const workoutQuery = useWorkout(workoutId);
-  const mutations = useSessionMutations({ workoutId });
+  const mutations = useSessionMutations({ userId, workoutId });
   const workoutMutations = useWorkoutMutations();
   const [activeExerciseId, setActiveExerciseId] = useState<string | null>(null);
   const [sessionMode, setSessionMode] = useState<"exercises" | "sets">("exercises");
