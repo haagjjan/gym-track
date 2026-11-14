@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { isAppRuntime } from "../../shared/platform/runtime";
 import { ExternalLink } from "../../shared/ui/external-link";
 import { IconForward } from "../../shared/ui/icons";
 import { Group } from "./settings-ui";
@@ -19,7 +20,7 @@ export function HelpSupportPanel({ supportUrl }: { supportUrl?: string | undefin
         <SettingsLink href="/help">Help and example workout</SettingsLink>
         <SettingsLink href="/support">Contact support</SettingsLink>
         <SettingsLink href="/privacy">Privacy notice</SettingsLink>
-        <SettingsLink href="/cookies">Cookies and storage</SettingsLink>
+        <SettingsLink href="/cookies">{isAppRuntime() ? "Device storage" : "Cookies and storage"}</SettingsLink>
         <SettingsLink href="/terms">Terms</SettingsLink>
         {supportUrl ? (
           <ExternalLink className={rowClass} href={supportUrl}>

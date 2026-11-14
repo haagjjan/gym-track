@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { ApiError, apiFetch } from "../../shared/api/client";
 import { apiRequest } from "../../shared/api/transport";
+import { isAppRuntime } from "../../shared/platform/runtime";
 import { saveFile } from "../../shared/save-file";
 import { Button } from "../../shared/ui/button";
 import { ConfirmDialog } from "../../shared/ui/confirm-dialog";
@@ -22,6 +23,7 @@ export function PrivacyDataPanel({ section }: { section: "choices" | "download" 
   const [confirming, setConfirming] = useState<Confirming>(null);
   const [pending, setPending] = useState(false);
   const { flash, saved } = useSavedFlash();
+  const app = isAppRuntime();
 
   async function setPreference(patch: Parameters<typeof update>[0]): Promise<void> {
     try {
@@ -43,7 +45,13 @@ export function PrivacyDataPanel({ section }: { section: "choices" | "download" 
     const blob = await response.blob();
     const file = new File([blob], `gym-progress-account-${new Date().toISOString().slice(0, 10)}.json`, { type: "application/json" });
     const result = await saveFile(file);
-    setState(result === "saved" ? "Your data is ready." : result === "needs-tap" ? "Tap Download again to save the file." : null);
+    setState(
+      result === "saved"
+        ? "Your data is ready."
+        : result === "needs-tap"
+          ? (app ? "Tap Export again to save the file." : "Tap Download again to save the file.")
+          : null
+    );
   }
 
   async function deleteAccount(): Promise<void> {
@@ -76,17 +84,17 @@ export function PrivacyDataPanel({ section }: { section: "choices" | "download" 
         <SavedStatus saved={saved} />
       </div> : null}
 
-      {section === "download" ? <Group label="Download your data">
+      {section === "download" ? <Group label={app ? "Export your data" : "Download your data"}>
         <Row>
           <p className="text-footnote text-text-secondary">Get a JSON copy of your account data. Workout CSV export is in History. Enter your password to confirm it’s you.</p>
           <PasswordField onChange={setPassword} value={password} />
-          <Button className="mt-3 w-full" disabled={!password} onClick={() => void exportAccount()} variant="secondary">Download account data</Button>
+          <Button className="mt-3 w-full" disabled={!password} onClick={() => void exportAccount()} variant="secondary">{app ? "Export account data" : "Download account data"}</Button>
         </Row>
       </Group> : null}
 
       {section === "delete" ? <Group label="Delete your account">
         <Row>
-          <p className="text-footnote text-text-secondary">Access ends right away. Your account and workout data are deleted for good after seven days. Download your data first. You can cancel from the emailed link or by contacting support before then.</p>
+          <p className="text-footnote text-text-secondary">Access ends right away. Your account and workout data are deleted for good after seven days. {app ? "Export your data first." : "Download your data first."} You can cancel from the emailed link or by contacting support before then.</p>
           {!showDelete ? <Button className="mt-3 w-full" onClick={() => setShowDelete(true)} variant="destructive">Review account deletion</Button> : (
             <div className="mt-3">
               <PasswordField onChange={setPassword} value={password} />

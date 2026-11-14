@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Button, buttonClass } from "../../shared/ui/button";
 import { ApiError, apiFetch } from "../../shared/api/client";
+import { isAppRuntime } from "../../shared/platform/runtime";
 import { IconCheck24 } from "../../shared/ui/icons";
 import { AuthFrame, FormError, PasswordField, TextField, inlineLinkClass } from "./auth-frame";
 
@@ -52,7 +53,7 @@ export function ForgotPasswordScreen(): ReactNode {
             If an account exists for that address, a reset link is on its way. The link
             works once and expires in 60 minutes.
           </SuccessNote>
-          <Link className={buttonClass("secondary")} href="/login">
+          <Link className={`${buttonClass("secondary")} w-full`} href="/login">
             Back to sign in
           </Link>
         </div>
@@ -198,6 +199,7 @@ export function VerifyEmailScreen(): ReactNode {
     };
   }, [token]);
 
+  const app = isAppRuntime();
   const copy: Record<VerifyState, { title: string; body: string; tone: string }> = {
     verifying: {
       title: "Confirming your email…",
@@ -206,7 +208,9 @@ export function VerifyEmailScreen(): ReactNode {
     },
     verified: {
       title: "Email confirmed",
-      body: "Your account is confirmed. You can close this page and carry on.",
+      body: app
+        ? "Your account is confirmed. Continue to the app to carry on."
+        : "Your account is confirmed. You can close this page and carry on.",
       tone: "text-text-secondary"
     },
     failed: {
@@ -225,7 +229,7 @@ export function VerifyEmailScreen(): ReactNode {
     <AuthFrame backHref="/" backLabel="Back to the app" title={copy[state].title}>
       <p className={`mt-2 text-body ${copy[state].tone}`} role="status">{copy[state].body}</p>
       <Link className={`${buttonClass("primary")} mt-6 w-full`} href="/">
-        Open the app
+        {app ? "Continue" : "Open the app"}
       </Link>
     </AuthFrame>
   );

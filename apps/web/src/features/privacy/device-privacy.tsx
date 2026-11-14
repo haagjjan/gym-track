@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { apiFetch } from "../../shared/api/client";
+import { isAppRuntime } from "../../shared/platform/runtime";
 import { Button } from "../../shared/ui/button";
 import { clearUserSetDrafts, purgeExpiredSetDrafts } from "../session/set-draft-storage";
 
@@ -124,12 +125,17 @@ export function useDevicePrivacy(): DevicePrivacyContextValue {
 }
 
 function StorageChoice({ onChoose }: { onChoose: (enabled: boolean) => void }): ReactNode {
+  const app = isAppRuntime();
   return (
     <aside aria-label="Device storage choice" className={SHEET_CLASS} role="dialog">
       <SheetGrabber />
-      <h2 className="text-title-3 text-text">Cookies and device storage</h2>
-      <p className="mt-2 text-subhead text-text-secondary">We always use one sign-in cookie and storage that recovers an unsaved set. You can also let us save your body profile, pinned lifts and display choices on this device. No advertising cookies.</p>
-      <p className="mt-2"><Link className="inline-flex min-h-11 items-center text-subhead text-accent" href="/cookies">Read the cookie and storage notice</Link></p>
+      <h2 className="text-title-3 text-text">{app ? "Device storage" : "Cookies and device storage"}</h2>
+      <p className="mt-2 text-subhead text-text-secondary">
+        {app
+          ? "We keep your sign-in and unsaved sets on this phone. You can also let us save your body profile, pinned lifts and display choices on this device. No advertising or tracking."
+          : "We always use one sign-in cookie and storage that recovers an unsaved set. You can also let us save your body profile, pinned lifts and display choices on this device. No advertising cookies."}
+      </p>
+      <p className="mt-2"><Link className="inline-flex min-h-11 items-center text-subhead text-accent" href="/cookies">{app ? "Read the device storage notice" : "Read the cookie and storage notice"}</Link></p>
       <div className="mt-2 grid gap-2"><Button onClick={() => onChoose(true)}>Save settings on this device</Button><Button onClick={() => onChoose(false)} variant="secondary">Essential only</Button></div>
     </aside>
   );

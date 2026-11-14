@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { apiFetch } from "../../shared/api/client";
+import { apiFetch, errorMessage } from "../../shared/api/client";
 import { ExternalLink } from "../../shared/ui/external-link";
-import { Skeleton } from "../../shared/ui/ui";
+import { ErrorState, Skeleton } from "../../shared/ui/ui";
 
 interface InboxMessage {
   id: string; title: string; body: string; actionUrl: string | null; essential: boolean;
@@ -13,7 +13,21 @@ interface InboxMessage {
 
 export function MessageInbox(): ReactNode {
   const [items, setItems] = useState<InboxMessage[] | null>(null);
-  useEffect(() => { void apiFetch<{ items: InboxMessage[] }>("/api/messages?inbox=true").then((result) => setItems(result.items)).catch(() => setItems([])); }, []);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(() => {
+    setError(null);
+    setItems(null);
+    void apiFetch<{ items: InboxMessage[] }>("/api/messages?inbox=true")
+      .then((result) => setItems(result.items))
+      .catch((caught: unknown) => setError(errorMessage(caught, "Couldn't load messages. Check your connection and try again.")));
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  if (error) return <ErrorState message={error} retry={load} />;
   if (items === null) return <Skeleton className="h-24 rounded-[var(--radius-card)]" />;
   if (items.length === 0) return <p className="text-body text-text-secondary">No messages yet. Notes from the team will show up here.</p>;
   return (

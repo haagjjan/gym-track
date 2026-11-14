@@ -76,7 +76,7 @@ export function SessionHeader(props: SessionHeaderProps): ReactNode {
           <label className="sr-only" htmlFor="session-name">Workout name</label>
           <input
             autoFocus={props.focusName}
-            className="block min-h-8 w-full truncate rounded-[var(--radius-sm)] bg-transparent px-1.5 text-headline text-text placeholder:text-text-muted focus:bg-surface-raised"
+            className="block min-h-11 w-full truncate rounded-[var(--radius-sm)] bg-transparent px-1.5 text-headline text-text placeholder:text-text-muted focus:bg-surface-raised"
             disabled={props.isRenaming}
             enterKeyHint="done"
             id="session-name"
@@ -93,7 +93,7 @@ export function SessionHeader(props: SessionHeaderProps): ReactNode {
             placeholder={fallbackTitle}
             value={draftTitle}
           />
-          <p className="px-1.5 text-footnote text-text-secondary">
+          <p className="px-1.5 pb-1 text-footnote text-text-secondary">
             {props.isOpen ? <ElapsedTime startedAt={props.startedAt} /> : <>Finished, {formatDayTime(props.startedAt)}</>}
             {props.isRenaming ? <span className="text-text-muted">, saving…</span> : null}
           </p>
