@@ -38,7 +38,7 @@ async function listRows(db: Kysely<AppDatabase>, filters: WorkoutListFilters, ex
   return rows.map((row) => ({
     ...toWorkoutSessionRecord(row),
     ...(extendedTracking ? { cardioEntries: extended.get(row.id)?.cardioEntries ?? 0 } : {}),
-    totalExercises: Number(row.totalExercises) + (extended.get(row.id)?.timeExercises ?? 0),
+    totalExercises: Number(row.totalExercises),
     totalSets: Number(row.totalSets) + (extended.get(row.id)?.timedSets ?? 0),
     tonnageKg: row.tonnageKg ?? "0",
     exercisePreview: previews.get(row.id) ?? []

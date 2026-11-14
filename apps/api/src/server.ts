@@ -145,7 +145,7 @@ export async function buildServer(
     repository: createWorkoutRepository(db, extras.extendedTracking ?? false)
   });
   const workoutLoggingService = createWorkoutLoggingService({
-    repository: createWorkoutLoggingRepository(db)
+    repository: createWorkoutLoggingRepository(db, extras.extendedTracking ?? false)
   });
   const exerciseService = createExerciseService({
     extendedTracking: extras.extendedTracking ?? false,

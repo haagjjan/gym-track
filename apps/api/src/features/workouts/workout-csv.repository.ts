@@ -36,7 +36,7 @@ export interface WorkoutCsvRepository {
 export function createWorkoutCsvRepository(db: Kysely<AppDatabase>): WorkoutCsvRepository {
   return {
     async listTimeExerciseNames() {
-      return (await db.selectFrom("exercises").select("name").where("tracking_mode", "=", "time").execute()).map((row) => row.name);
+      return (await db.selectFrom("exercises").select("name").where("tracking_mode", "<>", "reps").execute()).map((row) => row.name);
     },
     async exportRows(userId) {
       const rows = await db
@@ -174,7 +174,7 @@ async function findOrCreateExercise(
     .executeTakeFirst();
 
   if (existing) {
-    if (existing.trackingMode === "time") throw new TimeExerciseCsvError(exercise.row);
+    if (existing.trackingMode !== "reps") throw new TimeExerciseCsvError(exercise.row);
     if (existing.deletedAt) {
       await restoreExercise(db, existing.id, exercise, importedAt);
     }

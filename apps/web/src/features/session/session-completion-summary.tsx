@@ -90,7 +90,7 @@ export function CompletedWorkoutSummary({ totals, workout, example = false, onEd
         ) : (
           <StatTile label="Duration" value={duration} />
         )}
-        <StatTile label="Exercises" value={workout.exercises.length + (totals.timeExercises ?? 0)} />
+        <StatTile label="Exercises" value={workout.exercises.length} />
         <StatTile label="Sets" value={totals.sets} />
         <StatTile label="Volume" unit="kg" value={formatCompactNumber(totals.volume)} />
       </dl>

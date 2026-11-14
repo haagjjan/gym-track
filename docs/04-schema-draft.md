@@ -313,7 +313,7 @@ Rules:
 | Q13 Add exercise | `exercises`, lower-name uniqueness, optional `created_by_user_id` audit |
 | Q14 Exercise progress | Join `workout_sessions` -> `session_exercises` -> `sets` by user, exercise, date range |
 | Q15 Exercise summary | Same raw tables as Q14, computed aggregates on read |
-| Q16 Weekly sets per muscle | `sets` where `set_type = 'working'`, joined to exercise primary muscle |
+| Q16 Weekly sets per muscle | Working `sets` / enabled `timed_sets`, joined to current muscle roles (primary 1, secondary 0.5), computed on read |
 | Q17 Exercise muscle search/filter | `exercise_muscle_groups`, `muscle_groups`, lower-name B-tree and `pg_trgm` search indexes |
 | Q18 Template management | `workout_templates`, `workout_template_exercises` |
 | Q19 Template/session copying | template rows copied to `workout_sessions`, `session_exercises` transactionally |
@@ -349,6 +349,11 @@ body-region migration. `exercises.tracking_mode` defaults to `reps`, with a uniq
 constant-mode composite FK, plus its workout; it stores set type, positive
 seconds, nullable added kg and note. `cardio_entries` references its workout and
 stores activity, seconds, nullable metres/heart rate and note.
+`20261113130000000_unify_tracking_exercises.sql` adds the `cardio` tracking mode,
+`cardio_entries.exercise_id` and `cardio_entries.calories`, and seeds starter time
+and cardio exercises. `20261113140000000_correct_exercise_muscles.sql` corrects
+the regions and groups of 125 catalog exercises after a full audit; groups are
+derived from the regions.
 
 Both tables have client UUID primary keys, immutable create fingerprints,
 positive revisions, created/updated timestamps and nullable deletion timestamps.

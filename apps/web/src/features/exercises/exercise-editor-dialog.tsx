@@ -14,6 +14,8 @@ interface ExerciseEditorDialogProps {
   onSave: (input: CreateExerciseInput) => Promise<unknown>;
   onSelectExisting?: (exercise: Exercise) => void | Promise<void>;
   submitLabel?: string;
+  /** Preselects "Logged by" for a new exercise. */
+  defaultTrackingMode?: "reps" | "time" | "cardio";
 }
 
 /**
@@ -32,7 +34,8 @@ export function ExerciseEditorDialog({
   onClose,
   onSave,
   onSelectExisting,
-  submitLabel
+  submitLabel,
+  defaultTrackingMode
 }: ExerciseEditorDialogProps): ReactNode {
   return (
     <Sheet
@@ -66,6 +69,7 @@ export function ExerciseEditorDialog({
             {...(onSelectExisting ? { onSelectExisting } : {})}
             onSubmit={onSave}
             {...(submitLabel ? { submitLabel } : {})}
+            {...(defaultTrackingMode ? { defaultTrackingMode } : {})}
           />
         </>
       ) : null}

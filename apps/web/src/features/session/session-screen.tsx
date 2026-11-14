@@ -2,8 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "../../shared/api/client";
-import type { TrackingPayload } from "../tracking/tracking-types";
-import { WorkoutTracking } from "../tracking/workout-tracking";
+import { entryCounts, type TrackingPayload } from "../tracking/tracking-types";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ConfirmDialog } from "../../shared/ui/confirm-dialog";
@@ -44,6 +43,7 @@ export function SessionScreen({
   const [sessionMode, setSessionMode] = useState<"exercises" | "sets">("exercises");
   const [followActive, setFollowActive] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetScope, setSheetScope] = useState<"strength" | "cardio" | undefined>(undefined);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [status, setStatus] = useState("");
@@ -58,9 +58,12 @@ export function SessionScreen({
     if (!extendedTracking || !tracking.data) return total;
     return { ...total, sets: total.sets + tracking.data.timedSets.length,
       workingSets: total.workingSets + tracking.data.timedSets.filter((entry) => entry.setType === "working").length,
-      timeExercises: new Set(tracking.data.timedSets.map((entry) => entry.exerciseId)).size,
       cardioEntries: tracking.data.cardioEntries.length };
   }, [exercises, extendedTracking, tracking.data]);
+  const trackedCounts = useMemo(() => entryCounts(tracking.data), [tracking.data]);
+  // Removing an exercise removes its time and cardio entries on the server.
+  const refetchTracking = tracking.refetch;
+  useEffect(() => { if (extendedTracking) void refetchTracking(); }, [exercises.length, extendedTracking, refetchTracking]);
 
   // While logging, remember the open exercise for this browser session, so
   // leaving for the Progress shortcut (or a reload) comes back to it. A
@@ -93,6 +96,14 @@ export function SessionScreen({
   useEffect(() => {
     if (workout?.isOpen) void mark("startWorkout");
   }, [mark, workout?.isOpen]);
+
+  // Finishing swaps the logger for the summary; start it at the top, not at the
+  // logger's scroll position, so "Workout complete" isn't hidden under the bar.
+  const wasOpen = useRef<boolean | undefined>(undefined);
+  useEffect(() => {
+    if (wasOpen.current === true && workout?.isOpen === false) window.scrollTo({ top: 0 });
+    wasOpen.current = workout?.isOpen;
+  }, [workout?.isOpen]);
 
   useEffect(() => {
     if (!exercises.some((item) => item.id === activeExerciseId)) {
@@ -183,21 +194,29 @@ export function SessionScreen({
 
           <div className={sessionMode === "exercises" || !activeExercise ? "session-mode-back" : "session-mode-forward"} key={sessionMode}>
             {sessionMode === "exercises" || !activeExercise ? (
-              <SessionExerciseList
-                activeId={activeExercise?.id ?? null}
-                canEdit={isOpen}
-                exercises={exercises}
-                followActive={followActive}
-                isReordering={mutations.reorderExercises.isPending}
-                onAdd={() => setSheetOpen(true)}
-                onReorder={reorderExercises}
-                onSelect={(id) => {
-                  setFollowActive(true);
-                  setActiveExerciseId(id);
-                  closeEditors();
-                  setSessionMode("sets");
-                }}
-              />
+              <div className="space-y-6">
+                {/* With time and cardio on, cardio gets its own section below the exercises. */}
+                {(extendedTracking ? ["exercises", "cardio"] as const : ["exercises"] as const).map((variant) => (
+                  <SessionExerciseList
+                    activeId={activeExercise?.id ?? null}
+                    canEdit={isOpen}
+                    entryCounts={trackedCounts}
+                    exercises={!extendedTracking ? exercises : exercises.filter((item) => (item.exercise.trackingMode === "cardio") === (variant === "cardio"))}
+                    followActive={followActive}
+                    isReordering={mutations.reorderExercises.isPending}
+                    key={variant}
+                    onAdd={() => { setSheetScope(!extendedTracking ? undefined : variant === "cardio" ? "cardio" : "strength"); setSheetOpen(true); }}
+                    onReorder={reorderExercises}
+                    onSelect={(id) => {
+                      setFollowActive(true);
+                      setActiveExerciseId(id);
+                      closeEditors();
+                      setSessionMode("sets");
+                    }}
+                    variant={variant}
+                  />
+                ))}
+              </div>
             ) : (
               <>
                 <SessionModeNavigation
@@ -222,16 +241,16 @@ export function SessionScreen({
                   onSaveSet={() => { void logging.saveSet().then((saved) => { if (saved) void mark("logEditSet"); }); }}
                   savedFlash={null}
                   workoutEndedAt={workout.endedAt}
+                  workoutId={workoutId}
                 />
               </>
             )}
           </div>
 
-          {extendedTracking ? <WorkoutTracking workoutId={workoutId} /> : null}
           {!isOpen ? <SessionCompletionFooter workout={workout} /> : null}
         </div>
 
-        {isOpen ? <SessionStats exercises={exercises.length + (totals.timeExercises ?? 0)} totals={totals} /> : null}
+        {isOpen ? <SessionStats exercises={exercises.length} totals={totals} /> : null}
       </main>
 
       {isOpen ? (
@@ -263,6 +282,7 @@ export function SessionScreen({
         isSubmitting={mutations.addExercise.isPending || mutations.createExercise.isPending}
         onAddSelected={addExercises}
         onClose={closeExerciseSheet}
+        scope={sheetScope}
         onCreate={async (input) => {
           const exercise = await mutations.createExercise.mutateAsync(input);
           await addExercises([exercise.id]);

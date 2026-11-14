@@ -3,9 +3,9 @@ import { z } from "zod";
 import { cardioValuesSchema, timedValuesSchema } from "./tracking.schemas.js";
 
 const encodedColumns = ["workout_key", "workout_title", "workout_type", "workout_notes", "exercise_name", "activity", "note"] as const;
-export const trackingCsvColumns = ["format_version", "workout_key", "workout_started_at", "workout_ended_at", "workout_title", "workout_type", "workout_notes", "entry_kind", "entry_recorded_at", "exercise_name", "activity", "set_type", "duration_seconds", "added_weight_kg", "distance_metres", "average_heart_rate", "note"] as const;
+export const trackingCsvColumns = ["format_version", "workout_key", "workout_started_at", "workout_ended_at", "workout_title", "workout_type", "workout_notes", "entry_kind", "entry_recorded_at", "exercise_name", "activity", "set_type", "duration_seconds", "added_weight_kg", "distance_metres", "average_heart_rate", "calories", "note"] as const;
 export type TrackingCsvRow = Record<(typeof trackingCsvColumns)[number], string>;
-export interface ParsedTrackingRow { row: number; key: string; startedAt: Date; endedAt: Date; recordedAt: Date; title: string | null; workoutType: string | null; workoutNotes: string | null; exerciseName: string | null; values: z.infer<typeof timedValuesSchema> | z.infer<typeof cardioValuesSchema> }
+export interface ParsedTrackingRow { row: number; key: string; startedAt: Date; endedAt: Date; recordedAt: Date; title: string | null; workoutType: string | null; workoutNotes: string | null; exerciseName: string; kind: "time" | "cardio"; values: z.infer<typeof timedValuesSchema> | z.infer<typeof cardioValuesSchema> }
 export type TrackingCsvResult = { ok: true; rows: ParsedTrackingRow[] } | { ok: false; errors: { row: number; message: string }[] };
 
 export function parseTrackingCsv(text: string): TrackingCsvResult {
@@ -34,11 +34,13 @@ export function parseTrackingCsv(text: string): TrackingCsvResult {
     const common = { durationSeconds: Number(raw.duration_seconds), note: raw.note || null };
     const values = raw.entry_kind === "time" ? timedValuesSchema.safeParse({ ...common,
       exerciseId: "00000000-0000-4000-8000-000000000000", setType: raw.set_type, addedWeightKg: raw.added_weight_kg || null })
-      : raw.entry_kind === "cardio" ? cardioValuesSchema.safeParse({ ...common, activity: raw.activity,
-        distanceMetres: raw.distance_metres || null, averageHeartRate: raw.average_heart_rate ? Number(raw.average_heart_rate) : null }) : null;
-    if (!values?.success || (raw.entry_kind === "time" && !raw.exercise_name.trim())) { errors.push({ row, message: "Check the entry kind, exercise, duration and metric values." }); return; }
+      : raw.entry_kind === "cardio" ? cardioValuesSchema.safeParse({ ...common, exerciseId: "00000000-0000-4000-8000-000000000000",
+        distanceMetres: raw.distance_metres || null, averageHeartRate: raw.average_heart_rate ? Number(raw.average_heart_rate) : null,
+        calories: raw.calories ? Number(raw.calories) : null }) : null;
+    const name = (raw.entry_kind === "time" ? raw.exercise_name : raw.activity).trim();
+    if (!values?.success || !name || name.length > 100) { errors.push({ row, message: "Check the entry kind, exercise, duration and metric values." }); return; }
     rows.push({ row, key: raw.workout_key, startedAt: new Date(start.data), endedAt: new Date(end.data), recordedAt: new Date(recorded.data), title: raw.workout_title || null, workoutType: raw.workout_type || null, workoutNotes: raw.workout_notes || null,
-      exerciseName: raw.entry_kind === "time" ? raw.exercise_name.trim() : null, values: values.data });
+      exerciseName: name, kind: raw.entry_kind === "time" ? "time" : "cardio", values: values.data });
   });
   return errors.length ? { ok: false, errors } : { ok: true, rows };
 }

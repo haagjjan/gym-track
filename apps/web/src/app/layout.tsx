@@ -1,3 +1,4 @@
+import { ExtendedTrackingProvider } from "../shared/extended-tracking";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { QueryProvider } from "../shared/query-provider";
@@ -38,7 +39,7 @@ export default function RootLayout({ children }: RootLayoutProps): ReactNode {
       <body>
         <ClientDiagnosticsListener />
         <NavigationTracker />
-        <QueryProvider>{children}</QueryProvider>
+        <QueryProvider><ExtendedTrackingProvider enabled={process.env.ENABLE_EXTENDED_TRACKING === "true"}>{children}</ExtendedTrackingProvider></QueryProvider>
       </body>
     </html>
   );

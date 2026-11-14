@@ -187,7 +187,7 @@ interface ExerciseMuscleRegionsTable {
 }
 
 interface ExercisesTable {
-  tracking_mode: ColumnType<"reps" | "time", "reps" | "time" | undefined, "reps" | "time">;
+  tracking_mode: ColumnType<"reps" | "time" | "cardio", "reps" | "time" | "cardio" | undefined, "reps" | "time" | "cardio">;
   id: string;
   name: string;
   equipment: string | null;
@@ -287,6 +287,8 @@ interface TimedSetsTable extends ExtendedEntryColumns {
 }
 interface CardioEntriesTable extends ExtendedEntryColumns {
   activity: string;
+  exercise_id: string | null;
+  calories: number | null;
   distance_metres: ColumnType<string | null, string | number | null, string | number | null>;
   average_heart_rate: number | null;
 }

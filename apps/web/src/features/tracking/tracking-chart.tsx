@@ -1,28 +1,56 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { trackingInputClass } from "./timed-set-form";
+import { useEffect, useState, type ReactNode } from "react";
+import { formatDay } from "../../shared/format";
+import { IconBack, IconForward } from "../../shared/ui/icons";
+import { ProgressChartPlot } from "../progress/progress-chart-plot";
+import { ProgressChartViewToggle, ProgressInfoHint } from "../progress/progress-chart-controls";
+import { Segmented } from "../progress/progress-segmented";
+import type { ChartWindow } from "../progress/progress-selection";
+import { formatTrackingValue, trackingMetricLabel, type TrackingDay, type TrackingMetric } from "./tracking-progress-data";
 
-export interface TrackingPoint { id: string; date: string; value: number; detail: string }
-/** A bounded chart with an equivalent table and keyboard-accessible entry readout. */
-export function TrackingChart({ points, unit, emptyMessage = "Finish a workout with a logged entry to see progress." }: { points: TrackingPoint[]; unit: string; emptyMessage?: string }): ReactNode {
-  const [table, setTable] = useState(false);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const selected = points.find((point) => point.id === selectedId) ?? points.at(-1);
-  const max = points.reduce((value, point) => Math.max(value, point.value), 1);
-  const coordinates = points.map((point, index) => `${20 + index / Math.max(points.length - 1, 1) * 560},${190 - point.value / max * 170}`).join(" ");
-  if (!selected) return <p className="text-body text-text-secondary">{emptyMessage}</p>;
-  return <div className="mt-3 space-y-3">
-    <button aria-pressed={table} className="min-h-11 text-body text-accent" onClick={() => setTable(!table)} type="button">{table ? "Show chart" : "Show table"}</button>
-    {table ? <div className="overflow-x-auto"><table className="w-full text-left text-subhead text-text"><thead><tr><th className="py-2">Date</th><th>Entry</th></tr></thead><tbody>{points.map((point) => <tr className="border-t border-line" key={point.id}><td className="py-2 pr-3">{new Date(point.date).toLocaleDateString()}</td><td className="num">{point.detail}</td></tr>)}</tbody></table></div> : <>
-      <p className="num text-footnote text-text-secondary">0–{max.toLocaleString()} {unit}</p>
-      <svg aria-label={`${unit} across ${points.length} logged entries. Choose an entry below for its values.`} className="h-52 w-full text-accent" role="img" viewBox="0 0 600 220">
-        <path d="M20 20V190H580" fill="none" stroke="var(--line)" strokeWidth="1" />
-        <polyline fill="none" points={coordinates} stroke="currentColor" strokeWidth="3" />
-        {points.map((point, index) => <circle cx={20 + index / Math.max(points.length - 1, 1) * 560} cy={190 - point.value / max * 170} fill="currentColor" key={point.id} r={point.id === selected.id ? 6 : 3} />)}
-      </svg>
-      <label className="block text-subhead text-text-secondary">Entry<select aria-label="Entry" className={trackingInputClass} onChange={(event) => setSelectedId(event.target.value)} value={selected.id}>{points.map((point) => <option key={point.id} value={point.id}>{new Date(point.date).toLocaleDateString()} — {point.detail}</option>)}</select></label>
-      <p className="num text-body text-text" role="status">{selected.detail}</p>
-    </>}
+export function TrackingChart({ rows, kind, metric, onMetricChange, window }: {
+  rows: TrackingDay[]; kind: "time" | "cardio"; metric: TrackingMetric;
+  onMetricChange: (metric: TrackingMetric) => void; window: ChartWindow;
+}): ReactNode {
+  const [view, setView] = useState<"chart" | "table">("chart");
+  const [inspectedDate, setInspectedDate] = useState<string | null>(null);
+  useEffect(() => setInspectedDate(null), [rows]);
+  const picked = rows.findIndex((row) => row.date === inspectedDate);
+  const index = picked >= 0 ? picked : rows.length - 1;
+  const inspected = rows[index];
+  const label = trackingMetricLabel(metric);
+  const formatValue = (value: number): string => formatTrackingValue(value, metric);
+  const options: { label: string; value: TrackingMetric }[] = [{ label: "Duration", value: "duration" }, kind === "time" ? { label: "Added weight", value: "load" } : { label: "Distance", value: "distance" }];
+  return <div>
+    <div className="relative flex items-center gap-1 px-1">
+      <div className="min-w-0 flex-1"><Segmented label="Measure" onChange={onMetricChange} options={options} value={metric} /></div>
+      <ProgressInfoHint label="How the best daily entry is selected">
+        One best working entry per day. Duration measures endurance and shows the longest effort, added weight the heaviest hold, and distance the longest effort. Equal-distance efforts favor the faster time. Warm-ups are excluded.
+      </ProgressInfoHint>
+      <ProgressChartViewToggle onViewChange={setView} view={view} />
+    </div>
+    <p className="flex min-h-11 items-center gap-2 px-2 text-subhead font-semibold text-accent"><span aria-hidden className="size-2.5 rounded-full bg-accent" />{label}</p>
+    {rows.length === 0 ? <p className="py-6 text-center text-body text-text-secondary">{metric === "distance" ? "No distance is logged for this activity. Choose duration to see its progress." : "Finish a workout with a working entry to see progress."}</p> : view === "table" ? <TrackingTable rows={rows} metric={metric} /> : <ProgressChartPlot
+      marked={picked >= 0 ? rows[picked] : undefined} onTapDay={(date) => setInspectedDate(date === inspectedDate ? null : date)} rows={rows} window={window}
+      series={[{ side: "left", dataKey: "value", color: "var(--accent)", label, axisWidth: metric === "duration" ? 52 : 36, formatValue, dot: trackingDot }]} />}
+    {inspected ? <div className="mt-1 flex items-center gap-1 px-1">
+      <button aria-label="Previous day" className="flex size-11 shrink-0 items-center justify-center rounded-full text-accent disabled:text-text-muted" disabled={index <= 0} onClick={() => setInspectedDate(rows[index - 1]!.date)} type="button"><IconBack /></button>
+      <p className="min-w-0 flex-1 text-center text-callout text-text" role="status"><span className="block truncate font-semibold">{formatDay(inspected.date)}</span><span className="num block truncate text-subhead text-text-secondary" title={inspected.detail}>{inspected.detail}</span></p>
+      <button aria-label="Next day" className="flex size-11 shrink-0 items-center justify-center rounded-full text-accent disabled:text-text-muted" disabled={index >= rows.length - 1} onClick={() => setInspectedDate(rows[index + 1]!.date)} type="button"><IconForward /></button>
+    </div> : null}
   </div>;
+}
+
+function trackingDot({ cx, cy, payload, stroke }: { cx?: number | undefined; cy?: number | undefined; payload?: TrackingDay | undefined; stroke?: string | undefined }): ReactNode {
+  if (cx === undefined || cy === undefined || !payload) return <circle r={0} />;
+  return <circle cx={cx} cy={cy} fill={payload.changed ? stroke : "none"} r={payload.changed ? 4 : 2.5} stroke={stroke} strokeWidth={payload.changed ? 0 : 1.5} />;
+}
+
+function TrackingTable({ rows, metric }: { rows: TrackingDay[]; metric: TrackingMetric }): ReactNode {
+  return <div className="max-h-[22rem] overflow-auto"><table className="w-full text-left text-callout">
+    <caption className="sr-only">Best daily entries, newest first</caption>
+    <thead><tr className="text-footnote text-text-secondary"><th className="py-2 pr-3 font-normal" scope="col">Date</th><th className="px-3 py-2 text-right font-normal" scope="col">{trackingMetricLabel(metric)}</th><th className="px-3 py-2 font-normal" scope="col">Best entry</th></tr></thead>
+    <tbody className="divide-y divide-line">{[...rows].reverse().map((row) => <tr key={row.date}><th className="py-3 pr-3 font-normal text-text" scope="row">{formatDay(row.date)}</th><td className="num px-3 py-3 text-right text-text">{formatTrackingValue(row.value, metric)}</td><td className="num px-3 py-3 text-subhead text-text-secondary">{row.detail}</td></tr>)}</tbody>
+  </table></div>;
 }

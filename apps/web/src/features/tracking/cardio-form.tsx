@@ -1,32 +1,50 @@
 "use client";
 
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Button } from "../../shared/ui/button";
-import { trackingInputClass } from "./timed-set-form";
+import { Stepper } from "../../shared/ui/stepper";
+import { DurationInput } from "./duration-input";
+import { EntryActions, NoteField, type EntryFormProps } from "./entry-form-parts";
 import type { CardioEntry, CardioValues } from "./tracking-types";
 
-export function CardioForm({ entry, pending, onSave }: {
-  entry?: CardioEntry | undefined; pending: boolean; onSave: (values: CardioValues) => Promise<void>;
-}): ReactNode {
-  const [activity, setActivity] = useState(entry?.activity ?? "Running");
-  const [seconds, setSeconds] = useState(entry?.durationSeconds ?? 1200);
-  const [distance, setDistance] = useState(entry?.distanceMetres ? String(Number(entry.distanceMetres) / 1000) : "");
-  const [heartRate, setHeartRate] = useState(entry?.averageHeartRate?.toString() ?? "");
+/** Cardio: duration first, distance beside it, the rest behind "More details". */
+export function CardioForm({ entry, exerciseId, initial, onCancel, onDelete, onSave, pending, title }: EntryFormProps<CardioEntry, CardioValues>): ReactNode {
+  const from = entry ?? initial;
+  const [seconds, setSeconds] = useState(from?.durationSeconds ?? 1200);
+  const [distance, setDistance] = useState(from?.distanceMetres ? String(Number((Number(from.distanceMetres) / 1000).toFixed(2))) : "0");
+  const [calories, setCalories] = useState(entry?.calories ? String(entry.calories) : "0");
+  const [heartRate, setHeartRate] = useState(entry?.averageHeartRate ? String(entry.averageHeartRate) : "0");
   const [note, setNote] = useState(entry?.note ?? "");
-  async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
-    event.preventDefault();
-    await onSave({ activity, durationSeconds: seconds, distanceMetres: distance === "" ? null : (Number(distance) * 1000).toFixed(2),
-      averageHeartRate: heartRate === "" ? null : Number(heartRate), note: note || null });
+  const [more, setMore] = useState(Boolean(entry?.calories || entry?.averageHeartRate || entry?.note));
+  const km = Number(distance || 0);
+  const kcal = Number(calories || 0);
+  const bpm = Number(heartRate || 0);
+  const valid = seconds >= 1 && Number.isFinite(km) && km >= 0 && km <= 1000
+    && Number.isInteger(kcal) && kcal >= 0 && kcal <= 20000 && Number.isInteger(bpm) && (bpm === 0 || (bpm >= 20 && bpm <= 300));
+
+  function save(): void {
+    onSave({ exerciseId, durationSeconds: seconds, distanceMetres: km > 0 ? (km * 1000).toFixed(2) : null,
+      calories: kcal > 0 ? kcal : null, averageHeartRate: bpm > 0 ? bpm : null, note: note.trim() || null });
   }
-  return <form onSubmit={(event) => void submit(event)}><fieldset className="space-y-3" disabled={pending}>
-    <legend className="mb-3 text-headline text-text">{entry ? "Edit cardio" : "Log cardio"}</legend>
-    <label className="block text-subhead text-text-secondary">Activity<input className={trackingInputClass} maxLength={100} onChange={(event) => setActivity(event.target.value)} required value={activity} /></label>
-    <div className="grid grid-cols-2 gap-3">
-      <label className="text-subhead text-text-secondary">Seconds<input className={trackingInputClass} inputMode="numeric" max={86400} min={1} onChange={(event) => setSeconds(Number(event.target.value))} required step={1} type="number" value={seconds} /></label>
-      <label className="text-subhead text-text-secondary">Distance (km)<input className={trackingInputClass} inputMode="decimal" max={1000} min={0.00001} onChange={(event) => setDistance(event.target.value)} placeholder="Optional" step="0.00001" type="number" value={distance} /></label>
-    </div>
-    <label className="block text-subhead text-text-secondary">Average heart rate<input className={trackingInputClass} inputMode="numeric" max={300} min={20} onChange={(event) => setHeartRate(event.target.value)} placeholder="Optional" step={1} type="number" value={heartRate} /></label>
-    <label className="block text-subhead text-text-secondary">Note<input className={trackingInputClass} maxLength={1000} onChange={(event) => setNote(event.target.value)} value={note} /></label>
-    <Button type="submit">{pending ? "Saving…" : "Save cardio"}</Button>
-  </fieldset></form>;
+
+  return (
+    <section aria-label={title} data-set-inputs>
+      <h2 className="mb-3 text-title-3 text-text">{title}</h2>
+      <DurationInput onChange={setSeconds} step={60} value={seconds} />
+      <div className="mt-4"><Stepper decimals label="Distance" onChange={setDistance} step={0.5} unit="km" value={distance} /></div>
+      {more ? (
+        <>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <Stepper label="Calories" onChange={setCalories} step={10} unit="kcal" value={calories} />
+            <Stepper label="Avg heart rate" onChange={setHeartRate} step={1} unit="bpm" value={heartRate} />
+          </div>
+          <NoteField onChange={setNote} open value={note} />
+        </>
+      ) : (
+        <Button className="mt-2 -ml-4" onClick={() => setMore(true)} size="compact" variant="plain">More details</Button>
+      )}
+      <p className="mt-2 text-footnote text-text-secondary">Leave a value at 0 to skip it.</p>
+      <EntryActions canSave={valid} isEdit={Boolean(entry)} noun="entry" onCancel={onCancel} onDelete={onDelete} onSave={save} pending={pending} />
+    </section>
+  );
 }

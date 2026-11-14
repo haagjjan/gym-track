@@ -71,6 +71,8 @@ export function createExerciseService(options: ExerciseServiceOptions): Exercise
         exerciseType: input.exerciseType,
         ownership: input.ownership,
         userId,
+        ...(options.extendedTracking ? { includeTracked: true } : {}),
+        ...(input.trackingMode ? { trackingMode: input.trackingMode } : {}),
         sort: input.sort ?? "name",
         limit: input.limit,
         offset: input.offset

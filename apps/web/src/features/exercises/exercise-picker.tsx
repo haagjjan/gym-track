@@ -1,5 +1,8 @@
 "use client";
 
+import { useExtendedTracking } from "../../shared/extended-tracking";
+import type { TrackingModeFilterValue } from "../../shared/api/catalog-hooks";
+import { TrackingModeFilter } from "./tracking-mode-filter";
 import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "../../shared/ui/button";
 import { ErrorState, Skeleton } from "../../shared/ui/ui";
@@ -30,6 +33,8 @@ export interface ExercisePickerProps {
   footer?: ReactNode;
   selectionMode?: "multiple" | "single";
   selectedIds?: readonly string[];
+  /** Limits the list: `strength` hides cardio, `cardio` shows only cardio. */
+  scope?: "strength" | "cardio";
   onClose: () => void;
   onSelect: (exercise: Exercise) => void | Promise<void>;
 }
@@ -41,6 +46,7 @@ export function ExercisePicker({
   footer,
   selectionMode = "single",
   selectedIds = [],
+  scope,
   onClose,
   onSelect
 }: ExercisePickerProps): ReactNode {
@@ -48,7 +54,10 @@ export function ExercisePicker({
   const [debounced, setDebounced] = useState("");
   const [filters, setFilters] = useState<FacetFilterValue>(emptyFacetFilters);
   const [sort, setSort] = useState<"name" | "muscle" | "equipment" | "type">("name");
-  const exercises = useExercisesInfinite({ search: debounced, ...filters, sort });
+  const trackingEnabled = useExtendedTracking();
+  const [mode, setMode] = useState<TrackingModeFilterValue>("");
+  const trackingMode: TrackingModeFilterValue = !trackingEnabled ? "" : scope === "cardio" ? "cardio" : mode || (scope === "strength" ? "strength" : "");
+  const exercises = useExercisesInfinite({ search: debounced, ...filters, sort, ...(trackingMode ? { trackingMode } : {}) });
   const exerciseItems = exercises.data?.pages.flatMap((page) => page.items) ?? [];
 
   useEffect(() => {
@@ -66,6 +75,10 @@ export function ExercisePicker({
       <div className="shrink-0">
         <input aria-label="Search exercises" className={fieldClass} onChange={(event) => setQuery(event.currentTarget.value)} placeholder="Search by exercise or muscle" type="search" value={query} />
       </div>
+
+      {trackingEnabled && scope !== "cardio" ? (
+        <div className="mt-2 shrink-0"><TrackingModeFilter includeCardio={scope !== "strength"} onChange={setMode} value={mode} /></div>
+      ) : null}
 
       <div className="my-2 shrink-0">
         <FacetFilters

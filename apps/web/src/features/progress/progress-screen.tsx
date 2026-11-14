@@ -20,15 +20,9 @@ import {
   initialProgressViewPreferences,
   updateProgressViewPreferences
 } from "./progress-preferences";
+import { progressTimeWindows } from "./progress-selection";
 import { ProgressSummaryMetrics } from "./progress-summary-metrics";
 import { progressSummaryRange } from "./progress-summary";
-
-const timeWindows: { label: string; value: ChartWindow }[] = [
-  { label: "1W", value: "7" },
-  { label: "1M", value: "30" },
-  { label: "3M", value: "90" },
-  { label: "Max", value: "all" }
-];
 
 /**
  * Single-exercise strength analysis: pick one exercise, read the trend, decide
@@ -37,9 +31,12 @@ const timeWindows: { label: string; value: ChartWindow }[] = [
 export function ProgressScreen({ extendedTracking = false }: { extendedTracking?: boolean }): ReactNode {
   const completedExercises = useCompletedExercises();
   // `?exercise=<id>` opens that exercise (the shortcut from the workout logger).
-  const requestedId = useSearchParams().get("exercise");
+  const searchParams = useSearchParams();
+  const requestedId = searchParams.get("exercise");
+  // `?tracked=<id>&kind=time|cardio` opens a time or cardio exercise (the shortcut from the workout logger).
+  const requestedTracked = searchParams.get("tracked");
   const [selectedId, setSelectedId] = useState<string | null>(requestedId);
-  const [trackingView, setTrackingView] = useState<"strength" | "extended">("strength");
+  const [trackingView, setTrackingView] = useState<"strength" | "extended">(requestedTracked ? "extended" : "strength");
   const [view, setView] = useState(initialProgressViewPreferences);
   const { window } = view;
 
@@ -73,7 +70,7 @@ export function ProgressScreen({ extendedTracking = false }: { extendedTracking?
       <h1 className="text-large-title text-text">Progress</h1>
       <Segmented label="Progress tracking" onChange={setTrackingView} options={[{ value: "strength", label: "Strength" }, { value: "extended", label: "Time and cardio" }]} value={trackingView} />
     </div>
-    {trackingView === "strength" ? strength : <div className="mx-auto max-w-5xl px-4 pb-8 lg:px-6"><TrackingProgress /></div>}
+    {trackingView === "strength" ? strength : <TrackingProgress initialChoice={requestedTracked ?? ""} initialKind={searchParams.get("kind") === "cardio" ? "cardio" : "time"} window={window} onWindowChange={(next) => setView((current) => updateProgressViewPreferences(current, { window: next }))} />}
   </>;
 
 }
@@ -132,7 +129,7 @@ export function ProgressView({ hideTitle = false, completedExercises, exercises,
             ) : null}
 
             <div>
-              <Segmented label="Time window" onChange={(next: ChartWindow) => setView((current) => updateProgressViewPreferences(current, { window: next }))} options={timeWindows} value={window} />
+              <Segmented label="Time window" onChange={(next: ChartWindow) => setView((current) => updateProgressViewPreferences(current, { window: next }))} options={progressTimeWindows} value={window} />
             </div>
 
             <div className="mt-3 rounded-[var(--radius-card)] bg-surface px-2 py-2">

@@ -23,7 +23,8 @@ interface AddExerciseWriteInput {
 
 export async function addSessionExerciseWrite(
   db: Kysely<AppDatabase>,
-  input: AddExerciseWriteInput
+  input: AddExerciseWriteInput,
+  allowTracked = false
 ): Promise<MutationWriteResult<SessionExerciseRecord>> {
   return db.transaction().execute(async (trx) => {
     if (!(await lockOwnedWorkout(trx, input.userId, input.workoutId))) {
@@ -48,9 +49,19 @@ export async function addSessionExerciseWrite(
       };
     }
 
-    const exercise = await findSelectableExercise(trx, input.values.exerciseId);
+    const exercise = await findSelectableExercise(trx, input.values.exerciseId, allowTracked);
     if (!exercise) {
       return { ok: false, reason: "not_found" };
+    }
+    if (exercise.trackingMode) {
+      // Time and cardio entries hang off the workout and the exercise, so one
+      // such exercise appears once per workout: adding it again returns it.
+      const present = await trx.selectFrom("session_exercises").select("id")
+        .where("workout_session_id", "=", input.workoutId).where("exercise_id", "=", exercise.id)
+        .where("deleted_at", "is", null).executeTakeFirst();
+      if (present) {
+        return { ok: true, replayed: true, value: await findSessionExerciseByIdOrThrow(trx, present.id) };
+      }
     }
 
     const count = await countActiveRows(
@@ -144,6 +155,13 @@ export async function deleteSessionExerciseWrite(
       return { ok: false, reason: "not_found" };
     }
 
+    for (const table of ["timed_sets", "cardio_entries"] as const) {
+      await trx.updateTable(table)
+        .set({ deleted_at: deletedAt, updated_at: deletedAt, revision: sql`revision + 1` })
+        .where("workout_session_id", "=", workoutId).where("deleted_at", "is", null)
+        .where("exercise_id", "=", (eb) => eb.selectFrom("session_exercises").select("exercise_id").where("id", "=", sessionExerciseId))
+        .execute();
+    }
     await trx
       .updateTable("sets")
       .set({ deleted_at: deletedAt, updated_at: deletedAt })

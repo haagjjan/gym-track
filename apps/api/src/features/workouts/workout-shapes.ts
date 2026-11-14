@@ -28,6 +28,7 @@ interface SessionExerciseShape {
   exercise: {
     id: string;
     name: string;
+    trackingMode?: "time" | "cardio";
     primaryMuscleGroup: MuscleGroupShape;
     primaryMuscleGroups: MuscleGroupShape[];
     secondaryMuscleGroups: MuscleGroupShape[];

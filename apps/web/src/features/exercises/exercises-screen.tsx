@@ -1,5 +1,8 @@
 "use client";
 
+import { useExtendedTracking } from "../../shared/extended-tracking";
+import type { TrackingModeFilterValue } from "../../shared/api/catalog-hooks";
+import { TrackingModeFilter } from "./tracking-mode-filter";
 import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "../../shared/ui/button";
 import { ErrorState, Skeleton } from "../../shared/ui/ui";
@@ -29,7 +32,9 @@ export function ExercisesScreen({ userId }: { userId: string }): ReactNode {
     userId
   });
   const [editing, setEditing] = useState<Exercise | "new" | null>(null);
-  const exercises = useExercises({ search, ...filters, sort });
+  const trackingEnabled = useExtendedTracking();
+  const [trackingMode, setTrackingMode] = useState<TrackingModeFilterValue>("");
+  const exercises = useExercises({ search, ...filters, sort, ...(trackingEnabled && trackingMode ? { trackingMode } : {}) });
   const mutations = useExerciseMutations();
 
   useEffect(() => {
@@ -41,6 +46,7 @@ export function ExercisesScreen({ userId }: { userId: string }): ReactNode {
     <div className="mx-auto max-w-3xl space-y-4 px-4 pb-6 pt-4 lg:px-6">
       <h1 className="text-title-1 text-text">Exercise library</h1>
       <input aria-label="Search exercises" className="min-h-[3.125rem] w-full rounded-[var(--radius-control)] border border-control-line bg-surface-raised px-3 text-body text-text placeholder:text-text-muted" onChange={(event) => setSearchInput(event.currentTarget.value)} placeholder="Search by exercise, muscle or equipment" type="search" value={searchInput} />
+      {trackingEnabled ? <TrackingModeFilter onChange={setTrackingMode} value={trackingMode} /> : null}
       <FacetFilters filters={filters} onChange={setFilters} onClear={clear} onSortChange={(value) => setSort(value as typeof sort)} showEditability sort={sort} sortOptions={sortOptions} />
 
       {exercises.isLoading ? <ExerciseSkeleton /> : exercises.isError ? (

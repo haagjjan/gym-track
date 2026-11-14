@@ -17,10 +17,11 @@ export const timedValuesSchema = z.object({
   note
 });
 export const cardioValuesSchema = z.object({
-  activity: z.string().trim().min(1).max(100),
+  exerciseId: uuid,
   durationSeconds: duration,
   distanceMetres: decimal(true, 1000000).nullable().optional().transform((value) => value ?? null),
   averageHeartRate: z.number().int().min(20).max(300).nullable().optional().transform((value) => value ?? null),
+  calories: z.number().int().min(1).max(20000).nullable().optional().transform((value) => value ?? null),
   note
 });
 export const timedCreateSchema = timedValuesSchema.extend({ id: uuid }).strict();

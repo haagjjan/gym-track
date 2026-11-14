@@ -95,7 +95,7 @@ function ExercisePicker({ excludeId, label, onClear, onSelect, selected }: { exc
       </div>
     );
   }
-  const candidates = (results.data ?? []).filter((exercise) => exercise.id !== excludeId);
+  const candidates = (results.data ?? []).filter((exercise) => exercise.id !== excludeId && !exercise.trackingMode);
   return (
     <div>
       <label className="block">

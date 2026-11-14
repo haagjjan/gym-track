@@ -8,10 +8,11 @@ All new changes are uncommitted. No production migration, deployment or push ran
 
 `ENABLE_EXTENDED_TRACKING` defaults to false on both servers. When enabled:
 
-- Workout detail has time-set and cardio editors, a local timer, optional added
-  load, heart rate, revision checks and soft deletion. New time exercises use
-  the existing name/muscle validation. Existing repetition exercises are not
-  reclassified and time exercises do not enter the repetition picker/templates.
+- Time and cardio exercises are ordinary exercises: created in the Exercises menu
+  ("Logged by"), picked from the same list, ordered in the workout and allowed in
+  templates. Their "Add set" / "Add entry" sheet has a minutes-and-seconds
+  duration, a timer and optional added weight for holds, and distance, calories
+  and heart rate for cardio. Revision checks and soft deletion are unchanged.
 - Progress switches between strength and time/cardio. Time compares duration or
   added load; cardio compares duration or distance. A table and entry picker
   expose every value. History quick views show both new record kinds.

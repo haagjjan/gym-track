@@ -37,7 +37,9 @@ export async function listExerciseRows(
     .innerJoin("muscle_groups", "muscle_groups.id", "exercises.primary_muscle_group_id")
     .select(exerciseSelection)
     .where("exercises.deleted_at", "is", null)
-    .where("exercises.tracking_mode", "=", "reps")
+    .$if(!filters.includeTracked, (builder) => builder.where("exercises.tracking_mode", "=", "reps"))
+    .$if(filters.trackingMode === "strength", (builder) => builder.where("exercises.tracking_mode", "<>", "cardio"))
+    .$if(filters.trackingMode !== undefined && filters.trackingMode !== "strength", (builder) => builder.where("exercises.tracking_mode", "=", filters.trackingMode as "reps" | "time" | "cardio"))
     .$if(filters.primaryMuscleGroupId !== undefined, (builder) =>
       builder.where(sql<boolean>`exists (
         select 1 from exercise_muscle_groups emg
@@ -117,7 +119,9 @@ export async function countExerciseRows(
     .selectFrom("exercises")
     .select((eb) => eb.fn.countAll<string>().as("total"))
     .where("deleted_at", "is", null)
-    .where("tracking_mode", "=", "reps")
+    .$if(!filters.includeTracked, (builder) => builder.where("tracking_mode", "=", "reps"))
+    .$if(filters.trackingMode === "strength", (builder) => builder.where("tracking_mode", "<>", "cardio"))
+    .$if(filters.trackingMode !== undefined && filters.trackingMode !== "strength", (builder) => builder.where("tracking_mode", "=", filters.trackingMode as "reps" | "time" | "cardio"))
     .$if(filters.primaryMuscleGroupId !== undefined, (builder) =>
       builder.where(sql<boolean>`exists (
         select 1 from exercise_muscle_groups emg
@@ -265,7 +269,7 @@ export async function replaceExerciseMuscles(
 }
 
 type ExerciseRow = {
-  trackingMode: "reps" | "time";
+  trackingMode: "reps" | "time" | "cardio";
   id: string;
   name: string;
   equipment: string | null;

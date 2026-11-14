@@ -1395,7 +1395,7 @@ When no matching sets exist, numeric totals return zero, `averageRir` returns `n
 
 ### `GET /api/v1/analytics/weekly-volume`
 
-Returns weekly working-set counts by primary muscle group.
+Returns weekly weighted muscle-set counts: primary assignments receive 1 per working set and secondary assignments receive 0.5 (ADR 0028). All `workingSets` fields, including exercise and recent-workout contributions, are numbers that may contain .5 fractions.
 
 Query parameters:
 
@@ -1445,12 +1445,12 @@ Response `200`:
 Behavior:
 
 - Counts working sets only.
-- Counts each current primary muscle assignment for the exercise; secondary assignments do not receive volume.
+- Counts each current primary muscle assignment as 1 and each secondary assignment as 0.5 per working set. Logged set counts and tonnage in other endpoints remain unweighted.
 - Includes per-muscle exercise totals and recent contributing sessions for the Weekly Volume detail panel.
 - Each week also carries `regionItems`: the same working sets by finer muscle region. An item has the shape of a
   group item with `muscleRegion: { id, slug, name, muscleGroupSlug }` in place of `muscleGroup`. A set counts once
-  per primary region of its exercise, so the regions of one group can add up to more than the group.
-- A user-created exercise has no region rows and counts toward the default region of its primary muscle group.
+  per primary region and 0.5 per secondary region of its exercise; secondary groups never produce full-credit regions. Regions of one group can add up to more than the group.
+- An exercise with no region mapping for a muscle group credits that group's default region using the group role (1 primary, 0.5 secondary).
 - Excludes soft-deleted workouts, session exercises, and sets.
 
 ## Deferred Endpoints
@@ -1793,9 +1793,12 @@ Time values: `exerciseId` (time-mode exercise UUID), `durationSeconds` (integer
 `addedWeightKg` (0–9,999.99), and nullable/optional `note` (1,000 characters).
 No synthetic repetitions or RIR are stored. An absent added load is `null`.
 
-Cardio values: `activity` (trimmed 1–100 characters), `durationSeconds` (integer
+Cardio values: `exerciseId` (a cardio exercise), `durationSeconds` (integer
 1–86,400), nullable/optional positive `distanceMetres` (up to 1,000,000 with two
-decimals), nullable/optional `averageHeartRate` (integer 20–300), and note.
+decimals), nullable/optional `averageHeartRate` (integer 20–300),
+nullable/optional `calories` (integer 1–20,000), and note. Responses also carry
+`activity`, the exercise name. A time set on a cardio exercise, or the reverse,
+returns 404. Logging an entry adds its exercise to the workout when missing.
 Pace is derived as seconds per kilometre, never stored. Cardio does not enter
 strength tonnage or muscle-volume calculations.
 
@@ -1809,13 +1812,19 @@ foreign resources return 404 `TRACKING_RESOURCE_NOT_FOUND`. Rows include `id`,
 workout's `sessionDate`; timed rows include `exerciseName`. This is online
 optimistic concurrency, not the future offline operation-receipt protocol.
 
-`POST /exercises` accepts optional `trackingMode: "time"` only when enabled;
-otherwise it returns 404 for that mode. It creates a new global exercise and uses
-the existing name and muscle validation. Mode cannot be changed on an existing
-exercise; a time create never restores/reclassifies an old name. Time exercises
-are listed in `/tracking/catalog`, separately from the repetition picker and
-templates. Merging time exercises is unavailable. New custom exercises use the
-normal primary-group volume rules; the body-region batch uses group defaults.
+`POST /exercises` accepts optional `trackingMode: "time" | "cardio"` only when
+enabled; otherwise it returns 404 for those modes. It creates a new global
+exercise and uses the existing name and muscle validation. Mode cannot be changed
+on an existing exercise; such a create never restores/reclassifies an old name.
+While enabled, `GET /exercises` lists time and cardio exercises with the others
+(each carries `trackingMode`), they can be added to workouts and templates, and
+workout detail returns `exercise.trackingMode` for them. Adding one that is
+already in the workout returns the existing session exercise. `POST
+/workouts/:workoutId/exercises/:sessionExerciseId/sets` returns 404 for them.
+Merging time or cardio exercises is unavailable. `GET /exercises` also takes
+`trackingMode` (`reps`, `time`, `cardio`, or `strength` for everything except
+cardio) to filter by how an exercise is logged. New custom exercises use the
+the same 1-primary/0.5-secondary volume rules; explicit regions are used where available and missing groups use their default region.
 
 History summaries count timed sets (including warmups) as sets and unique timed
 exercises as exercises; `cardioEntries` is present while enabled. Tonnage remains

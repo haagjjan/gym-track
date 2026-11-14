@@ -35,12 +35,14 @@ function registerEntryRoutes(server: FastifyInstance, options: Options, kind: Tr
     const user = await authenticateRequest(request, reply, options);
     if (!user) return;
     const params = trackingParamsSchema.safeParse(request.params);
-    const body = (kind === "timed_sets" ? timedCreateSchema : cardioCreateSchema).safeParse(request.body);
     if (!params.success) return sendValidationError(reply, params.error);
-    if (!body.success) return sendValidationError(reply, body.error);
-    const result = "exerciseId" in body.data
-      ? await options.repository.createTimed(user.id, params.data.workoutId, body.data.id, body.data)
-      : await options.repository.createCardio(user.id, params.data.workoutId, body.data.id, body.data);
+    const timed = kind === "timed_sets" ? timedCreateSchema.safeParse(request.body) : null;
+    const cardio = kind === "cardio_entries" ? cardioCreateSchema.safeParse(request.body) : null;
+    const failed = timed?.success === false ? timed.error : cardio?.success === false ? cardio.error : null;
+    if (failed) return sendValidationError(reply, failed);
+    const result = timed?.success
+      ? await options.repository.createTimed(user.id, params.data.workoutId, timed.data.id, timed.data)
+      : await options.repository.createCardio(user.id, params.data.workoutId, cardio!.data!.id, cardio!.data!);
     if (!result.ok) return trackingError(reply, result.reason);
     return reply.status(result.replayed ? 200 : 201).send({ data: { entry: result.value, replayed: result.replayed } });
   });
@@ -48,12 +50,14 @@ function registerEntryRoutes(server: FastifyInstance, options: Options, kind: Tr
     const user = await authenticateRequest(request, reply, options);
     if (!user) return;
     const params = trackingParamsSchema.safeParse(request.params);
-    const body = (kind === "timed_sets" ? timedUpdateSchema : cardioUpdateSchema).safeParse(request.body);
     if (!params.success) return sendValidationError(reply, params.error);
-    if (!body.success) return sendValidationError(reply, body.error);
-    const result = "exerciseId" in body.data
-      ? await options.repository.updateTimed(user.id, params.data.workoutId, params.data.id!, body.data.revision, body.data)
-      : await options.repository.updateCardio(user.id, params.data.workoutId, params.data.id!, body.data.revision, body.data);
+    const timed = kind === "timed_sets" ? timedUpdateSchema.safeParse(request.body) : null;
+    const cardio = kind === "cardio_entries" ? cardioUpdateSchema.safeParse(request.body) : null;
+    const failed = timed?.success === false ? timed.error : cardio?.success === false ? cardio.error : null;
+    if (failed) return sendValidationError(reply, failed);
+    const result = timed?.success
+      ? await options.repository.updateTimed(user.id, params.data.workoutId, params.data.id!, timed.data.revision, timed.data)
+      : await options.repository.updateCardio(user.id, params.data.workoutId, params.data.id!, cardio!.data!.revision, cardio!.data!);
     return result.ok ? { data: { entry: result.value } } : trackingError(reply, result.reason);
   });
   server.delete(`${path}/:id`, async (request, reply) => {

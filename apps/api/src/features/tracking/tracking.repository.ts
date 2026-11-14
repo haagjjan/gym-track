@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { sql, type Kysely, type Transaction } from "kysely";
 import type { AppDatabase } from "../../db/database.js";
 import { lockOwnedWorkout } from "../workouts/workout-logging.repository.helpers.js";
@@ -11,8 +11,8 @@ type Result<T> = { ok: true; value: T; replayed?: boolean } | { ok: false; reaso
 export function createTrackingRepository(db: Kysely<AppDatabase>) {
   return {
     async catalog() {
-      return db.selectFrom("exercises").select(["id", "name"])
-        .where("tracking_mode", "=", "time").where("deleted_at", "is", null).orderBy("name").execute();
+      return db.selectFrom("exercises").select(["id", "name", "tracking_mode as trackingMode"])
+        .where("tracking_mode", "<>", "reps").where("deleted_at", "is", null).orderBy("name").execute();
     },
     async workout(userId: string, workoutId: string) {
       const owned = await db.selectFrom("workout_sessions").select("id").where("id", "=", workoutId)
@@ -27,13 +27,13 @@ export function createTrackingRepository(db: Kysely<AppDatabase>) {
       return { timedSets, cardioEntries };
     },
     createTimed: (userId: string, workoutId: string, id: string, values: TimedValues) =>
-      createEntry(db, "timed_sets", userId, workoutId, id, values),
+      createEntry(db, { kind: "timed_sets", values }, userId, workoutId, id),
     createCardio: (userId: string, workoutId: string, id: string, values: CardioValues) =>
-      createEntry(db, "cardio_entries", userId, workoutId, id, values),
+      createEntry(db, { kind: "cardio_entries", values }, userId, workoutId, id),
     updateTimed: (userId: string, workoutId: string, id: string, revision: number, values: TimedValues) =>
-      changeEntry(db, "timed_sets", userId, workoutId, id, revision, values),
+      changeEntry(db, "timed_sets", userId, workoutId, id, revision, { kind: "timed_sets", values }),
     updateCardio: (userId: string, workoutId: string, id: string, revision: number, values: CardioValues) =>
-      changeEntry(db, "cardio_entries", userId, workoutId, id, revision, values),
+      changeEntry(db, "cardio_entries", userId, workoutId, id, revision, { kind: "cardio_entries", values }),
     remove: (kind: TrackingKind, userId: string, workoutId: string, id: string, revision: number) =>
       changeEntry(db, kind, userId, workoutId, id, revision, null),
     async progress(userId: string) {
@@ -59,11 +59,14 @@ function timedRows(db: Db, userId: string) {
       "timed_sets.updated_at as updatedAt", "timed_sets.deleted_at as deletedAt", "workout_sessions.started_at as sessionDate"]);
 }
 function cardioRows(db: Db, userId: string) {
+  // `activity` is the exercise name; entries from before cardio exercises keep their own.
   return db.selectFrom("cardio_entries").innerJoin("workout_sessions", "workout_sessions.id", "cardio_entries.workout_session_id")
+    .leftJoin("exercises", "exercises.id", "cardio_entries.exercise_id")
     .where("workout_sessions.user_id", "=", userId)
-    .select(["cardio_entries.id", "cardio_entries.workout_session_id as workoutId", "cardio_entries.activity",
+    .select(["cardio_entries.id", "cardio_entries.workout_session_id as workoutId", "cardio_entries.exercise_id as exerciseId",
+      sql<string>`coalesce(exercises.name, cardio_entries.activity)`.as("activity"),
       "cardio_entries.duration_seconds as durationSeconds", "cardio_entries.distance_metres as distanceMetres",
-      "cardio_entries.average_heart_rate as averageHeartRate", "cardio_entries.note", "cardio_entries.revision",
+      "cardio_entries.average_heart_rate as averageHeartRate", "cardio_entries.calories", "cardio_entries.note", "cardio_entries.revision",
       "cardio_entries.created_at as createdAt", "cardio_entries.updated_at as updatedAt", "cardio_entries.deleted_at as deletedAt",
       "workout_sessions.started_at as sessionDate"]);
 }
@@ -71,49 +74,74 @@ async function findEntry(db: Db, kind: TrackingKind, userId: string, id: string)
   return kind === "timed_sets" ? timedRows(db, userId).where("timed_sets.id", "=", id).executeTakeFirst()
     : cardioRows(db, userId).where("cardio_entries.id", "=", id).executeTakeFirst();
 }
-function fields(values: TimedValues | CardioValues) {
-  const common = { duration_seconds: values.durationSeconds, note: values.note };
-  return "exerciseId" in values ? { ...common, exercise_id: values.exerciseId, set_type: values.setType, added_weight_kg: values.addedWeightKg }
-    : { ...common, activity: values.activity, distance_metres: values.distanceMetres, average_heart_rate: values.averageHeartRate };
+type Entry = { kind: "timed_sets"; values: TimedValues } | { kind: "cardio_entries"; values: CardioValues };
+function timedFields(values: TimedValues) {
+  return { duration_seconds: values.durationSeconds, note: values.note, exercise_id: values.exerciseId, set_type: values.setType, added_weight_kg: values.addedWeightKg };
 }
-async function validExercise(db: Db, values: TimedValues | CardioValues) {
-  return !("exerciseId" in values) || Boolean(await db.selectFrom("exercises").select("id")
-    .where("id", "=", values.exerciseId).where("tracking_mode", "=", "time").where("deleted_at", "is", null).executeTakeFirst());
+function cardioFields(values: CardioValues, activity: string) {
+  return { duration_seconds: values.durationSeconds, note: values.note, exercise_id: values.exerciseId, activity,
+    distance_metres: values.distanceMetres, average_heart_rate: values.averageHeartRate, calories: values.calories };
 }
-async function createEntry(db: Kysely<AppDatabase>, kind: TrackingKind, userId: string, workoutId: string,
-  id: string, values: TimedValues | CardioValues): Promise<Result<NonNullable<Awaited<ReturnType<typeof findEntry>>>>> {
-  const fingerprint = createHash("sha256").update(JSON.stringify({ kind, workoutId, ...fields(values) })).digest("hex");
+/** The exercise must exist in the entry's own mode: time sets on time exercises, cardio on cardio. */
+async function exerciseName(db: Db, entry: Entry): Promise<string | null> {
+  const row = await db.selectFrom("exercises").select("name").where("id", "=", entry.values.exerciseId)
+    .where("tracking_mode", "=", entry.kind === "timed_sets" ? "time" : "cardio").where("deleted_at", "is", null).executeTakeFirst();
+  return row?.name ?? null;
+}
+/** An entry always shows under its exercise in the workout, so the exercise is added when missing. */
+export async function ensureSessionExercise(db: Db, workoutId: string, exerciseId: string, at = new Date()): Promise<void> {
+  const present = await db.selectFrom("session_exercises").select("id").where("workout_session_id", "=", workoutId)
+    .where("exercise_id", "=", exerciseId).where("deleted_at", "is", null).executeTakeFirst();
+  if (present) return;
+  const last = await db.selectFrom("session_exercises").select((eb) => eb.fn.max("position").as("position"))
+    .where("workout_session_id", "=", workoutId).where("deleted_at", "is", null).executeTakeFirst();
+  await db.insertInto("session_exercises").values({ id: randomUUID(), workout_session_id: workoutId, exercise_id: exerciseId,
+    position: (last?.position ?? 0) + 1, created_at: at, updated_at: at }).execute();
+}
+async function createEntry(db: Kysely<AppDatabase>, entry: Entry, userId: string, workoutId: string,
+  id: string): Promise<Result<NonNullable<Awaited<ReturnType<typeof findEntry>>>>> {
+  const { kind } = entry;
   return db.transaction().execute(async (trx) => {
-    const replay = await trx.selectFrom(kind).innerJoin("workout_sessions", "workout_sessions.id", `${kind}.workout_session_id`)
+    const name = await exerciseName(trx, entry);
+    const fields = entry.kind === "timed_sets" ? timedFields(entry.values) : cardioFields(entry.values, name ?? "");
+    const fingerprint = createHash("sha256").update(JSON.stringify({ kind, workoutId, ...fields, activity: undefined })).digest("hex");
+    const stored = () => trx.selectFrom(kind).innerJoin("workout_sessions", "workout_sessions.id", `${kind}.workout_session_id`)
       .select(`${kind}.create_fingerprint as fingerprint`).where(`${kind}.id`, "=", id)
       .where("workout_sessions.user_id", "=", userId).executeTakeFirst();
+    const replay = await stored();
     if (replay) return replay.fingerprint === fingerprint
       ? { ok: true, replayed: true, value: (await findEntry(trx, kind, userId, id))! } : { ok: false, reason: "conflict" };
-    if (!(await lockOwnedWorkout(trx, userId, workoutId)) || !(await validExercise(trx, values))) return { ok: false, reason: "not_found" };
-    const common = { id, workout_session_id: workoutId, create_fingerprint: fingerprint, duration_seconds: values.durationSeconds, note: values.note };
-    const row = "exerciseId" in values
-      ? await trx.insertInto("timed_sets").values({ ...common, exercise_id: values.exerciseId, set_type: values.setType, added_weight_kg: values.addedWeightKg })
+    if (!(await lockOwnedWorkout(trx, userId, workoutId)) || name === null) return { ok: false, reason: "not_found" };
+    await ensureSessionExercise(trx, workoutId, entry.values.exerciseId);
+    const common = { id, workout_session_id: workoutId, create_fingerprint: fingerprint };
+    const row = entry.kind === "timed_sets"
+      ? await trx.insertInto("timed_sets").values({ ...common, ...timedFields(entry.values) })
         .onConflict((conflict) => conflict.column("id").doNothing()).returning("id").executeTakeFirst()
-      : await trx.insertInto("cardio_entries").values({ ...common, activity: values.activity, distance_metres: values.distanceMetres, average_heart_rate: values.averageHeartRate })
+      : await trx.insertInto("cardio_entries").values({ ...common, ...cardioFields(entry.values, name) })
         .onConflict((conflict) => conflict.column("id").doNothing()).returning("id").executeTakeFirst();
     if (row) return { ok: true, replayed: false, value: (await findEntry(trx, kind, userId, id))! };
-    const raced = await trx.selectFrom(kind).innerJoin("workout_sessions", "workout_sessions.id", `${kind}.workout_session_id`)
-      .select(`${kind}.create_fingerprint as fingerprint`).where(`${kind}.id`, "=", id)
-      .where("workout_sessions.user_id", "=", userId).executeTakeFirst();
+    const raced = await stored();
     return raced?.fingerprint === fingerprint
       ? { ok: true, replayed: true, value: (await findEntry(trx, kind, userId, id))! } : { ok: false, reason: "conflict" };
   });
 }
 async function changeEntry(db: Kysely<AppDatabase>, kind: TrackingKind, userId: string, workoutId: string,
-  id: string, revision: number, values: TimedValues | CardioValues | null): Promise<Result<NonNullable<Awaited<ReturnType<typeof findEntry>>>>> {
+  id: string, revision: number, change: Entry | null): Promise<Result<NonNullable<Awaited<ReturnType<typeof findEntry>>>>> {
   return db.transaction().execute(async (trx) => {
     if (!(await lockOwnedWorkout(trx, userId, workoutId))) return { ok: false, reason: "not_found" };
     const entry = await findEntry(trx, kind, userId, id);
     if (!entry || entry.workoutId !== workoutId) return { ok: false, reason: "not_found" };
     if (entry.revision !== revision || entry.deletedAt) return { ok: false, reason: "conflict" };
-    if (values && !(await validExercise(trx, values))) return { ok: false, reason: "not_found" };
-    await trx.updateTable(kind).set({ ...(values ? fields(values) : { deleted_at: new Date() }),
-      revision: sql`revision + 1`, updated_at: new Date() }).where("id", "=", id).execute();
+    const stamp = { revision: sql<number>`revision + 1`, updated_at: new Date() };
+    if (!change) {
+      await trx.updateTable(kind).set({ ...stamp, deleted_at: new Date() }).where("id", "=", id).execute();
+    } else {
+      const name = await exerciseName(trx, change);
+      if (name === null) return { ok: false, reason: "not_found" };
+      await ensureSessionExercise(trx, workoutId, change.values.exerciseId);
+      if (change.kind === "timed_sets") await trx.updateTable("timed_sets").set({ ...stamp, ...timedFields(change.values) }).where("id", "=", id).execute();
+      else await trx.updateTable("cardio_entries").set({ ...stamp, ...cardioFields(change.values, name) }).where("id", "=", id).execute();
+    }
     return { ok: true, value: (await findEntry(trx, kind, userId, id))! };
   });
 }

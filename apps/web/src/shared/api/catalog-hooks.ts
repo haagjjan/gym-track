@@ -48,12 +48,16 @@ export function useExerciseSearch(search: string, muscleGroupId = ""): UseQueryR
   });
 }
 
+/** `strength` is everything except cardio; an empty value lists every exercise. */
+export type TrackingModeFilterValue = "" | "reps" | "time" | "cardio" | "strength";
+
 export interface ExerciseListOptions {
   search?: string;
   muscleGroupIds?: string[];
   equipment?: string;
   exerciseType?: string;
   ownership?: "editable" | "readOnly" | "";
+  trackingMode?: TrackingModeFilterValue;
   sort?: "name" | "muscle" | "equipment" | "type";
 }
 

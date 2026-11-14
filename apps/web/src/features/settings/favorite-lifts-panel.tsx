@@ -34,7 +34,7 @@ export function FavoriteLiftsPanel(): ReactNode {
     setSearch("");
   }
 
-  const candidates = (results.data ?? []).filter(
+  const candidates = (results.data ?? []).filter((exercise) => !exercise.trackingMode).filter(
     (exercise) => !favorites.some((item) => item.id === exercise.id)
   );
 

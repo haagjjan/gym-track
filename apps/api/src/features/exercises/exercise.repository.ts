@@ -22,7 +22,7 @@ export interface MuscleGroupRecord {
 }
 
 export interface ExerciseRecord {
-  trackingMode?: "reps" | "time";
+  trackingMode?: "reps" | "time" | "cardio";
   id: string;
   name: string;
   equipment: string | null;
@@ -49,13 +49,16 @@ export interface ExerciseListFilters {
   exerciseType: string | "unspecified" | undefined;
   ownership: "editable" | "readOnly" | undefined;
   userId: string | undefined;
+  /** Time and cardio exercises are listed only while extended tracking is on. */
+  includeTracked?: boolean;
+  trackingMode?: "reps" | "time" | "cardio" | "strength";
   sort: "name" | "muscle" | "equipment" | "type";
   limit: number;
   offset: number;
 }
 
 export interface NewExercise {
-  trackingMode?: "reps" | "time";
+  trackingMode?: "reps" | "time" | "cardio";
   id: string;
   name: string;
   equipment: string | null;

@@ -78,7 +78,7 @@ Draft rules for the first schema pass. These notes capture business rules and da
 - The same muscle group may appear only once per exercise and cannot hold both roles.
 - Exercise muscle assignments are authoritative current classification data; sessions and templates do not snapshot them.
 - Historical workout displays and analytics use the exercise's current classification.
-- Weekly muscle volume counts each current primary muscle assignment; no stabilizer role or weighting exists.
+- Weekly muscle volume gives each current primary assignment 1 set and each secondary assignment 0.5 sets per working set (ADR 0028). Group and region totals, exercise contributions and recent-workout contributions preserve fractions.
 - Weekly muscle volume counts working sets only.
 - Warmup sets do not count toward weekly muscle volume.
 
@@ -134,7 +134,9 @@ Draft rules for the first schema pass. These notes capture business rules and da
 ### Optional duration and cardio records (ADR 0026)
 
 The next-feature batch adds `exercises.tracking_mode` (`reps` by default, `time`
-for newly created time exercises), `timed_sets` and `cardio_entries`. It does not
+for holds, `cardio` for cardio activities), `timed_sets` and `cardio_entries`.
+Time and cardio exercises sit in `session_exercises` like any other; their
+entries are joined by workout and exercise. It does not
 weaken the original strength-set constraints. Both new entry tables reference an
 owned workout, use a client UUID, preserve the initial create fingerprint, start
 at revision 1, and keep deletion tombstones. Updates/deletes check the expected
@@ -142,7 +144,7 @@ revision under the parent workout lock. Full sync remains proposed in ADR 0025.
 
 Timed rows reference a time-mode exercise through a composite FK, record positive
 seconds and optional nonnegative added kg, and retain working/warmup semantics.
-Timed working sets count toward primary muscle volume; warmups and cardio do not.
+Timed working sets count toward muscle volume with primary credit 1 and secondary credit 0.5; warmups and cardio do not.
 Cardio stores duration, optional positive metres, optional heart rate and note;
 pace is derived. No standalone cardio is implemented in this batch.
 

@@ -9,6 +9,8 @@ import { IconPlus24 } from "../../shared/ui/icons";
 
 interface ExerciseSheetProps {
   isOpen: boolean;
+  /** `cardio` picks cardio only; `strength` hides cardio. Unset lists everything. */
+  scope?: "strength" | "cardio" | undefined;
   isSubmitting: boolean;
   onAddSelected: (exerciseIds: string[]) => Promise<boolean>;
   onCreate: (input: CreateExerciseInput) => Promise<Exercise>;
@@ -44,7 +46,7 @@ export function ExerciseSheet(props: ExerciseSheetProps): ReactNode {
               disabled={selectedIds.length === 0 || props.isSubmitting}
               onClick={async () => { if (await props.onAddSelected(selectedIds)) props.onClose(); }}
             >
-              Add selected exercises ({selectedIds.length})
+              {props.scope === "cardio" ? "Add selected cardio" : "Add selected exercises"} ({selectedIds.length})
             </Button>
             <Button className="w-full" onClick={() => setShowCreate(true)} variant="secondary">
               <IconPlus24 /> Create new exercise
@@ -59,7 +61,8 @@ export function ExerciseSheet(props: ExerciseSheetProps): ReactNode {
           : [...current, exercise.id])}
         selectedIds={selectedIds}
         selectionMode="multiple"
-        title="Choose exercises"
+        title={props.scope === "cardio" ? "Choose cardio" : "Choose exercises"}
+        {...(props.scope ? { scope: props.scope } : {})}
       />
 
       <ExerciseEditorDialog
@@ -74,6 +77,7 @@ export function ExerciseSheet(props: ExerciseSheetProps): ReactNode {
           if (await props.onAddSelected([exercise.id])) props.onClose();
         }}
         submitLabel="Create and add"
+        {...(props.scope === "cardio" ? { defaultTrackingMode: "cardio" as const } : {})}
       />
     </>
   );

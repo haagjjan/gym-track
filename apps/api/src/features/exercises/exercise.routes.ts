@@ -89,8 +89,8 @@ export async function registerExerciseRoutes(
       return sendValidationError(reply, parsed.error);
     }
 
-    if (parsed.data.trackingMode === "time" && !options.extendedTracking) {
-      return reply.status(404).send({ error: { code: "FEATURE_UNAVAILABLE", message: "Time tracking is not enabled." } });
+    if (parsed.data.trackingMode && parsed.data.trackingMode !== "reps" && !options.extendedTracking) {
+      return reply.status(404).send({ error: { code: "FEATURE_UNAVAILABLE", message: "Time and cardio tracking is not enabled." } });
     }
     const result = await options.exerciseService.createExercise(user.id, parsed.data);
 

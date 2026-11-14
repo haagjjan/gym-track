@@ -10,9 +10,8 @@ export function useTracking(workoutId: string) {
   const prefix = `/api/tracking/workouts/${encodeURIComponent(workoutId)}`;
   const pendingCreate = useRef<string | null>(null);
   const entries = useQuery({ queryKey: ["tracking", workoutId], queryFn: () => apiFetch<TrackingPayload>(prefix) });
-  const catalog = useQuery({ queryKey: ["time-catalog"], queryFn: () => apiFetch<{ items: { id: string; name: string }[] }>("/api/tracking/catalog") });
   const refresh = async (): Promise<void> => {
-    await Promise.all([client.invalidateQueries({ queryKey: ["tracking"] }), client.invalidateQueries({ queryKey: ["workouts"] }), client.invalidateQueries({ queryKey: ["workouts-infinite"] }),
+    await Promise.all([client.invalidateQueries({ queryKey: ["tracking"] }), client.invalidateQueries({ queryKey: ["workout"] }), client.invalidateQueries({ queryKey: ["workouts"] }), client.invalidateQueries({ queryKey: ["workouts-infinite"] }),
       client.invalidateQueries({ queryKey: ["weekly-volume"] }), client.invalidateQueries({ queryKey: ["tracking-progress"] })]);
   };
   const save = useMutation({
@@ -29,5 +28,5 @@ export function useTracking(workoutId: string) {
   const remove = useMutation({ mutationFn: ({ kind, entry }: { kind: "timed-sets" | "cardio"; entry: TimedEntry | CardioEntry }) =>
     apiFetch(`${prefix}/${kind}/${entry.id}?revision=${entry.revision}`, { method: "DELETE" }), onSuccess: refresh,
     onError: async (error) => { if (error instanceof ApiError && error.status === 409) await refresh(); } });
-  return { entries, catalog, save, remove, abandonCreate: () => { pendingCreate.current = null; } };
+  return { entries, save, remove, abandonCreate: () => { pendingCreate.current = null; } };
 }

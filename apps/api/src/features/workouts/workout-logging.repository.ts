@@ -26,6 +26,7 @@ interface MuscleGroupRecord {
 export interface SelectableExerciseRecord {
   id: string;
   name: string;
+  trackingMode?: "time" | "cardio";
   primaryMuscleGroup: MuscleGroupRecord;
 }
 
@@ -95,10 +96,11 @@ export interface WorkoutLoggingRepository {
 }
 
 export function createWorkoutLoggingRepository(
-  db: Kysely<AppDatabase>
+  db: Kysely<AppDatabase>,
+  extendedTracking = false
 ): WorkoutLoggingRepository {
   return {
-    addSessionExercise: (input) => addSessionExerciseWrite(db, input),
+    addSessionExercise: (input) => addSessionExerciseWrite(db, input, extendedTracking),
     reorderSessionExercises: (userId, workoutId, input, updatedAt) =>
       reorderSessionExercisesWrite(db, userId, workoutId, input.items, updatedAt),
     deleteSessionExercise: (userId, workoutId, sessionExerciseId, deletedAt) =>

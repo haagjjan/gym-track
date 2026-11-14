@@ -78,10 +78,12 @@ function FetchedQuickView({ workoutId, extendedTracking }: { workoutId: string; 
 }
 
 function QuickView({ detail, showEmpty = true }: { detail: WorkoutDetail; showEmpty?: boolean }): ReactNode {
-  if (detail.exercises.length === 0) return showEmpty ? <p className="text-subhead text-text-secondary">No exercises recorded.</p> : null;
+  // Time and cardio exercises are listed with their entries by TrackingReadout.
+  const exercises = detail.exercises.filter((exercise) => !exercise.exercise.trackingMode);
+  if (exercises.length === 0) return showEmpty ? <p className="text-subhead text-text-secondary">No exercises recorded.</p> : null;
   return (
     <ul className="space-y-3">
-      {detail.exercises.map((exercise) => <QuickExercise exercise={exercise} key={exercise.id} />)}
+      {exercises.map((exercise) => <QuickExercise exercise={exercise} key={exercise.id} />)}
     </ul>
   );
 }
