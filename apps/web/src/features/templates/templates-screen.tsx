@@ -11,6 +11,7 @@ import { formatDay } from "../../shared/format";
 import { apiFetch, errorMessage } from "../../shared/api/client";
 import { useTemplateMutations, useTemplates } from "../../shared/api/hooks";
 import type { WorkoutTemplate } from "../../shared/api/types";
+import { workoutHref } from "../../shared/platform/routes";
 import { IconMore } from "../../shared/ui/icons";
 import { FacetFilters, type FacetFilterValue } from "../workouts/facet-filters";
 import { usePersistentFilters } from "../workouts/filter-persistence";
@@ -58,7 +59,7 @@ export function TemplatesScreen({ userId, initialTemplateId }: { userId: string;
     setActionError(null);
     try {
       const result = await mutations.start.mutateAsync({ templateId });
-      router.push(`/workouts/${result.workoutId}?focusName=1`);
+      router.push(workoutHref(result.workoutId, { focusName: true }));
     } catch (caught) {
       setActionError(errorMessage(caught, "Couldn't start the workout. Check your connection and try again."));
     }

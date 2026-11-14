@@ -13,6 +13,7 @@ import {
 } from "../../shared/api/hooks";
 import type { WorkoutDetail, WorkoutTemplate } from "../../shared/api/types";
 import { formatDayTime } from "../../shared/format";
+import { workoutHref } from "../../shared/platform/routes";
 import { IconForward } from "../../shared/ui/icons";
 
 export function LaunchScreen(): ReactNode {
@@ -34,7 +35,7 @@ export function LaunchScreen(): ReactNode {
         method: "POST",
         body: {}
       });
-      router.push(`/workouts/${payload.workout.id}?focusName=1`);
+      router.push(workoutHref(payload.workout.id, { focusName: true }));
     } catch (caught) {
       setLaunchError(errorMessage(caught, "Couldn't start the workout. Check your connection and try again."));
       await workouts.refetch();
@@ -48,7 +49,7 @@ export function LaunchScreen(): ReactNode {
 
     try {
       const result = await templateMutations.start.mutateAsync({ templateId });
-      router.push(`/workouts/${result.workoutId}?focusName=1`);
+      router.push(workoutHref(result.workoutId, { focusName: true }));
     } catch (caught) {
       setLaunchError(errorMessage(caught, "Couldn't start the workout from this template. Check your connection and try again."));
       await workouts.refetch();
@@ -66,7 +67,7 @@ export function LaunchScreen(): ReactNode {
 
       {activeWorkout ? (
         <ResumeWorkout
-          href={`/workouts/${activeWorkout.id}`}
+          href={workoutHref(activeWorkout.id)}
           startedAt={activeWorkout.startedAt}
           title={activeWorkout.title ?? activeWorkout.workoutType}
         />

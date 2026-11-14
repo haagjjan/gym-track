@@ -4,6 +4,7 @@ import Link from "next/link";
 import { radioGroupKeyDown } from "../../shared/ui/radio-group";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { formatDay, formatNumber } from "../../shared/format";
+import { workoutHref as workoutPageHref } from "../../shared/platform/routes";
 import { IconClose, IconForward } from "../../shared/ui/icons";
 import {
   HEAT_STAGE_COLORS,
@@ -192,7 +193,7 @@ function ContributionList({ aggregate, workoutHref }: { aggregate: MuscleAggrega
           <ul className="mt-1 divide-y divide-line">
             {aggregate.sessions.slice(0, 3).map((session) => (
               <li key={`${session.workoutId}-${session.date}`}>
-                <Link className="flex min-h-11 items-center justify-between gap-3 active:bg-surface-raised" href={workoutHref?.(session.workoutId) ?? `/workouts/${session.workoutId}`}>
+                <Link className="flex min-h-11 items-center justify-between gap-3 active:bg-surface-raised" href={workoutHref?.(session.workoutId) ?? workoutPageHref(session.workoutId)}>
                   <span className="text-body text-text">{formatDay(session.date)}</span>
                   <span className="flex items-center gap-1 text-callout text-text-secondary">
                     <span className="num">{formatNumber(session.sets)} sets</span>

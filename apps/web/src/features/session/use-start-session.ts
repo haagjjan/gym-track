@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ApiError, apiFetch } from "../../shared/api/client";
 import type { ListWorkoutsPayload } from "../../shared/api/types";
+import { workoutHref } from "../../shared/platform/routes";
 
 interface StartSession {
   start: () => Promise<void>;
@@ -27,7 +28,7 @@ export function useStartSession(): StartSession {
     try {
       const openWorkout = await findOpenWorkout();
 
-      router.push(openWorkout ? `/workouts/${openWorkout}` : "/workout");
+      router.push(openWorkout ? workoutHref(openWorkout) : "/workout");
     } catch (caught) {
       setError(
         caught instanceof ApiError ? caught.message : "Couldn't start the workout. Try again."

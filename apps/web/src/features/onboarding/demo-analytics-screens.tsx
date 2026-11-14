@@ -7,6 +7,7 @@ import { VolumeView } from "../volume/volume-screen";
 import type { VolumeWindowDays } from "../volume/volume-panels";
 import { demoCompletedExercises, demoProgress, demoSummary, demoVolume } from "./demo-analytics";
 import { useDemo, useDemoWorkouts } from "./demo-provider";
+import { demoWorkoutHref } from "../../shared/platform/routes";
 
 function loaded<T>(data: T) { return { data, isLoading: false, isError: false, error: null, refetch: () => undefined }; }
 
@@ -34,5 +35,5 @@ export function DemoVolumeScreen(): ReactNode {
   const payload = demoVolume(workouts, days, Date.now());
   return <VolumeView volume={loaded(payload)} windowDays={days} setWindowDays={setDays}
     onSelectMuscle={(slug) => { if (payload.weeks.some((week) => week.items.some((item) => item.muscleGroup.slug === slug && item.workingSets > 0))) record("selectedMuscle"); }}
-    workoutHref={(id) => `/help/demo/history/${id}`} />;
+    workoutHref={demoWorkoutHref} />;
 }

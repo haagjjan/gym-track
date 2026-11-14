@@ -14,3 +14,13 @@ export function workoutHref(workoutId: string, options: { focusName?: boolean } 
 
   return `/workouts/${id}${options.focusName ? "?focusName=1" : ""}`;
 }
+
+/**
+ * Link to one workout inside the hands-on example. Example workouts can be created
+ * on the device, so the app cannot pre-render their pages either.
+ */
+export function demoWorkoutHref(workoutId: string, app = isAppRuntime()): string {
+  const id = encodeURIComponent(workoutId);
+
+  return app ? `/help/demo/history/?workout=${id}` : `/help/demo/history/${id}`;
+}
