@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { createIdentifierLimiter } from "../../shared/identifier-limiter.js";
 import type { AppLoggerLike, Mailer } from "../../shared/mailer.js";
 import type {
   ActionTokenPurpose,
@@ -49,6 +50,27 @@ export function createAuthActionService(options: AuthActionServiceOptions): Auth
   const logger = options.logger ?? noopLogger;
   const appBaseUrl = options.appBaseUrl ?? "http://localhost:3000";
 
+  const limiterOptions = { max: 3, windowMs: 60 * 60 * 1000, now: () => options.now().getTime() };
+  const resetLimiter = createIdentifierLimiter(limiterOptions);
+  const verificationLimiter = createIdentifierLimiter(limiterOptions);
+
+  // Detach lookups and token issuance too, so unknown addresses take the same response path.
+  function enqueue(work: () => Promise<void>, message: string): void {
+    void Promise.resolve().then(work).catch((error: unknown) => logger.error({ error }, message));
+  }
+
+  async function sendPasswordReset(email: string): Promise<void> {
+    const user = await options.repository.findUserByEmail(email);
+    if (!user) return;
+    const token = await issueToken(user.id, "password_reset", RESET_TOKEN_TTL_MINUTES * 60 * 1000);
+    await mailer.send({
+      kind: "PASSWORD_RESET",
+      to: user.email,
+      subject: "Reset your Gym Progress Tracker password",
+      text: passwordResetEmailText(user, `${appBaseUrl}/reset-password?token=${token}`)
+    });
+  }
+
   async function issueToken(
     userId: string,
     purpose: ActionTokenPurpose,
@@ -91,19 +113,13 @@ export function createAuthActionService(options: AuthActionServiceOptions): Auth
       }
     },
     async requestEmailVerification(userId) {
-      const user = await options.repository.findUserById(userId);
-
-      if (!user || user.emailVerifiedAt) {
-        return { status: "NOT_REQUIRED" };
-      }
-
-      try {
-        await sendVerificationEmail(user);
-        return { status: "SENT" };
-      } catch (error) {
-        logger.error({ error }, "verification email failed");
-        return { status: "FAILED" };
-      }
+      enqueue(async () => {
+        const user = await options.repository.findUserById(userId);
+        if (user && verificationLimiter.consume(user.email).allowed && !user.emailVerifiedAt) {
+          await sendVerificationEmail(user);
+        }
+      }, "verification email failed");
+      return { status: "SENT" };
     },
     async verifyEmail(token) {
       const consumed = await consumeToken(options, token, "email_verification");
@@ -116,26 +132,9 @@ export function createAuthActionService(options: AuthActionServiceOptions): Auth
       return { ok: true, value: { verified: true } };
     },
     async requestPasswordReset(email) {
-      const user = await options.repository.findUserByEmail(email);
-
-      if (user) {
-        try {
-          const token = await issueToken(
-            user.id,
-            "password_reset",
-            RESET_TOKEN_TTL_MINUTES * 60 * 1000
-          );
-          await mailer.send({
-            kind: "PASSWORD_RESET",
-            to: user.email,
-            subject: "Reset your Gym Progress Tracker password",
-            text: passwordResetEmailText(user, `${appBaseUrl}/reset-password?token=${token}`)
-          });
-        } catch (error) {
-          logger.error({ error }, "password reset email failed");
-        }
+      if (resetLimiter.consume(email).allowed) {
+        enqueue(() => sendPasswordReset(email.trim().toLowerCase()), "password reset email failed");
       }
-
       return { requested: true };
     },
     async resetPassword(token, password) {

@@ -307,7 +307,7 @@ Disabled response `403`:
 
 ### `POST /api/v1/auth/login`
 
-Logs in with username and password.
+Logs in with a username or email identifier and password.
 
 Request:
 
@@ -337,8 +337,9 @@ Response `200`:
 Behavior:
 
 - Sets the auth session cookie.
-- Returns `401` for invalid credentials.
-- After 10 failed attempts, temporarily locks the account for 15 minutes and returns `423` while the lock is active.
+- Returns `401 INVALID_CREDENTIALS` for a wrong password, including locked, suspended, or deletion-pending accounts. Unknown users still perform dummy password-hash verification.
+- After 10 failed attempts, temporarily locks the account for 15 minutes. Only a correct password reveals `423 ACCOUNT_LOCKED` during the lock or `403 ACCOUNT_UNAVAILABLE` for a non-active account.
+- Independently of the address, allows 10 attempts per 15 minutes per trimmed, lower-case identifier as typed (username and email are separate identifiers), including unknown accounts and successful attempts. Further attempts return `429 RATE_LIMITED` with `Retry-After` in seconds.
 - A successful login clears prior failure and lockout state.
 
 ### `POST /api/v1/auth/logout`
@@ -403,7 +404,7 @@ Returns `400` with `INVALID_TOKEN` when the token is invalid, expired, already u
 
 ### `POST /api/v1/auth/resend-verification`
 
-Attempts to send a new verification email for the authenticated user.
+Queues a new verification email for the authenticated user.
 
 Response `200`:
 
@@ -415,7 +416,7 @@ Response `200`:
 }
 ```
 
-`status` is `SENT`, `NOT_REQUIRED`, or `FAILED`. A new request supersedes every unused verification token for that account. Returns `401` without a valid auth session.
+`status` is always `SENT`: acknowledgement of the request, not delivery confirmation. The response does not wait for account lookup, token issuance, or mail delivery. Already-verified, unknown, throttled, and delivery-failure cases have the same acknowledgement. Allows 3 requests per hour per normalized account email; further requests send nothing and keep the same `200` response. An accepted send supersedes every unused verification token for that account. Returns `401` without a valid auth session.
 
 ### `POST /api/v1/auth/forgot-password`
 
@@ -439,7 +440,7 @@ Response `200`:
 }
 ```
 
-The response is identical whether the email exists or email delivery succeeds, preventing account enumeration. For an existing account, a new request supersedes every unused reset token and attempts delivery of a replacement token that expires after 60 minutes. The delivery outcome is internal only.
+The response is identical whether the email exists or email delivery succeeds, preventing account enumeration. For an existing account, a new request supersedes every unused reset token and attempts delivery of a replacement token that expires after 60 minutes. The delivery outcome is internal only. Allows 3 requests per hour per trimmed, lower-case email, including unknown addresses; further requests send nothing and keep the same `200` response. The HTTP answer does not wait for account lookup, token issuance, or delivery. Errors in background work are logged internally.
 
 ### `POST /api/v1/auth/reset-password`
 
@@ -1744,6 +1745,20 @@ Unavailable upstream service returns `502 API_UNAVAILABLE` without cached data.
 ### API-process lifecycle behavior
 
 The single API process owns a single-flight lifecycle runner. It runs once during startup and hourly thereafter. Auth-token cleanup, due deletions, retention cleanup, and completion notifications are isolated phases: one failure does not stop later phases, later due accounts, or the next scheduled run. The runner processes the entire due-deletion list and reports bounded metrics described under `GET /api/v1/metrics`.
+
+Address limits apply per API process using the trusted client address:
+
+| Scope | Limit | Excess behavior |
+| --- | --- | --- |
+| All requests, aggregated across routes | 300/minute/address | `429 RATE_LIMITED`, `Retry-After` |
+| No session cookie and no Authorization header; except `/api/v1/health` and `/api/v1/status-metrics` | Additional 120/minute/address | `429 RATE_LIMITED`, `Retry-After` |
+| Auth credential/action routes, web/BFF | 10/15 minutes/address/route | `429 RATE_LIMITED`, `Retry-After` |
+| Auth credential/action routes, app (`isMobileClient`) | 60/15 minutes/address/route | `429 RATE_LIMITED`, `Retry-After` |
+| Login identifier, across addresses | 10/15 minutes/identifier | `429 RATE_LIMITED`, `Retry-After` |
+| Forgot-password email, across addresses | 3/hour/email | Identical `200`, no send |
+| Resend-verification email, across addresses | 3/hour/email | Identical `200`, no send |
+
+Session-looking requests are classified by credential presence, not validity. Health and status-metrics retain the 300/minute ceiling. Route and address limits can still return `429` on email-action requests; only the per-email limit is silent. Identifier/email buckets use SHA-256 keys over trimmed, lower-case values, fixed windows starting with the first attempt, and at most 50,000 keys per limiter with oldest-first eviction. Limits reset on process restart and are not shared between API replicas. Background email work is best effort and is not a durable queue.
 
 All public/auth/export/deletion/feedback/admin mutation groups have endpoint-specific limits. Production client attribution accepts only a valid BFF HMAC; browser-supplied forwarding headers are not trusted by the API.
 

@@ -124,14 +124,6 @@ export function createAuthService(options: AuthServiceOptions): AuthService {
         return { ok: false, reason: "invalid_credentials" };
       }
 
-      if (user.lockedUntil && user.lockedUntil > now()) {
-        return { ok: false, reason: "locked" };
-      }
-
-      if (user.accountStatus && user.accountStatus !== "ACTIVE") {
-        return { ok: false, reason: "account_unavailable" };
-      }
-
       const passwordMatches = await options.passwordHasher.verify(
         user.passwordHash,
         input.password
@@ -148,6 +140,14 @@ export function createAuthService(options: AuthServiceOptions): AuthService {
         }
 
         return { ok: false, reason: "invalid_credentials" };
+      }
+
+      if (user.lockedUntil && user.lockedUntil > now()) {
+        return { ok: false, reason: "locked" };
+      }
+
+      if (user.accountStatus && user.accountStatus !== "ACTIVE") {
+        return { ok: false, reason: "account_unavailable" };
       }
 
       if (user.failedLoginAttempts > 0 || user.lockedUntil) {

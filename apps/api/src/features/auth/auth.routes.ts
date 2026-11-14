@@ -1,4 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { createIdentifierLimiter } from "../../shared/identifier-limiter.js";
+import { createRateLimitResponse } from "../../shared/rate-limit-response.js";
 import { noopEventTracker } from "../../shared/events.js";
 import { sendValidationError } from "../../shared/http-validation.js";
 import { registerAuthActionRoutes } from "./auth-action.routes.js";
@@ -18,6 +20,7 @@ export async function registerAuthRoutes(
 ): Promise<void> {
   const events = options.events ?? noopEventTracker;
   const mode = registrationMode(options);
+  const loginLimiter = createIdentifierLimiter({ max: 10, windowMs: 15 * 60 * 1000 });
 
   server.post(
     "/api/v1/auth/signup",
@@ -62,6 +65,13 @@ export async function registerAuthRoutes(
 
     if (!parsed.success) {
       return sendValidationError(reply, parsed.error);
+    }
+
+    const limit = loginLimiter.consume(parsed.data.username);
+    if (!limit.allowed) {
+      return reply.header("retry-after", limit.retryAfterSeconds).status(429).send(
+        createRateLimitResponse({ statusCode: 429, after: `${limit.retryAfterSeconds} seconds` })
+      );
     }
 
     const result = await options.service.login(parsed.data);

@@ -49,6 +49,7 @@ import { createEventTracker, noopEventTracker, type EventTracker } from "./share
 import { createMailerFromEnv, type Mailer } from "./shared/mailer.js";
 import type { ApiLogger } from "./shared/logger.js";
 import { registerApiMetrics, type ApiMetricsOptions } from "./shared/metrics.js";
+import { registerGlobalRateLimits } from "./shared/global-rate-limit.js";
 import { createRateLimitResponse } from "./shared/rate-limit-response.js";
 import { createRequestId, registerApiRequestLogging } from "./shared/request-logging.js";
 import { trustedClientKey, verifiedClientIp } from "./shared/client-attribution.js";
@@ -107,6 +108,8 @@ export async function buildServer(
   const server = fastify({
     logger,
     bodyLimit: BODY_LIMIT_BYTES,
+    // Bound how long a client may take to send a request (slow-request guard).
+    requestTimeout: 60_000,
     trustProxy: extras.trustProxy ?? false,
     logController: new LogController({ disableRequestLogging: true }),
     genReqId: (request) => createRequestId(request.headers["x-request-id"])
@@ -116,15 +119,6 @@ export async function buildServer(
     registerMobileClient(server, extras.mobileClient);
   } else {
     server.decorateRequest("mobileClient", false);
-  }
-  if (extras.clientIpSecret) {
-    server.addHook("onRequest", async (request, reply) => {
-      const path = request.url.split("?", 1)[0];
-      if (path === "/api/v1/health" || path === "/api/v1/metrics" || isMobileClient(request) || verifiedClientIp(request, extras.clientIpSecret)) {
-        return;
-      }
-      return reply.status(403).send({ error: { code: "BFF_REQUIRED", message: "Requests must use the public web application." } });
-    });
   }
   const operationalMetrics = registerApiMetrics(server, extras.metrics);
   const events =
@@ -186,9 +180,9 @@ export async function buildServer(
   await server.register(helmet, {
     contentSecurityPolicy: false
   });
-  // Baseline abuse ceiling per client IP; auth routes carry stricter
-  // per-route limits (see auth.routes.ts).
+  // Route buckets supplement independent global address ceilings.
   await server.register(rateLimit, {
+    global: false,
     max: 300,
     timeWindow: "1 minute",
     keyGenerator: (request) => trustedClientKey(request, extras.clientIpSecret),
@@ -196,6 +190,16 @@ export async function buildServer(
     errorResponseBuilder: (_request, context) => createRateLimitResponse(context)
   });
   await server.register(cookie);
+  registerGlobalRateLimits(server, authConfig.cookieName, extras.clientIpSecret);
+  if (extras.clientIpSecret) {
+    server.addHook("onRequest", async (request, reply) => {
+      const path = request.url.split("?", 1)[0];
+      if (path === "/api/v1/health" || path === "/api/v1/metrics" || isMobileClient(request) || verifiedClientIp(request, extras.clientIpSecret)) {
+        return;
+      }
+      return reply.status(403).send({ error: { code: "BFF_REQUIRED", message: "Requests must use the public web application." } });
+    });
+  }
   await registerHealthRoutes(server, databaseHealth);
   await registerStatusRoutes(server, statusService);
   await registerAuthRoutes(server, {

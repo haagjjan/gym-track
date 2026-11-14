@@ -2,6 +2,9 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import cookie from "@fastify/cookie";
 import fastify from "fastify";
+import rateLimit from "@fastify/rate-limit";
+import { registerMobileClient } from "./mobile-client.js";
+import { createRateLimitResponse } from "../../shared/rate-limit-response.js";
 import type { AuthService, AuthenticatedUser, PublicUser } from "./auth.service.js";
 import { registerAuthRoutes } from "./auth.routes.js";
 
@@ -52,10 +55,17 @@ function authService(overrides: Partial<AuthService> = {}): AuthService {
 
 async function buildAuthServer(
   service: AuthService,
-  options: { registrationEnabled?: boolean; secure?: boolean } = {}
+  options: { registrationEnabled?: boolean; secure?: boolean; rateLimits?: boolean } = {}
 ) {
   const server = fastify();
 
+  registerMobileClient(server, { origins: ["capacitor://localhost"] });
+  if (options.rateLimits) {
+    await server.register(rateLimit, {
+      keyGenerator: (request) => request.ip,
+      errorResponseBuilder: (_request, context) => createRateLimitResponse(context)
+    });
+  }
   await server.register(cookie);
   await registerAuthRoutes(server, {
     service,
@@ -351,3 +361,47 @@ describe("auth routes", () => {
     assert.equal(response.json().error.code, "VALIDATION_ERROR");
   });
 });
+
+for (const identifier of ["jan", "jan@example.com"]) {
+  for (const exists of [true, false]) {
+    it(`limits login by normalized identifier ${identifier}, exists=${exists}, across addresses`, async (t) => {
+      let calls = 0;
+      const server = await buildAuthServer(authService({
+        async login() {
+          calls += 1;
+          return exists ? { ok: true, value: authenticatedUser } : { ok: false, reason: "invalid_credentials" };
+        }
+      }), { rateLimits: true });
+      t.after(() => server.close());
+      for (let attempt = 0; attempt < 11; attempt += 1) {
+        const response = await server.inject({
+          method: "POST", url: "/api/v1/auth/login", remoteAddress: `127.0.0.${attempt + 1}`,
+          payload: { username: attempt % 2 ? ` ${identifier.toUpperCase()} ` : identifier, password: "password" }
+        });
+        assert.equal(response.statusCode, attempt < 10 ? (exists ? 200 : 401) : 429);
+        if (attempt === 10) {
+          assert.equal(response.json().error.code, "RATE_LIMITED");
+          assert.ok(Number(response.headers["retry-after"]) > 0);
+          assert.deepEqual(Object.keys(response.json()), ["error"]);
+        }
+      }
+      assert.equal(calls, 10);
+    });
+  }
+}
+
+for (const mobile of [false, true]) {
+  it(`enforces the ${mobile ? 60 : 10} auth address limit for ${mobile ? "app" : "web"}`, async (t) => {
+    const server = await buildAuthServer(authService(), { rateLimits: true });
+    t.after(() => server.close());
+    const max = mobile ? 60 : 10;
+    for (let attempt = 0; attempt <= max; attempt += 1) {
+      const response = await server.inject({
+        method: "POST", url: "/api/v1/auth/login",
+        headers: mobile ? { "x-gym-client": "app" } : {},
+        payload: { username: `person-${attempt}`, password: "password" }
+      });
+      assert.equal(response.statusCode, attempt < max ? 200 : 429);
+    }
+  });
+}

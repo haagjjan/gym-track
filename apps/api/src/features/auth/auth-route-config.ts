@@ -1,3 +1,5 @@
+import type { FastifyRequest } from "fastify";
+import { isMobileClient } from "./mobile-client.js";
 import type { EventTracker } from "../../shared/events.js";
 import type { AuthService } from "./auth.service.js";
 
@@ -23,7 +25,7 @@ export function registrationMode(options: AuthRouteOptions): "ENABLED" | "DISABL
 /** Strict per-route limits on credential and action-token endpoints. */
 export const authRateLimit = {
   rateLimit: {
-    max: 10,
+    max: (request: FastifyRequest) => isMobileClient(request) ? 60 : 10,
     timeWindow: "15 minutes"
   }
 };

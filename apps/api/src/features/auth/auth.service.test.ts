@@ -1,5 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { setImmediate } from "node:timers/promises";
+import cookie from "@fastify/cookie";
+import fastify from "fastify";
+import { registerAuthRoutes } from "./auth.routes.js";
 import type {
   AuthRepository,
   AuthUserRecord,
@@ -350,7 +354,7 @@ describe("auth service", () => {
     assert.ok(sentMail[0]?.text.includes("https://cockpit.example/verify-email?token="));
   });
 
-  it("reports verification resend delivery and not-required states", async () => {
+  it("keeps verification resend acknowledgements uniform", async () => {
     const unverified = createAuthService({
       repository: new FakeAuthRepository(),
       passwordHasher: passwordHasher(),
@@ -367,8 +371,8 @@ describe("auth service", () => {
       now: () => now
     });
 
-    assert.deepEqual(await unverified.requestEmailVerification("user-1"), { status: "FAILED" });
-    assert.deepEqual(await verified.requestEmailVerification("user-1"), { status: "NOT_REQUIRED" });
+    assert.deepEqual(await unverified.requestEmailVerification("user-1"), { status: "SENT" });
+    assert.deepEqual(await verified.requestEmailVerification("user-1"), { status: "SENT" });
   });
 
   it("rejects login while the account is locked", async () => {
@@ -495,7 +499,116 @@ describe("auth service", () => {
     const result = await service.requestPasswordReset("jan@example.com");
 
     assert.deepEqual(result, { requested: true });
+    await setImmediate();
     assert.equal(repository.createdActionTokens[0]?.purpose, "password_reset");
     assert.equal(loggedFailures, 1);
   });
+});
+
+for (const state of [
+  { lockedUntil: new Date(now.getTime() + 60_000) },
+  { accountStatus: "SUSPENDED" as const },
+  { accountStatus: "DELETION_PENDING" as const }
+]) {
+  for (const matches of [false, true]) {
+    it(`checks password before exposing ${JSON.stringify(state)}, matches=${matches}`, async () => {
+      const repository = new FakeAuthRepository(userRecord(state));
+      let verifications = 0;
+      const service = createAuthService({
+        repository, passwordHasher: passwordHasher(matches, () => { verifications += 1; }),
+        sessionTokens: sessionTokens(), sessionTtlDays: 30, now: () => now
+      });
+      const result = await service.login({ username: "jan", password: "wrong-or-correct" });
+      const reason = matches ? ("lockedUntil" in state ? "locked" : "account_unavailable") : "invalid_credentials";
+      assert.deepEqual(result, { ok: false, reason });
+      assert.equal(verifications, 1);
+      assert.equal(repository.failedLoginCount, matches ? 0 : 1);
+      assert.equal(repository.createdSession, null);
+    });
+  }
+}
+
+for (const verification of [false, true]) {
+  it(`silently limits ${verification ? "resend" : "reset"} to three per normalized email per hour`, async () => {
+    const repository = new FakeAuthRepository();
+    let clock = now;
+    let sent = 0;
+    const service = createAuthService({
+      repository, passwordHasher: passwordHasher(), sessionTokens: sessionTokens(),
+      sessionTtlDays: 30, now: () => clock,
+      mailer: { async send() { sent += 1; return { provider: "log" }; } }
+    });
+    const request = (index: number) => verification
+      ? service.requestEmailVerification(`user-${index}`)
+      : service.requestPasswordReset(index % 2 ? " JAN@example.com " : "jan@example.com");
+    for (let index = 0; index < 5; index += 1) {
+      assert.deepEqual(await request(index), verification ? { status: "SENT" } : { requested: true });
+    }
+    await setImmediate();
+    assert.equal(sent, 3);
+    assert.equal(repository.createdActionTokens.length, 3);
+    clock = new Date(now.getTime() + 60 * 60 * 1000);
+    await request(0);
+    await setImmediate();
+    assert.equal(sent, 4);
+  });
+}
+
+it("counts unknown reset addresses without performing more than three lookups", async () => {
+  const repository = new FakeAuthRepository(null);
+  const service = createAuthService({
+    repository, passwordHasher: passwordHasher(), sessionTokens: sessionTokens(),
+    sessionTtlDays: 30, now: () => now
+  });
+  for (let index = 0; index < 5; index += 1) {
+    assert.deepEqual(await service.requestPasswordReset("unknown@example.com"), { requested: true });
+  }
+  await setImmediate();
+  assert.equal(repository.emailLookups.length, 3);
+  assert.equal(repository.createdActionTokens.length, 0);
+});
+
+for (const verification of [false, true]) {
+  it(`answers HTTP ${verification ? "resend" : "reset"} before a pending mail send and logs rejection`, { timeout: 2000 }, async (t) => {
+    const repository = new FakeAuthRepository();
+    let rejectMail: (error: Error) => void = () => {};
+    let logged = 0;
+    const pendingMail = new Promise<never>((_resolve, reject) => { rejectMail = reject; });
+    const service = createAuthService({
+      repository, passwordHasher: passwordHasher(), sessionTokens: sessionTokens(),
+      sessionTtlDays: 30, now: () => now,
+      mailer: { send: () => pendingMail },
+      logger: { info() {}, warn() {}, error() { logged += 1; } }
+    });
+    const server = fastify();
+    t.after(() => server.close());
+    await server.register(cookie);
+    await registerAuthRoutes(server, {
+      service, cookie: { name: "session", secure: false, maxAgeSeconds: 60 }
+    });
+    for (let index = 0; index < 5; index += 1) {
+      const response = await server.inject({
+        method: "POST", url: `/api/v1/auth/${verification ? "resend-verification" : "forgot-password"}`,
+        cookies: { session: "valid-session" }, payload: verification ? {} : { email: "jan@example.com" }
+      });
+      assert.equal(response.statusCode, 200);
+      assert.deepEqual(response.json(), { data: verification ? { status: "SENT" } : { requested: true } });
+    }
+    assert.equal(repository.createdActionTokens.length, 3);
+    rejectMail(new Error("delivery failed"));
+    await setImmediate();
+    assert.equal(logged, 3);
+  });
+}
+
+it("returns reset acknowledgements before even the account lookup completes", { timeout: 2000 }, async () => {
+  const repository = new FakeAuthRepository(null);
+  let releaseLookup: (user: AuthUserRecord | null) => void = () => {};
+  repository.findUserByEmail = () => new Promise((resolve) => { releaseLookup = resolve; });
+  const service = createAuthService({
+    repository, passwordHasher: passwordHasher(), sessionTokens: sessionTokens(), sessionTtlDays: 30
+  });
+  assert.deepEqual(await service.requestPasswordReset("unknown@example.com"), { requested: true });
+  releaseLookup(null);
+  await setImmediate();
 });
