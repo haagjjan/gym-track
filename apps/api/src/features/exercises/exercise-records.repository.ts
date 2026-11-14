@@ -6,6 +6,8 @@ import type {
   MuscleGroupRecord
 } from "./exercise.repository.js";
 
+import { findExerciseRegions, regionPredicate, regionSortOrder } from "./exercise-regions.repository.js";
+
 export const exerciseSelection = [
   "exercises.id as id",
   "exercises.name as name",
@@ -67,6 +69,8 @@ export async function listExerciseRows(
       )
     );
 
+  for (const id of filters.muscleRegionIds ?? []) query = query.where(regionPredicate(sql.ref("exercises.id"), id));
+
   for (const muscleGroupId of filters.muscleGroupIds) {
     query = query.where(sql<boolean>`exists (
       select 1 from exercise_muscle_groups emg
@@ -97,7 +101,7 @@ export async function listExerciseRows(
   }
 
   if (filters.sort === "muscle") {
-    query = query.orderBy("muscle_groups.sort_order", "asc");
+    query = query.orderBy(regionSortOrder(), "asc");
   } else if (filters.sort === "equipment") {
     query = query.orderBy(sql<string>`coalesce(exercises.equipment, 'zzzz')`, "asc");
   } else if (filters.sort === "type") {
@@ -133,6 +137,8 @@ export async function countExerciseRows(
     .$if(filters.search !== undefined, (builder) =>
       builder.where(exerciseSearchPredicate(filters))
     );
+
+  for (const id of filters.muscleRegionIds ?? []) query = query.where(regionPredicate(sql.ref("exercises.id"), id));
 
   for (const muscleGroupId of filters.muscleGroupIds) {
     query = query.where(sql<boolean>`exists (
@@ -208,7 +214,8 @@ export async function findExerciseByIdOrThrow(
     .where("exercises.id", "=", exerciseId)
     .executeTakeFirstOrThrow();
   const muscles = await findExerciseMuscleGroups(db, [exerciseId]);
-  return toExerciseRecord(row, muscles.get(exerciseId) ?? []);
+  const regions = await findExerciseRegions(db, [exerciseId]);
+  return { ...toExerciseRecord(row, muscles.get(exerciseId) ?? []), muscleRegions: regions.get(exerciseId) ?? [] };
 }
 
 interface ExerciseMuscleRecord extends MuscleGroupRecord {

@@ -1,3 +1,4 @@
+import { findExerciseRegions } from "../exercises/exercise-regions.repository.js";
 import { trackedMode } from "./workout-logging.repository.helpers.js";
 import type { Kysely } from "kysely";
 import type { AppDatabase } from "../../db/database.js";
@@ -43,6 +44,7 @@ export interface WorkoutSessionExerciseRecord {
     primaryMuscleGroup: WorkoutMuscleGroupRecord;
     primaryMuscleGroups: WorkoutMuscleGroupRecord[];
     secondaryMuscleGroups: WorkoutMuscleGroupRecord[];
+    muscleRegions?: Array<WorkoutMuscleGroupRecord & { role: "PRIMARY" | "SECONDARY" }>;
     muscleGroups: Array<WorkoutMuscleGroupRecord & { role: "PRIMARY" | "SECONDARY" }>;
   };
   sets: WorkoutSetRecord[];
@@ -106,6 +108,7 @@ async function findSessionExercises(
     .execute();
   const muscleRows = await findMuscleRows(db, [...new Set(rows.map((row) => row.exerciseId))]);
 
+  const regions = await findExerciseRegions(db, [...new Set(rows.map((row) => row.exerciseId))]);
   return rows.map((row) => {
     const muscleGroups = muscleRows
       .filter((muscle) => muscle.exerciseId === row.exerciseId)
@@ -136,7 +139,8 @@ async function findSessionExercises(
         secondaryMuscleGroups: muscleGroups
           .filter((muscle) => muscle.role === "SECONDARY")
           .map(withoutRole),
-        muscleGroups
+        muscleGroups,
+        muscleRegions: regions.get(row.exerciseId) ?? []
       }
     };
   });

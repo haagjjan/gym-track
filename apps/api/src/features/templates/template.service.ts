@@ -20,6 +20,7 @@ export interface TemplateShape {
       name: string;
       equipment: string | null;
       exerciseType: string | null;
+      muscleRegions?: Array<{ id: string; slug: string; name: string; role: "PRIMARY" | "SECONDARY" }>;
       muscleGroups: Array<{
         id: string;
         slug: string;
@@ -66,6 +67,7 @@ export function createTemplateService(options: {
       return (await options.repository.listTemplates(userId, {
         search: input.search,
         muscleGroupIds: input.muscleGroupIds ?? [],
+        muscleRegionIds: input.muscleRegionIds ?? [],
         equipment: input.equipment,
         exerciseType: input.exerciseType,
         sort: input.sort ?? "lastUsed"
@@ -157,6 +159,7 @@ function toTemplateShape(record: TemplateRecord): TemplateShape {
         name: entry.exercise.name,
         equipment: entry.exercise.equipment,
         exerciseType: entry.exercise.exerciseType,
+        ...(entry.exercise.muscleRegions ? { muscleRegions: entry.exercise.muscleRegions } : {}),
         muscleGroups: entry.exercise.muscleGroups.map((muscle) => ({
           id: muscle.id,
           slug: muscle.slug,

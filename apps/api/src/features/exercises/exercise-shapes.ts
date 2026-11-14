@@ -20,12 +20,14 @@ export interface ExerciseShape {
   primaryMuscleGroups: MuscleGroupShape[];
   secondaryMuscleGroups: MuscleGroupShape[];
   muscleGroups: ExerciseMuscleGroupShape[];
+  muscleRegions?: ExerciseMuscleGroupShape[];
   createdByUserId: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface MuscleGroupList {
+  regions?: MuscleGroupShape[];
   items: MuscleGroupShape[];
 }
 
@@ -48,6 +50,7 @@ export function toExerciseShape(record: ExerciseRecord): ExerciseShape {
     primaryMuscleGroup: toMuscleGroupShape(record.primaryMuscleGroup),
     primaryMuscleGroups: record.primaryMuscleGroups.map(toMuscleGroupShape),
     secondaryMuscleGroups: record.secondaryMuscleGroups.map(toMuscleGroupShape),
+    ...(record.muscleRegions ? { muscleRegions: record.muscleRegions.map((region) => ({ ...toMuscleGroupShape(region), role: region.role })) } : {}),
     muscleGroups: [
       ...record.primaryMuscleGroups.map((muscle) => ({
         ...toMuscleGroupShape(muscle),

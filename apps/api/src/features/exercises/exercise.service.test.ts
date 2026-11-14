@@ -53,6 +53,10 @@ class FakeExerciseRepository implements ExerciseRepository {
     };
   }
 
+  public async listMuscleRegions(): Promise<MuscleGroupRecord[]> {
+    return [{ id: "00000000-0000-4000-8000-000000000103", slug: "delts_side", name: "Side delts", sortOrder: 3 }];
+  }
+
   public async listMuscleGroups(): Promise<MuscleGroupRecord[]> {
     return this.muscleGroups;
   }
@@ -136,6 +140,7 @@ describe("exercise service", () => {
       searchAliases: ["Barbell Bench Press", "Flat Bench Press"],
       muscleGroupIds: [],
       primaryMuscleGroupId: chest.id,
+      muscleRegionIds: [],
       equipment: undefined,
       exerciseType: undefined,
       ownership: "editable",
@@ -160,6 +165,7 @@ describe("exercise service", () => {
     const result = await service.listMuscleGroups();
 
     assert.deepEqual(result, {
+      regions: [{ id: "00000000-0000-4000-8000-000000000103", slug: "delts_side", name: "Side delts" }],
       items: [
         {
           id: chest.id,

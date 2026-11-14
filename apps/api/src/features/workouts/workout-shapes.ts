@@ -32,6 +32,7 @@ interface SessionExerciseShape {
     primaryMuscleGroup: MuscleGroupShape;
     primaryMuscleGroups: MuscleGroupShape[];
     secondaryMuscleGroups: MuscleGroupShape[];
+    muscleRegions?: Array<MuscleGroupShape & { role: "PRIMARY" | "SECONDARY" }>;
     muscleGroups: Array<MuscleGroupShape & { role: "PRIMARY" | "SECONDARY" }>;
   };
   sets: WorkoutSetShape[];

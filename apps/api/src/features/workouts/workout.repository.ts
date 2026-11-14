@@ -53,6 +53,7 @@ export interface WorkoutListFilters {
   endDate: Date | undefined;
   search: string | undefined;
   muscleGroupIds: string[];
+  muscleRegionIds?: string[];
   equipment: string | "unspecified" | undefined;
   exerciseType: string | "unspecified" | undefined;
   sort: "newest" | "oldest" | "name";

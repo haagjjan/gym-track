@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { sql, type Kysely, type Transaction } from "kysely";
 import type { AppDatabase } from "../../db/database.js";
+import { findExerciseRegions } from "../exercises/exercise-regions.repository.js";
 import { lockOwnedWorkout } from "../workouts/workout-logging.repository.helpers.js";
 import type { TimedValues, CardioValues } from "./tracking.schemas.js";
 
@@ -45,7 +46,12 @@ export function createTrackingRepository(db: Kysely<AppDatabase>) {
           .where("workout_sessions.deleted_at", "is", null).where("workout_sessions.ended_at", "is not", null)
           .orderBy("workout_sessions.started_at").orderBy("cardio_entries.created_at").orderBy("cardio_entries.id").execute()
       ]);
-      return { timedSets, cardioEntries };
+      const ids = [...timedSets.map((row) => row.exerciseId), ...cardioEntries.flatMap((row) => row.exerciseId ? [row.exerciseId] : [])];
+      const regions = await findExerciseRegions(db, [...new Set(ids)]);
+      return {
+        timedSets: timedSets.map((row) => ({ ...row, muscleRegions: regions.get(row.exerciseId) ?? [] })),
+        cardioEntries: cardioEntries.map((row) => ({ ...row, muscleRegions: row.exerciseId ? regions.get(row.exerciseId) ?? [] : [] }))
+      };
     }
   };
 }

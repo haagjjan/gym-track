@@ -14,6 +14,8 @@ import {
   toMuscleGroupRecord
 } from "./exercise-records.repository.js";
 
+import { findExerciseRegions, type ExerciseRegion } from "./exercise-regions.repository.js";
+
 export interface MuscleGroupRecord {
   id: string;
   slug: string;
@@ -27,6 +29,7 @@ export interface ExerciseRecord {
   name: string;
   equipment: string | null;
   exerciseType: string | null;
+  muscleRegions?: ExerciseRegion[];
   primaryMuscleGroup: MuscleGroupRecord;
   primaryMuscleGroups: MuscleGroupRecord[];
   secondaryMuscleGroups: MuscleGroupRecord[];
@@ -44,6 +47,7 @@ export interface ExerciseListFilters {
   search: string | undefined;
   searchAliases: string[];
   muscleGroupIds: string[];
+  muscleRegionIds?: string[];
   primaryMuscleGroupId: string | undefined;
   equipment: string | "unspecified" | undefined;
   exerciseType: string | "unspecified" | undefined;
@@ -99,6 +103,7 @@ export interface MergeExerciseHistoryResult {
 export interface ExerciseRepository {
   listExercises(filters: ExerciseListFilters): Promise<ExerciseListResult>;
   listMuscleGroups(): Promise<MuscleGroupRecord[]>;
+  listMuscleRegions(): Promise<MuscleGroupRecord[]>;
   findExerciseByName(name: string): Promise<ExistingExerciseRecord | null>;
   findActiveExerciseById(exerciseId: string): Promise<ExerciseRecord | null>;
   findMuscleGroupsByIds(ids: string[]): Promise<MuscleGroupRecord[]>;
@@ -123,10 +128,14 @@ export function createExerciseRepository(db: Kysely<AppDatabase>): ExerciseRepos
         rows.map((row) => row.id)
       );
 
+      const regions = await findExerciseRegions(db, rows.map((row) => row.id));
       return {
-        items: rows.map((row) => toExerciseRecord(row, muscles.get(row.id) ?? [])),
+        items: rows.map((row) => ({ ...toExerciseRecord(row, muscles.get(row.id) ?? []), muscleRegions: regions.get(row.id) ?? [] })),
         total
       };
+    },
+    async listMuscleRegions() {
+      return db.selectFrom("muscle_regions").select(muscleGroupSelection).orderBy("sort_order", "asc").execute();
     },
     async listMuscleGroups() {
       const rows = await db
@@ -161,7 +170,8 @@ export function createExerciseRepository(db: Kysely<AppDatabase>): ExerciseRepos
 
       const muscles = await findExerciseMuscleGroups(db, [exerciseId]);
 
-      return toExerciseRecord(row, muscles.get(exerciseId) ?? []);
+      const regions = await findExerciseRegions(db, [exerciseId]);
+      return { ...toExerciseRecord(row, muscles.get(exerciseId) ?? []), muscleRegions: regions.get(exerciseId) ?? [] };
     },
     async findMuscleGroupsByIds(ids) {
       if (ids.length === 0) {

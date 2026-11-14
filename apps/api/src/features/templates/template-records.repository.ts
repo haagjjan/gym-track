@@ -1,3 +1,4 @@
+import { findExerciseRegions, regionPredicate } from "../exercises/exercise-regions.repository.js";
 import { sql, type Kysely, type RawBuilder, type Transaction } from "kysely";
 import type { AppDatabase } from "../../db/database.js";
 import type {
@@ -86,6 +87,7 @@ export async function hydrateTemplates(
     .where("exercise_muscle_groups.exercise_id", "in", exerciseIds)
     .orderBy("muscle_groups.sort_order", "asc")
     .execute();
+  const regions = await findExerciseRegions(db, exerciseIds);
   const lastUsed = await findLastUsedBySignature(db, templates, entries);
 
   return templates.map((template) => ({
@@ -101,6 +103,7 @@ export async function hydrateTemplates(
           name: entry.exerciseName,
           equipment: entry.equipment,
           exerciseType: entry.exerciseType,
+          muscleRegions: regions.get(entry.exerciseId) ?? [],
           muscleGroups: muscles
             .filter((muscle) => muscle.exerciseId === entry.exerciseId)
             .map((muscle) => ({
@@ -215,6 +218,7 @@ export function templateFilterExpression(filters: TemplateListFilters): RawBuild
     where facet_emg.exercise_id = facet_e.id
       and facet_emg.muscle_group_id = ${muscleGroupId}
   )`);
+  for (const id of filters.muscleRegionIds ?? []) facets.push(regionPredicate(sql.ref("facet_e.id"), id));
   if (filters.equipment === "unspecified") facets.push(sql`facet_e.equipment is null`);
   else if (filters.equipment) facets.push(sql`facet_e.equipment = ${filters.equipment}`);
   if (filters.exerciseType === "unspecified") facets.push(sql`facet_e.exercise_type is null`);

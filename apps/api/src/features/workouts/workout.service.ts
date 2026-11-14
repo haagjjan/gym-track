@@ -104,6 +104,7 @@ async function listWorkouts(
     endDate: input.endDate,
     search: input.search,
     muscleGroupIds: input.muscleGroupIds ?? [],
+    muscleRegionIds: input.muscleRegionIds ?? [],
     equipment: input.equipment,
     exerciseType: input.exerciseType,
     sort: input.sort ?? "newest",

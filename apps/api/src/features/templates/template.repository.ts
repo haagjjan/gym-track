@@ -35,6 +35,7 @@ export interface TemplateExerciseRecord {
     equipment: string | null;
     exerciseType: string | null;
     muscleGroups: TemplateMuscleRecord[];
+    muscleRegions?: TemplateMuscleRecord[];
   };
 }
 
@@ -51,6 +52,7 @@ export interface TemplateRecord {
 export interface TemplateListFilters {
   search: string | undefined;
   muscleGroupIds: string[];
+  muscleRegionIds?: string[];
   equipment: string | "unspecified" | undefined;
   exerciseType: string | "unspecified" | undefined;
   sort: "lastUsed" | "name" | "lastEdited";

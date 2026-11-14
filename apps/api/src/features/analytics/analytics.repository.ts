@@ -4,6 +4,7 @@ import { findTimedRegionSets, type TimedRegionSet } from "../tracking/tracking-r
 import { findTimedVolumeSets } from "../tracking/tracking-volume.repository.js";
 import type { Kysely } from "kysely";
 import type { AppDatabase } from "../../db/database.js";
+import { findExerciseRegions, type ExerciseRegion } from "../exercises/exercise-regions.repository.js";
 import { findSecondaryMuscleGroups, groupCompletedExercises } from "./analytics-exercise-list.repository.js";
 
 export interface AnalyticsSetFilters {
@@ -29,6 +30,7 @@ export interface CompletedExerciseRecord {
 }
 
 interface AnalyticsExerciseRecord {
+  muscleRegions?: ExerciseRegion[];
   id: string;
   name: string;
   primaryMuscleGroup: AnalyticsMuscleGroupRecord;
@@ -119,7 +121,10 @@ export function createAnalyticsRepository(db: Kysely<AppDatabase>, extendedTrack
         [...new Set(rows.map((row) => row.exerciseId))]
       );
 
-      return groupCompletedExercises(rows, secondaryMuscles, timeZone);
+      const regions = await findExerciseRegions(db, [...new Set(rows.map((row) => row.exerciseId))]);
+      return groupCompletedExercises(rows, secondaryMuscles, timeZone).map((record) => ({
+        ...record, exercise: { ...record.exercise, muscleRegions: regions.get(record.exercise.id) ?? [] }
+      }));
     },
     async findExerciseSets(filters) {
       const rows = await db

@@ -1,3 +1,4 @@
+import { regionPredicate } from "../exercises/exercise-regions.repository.js";
 import { trackingSummaries } from "../tracking/tracking-summary.repository.js";
 import { sql, type Kysely, type RawBuilder } from "kysely";
 import type { AppDatabase } from "../../db/database.js";
@@ -97,6 +98,7 @@ function searchExpression(search: string, timeZone: string, extendedTracking: bo
 
 function exerciseFilterClauses(filters: WorkoutListFilters): RawBuilder<unknown>[] {
   const clauses = filters.muscleGroupIds.map((id) => sql`exists (select 1 from exercise_muscle_groups facet_emg where facet_emg.exercise_id = filtered_e.id and facet_emg.muscle_group_id = ${id})`);
+  for (const id of filters.muscleRegionIds ?? []) clauses.push(regionPredicate(sql.ref("filtered_e.id"), id));
   if (filters.equipment === "unspecified") clauses.push(sql`filtered_e.equipment is null`);
   else if (filters.equipment) clauses.push(sql`filtered_e.equipment = ${filters.equipment}`);
   if (filters.exerciseType === "unspecified") clauses.push(sql`filtered_e.exercise_type is null`);

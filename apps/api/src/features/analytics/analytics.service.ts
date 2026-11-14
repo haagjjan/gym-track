@@ -61,6 +61,7 @@ export interface CompletedExerciseList {
 }
 
 interface CompletedExercise {
+  muscleRegions?: Array<MuscleGroupShape & { role: "PRIMARY" | "SECONDARY" }>;
   id: string;
   name: string;
   primaryMuscleGroup: MuscleGroupShape;
@@ -160,6 +161,7 @@ function toCompletedExercise(record: CompletedExerciseRecord): CompletedExercise
   return {
     id: record.exercise.id,
     name: record.exercise.name,
+    ...(record.exercise.muscleRegions ? { muscleRegions: record.exercise.muscleRegions } : {}),
     primaryMuscleGroup: toMuscleGroupShape(record.exercise.primaryMuscleGroup),
     secondaryMuscleGroups: record.exercise.secondaryMuscleGroups.map(toMuscleGroupShape),
     lastDoneAt: record.lastDoneAt.toISOString(),

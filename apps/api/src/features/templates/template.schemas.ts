@@ -9,6 +9,7 @@ export const workoutTemplateParamsSchema = z.object({ workoutId: z.string().uuid
 export const listTemplatesQuerySchema = z.object({
   search: z.string().trim().max(120).transform((value) => value || undefined).optional(),
   muscleGroupIds: queryArraySchema(z.string().uuid()).optional(),
+  muscleRegionIds: queryArraySchema(z.string().uuid()).optional(),
   equipment: z.enum([...EXERCISE_EQUIPMENT, "unspecified"]).optional(),
   exerciseType: z.enum([...EXERCISE_TYPES, "unspecified"]).optional(),
   sort: z.enum(["lastUsed", "name", "lastEdited"]).optional()

@@ -11,6 +11,7 @@ export const listExercisesQuerySchema = z.object({
   search: searchSchema.optional(),
   muscleGroupId: z.string().uuid().optional(),
   muscleGroupIds: queryArraySchema(z.string().uuid()).optional(),
+  muscleRegionIds: queryArraySchema(z.string().uuid()).optional(),
   primaryMuscleGroupId: z.string().uuid().optional(),
   equipment: z.enum([...EXERCISE_EQUIPMENT, "unspecified"]).optional(),
   exerciseType: z.enum([...EXERCISE_TYPES, "unspecified"]).optional(),

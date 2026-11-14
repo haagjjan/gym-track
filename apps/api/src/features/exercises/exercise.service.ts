@@ -67,6 +67,7 @@ export function createExerciseService(options: ExerciseServiceOptions): Exercise
           ...(input.muscleGroupId ? [input.muscleGroupId] : [])
         ]),
         primaryMuscleGroupId: input.primaryMuscleGroupId,
+        muscleRegionIds: input.muscleRegionIds ?? [],
         equipment: input.equipment,
         exerciseType: input.exerciseType,
         ownership: input.ownership,
@@ -92,7 +93,8 @@ export function createExerciseService(options: ExerciseServiceOptions): Exercise
       const items = await options.repository.listMuscleGroups();
 
       return {
-        items: items.map(toMuscleGroupShape)
+        items: items.map(toMuscleGroupShape),
+        regions: (await options.repository.listMuscleRegions()).map(toMuscleGroupShape)
       };
     },
     async listOptions() {
