@@ -27,6 +27,7 @@ export function trackingChoices(payload: TrackingPayload): TrackingExerciseChoic
     const latest = entries.reduce((a, b) => new Date(a.sessionDate) > new Date(b.sessionDate) ? a : b);
     const timed = "setType" in latest;
     return { id, name: timed ? latest.exerciseName : latest.activity, kind: timed ? "time" as const : "cardio" as const,
+      muscleRegions: latest.muscleRegions,
       category: timed ? "Time" : "Cardio", plottedUnit: "days" as const,
       lastDoneAt: latest.sessionDate, plottedSetCount: new Set(entries.map((entry) => localDayKey(entry.sessionDate))).size };
   }).sort((a, b) => new Date(b.lastDoneAt).getTime() - new Date(a.lastDoneAt).getTime() || a.name.localeCompare(b.name));

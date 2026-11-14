@@ -1,5 +1,7 @@
 "use client";
 
+import { matchesMuscleRegion, primaryMuscleName } from "../../shared/exercise-muscles";
+
 import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { buttonClass } from "../../shared/ui/button";
@@ -7,6 +9,7 @@ import { IconChevronDown } from "../../shared/ui/icons";
 import { Sheet } from "../../shared/ui/sheet";
 import { Skeleton } from "../../shared/ui/ui";
 import { formatDay } from "../../shared/format";
+import { useMuscleRegions } from "../../shared/api/hooks";
 import { ExerciseOption, type ProgressExerciseChoice } from "./progress-panels";
 
 interface ProgressExerciseSelectorProps {
@@ -43,7 +46,7 @@ export function ProgressExerciseSelector(props: ProgressExerciseSelectorProps): 
           >
             <span className="min-w-0">
               <span className="block truncate text-title-3 text-text">{selected.name}</span>
-              <span className="block truncate text-footnote text-text-secondary">{selected.category ?? selected.primaryMuscleGroup?.name ?? "Exercise"}, last trained {formatDay(selected.lastDoneAt)}</span>
+              <span className="block truncate text-footnote text-text-secondary">{selected.category ?? primaryMuscleName(selected)}, last trained {formatDay(selected.lastDoneAt)}</span>
             </span>
             <IconChevronDown className="shrink-0 text-accent" />
           </button>
@@ -67,16 +70,13 @@ function ExercisePicker(props: ProgressExerciseSelectorProps): ReactNode {
   const [muscleSlug, setMuscleSlug] = useState("");
   const [search, setSearch] = useState("");
 
-  const muscleGroups = useMemo(() => {
-    const seen = new Map<string, string>();
-    for (const exercise of props.exercises) if (exercise.primaryMuscleGroup) seen.set(exercise.primaryMuscleGroup.slug, exercise.primaryMuscleGroup.name);
-    return [...seen.entries()].map(([slug, name]) => ({ slug, name }));
-  }, [props.exercises]);
+  const regions = useMuscleRegions();
+  const muscleGroups = regions.data ?? [];
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
     return props.exercises.filter((exercise) => {
-      if (muscleSlug && exercise.primaryMuscleGroup?.slug !== muscleSlug) return false;
+      if (!matchesMuscleRegion(exercise, muscleSlug)) return false;
       return query.length === 0 || exercise.name.toLowerCase().includes(query);
     });
   }, [muscleSlug, props.exercises, search]);
@@ -85,7 +85,7 @@ function ExercisePicker(props: ProgressExerciseSelectorProps): ReactNode {
     <section>
       <div className={`grid gap-2 ${muscleGroups.length ? "grid-cols-2" : "grid-cols-1"}`}>
         <input aria-label="Search exercises" className={fieldClass} onChange={(event) => setSearch(event.currentTarget.value)} placeholder="Search" type="search" value={search} />
-        {muscleGroups.length ? <select aria-label="Filter by muscle group" className={fieldClass} onChange={(event) => setMuscleSlug(event.currentTarget.value)} value={muscleSlug}>
+        {muscleGroups.length ? <select aria-label="Filter by muscle" className={fieldClass} onChange={(event) => setMuscleSlug(event.currentTarget.value)} value={muscleSlug}>
           <option value="">All muscles</option>
           {muscleGroups.map((group) => <option key={group.slug} value={group.slug}>{group.name}</option>)}
         </select> : null}

@@ -1,11 +1,14 @@
 "use client";
 
+import { primaryMuscleName } from "../../shared/exercise-muscles";
+
 import type { ReactNode } from "react";
 import type { CompletedExercise } from "../../shared/api/types";
 import { IconCheck24 } from "../../shared/ui/icons";
 
 export interface ProgressExerciseChoice extends Pick<CompletedExercise, "id" | "name" | "lastDoneAt" | "plottedSetCount"> {
   primaryMuscleGroup?: CompletedExercise["primaryMuscleGroup"];
+  muscleRegions?: CompletedExercise["muscleRegions"];
   category?: string;
   plottedUnit?: "days";
 }
@@ -29,7 +32,7 @@ export function ExerciseOption({
       <span className="min-w-0">
         <span className={`block truncate text-body ${isActive ? "font-semibold text-accent" : "text-text"}`}>{exercise.name}</span>
         <span className="block text-footnote text-text-secondary">
-          {`${exercise.category ?? exercise.primaryMuscleGroup?.name ?? "Exercise"}, ${exercise.plottedSetCount} plotted ${exercise.plottedUnit ?? "sets"}`}
+          {`${exercise.category ?? primaryMuscleName(exercise)}, ${exercise.plottedSetCount} plotted ${exercise.plottedUnit ?? "sets"}`}
         </span>
       </span>
       {isActive ? <IconCheck24 aria-hidden className="shrink-0 text-accent" /> : null}

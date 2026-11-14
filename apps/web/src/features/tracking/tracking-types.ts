@@ -1,4 +1,8 @@
-export interface EntryBase { id: string; workoutId: string; durationSeconds: number; note: string | null; revision: number; sessionDate: string }
+import type { ExerciseMuscleGroup } from "../../shared/api/types";
+export interface EntryBase {
+  muscleRegions?: ExerciseMuscleGroup[];
+  id: string; workoutId: string; durationSeconds: number; note: string | null; revision: number; sessionDate: string
+}
 export interface TimedEntry extends EntryBase {
   exerciseId: string; exerciseName: string; setType: "warmup" | "working"; addedWeightKg: string | null;
 }

@@ -123,7 +123,7 @@ export function ProgressView({ hideTitle = false, completedExercises, exercises,
               <div className="mb-3 hidden px-1 lg:block">
                 <h2 className="break-words text-title-2 text-text">{selected.name}</h2>
                 <p className="text-subhead text-text-secondary">
-                  {selected.primaryMuscleGroup.name}, last trained {formatDay(selected.lastDoneAt)}
+                  {selected.muscleRegions?.find((region) => region.role === "PRIMARY")?.name ?? selected.primaryMuscleGroup.name}, last trained {formatDay(selected.lastDoneAt)}
                 </p>
               </div>
             ) : null}
