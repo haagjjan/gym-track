@@ -107,26 +107,26 @@ describe("apiRequest", () => {
 
   it("forgets the token and reports it when the session has ended", async () => {
     const store = memoryStore("stored-token");
-    let signedOut = 0;
-    configureAppTransport({ apiOrigin: ORIGIN, appVersion: "1.0.0", tokenStore: store, onSignedOut: () => { signedOut += 1; } });
+    const events: string[] = [];
+    configureAppTransport({ apiOrigin: ORIGIN, appVersion: "1.0.0", tokenStore: store, onSessionChange: (event) => { events.push(event); } });
     stubFetch(() => json(401, { error: { code: "UNAUTHORIZED" } }));
 
     await apiRequest("/api/workouts");
 
     assert.equal(store.value, null);
-    assert.equal(signedOut, 1);
+    assert.deepEqual(events, ["expired"]);
   });
 
   it("does not treat a wrong password as a lost session", async () => {
     const store = memoryStore("stored-token");
-    let signedOut = 0;
-    configureAppTransport({ apiOrigin: ORIGIN, appVersion: "1.0.0", tokenStore: store, onSignedOut: () => { signedOut += 1; } });
+    const events: string[] = [];
+    configureAppTransport({ apiOrigin: ORIGIN, appVersion: "1.0.0", tokenStore: store, onSessionChange: (event) => { events.push(event); } });
     stubFetch(() => json(401, { error: { code: "INVALID_CREDENTIALS" } }));
 
     await apiRequest("/api/auth/login", { method: "POST", body: "{}" });
 
     assert.equal(store.value, "stored-token");
-    assert.equal(signedOut, 0);
+    assert.deepEqual(events, []);
   });
 
   it("reports a required update and keeps the session", async () => {

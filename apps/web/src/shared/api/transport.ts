@@ -14,14 +14,19 @@ export interface SessionTokenStore {
   clear(): Promise<void>;
 }
 
+export type SessionEvent = "started" | "ended" | "expired";
+
 export interface AppTransportConfig {
   /** Origin of apps/api as the phone reaches it, for example `https://app.gymtrack.ch`. */
   apiOrigin: string;
   /** App version as `major.minor.patch`, sent as `X-App-Version`. */
   appVersion: string;
   tokenStore: SessionTokenStore;
-  /** The session ended (expired, revoked or signed out elsewhere). */
-  onSignedOut?: () => void;
+  /**
+   * The session changed: "started" after login or signup, "ended" after logout,
+   * "expired" when the API no longer accepts the token (expired or revoked).
+   */
+  onSessionChange?: (event: SessionEvent) => void;
   /** The API no longer serves this app version. */
   onUpdateRequired?: () => void;
 }
@@ -110,12 +115,13 @@ export async function apiRequest(url: string, init: RequestInit = {}): Promise<R
 
   if (path === LOGOUT_PATH) {
     await forgetSession(current);
+    current.config.onSessionChange?.("ended");
     return response;
   }
 
   if (response.status === 401 && token && !SESSION_START_PATHS.has(path)) {
     await forgetSession(current);
-    current.config.onSignedOut?.();
+    current.config.onSessionChange?.("expired");
   }
 
   return response;
@@ -131,6 +137,7 @@ async function storeSessionFrom(response: Response, current: TransportState): Pr
 
   current.token = Promise.resolve(token);
   await current.config.tokenStore.save(token).catch(() => undefined);
+  current.config.onSessionChange?.("started");
 }
 
 async function forgetSession(current: TransportState): Promise<void> {
