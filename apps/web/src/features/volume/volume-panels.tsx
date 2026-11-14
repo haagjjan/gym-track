@@ -10,9 +10,7 @@ import {
   heatBarWidth,
   heatBucket,
   heatRangeLabel,
-  REGION_SLUGS,
-  volumeRampCss,
-  type RegionSlug
+  volumeRampCss
 } from "./heatmap";
 import type { MuscleAggregate } from "./volume-aggregation";
 
@@ -97,6 +95,7 @@ export function HeatLegend({ heatCeiling }: { heatCeiling: number }): ReactNode 
           Full color at <span className="num ml-1">{formatNumber(heatCeiling)}</span>
         </Link>
       </div>
+      <p className="mt-1 text-footnote text-text-secondary">Each working set counts as 1 for primary muscles and 0.5 for secondary muscles.</p>
       <ul aria-label="Working set heat ranges" className="mt-1.5 grid grid-cols-6 gap-1">
         {stages.map((stage) => (
           <li className="min-w-0" key={stage.label}>
@@ -147,13 +146,13 @@ export function MuscleIntel({
       <dl className="mt-3 grid grid-cols-2 gap-4">
         {oneWeek ? (
           <>
-            <IntelTile label="Last 7 days" unit="sets" value={aggregate.totalSets} />
+            <IntelTile label="Last 7 days" unit="sets" value={formatNumber(aggregate.totalSets)} />
             <IntelTile label="Workouts" value={aggregate.sessions.length} />
           </>
         ) : (
           <>
             <IntelTile label="Per week" unit="sets" value={formatNumber(aggregate.weeklyAvg)} />
-            <IntelTile label={`Total, ${windowLabel}`} unit="sets" value={aggregate.totalSets} />
+            <IntelTile label={`Total, ${windowLabel}`} unit="sets" value={formatNumber(aggregate.totalSets)} />
           </>
         )}
       </dl>
@@ -181,7 +180,7 @@ function ContributionList({ aggregate, workoutHref }: { aggregate: MuscleAggrega
             {aggregate.exercises.slice(0, 3).map((exercise) => (
               <li className="flex min-h-11 items-center justify-between gap-3" key={exercise.id}>
                 <span className="min-w-0 truncate text-body text-text">{exercise.name}</span>
-                <span className="num flex-none text-callout text-text-secondary">{exercise.sets} sets</span>
+                <span className="num flex-none text-callout text-text-secondary">{formatNumber(exercise.sets)} sets</span>
               </li>
             ))}
           </ul>
@@ -196,7 +195,7 @@ function ContributionList({ aggregate, workoutHref }: { aggregate: MuscleAggrega
                 <Link className="flex min-h-11 items-center justify-between gap-3 active:bg-surface-raised" href={workoutHref?.(session.workoutId) ?? `/workouts/${session.workoutId}`}>
                   <span className="text-body text-text">{formatDay(session.date)}</span>
                   <span className="flex items-center gap-1 text-callout text-text-secondary">
-                    <span className="num">{session.sets} sets</span>
+                    <span className="num">{formatNumber(session.sets)} sets</span>
                     <IconForward />
                   </span>
                 </Link>
@@ -217,7 +216,7 @@ export function DistributionMatrix({
 }: {
   aggregates: Map<string, MuscleAggregate>;
   heatCeiling: number;
-  onSelect: (slug: RegionSlug) => void;
+  onSelect: (slug: string) => void;
   selectedSlug: string | null;
 }): ReactNode {
   const rows = [...aggregates.values()].sort((left, right) => right.weeklyAvg - left.weeklyAvg);
@@ -238,11 +237,10 @@ export function DistributionMatrix({
   );
 }
 
-function DistributionRow({ heatCeiling, isSelected, onSelect, row }: { heatCeiling: number; isSelected: boolean; onSelect: (slug: RegionSlug) => void; row: MuscleAggregate }): ReactNode {
-  const isRegion = REGION_SLUGS.includes(row.slug as RegionSlug);
+function DistributionRow({ heatCeiling, isSelected, onSelect, row }: { heatCeiling: number; isSelected: boolean; onSelect: (slug: string) => void; row: MuscleAggregate }): ReactNode {
   return (
     <li>
-      <button aria-pressed={isSelected} className={`flex min-h-11 w-full cursor-pointer items-center gap-3 px-4 active:bg-surface-raised ${isSelected ? "bg-surface-raised" : ""}`} disabled={!isRegion} onClick={() => isRegion && onSelect(row.slug as RegionSlug)} type="button">
+      <button aria-pressed={isSelected} className={`flex min-h-11 w-full cursor-pointer items-center gap-3 px-4 active:bg-surface-raised ${isSelected ? "bg-surface-raised" : ""}`} onClick={() => onSelect(row.slug)} type="button">
         <span className={`w-24 shrink-0 truncate text-left text-body ${isSelected ? "font-semibold text-text" : "text-text"}`}>{row.name}</span>
         {/* Neutral track (no black bar in light mode); the fill carries the swatch outline. */}
         <span aria-hidden className="h-2.5 min-w-0 flex-1 rounded-full bg-surface-raised">

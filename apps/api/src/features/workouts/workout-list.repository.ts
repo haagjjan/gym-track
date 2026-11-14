@@ -1,3 +1,4 @@
+import { trackingSummaries } from "../tracking/tracking-summary.repository.js";
 import { sql, type Kysely, type RawBuilder } from "kysely";
 import type { AppDatabase } from "../../db/database.js";
 import {
@@ -10,21 +11,22 @@ import { toWorkoutSessionRecord, workoutSessionSelection } from "./workout-recor
 
 export async function listWorkoutRecords(
   db: Kysely<AppDatabase>,
-  filters: WorkoutListFilters
+  filters: WorkoutListFilters,
+  extendedTracking = false
 ): Promise<WorkoutListResult> {
   return {
-    items: await listRows(db, filters),
-    total: await countRows(db, filters),
+    items: await listRows(db, filters, extendedTracking),
+    total: await countRows(db, filters, extendedTracking),
     allTimeSummary: await findAllTimeSummary(db, filters.userId)
   };
 }
 
-async function listRows(db: Kysely<AppDatabase>, filters: WorkoutListFilters): Promise<WorkoutListRecord[]> {
+async function listRows(db: Kysely<AppDatabase>, filters: WorkoutListFilters, extendedTracking: boolean): Promise<WorkoutListRecord[]> {
   let query = db.selectFrom("workout_sessions").select(workoutSessionSelection).select((eb) => [
     eb.selectFrom("session_exercises").select((subquery) => subquery.fn.countAll<string>().as("count")).whereRef("session_exercises.workout_session_id", "=", "workout_sessions.id").where("session_exercises.deleted_at", "is", null).as("totalExercises"),
     eb.selectFrom("sets").innerJoin("session_exercises", "session_exercises.id", "sets.session_exercise_id").select((subquery) => subquery.fn.countAll<string>().as("count")).whereRef("session_exercises.workout_session_id", "=", "workout_sessions.id").where("session_exercises.deleted_at", "is", null).where("sets.deleted_at", "is", null).as("totalSets"),
     eb.selectFrom("sets").innerJoin("session_exercises", "session_exercises.id", "sets.session_exercise_id").select(sql<string>`coalesce(sum(sets.weight_kg * sets.reps), 0)::text`.as("tonnageKg")).whereRef("session_exercises.workout_session_id", "=", "workout_sessions.id").where("session_exercises.deleted_at", "is", null).where("sets.deleted_at", "is", null).as("tonnageKg")
-  ]).where("user_id", "=", filters.userId).where("deleted_at", "is", null).where(filterExpression(filters));
+  ]).where("user_id", "=", filters.userId).where("deleted_at", "is", null).where(filterExpression(filters, extendedTracking));
 
   if (filters.sort === "oldest") query = query.orderBy("started_at", "asc");
   else if (filters.sort === "name") query = query.orderBy(sql<string>`lower(coalesce(title, workout_type, ''))`, "asc").orderBy("started_at", "desc");
@@ -32,38 +34,50 @@ async function listRows(db: Kysely<AppDatabase>, filters: WorkoutListFilters): P
 
   const rows = await query.limit(filters.limit).offset(filters.offset).execute();
   const previews = await findExercisePreviews(db, rows.map((row) => row.id));
+  const extended = extendedTracking ? await trackingSummaries(db, rows.map((row) => row.id)) : new Map<string, { timedSets: number; timeExercises: number; cardioEntries: number }>();
   return rows.map((row) => ({
     ...toWorkoutSessionRecord(row),
+    ...(extendedTracking ? { cardioEntries: extended.get(row.id)?.cardioEntries ?? 0 } : {}),
     totalExercises: Number(row.totalExercises),
-    totalSets: Number(row.totalSets),
+    totalSets: Number(row.totalSets) + (extended.get(row.id)?.timedSets ?? 0),
     tonnageKg: row.tonnageKg ?? "0",
     exercisePreview: previews.get(row.id) ?? []
   }));
 }
 
-async function countRows(db: Kysely<AppDatabase>, filters: WorkoutListFilters): Promise<number> {
-  const row = await db.selectFrom("workout_sessions").select((eb) => eb.fn.countAll<string>().as("total")).where("user_id", "=", filters.userId).where("deleted_at", "is", null).where(filterExpression(filters)).executeTakeFirstOrThrow();
+async function countRows(db: Kysely<AppDatabase>, filters: WorkoutListFilters, extendedTracking: boolean): Promise<number> {
+  const row = await db.selectFrom("workout_sessions").select((eb) => eb.fn.countAll<string>().as("total")).where("user_id", "=", filters.userId).where("deleted_at", "is", null).where(filterExpression(filters, extendedTracking)).executeTakeFirstOrThrow();
   return Number(row.total);
 }
 
-function filterExpression(filters: WorkoutListFilters): RawBuilder<boolean> {
+function filterExpression(filters: WorkoutListFilters, extendedTracking: boolean): RawBuilder<boolean> {
   const clauses: RawBuilder<unknown>[] = [];
   if (filters.startDate) clauses.push(sql`workout_sessions.started_at >= ${filters.startDate}`);
   if (filters.endDate) clauses.push(sql`workout_sessions.started_at <= ${filters.endDate}`);
-  if (filters.search) clauses.push(searchExpression(filters.search, filters.timeZone));
+  if (filters.search) clauses.push(searchExpression(filters.search, filters.timeZone, extendedTracking));
   const facets = exerciseFilterClauses(filters);
-  if (facets.length > 0) clauses.push(sql`exists (
+  if (facets.length > 0) clauses.push(sql`(exists (
     select 1 from session_exercises filtered_se
     join exercises filtered_e on filtered_e.id = filtered_se.exercise_id
     where filtered_se.workout_session_id = workout_sessions.id
       and filtered_se.deleted_at is null and filtered_e.deleted_at is null
       and ${sql.join(facets, sql` and `)}
-  )`);
+  ) ${extendedTracking ? sql`or exists (
+    select 1 from timed_sets filtered_ts join exercises filtered_e on filtered_e.id = filtered_ts.exercise_id
+    where filtered_ts.workout_session_id = workout_sessions.id and filtered_ts.deleted_at is null
+      and filtered_e.deleted_at is null and ${sql.join(facets, sql` and `)}
+  )` : sql``})`);
   return clauses.length > 0 ? sql<boolean>`(${sql.join(clauses, sql` and `)})` : sql<boolean>`true`;
 }
 
-function searchExpression(search: string, timeZone: string): RawBuilder<unknown> {
+function searchExpression(search: string, timeZone: string, extendedTracking: boolean): RawBuilder<unknown> {
   const pattern = `%${search.toLowerCase()}%`;
+  const extended = extendedTracking ? sql`or exists (
+    select 1 from timed_sets search_ts join exercises search_e on search_e.id = search_ts.exercise_id
+    where search_ts.workout_session_id = workout_sessions.id and search_ts.deleted_at is null
+      and (lower(search_e.name) like ${pattern} or lower(coalesce(search_e.equipment, '')) like ${pattern}
+        or exists (select 1 from exercise_muscle_groups emg join muscle_groups mg on mg.id = emg.muscle_group_id where emg.exercise_id = search_e.id and lower(mg.name) like ${pattern}))
+    ) or exists (select 1 from cardio_entries search_ce where search_ce.workout_session_id = workout_sessions.id and search_ce.deleted_at is null and lower(search_ce.activity) like ${pattern})` : sql``;
   return sql`(
     lower(coalesce(workout_sessions.title, '')) like ${pattern}
     or lower(coalesce(workout_sessions.workout_type, '')) like ${pattern}
@@ -77,6 +91,7 @@ function searchExpression(search: string, timeZone: string): RawBuilder<unknown>
         and (lower(search_e.name) like ${pattern} or lower(coalesce(search_e.equipment, '')) like ${pattern}
           or exists (select 1 from exercise_muscle_groups search_emg join muscle_groups search_mg on search_mg.id = search_emg.muscle_group_id where search_emg.exercise_id = search_e.id and lower(search_mg.name) like ${pattern}))
     )
+    ${extended}
   )`;
 }
 

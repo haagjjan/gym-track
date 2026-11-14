@@ -1,3 +1,7 @@
+import { findVolumeRegionSets } from "./analytics-volume-region.repository.js";
+import type { VolumeMuscleRole } from "./analytics-volume-attribution.js";
+import { findTimedRegionSets, type TimedRegionSet } from "../tracking/tracking-region-volume.js";
+import { findTimedVolumeSets } from "../tracking/tracking-volume.repository.js";
 import type { Kysely } from "kysely";
 import type { AppDatabase } from "../../db/database.js";
 import { findSecondaryMuscleGroups, groupCompletedExercises } from "./analytics-exercise-list.repository.js";
@@ -51,6 +55,7 @@ export interface AnalyticsSetRecord {
 }
 
 export interface WeeklyVolumeSetRecord {
+  muscleRole: VolumeMuscleRole;
   workoutId: string;
   sessionDate: Date;
   exercise: {
@@ -60,14 +65,32 @@ export interface WeeklyVolumeSetRecord {
   muscleGroup: AnalyticsMuscleGroupRecord;
 }
 
+export interface AnalyticsMuscleRegionRecord extends AnalyticsMuscleGroupRecord {
+  muscleGroupSlug: string;
+}
+
+export interface WeeklyVolumeRegionSetRecord {
+  muscleRole: VolumeMuscleRole;
+  workoutId: string;
+  sessionDate: Date;
+  exercise: {
+    id: string;
+    name: string;
+  };
+  muscleRegion: AnalyticsMuscleRegionRecord;
+}
+
 export interface AnalyticsRepository {
+  findTimedVolumeRegions?(filters: WeeklyVolumeFilters): Promise<TimedRegionSet[]>;
   findCompletedExercises(userId: string, timeZone: string): Promise<CompletedExerciseRecord[]>;
   findExerciseSets(filters: AnalyticsSetFilters): Promise<AnalyticsSetRecord[]>;
   findWeeklyVolumeSets(filters: WeeklyVolumeFilters): Promise<WeeklyVolumeSetRecord[]>;
+  findWeeklyVolumeRegionSets(filters: WeeklyVolumeFilters): Promise<WeeklyVolumeRegionSetRecord[]>;
 }
 
-export function createAnalyticsRepository(db: Kysely<AppDatabase>): AnalyticsRepository {
+export function createAnalyticsRepository(db: Kysely<AppDatabase>, extendedTracking = false): AnalyticsRepository {
   return {
+    findTimedVolumeRegions: (filters) => extendedTracking ? findTimedRegionSets(db, filters) : Promise.resolve([]),
     async findCompletedExercises(userId, timeZone) {
       const rows = await db
         .selectFrom("sets")
@@ -139,12 +162,10 @@ export function createAnalyticsRepository(db: Kysely<AppDatabase>): AnalyticsRep
         .innerJoin("session_exercises", "session_exercises.id", "sets.session_exercise_id")
         .innerJoin("workout_sessions", "workout_sessions.id", "session_exercises.workout_session_id")
         .innerJoin("exercises", "exercises.id", "session_exercises.exercise_id")
-        .innerJoin("exercise_muscle_groups", (join) =>
-          join.onRef("exercise_muscle_groups.exercise_id", "=", "exercises.id")
-            .on("exercise_muscle_groups.role", "=", "PRIMARY")
-        )
+        .innerJoin("exercise_muscle_groups", "exercise_muscle_groups.exercise_id", "exercises.id")
         .innerJoin("muscle_groups", "muscle_groups.id", "exercise_muscle_groups.muscle_group_id")
         .select([
+          "exercise_muscle_groups.role as muscleRole",
           "workout_sessions.id as workoutId",
           "workout_sessions.started_at as sessionDate",
           "exercises.id as exerciseId",
@@ -159,6 +180,7 @@ export function createAnalyticsRepository(db: Kysely<AppDatabase>): AnalyticsRep
         .where("session_exercises.deleted_at", "is", null)
         .where("sets.deleted_at", "is", null)
         .where("sets.set_type", "=", "working")
+        .where("exercises.tracking_mode", "=", "reps")
         .$if(filters.startDate !== undefined, (query) =>
           query.where("workout_sessions.started_at", ">=", filters.startDate as Date)
         )
@@ -172,7 +194,8 @@ export function createAnalyticsRepository(db: Kysely<AppDatabase>): AnalyticsRep
         .orderBy("muscle_groups.sort_order", "asc")
         .execute();
 
-      return rows.map((row) => ({
+      const grouped = rows.map((row) => ({
+        muscleRole: row.muscleRole,
         workoutId: row.workoutId,
         sessionDate: row.sessionDate,
         exercise: {
@@ -186,6 +209,8 @@ export function createAnalyticsRepository(db: Kysely<AppDatabase>): AnalyticsRep
           sortOrder: row.muscleGroupSortOrder
         }
       }));
-    }
+      return extendedTracking ? grouped.concat(await findTimedVolumeSets(db, filters)) : grouped;
+    },
+    findWeeklyVolumeRegionSets: (filters) => findVolumeRegionSets(db, filters, "reps")
   };
 }

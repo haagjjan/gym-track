@@ -21,6 +21,20 @@ export function parseThemePreference(value: unknown): ThemePreference {
   return value === "system" || value === "dark" || value === "light" ? value : DEFAULT_THEME_PREFERENCE;
 }
 
+export function readStoredThemePreference(): ThemePreference {
+  try {
+    return parseThemePreference(globalThis.localStorage.getItem(THEME_STORAGE_KEY));
+  } catch {
+    return DEFAULT_THEME_PREFERENCE;
+  }
+}
+
+export function nextThemePreference(current: ThemePreference): ThemePreference {
+  if (current === "system") return "light";
+  if (current === "light") return "dark";
+  return "system";
+}
+
 export function resolveTheme(preference: ThemePreference, prefersLight: boolean): ResolvedTheme {
   if (preference === "system") return prefersLight ? "light" : "dark";
   return preference;

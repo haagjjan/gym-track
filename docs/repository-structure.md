@@ -140,10 +140,10 @@ apps/
 - `apps/web` owns the Next.js App Router app, the BFF route handlers, all product UI, and the Playwright specs.
 - `apps/web/src/middleware.ts` and `apps/web/src/request-security.ts` own the Next.js
   host allowlist, same-origin state-change guard, and browser-facing security headers.
-- `apps/web/public/models/avatar/avatar-base.fbx` is the shared 3D figure (its fused pedestal is cut away at runtime and not rendered). `base-v-2.fbx` is the dashboard pedestal.
+- `apps/web/public/models/body/body.glb` is the shared rigged figure. `tools/body-model/` holds the build scripts and structural validator.
 - `apps/web/src/features/avatar` owns the dashboard avatar scene, hologram bay, and runtime figure/pedestal separation and materials.
-- `apps/web/src/features/volume` owns the interactive muscle-volume figure view, which reuses the shared avatar FBX and applies the muscle-region visualization.
-- `apps/web/public/volume/` holds the muscle-region SVG maps and their editing guide (`README.md`). Edit them against `/weekly-volume?debugRegions=1`.
+- `apps/web/src/features/volume` owns the interactive muscle-volume figure view, which reuses the shared GLB, colours each named muscle mesh and picks by raycast.
+- `/weekly-volume?debugRegions=1` colours each named muscle region for inspection. The old SVG projection maps are retired.
 - `apps/web/src/shared/ui` owns design-system primitives (Button, Sheet, ConfirmDialog, Stepper, icons). `shared/` must not import from `features/`.
 - `apps/web/e2e` owns browser smoke tests for core UI flows that run against the local app stack.
 - `apps/web/src/features/analytics` owns the same-origin analytics API proxy helper. The Progress and Volume screens live in `features/progress` and `features/volume`.
@@ -156,7 +156,7 @@ apps/
 - `apps/web/src/features/session` owns the mobile-first live workout, exercise/set modes, staged multi-exercise adding, local unfinished-set drafts, exercise order, the mobile set-editor bottom sheet, rest-timer dock, and authoritative live header timer. Desktop editors/timer remain inline.
 - `apps/web/src/features/history` owns History presentation, use of the shared tab-session facet/sort state, CSV import/export controls, and the canonical CSV format/sample guide.
 - `apps/web/src/features/progress`, `volume`, and `settings` own V1 range-aware Progress summaries, the five-stage heatmap/touch gesture boundary, and preference/maintenance surfaces.
-- `apps/web/src/features/avatar/statue-core.tsx` loads the shared FBX and separates its fused figure and pedestal geometry at runtime; it does not load a second pedestal asset.
+- `apps/web/src/features/avatar/body-model.ts` clones the shared skinned GLB; `scene-kit.tsx` provides lighting and a simple disc pedestal. `statue-core.tsx` only builds Home's rim material.
 - `apps/web/src/shared` owns web-only helpers with at least two feature consumers, currently API base URL resolution.
 - `apps/web/src/shared/ui` owns reusable web UI primitives that are shared across multiple feature surfaces.
 
@@ -311,3 +311,7 @@ Use `.env.example` for shared environment variable documentation. Do not commit 
 - `apps/web/e2e/onboarding-demo.spec.ts` covers the complete example and its isolation boundary.
   Captures, traces and disposable local verification data remain ignored in `test-results/`
   and `.cache/onboarding-review/`.
+
+## Optional tracking batch
+
+`apps/api/src/features/tracking/` owns time/cardio validation, authenticated routes, transactional writes, CSV and volume compatibility. The additive migrations are `20261110130000000_add_time_tracking.sql` and `20261110140000000_add_cardio_entries.sql`. `apps/web/src/features/tracking/` owns forms, timer, progress, history readout, practice and CSV controls. Its BFF is `apps/web/src/app/api/tracking/[...path]/route.ts`. `apps/api/scripts/check-tracking-migrations.ts` verifies disposable local migration fixtures.

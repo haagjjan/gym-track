@@ -631,7 +631,7 @@ not good success metrics
 - **FR-25:** The progress chart shall support 1 week, 1 month, 3 months, and all-entry windows. Total sets and total tonnage follow that window and include warmups; best set and estimated 1RM remain all-time.
 
 ### Weekly volume
-- **FR-30:** The user shall be able to view weekly working-set counts per muscle group.
+- **FR-30:** The user shall be able to view weekly weighted muscle-set counts per muscle group: 1 per primary assignment and 0.5 per secondary assignment for each working set (ADR 0028). The body map, exercise/workout contributions and totals preserve fractional credit; warm-ups and cardio are excluded.
 - **FR-31:** The user shall be able to view weekly working-set counts per exercise (optional: within muscle group view).
 - **FR-32:** The user shall be able to filter/select which muscle groups are displayed.
 - **FR-33:** The weekly volume view shall show an anatomical body visualization with separated muscles.

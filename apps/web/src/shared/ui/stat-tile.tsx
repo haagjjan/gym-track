@@ -5,8 +5,9 @@ export function StatTile({ label, unit, value }: { label: string; unit?: string 
   return (
     <div className="min-w-0">
       <dt className="text-subhead text-text-secondary">{label}</dt>
-      <dd className="mt-0.5 flex items-baseline gap-1">
-        <span className="num truncate text-title-2 text-text">{value}</span>
+      {/* The unit wraps below a long value in narrow tiles instead of the value being cut to "9…". */}
+      <dd className="mt-0.5 flex flex-wrap items-baseline gap-x-1">
+        <span className="num whitespace-nowrap text-title-2 text-text">{value}</span>
         {unit ? <span className="text-callout text-text-secondary">{unit}</span> : null}
       </dd>
     </div>

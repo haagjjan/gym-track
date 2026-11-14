@@ -6,9 +6,8 @@ import { Skeleton } from "../../shared/ui/ui";
 import { useDisplaySettings } from "../dashboard/use-display-settings";
 import {
   DEFAULT_THEME_PREFERENCE,
-  THEME_STORAGE_KEY,
   applyThemePreference,
-  parseThemePreference,
+  readStoredThemePreference,
   type ThemePreference
 } from "../shell/theme";
 import { Group, Row, SwitchRow } from "./settings-ui";
@@ -19,21 +18,13 @@ const THEME_OPTIONS: { label: string; value: ThemePreference }[] = [
   { label: "Light", value: "light" }
 ];
 
-function readStoredTheme(): ThemePreference {
-  try {
-    return parseThemePreference(globalThis.localStorage.getItem(THEME_STORAGE_KEY));
-  } catch {
-    return DEFAULT_THEME_PREFERENCE;
-  }
-}
-
 /** Theme choice and the dashboard figure's idle spin. */
 export function DisplayPanel(): ReactNode {
   const { settings, save, isLoaded } = useDisplaySettings();
   const [theme, setTheme] = useState<ThemePreference>(DEFAULT_THEME_PREFERENCE);
 
   // Read after mount so server and client markup match.
-  useEffect(() => setTheme(readStoredTheme()), []);
+  useEffect(() => setTheme(readStoredThemePreference()), []);
 
   function choose(next: ThemePreference): void {
     setTheme(next);

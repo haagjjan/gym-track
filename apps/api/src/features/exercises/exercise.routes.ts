@@ -15,6 +15,7 @@ import type { ExerciseService } from "./exercise.service.js";
 import type { ExerciseNameEvaluation } from "./exercise-name-quality.js";
 
 interface ExerciseRouteOptions {
+  extendedTracking?: boolean;
   authService: AuthService;
   cookieName: string;
   exerciseService: ExerciseService;
@@ -88,6 +89,9 @@ export async function registerExerciseRoutes(
       return sendValidationError(reply, parsed.error);
     }
 
+    if (parsed.data.trackingMode && parsed.data.trackingMode !== "reps" && !options.extendedTracking) {
+      return reply.status(404).send({ error: { code: "FEATURE_UNAVAILABLE", message: "Time and cardio tracking is not enabled." } });
+    }
     const result = await options.exerciseService.createExercise(user.id, parsed.data);
 
     if (!result.ok) {

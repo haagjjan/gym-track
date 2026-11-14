@@ -27,6 +27,7 @@ export interface WorkoutSessionRecord {
 }
 
 export interface WorkoutListRecord extends WorkoutSessionRecord {
+  cardioEntries?: number;
   totalExercises: number;
   totalSets: number;
   tonnageKg: string;
@@ -100,7 +101,7 @@ export interface WorkoutRepository {
   ): Promise<WorkoutSessionRecord | null>;
 }
 
-export function createWorkoutRepository(db: Kysely<AppDatabase>): WorkoutRepository {
+export function createWorkoutRepository(db: Kysely<AppDatabase>, extendedTracking = false): WorkoutRepository {
   return {
     async createWorkout(workout) {
       try {
@@ -130,7 +131,7 @@ export function createWorkoutRepository(db: Kysely<AppDatabase>): WorkoutReposit
       }
     },
     async listWorkouts(filters) {
-      return listWorkoutRecords(db, filters);
+      return listWorkoutRecords(db, filters, extendedTracking);
     },
     async findWorkoutSession(userId, workoutId) {
       const row = await db

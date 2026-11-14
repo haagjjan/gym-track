@@ -27,6 +27,7 @@ export function appendExerciseFilters(
     equipment?: string;
     exerciseType?: string;
     ownership?: string;
+    trackingMode?: string;
     sort?: string;
   }
 ): void {
@@ -34,6 +35,7 @@ export function appendExerciseFilters(
   options.muscleGroupIds?.forEach((id) => params.append("muscleGroupIds", id));
   if (options.equipment) params.set("equipment", options.equipment);
   if (options.exerciseType) params.set("exerciseType", options.exerciseType);
+  if (options.trackingMode) params.set("trackingMode", options.trackingMode);
   if (options.ownership) params.set("ownership", options.ownership);
   if (options.sort) params.set("sort", options.sort);
 }

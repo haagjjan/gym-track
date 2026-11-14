@@ -15,6 +15,8 @@ export const listExercisesQuerySchema = z.object({
   equipment: z.enum([...EXERCISE_EQUIPMENT, "unspecified"]).optional(),
   exerciseType: z.enum([...EXERCISE_TYPES, "unspecified"]).optional(),
   ownership: z.enum(["editable", "readOnly"]).optional(),
+  /** `strength` is everything except cardio: weight-and-reps plus time. */
+  trackingMode: z.enum(["reps", "time", "cardio", "strength"]).optional(),
   sort: z.enum(["name", "muscle", "equipment", "type"]).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0)
@@ -68,7 +70,7 @@ const exerciseWriteSchema = z
       value.primaryMuscleGroupIds ?? (primaryMuscleGroupId ? [primaryMuscleGroupId] : [])
   }));
 
-export const createExerciseRequestSchema = exerciseWriteSchema;
+export const createExerciseRequestSchema = exerciseWriteSchema.and(z.object({ trackingMode: z.enum(["reps", "time", "cardio"]).optional() }));
 export const updateExerciseRequestSchema = exerciseWriteSchema;
 
 export const exerciseParamsSchema = z.object({

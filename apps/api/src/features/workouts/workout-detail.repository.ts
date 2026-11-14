@@ -1,3 +1,4 @@
+import { trackedMode } from "./workout-logging.repository.helpers.js";
 import type { Kysely } from "kysely";
 import type { AppDatabase } from "../../db/database.js";
 import type { WorkoutSessionRecord } from "./workout.repository.js";
@@ -38,6 +39,7 @@ export interface WorkoutSessionExerciseRecord {
   exercise: {
     id: string;
     name: string;
+    trackingMode?: "time" | "cardio";
     primaryMuscleGroup: WorkoutMuscleGroupRecord;
     primaryMuscleGroups: WorkoutMuscleGroupRecord[];
     secondaryMuscleGroups: WorkoutMuscleGroupRecord[];
@@ -95,7 +97,8 @@ async function findSessionExercises(
       "session_exercises.id as id",
       "session_exercises.position as position",
       "exercises.id as exerciseId",
-      "exercises.name as exerciseName"
+      "exercises.name as exerciseName",
+      "exercises.tracking_mode as trackingMode"
     ])
     .where("session_exercises.workout_session_id", "=", workoutId)
     .where("session_exercises.deleted_at", "is", null)
@@ -127,6 +130,7 @@ async function findSessionExercises(
       exercise: {
         id: row.exerciseId,
         name: row.exerciseName,
+        ...trackedMode(row.trackingMode),
         primaryMuscleGroup,
         primaryMuscleGroups,
         secondaryMuscleGroups: muscleGroups

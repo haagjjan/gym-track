@@ -14,6 +14,7 @@ import { SessionEditorDock } from "./session-editor-dock";
 import { SessionSetEditor, SessionSetRow } from "./session-set-list";
 import { formatDay, formatKgValue } from "../../shared/format";
 import { useOnboarding } from "../onboarding/use-onboarding";
+import { TrackedEntries } from "../tracking/tracked-entries";
 
 interface ActiveExercisePanelProps {
   canEdit: boolean;
@@ -29,6 +30,7 @@ interface ActiveExercisePanelProps {
   onSaveSet: () => void;
   savedFlash: string | null;
   workoutEndedAt: string | null;
+  workoutId: string;
 }
 
 export function ActiveExercisePanel(props: ActiveExercisePanelProps): ReactNode {
@@ -50,6 +52,7 @@ export function ActiveExercisePanel(props: ActiveExercisePanelProps): ReactNode 
     );
   }
 
+  const tracked = Boolean(props.exercise.exercise.trackingMode);
   const editingSet = sets.find((set) => set.id === props.editingSetId) ?? null;
 
   return (
@@ -67,12 +70,16 @@ export function ActiveExercisePanel(props: ActiveExercisePanelProps): ReactNode 
         <Link
           aria-label={`${props.exercise.exercise.name} progress`}
           className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-full bg-surface px-3 text-subhead font-semibold text-accent active:bg-surface-raised"
-          href={`/progress?exercise=${encodeURIComponent(props.exercise.exercise.id)}`}
+          href={tracked ? `/progress?tracked=${encodeURIComponent(props.exercise.exercise.id)}&kind=${props.exercise.exercise.trackingMode}` : `/progress?exercise=${encodeURIComponent(props.exercise.exercise.id)}`}
         >
           <IconTrend /> Progress
         </Link>
       </header>
 
+      {tracked ? (
+        <TrackedEntries canEdit={props.canEdit} exercise={props.exercise} key={props.exercise.id} onError={props.onError} workoutId={props.workoutId} />
+      ) : (
+      <>
       <PreviousPerformance exercise={props.exercise} />
 
       <h3 className="mt-6 mb-2 px-1 text-footnote font-semibold text-text-secondary">
@@ -135,6 +142,8 @@ export function ActiveExercisePanel(props: ActiveExercisePanelProps): ReactNode 
           </Button>
         )
       ) : null}
+      </>
+      )}
 
       {props.canEdit ? (
         <Button className="mt-8 w-full" onClick={() => setConfirmRemove(true)} size="compact" variant="destructive">
@@ -146,7 +155,7 @@ export function ActiveExercisePanel(props: ActiveExercisePanelProps): ReactNode 
         confirmLabel="Remove exercise"
         isOpen={confirmRemove}
         isPending={props.mutations.removeExercise.isPending}
-        message="Its sets in this workout are removed too."
+        message={props.exercise.exercise.trackingMode === "cardio" ? "Its entries in this workout are removed too." : "Its sets in this workout are removed too."}
         onCancel={() => setConfirmRemove(false)}
         onConfirm={removeExercise}
         pendingLabel="Removing…"

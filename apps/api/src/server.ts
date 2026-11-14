@@ -1,3 +1,7 @@
+import { createTrackingCsvRepository } from "./features/tracking/tracking-csv.repository.js";
+import { registerTrackingCsvRoutes } from "./features/tracking/tracking-csv.routes.js";
+import { createTrackingRepository } from "./features/tracking/tracking.repository.js";
+import { registerTrackingRoutes } from "./features/tracking/tracking.routes.js";
 import cookie from "@fastify/cookie";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
@@ -62,6 +66,7 @@ export interface ServerAuthConfig {
 }
 
 export interface ServerExtras {
+  extendedTracking?: boolean;
   /** Email transport for verification/reset mail. Defaults to a no-op sender. */
   mailer?: Mailer;
   /** Alternative to `mailer`: build the transport from env using the server logger. */
@@ -137,16 +142,17 @@ export async function buildServer(
     logger: server.log
   });
   const workoutService = createWorkoutService({
-    repository: createWorkoutRepository(db)
+    repository: createWorkoutRepository(db, extras.extendedTracking ?? false)
   });
   const workoutLoggingService = createWorkoutLoggingService({
-    repository: createWorkoutLoggingRepository(db)
+    repository: createWorkoutLoggingRepository(db, extras.extendedTracking ?? false)
   });
   const exerciseService = createExerciseService({
+    extendedTracking: extras.extendedTracking ?? false,
     repository: createExerciseRepository(db)
   });
   const analyticsService = createAnalyticsService({
-    repository: createAnalyticsRepository(db)
+    repository: createAnalyticsRepository(db, extras.extendedTracking ?? false)
   });
   const templateService = createTemplateService({
     repository: createTemplateRepository(db)
@@ -201,6 +207,10 @@ export async function buildServer(
     workoutService,
     events
   });
+  if (extras.extendedTracking) {
+    await registerTrackingCsvRoutes(server, { authService, cookieName: authConfig.cookieName, repository: createTrackingCsvRepository(db) });
+    await registerTrackingRoutes(server, { authService, cookieName: authConfig.cookieName, repository: createTrackingRepository(db) });
+  }
   await registerWorkoutLoggingRoutes(server, {
     authService,
     cookieName: authConfig.cookieName,
@@ -214,6 +224,7 @@ export async function buildServer(
     events
   });
   await registerExerciseRoutes(server, {
+    extendedTracking: extras.extendedTracking ?? false,
     authService,
     cookieName: authConfig.cookieName,
     exerciseService,

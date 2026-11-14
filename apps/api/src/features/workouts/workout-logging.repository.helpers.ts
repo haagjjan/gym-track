@@ -37,7 +37,8 @@ const qualifiedSetSelection = [
 
 export async function findSelectableExercise(
   db: Kysely<AppDatabase>,
-  exerciseId: string
+  exerciseId: string,
+  allowTracked = false
 ): Promise<SelectableExerciseRecord | null> {
   const row = await db
     .selectFrom("exercises")
@@ -45,18 +46,21 @@ export async function findSelectableExercise(
     .select([
       "exercises.id as id",
       "exercises.name as name",
+      "exercises.tracking_mode as trackingMode",
       "muscle_groups.id as muscleGroupId",
       "muscle_groups.slug as muscleGroupSlug",
       "muscle_groups.name as muscleGroupName"
     ])
     .where("exercises.id", "=", exerciseId)
     .where("exercises.deleted_at", "is", null)
+    .$if(!allowTracked, (query) => query.where("exercises.tracking_mode", "=", "reps"))
     .executeTakeFirst();
 
   return row
     ? {
         id: row.id,
         name: row.name,
+        ...trackedMode(row.trackingMode),
         primaryMuscleGroup: {
           id: row.muscleGroupId,
           slug: row.muscleGroupSlug,
@@ -96,6 +100,7 @@ export async function findSessionExerciseByIdOrThrow(
       "session_exercises.position as position",
       "exercises.id as exerciseId",
       "exercises.name as exerciseName",
+      "exercises.tracking_mode as trackingMode",
       "muscle_groups.id as muscleGroupId",
       "muscle_groups.slug as muscleGroupSlug",
       "muscle_groups.name as muscleGroupName"
@@ -109,6 +114,7 @@ export async function findSessionExerciseByIdOrThrow(
     exercise: {
       id: row.exerciseId,
       name: row.exerciseName,
+      ...trackedMode(row.trackingMode),
       primaryMuscleGroup: {
         id: row.muscleGroupId,
         slug: row.muscleGroupSlug,
@@ -275,4 +281,9 @@ export function toSetRecord(row: {
     createdAt: row.createdAt,
     updatedAt: row.updatedAt
   };
+}
+
+/** Rep exercises carry no mode in responses; time and cardio name theirs. */
+export function trackedMode(mode: "reps" | "time" | "cardio"): { trackingMode?: "time" | "cardio" } {
+  return mode === "reps" ? {} : { trackingMode: mode };
 }

@@ -22,5 +22,5 @@ export default async function SessionPage({ params, searchParams }: SessionPageP
   const { workoutId } = await params;
   const query = await searchParams;
 
-  return <OnboardingProvider userId={user.id}><SessionScreen focusName={query.focusName === "1"} userId={user.id} workoutId={workoutId} /></OnboardingProvider>;
+  return <OnboardingProvider userId={user.id}><SessionScreen extendedTracking={process.env.ENABLE_EXTENDED_TRACKING === "true"} focusName={query.focusName === "1"} userId={user.id} workoutId={workoutId} /></OnboardingProvider>;
 }

@@ -162,15 +162,15 @@ The database schema, constraints, and indexes will be designed to support these 
 ### Q16. Weekly sets per muscle group
 - Filter: user_id, time range
 - Output:
-  - average weekly woking sets for each muscle group
+  - average weekly weighted muscle sets for each muscle group (primary 1, secondary 0.5 per working set)
   - muscle_group
-  - total number of sets per muscle group
+  - total weighted muscle sets per group, with matching fractional exercise/workout breakdowns
 
 ---
 
 ## 6) Cardio (deferred / vNext)
 
-Status: Deferred from the MVP and not part of the first schema/API pass.
+Public MVP: deferred. The optional next-feature batch supports owned workout-linked cardio, edit/delete by revision, completed-workout progress and separate CSV import/export (ADR 0026). Standalone cardio remains deferred.
 
 ## 7) Account Lifecycle
 
@@ -211,3 +211,7 @@ Imported sessions use `ended_at`, never import/creation time. All windows share 
 value. Existing indexes and direct aggregate scans are sufficient for the small beta; no migration
 or speculative aggregate index is introduced. Query-boundary and database tests cover UTC weeks,
 rolling boundaries, imports, deleted/open/future sessions, account status and physical erasure.
+
+## Optional time tracking
+
+Time sets are fetched by owned workout or completed exercise history. Working sets join current primary muscle assignments for volume; warmups are excluded. All new writes lock the parent workout and compare revisions. Cardio never joins the muscle-volume query.

@@ -1,7 +1,6 @@
 # Codebase map
 
-A factual map of the repository, checked against the tree on 2026-11-09 (branch `ux-rework`,
-UX rework Step 12). Rules and boundaries are in [ARCHITECTURE.md](ARCHITECTURE.md); the full
+A factual map of the repository, updated for the body runtime on 2026-11-10 (branch `next/b-body`). Rules and boundaries are in [ARCHITECTURE.md](ARCHITECTURE.md); the full
 directory listing is in [docs/repository-structure.md](docs/repository-structure.md).
 
 ## Shape
@@ -40,7 +39,8 @@ Features (`src/features/`), each with routes, schemas, services, repositories an
 | `workouts` | workouts, session exercises, sets, retroactive edits, CSV import/export |
 | `templates` | workout templates and starting a workout from one |
 | `exercises` | catalog (about 820 system exercises), search, custom exercises, merge, muscle groups |
-| `analytics` | completed exercises, exercise progress and summaries, weekly volume |
+| `analytics` | completed exercises, exercise progress and summaries, weighted group/region volume (primary 1, secondary 0.5) |
+| `tracking` | gated time sets/cardio, revisions, progress, separate CSV, optional region compatibility |
 | `messages` | in-app messages, campaigns, deliveries, responses |
 | `admin` | overview, members, deletion support, campaigns, audit log |
 | `status` | aggregate numbers for the public status page |
@@ -49,12 +49,12 @@ Features (`src/features/`), each with routes, schemas, services, repositories an
 Routes are mounted under `/api/v1/*`. Errors use
 `{ "error": { "code", "message", "fields", "details" } }`.
 
-Database: 10 migrations in `db/migrations/` (core schema, muscle seed, auth hardening and
+Database: 16 migrations in `db/migrations/` (core schema, muscle seed, auth hardening and
 events, exercise muscles and templates, canonical classifications, catalog expansion and search,
 public beta foundation, workout mutation safety, onboarding demo). Tables: `users`,
 `user_sessions`, `auth_action_tokens`, `account_deletion_tokens`, `erasure_tombstones`,
 `app_events`, `admin_audit_events`, `muscle_groups`, `exercises`, `exercise_muscle_groups`,
-`exercise_secondary_muscles`, `workout_sessions`, `session_exercises`, `sets`,
+`exercise_secondary_muscles`, `muscle_regions`, `exercise_muscle_regions`, `workout_sessions`, `session_exercises`, `sets`, `timed_sets`, `cardio_entries`,
 `workout_templates`, `workout_template_exercises`, `campaigns`, `campaign_targets`,
 `message_deliveries`, `beta_settings`, `beta_access_requests`. The last two are left over from
 the beta; ADR 0022 plans their cleanup.
@@ -97,18 +97,20 @@ Features (`src/features/`):
 | `launch` | Workout tab screen |
 | `dashboard` | Home screen and panels; device-local body profile, favourite lifts, display settings |
 | `history` | History list, rows, CSV panel and format guide |
-| `progress` | progress chart (pinned axes, zoom, table view) and controls |
-| `volume` | volume screen and panels, 3D body map, region maps, mask shader, camera director, aggregation |
-| `avatar` | Home 3D scene: stage, camera, turntable driver, PR burst, hologram bay (textures, environment, motes), pedestal, statue |
+| `progress` | shared time plot (pinned axes, panning, daily inspection), exercise picker, time windows and strength controls |
+| `volume` | volume screen and panels, named muscle meshes, native touch scroll, camera director, region/group aggregation |
+| `avatar` | Home 3D scene: shared GLB loader and scene kit, camera, turntable driver, PR burst and rim material |
 | `templates`, `exercises`, `workouts` | template editor and list; exercise picker, editor and form; shared facet filters |
 | `settings` | settings screen and its panels (theme, rest timer, favourite lifts, heat ceiling, privacy and data, exercise merge, help) |
 | `onboarding` | guided example: lessons, demo data, demo screens, guide card |
 | `privacy` | device-storage choice and `useScopedLocalStorage` |
 | `auth`, `legal`, `messages`, `admin`, `status`, `analytics` | account flows, policy pages, inbox, admin console, proxy helpers |
 
-3D assets: `public/models/avatar/avatar-base.fbx` (figure) and `base-v-2.fbx` (pedestal).
-Muscle regions: `public/volume/muscle-regions-{front,back,side}.svg`, with an editing guide in
-`public/volume/README.md`.
+3D asset: `public/models/body/body.glb`, shared by Home and Volume. Its URL carries a content
+fingerprint for long-lived web caching. Build and structural validation live in
+`tools/body-model/`; downloaded anatomy and Blender intermediates stay outside the repo.
+Twenty named muscle-region pairs provide colouring and picking. Settings → Credits carries
+the BodyParts3D credit. The former FBX assets and SVG projection pipeline are retired.
 
 Tests: unit tests next to the code (`*.test.ts`, Node test runner). Playwright specs in
 `apps/web/e2e/`: `auth-workout-smoke`, `workout-templates`, `onboarding-demo`, `public-status`,
@@ -155,3 +157,5 @@ green `main`.
 - Local auth and signup share one rate-limit bucket per IP, so parallel e2e runs hit `429`s.
   Run specs one at a time.
 - Device-local preferences are not synced to the API.
+
+Optional tracking UI lives in `apps/web/src/features/tracking/`; the BFF is `app/api/tracking/[...path]`. Enable `ENABLE_EXTENDED_TRACKING=true` on both servers to expose it. The migration guard check is `apps/api/scripts/check-tracking-migrations.ts`.

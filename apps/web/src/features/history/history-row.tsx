@@ -1,5 +1,6 @@
 "use client";
 
+import { TrackingReadout } from "../tracking/tracking-readout";
 import Link from "next/link";
 import { useId, type ReactNode } from "react";
 import { useWorkout } from "../../shared/api/hooks";
@@ -14,12 +15,14 @@ import { Skeleton } from "../../shared/ui/ui";
  * exercises and sets in place; "Open workout" goes to the full page.
  */
 export function HistoryRow({
+  extendedTracking = false,
   detail,
   detailHref,
   isExpanded,
   onToggle,
   workout
 }: {
+  extendedTracking?: boolean;
   /** Preloaded detail (the example). Without it the row fetches when opened. */
   detail?: WorkoutDetail | undefined;
   detailHref?: string;
@@ -49,13 +52,15 @@ export function HistoryRow({
               <span className="num">{formatMinutes(workout.startedAt, workout.endedAt)}</span>
             )}
             <span className="num">{sets}</span>
+            {extendedTracking && workout.cardioEntries ? <span className="num">{workout.cardioEntries} cardio</span> : null}
           </span>
         </span>
         <IconChevronDown className={`shrink-0 text-text-muted transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
       </button>
       {isExpanded ? (
         <div className="border-t border-line px-4 pb-4 pt-3" id={panelId}>
-          {detail ? <QuickView detail={detail} /> : <FetchedQuickView workoutId={workout.id} />}
+          {detail ? <QuickView detail={detail} showEmpty={!extendedTracking} /> : <FetchedQuickView extendedTracking={extendedTracking} workoutId={workout.id} />}
+          {extendedTracking ? <TrackingReadout workoutId={workout.id} /> : null}
           <Link className={`${buttonClass("secondary")} mt-4 w-full`} href={detailHref ?? `/workouts/${workout.id}`}>
             Open workout
           </Link>
@@ -65,18 +70,20 @@ export function HistoryRow({
   );
 }
 
-function FetchedQuickView({ workoutId }: { workoutId: string }): ReactNode {
+function FetchedQuickView({ workoutId, extendedTracking }: { workoutId: string; extendedTracking: boolean }): ReactNode {
   const query = useWorkout(workoutId);
   if (query.isLoading) return <Skeleton className="h-24" />;
   if (query.isError || !query.data) return <p className="text-subhead text-danger" role="alert">Couldn&apos;t load the sets. Check your connection and try again.</p>;
-  return <QuickView detail={query.data} />;
+  return <QuickView detail={query.data} showEmpty={!extendedTracking} />;
 }
 
-function QuickView({ detail }: { detail: WorkoutDetail }): ReactNode {
-  if (detail.exercises.length === 0) return <p className="text-subhead text-text-secondary">No exercises recorded.</p>;
+function QuickView({ detail, showEmpty = true }: { detail: WorkoutDetail; showEmpty?: boolean }): ReactNode {
+  // Time and cardio exercises are listed with their entries by TrackingReadout.
+  const exercises = detail.exercises.filter((exercise) => !exercise.exercise.trackingMode);
+  if (exercises.length === 0) return showEmpty ? <p className="text-subhead text-text-secondary">No exercises recorded.</p> : null;
   return (
     <ul className="space-y-3">
-      {detail.exercises.map((exercise) => <QuickExercise exercise={exercise} key={exercise.id} />)}
+      {exercises.map((exercise) => <QuickExercise exercise={exercise} key={exercise.id} />)}
     </ul>
   );
 }

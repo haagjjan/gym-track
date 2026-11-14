@@ -26,6 +26,8 @@ Draft rules for the first schema pass. These notes capture business rules and da
 - The deterministic system catalog is the reviewed union of the legacy 152 names and logging-compatible records from Free Exercise DB revision `b0eed061e1c832b3ed815fbaa4b45b3cdc14df49`. Only names/classifications are seeded; cardio, stretching, duration/distance-only movements, instructions, and media are excluded.
 - Catalog conflicts never rename, promote, or overwrite a user-owned exercise. The migration preserves the user row and reports the name for manual review.
 - Equipment additionally supports `EZ bar`, `medicine ball`, and `stability ball`. Detailed source muscles map into the existing 12-group taxonomy.
+- `muscle_regions` holds 20 finer regions, each belonging to exactly one of the 12 muscle groups (for example front, side and rear delts; lats, upper back and lower back). `exercise_muscle_regions` maps every system exercise to primary and secondary regions, and each region's group is one the exercise already has, so group totals are unchanged. Regions drive the Volume figure; filters, history and CSV keep using muscle groups.
+- One region per group is flagged `is_group_default`. Exercises without region rows (user-created ones) count toward the default region of their primary group.
 
 ### Ordering
 
@@ -76,7 +78,7 @@ Draft rules for the first schema pass. These notes capture business rules and da
 - The same muscle group may appear only once per exercise and cannot hold both roles.
 - Exercise muscle assignments are authoritative current classification data; sessions and templates do not snapshot them.
 - Historical workout displays and analytics use the exercise's current classification.
-- Weekly muscle volume counts each current primary muscle assignment; no stabilizer role or weighting exists.
+- Weekly muscle volume gives each current primary assignment 1 set and each secondary assignment 0.5 sets per working set (ADR 0028). Group and region totals, exercise contributions and recent-workout contributions preserve fractions.
 - Weekly muscle volume counts working sets only.
 - Warmup sets do not count toward weekly muscle volume.
 
@@ -120,9 +122,7 @@ Draft rules for the first schema pass. These notes capture business rules and da
 
 ### Cardio
 
-- Cardio is deferred from the MVP.
-- Do not include cardio tables in the first schema pass.
-- Future cardio modeling should support both session-linked and standalone entries.
+- The public MVP has no cardio. The optional next-feature batch adds workout-linked entries behind a flag (ADR 0026). Standalone cardio remains deferred.
 
 ## Follow-Up Notes For Schema Draft
 
@@ -130,3 +130,27 @@ Draft rules for the first schema pass. These notes capture business rules and da
 - Decide whether soft-deleted global exercises can be recreated or must be restored.
 - Choose decimal precision for kg values.
 - Decide the exact representation of open/closed sessions, such as `ended_at IS NULL` or an explicit status.
+
+### Optional duration and cardio records (ADR 0026)
+
+The next-feature batch adds `exercises.tracking_mode` (`reps` by default, `time`
+for holds, `cardio` for cardio activities), `timed_sets` and `cardio_entries`.
+Time and cardio exercises sit in `session_exercises` like any other; their
+entries are joined by workout and exercise. It does not
+weaken the original strength-set constraints. Both new entry tables reference an
+owned workout, use a client UUID, preserve the initial create fingerprint, start
+at revision 1, and keep deletion tombstones. Updates/deletes check the expected
+revision under the parent workout lock. Full sync remains proposed in ADR 0025.
+
+Timed rows reference a time-mode exercise through a composite FK, record positive
+seconds and optional nonnegative added kg, and retain working/warmup semantics.
+Timed working sets count toward muscle volume with primary credit 1 and secondary credit 0.5; warmups and cardio do not.
+Cardio stores duration, optional positive metres, optional heart rate and note;
+pace is derived. No standalone cardio is implemented in this batch.
+
+The flag is off by default. Time exercises are a separate catalog/picker and are
+not template occurrences. A seed identity collision fails explicitly without
+reclassifying an existing exercise. Down migrations refuse logged data, custom
+time exercises or a changed seed; disabling the flag is the normal rollback.
+Account export and erasure include new entries even while disabled. Erasure
+preserves any shared time exercise referenced by another account.

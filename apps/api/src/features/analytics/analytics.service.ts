@@ -1,3 +1,4 @@
+import { addTimedRegionVolume } from "../tracking/tracking-region-volume.js";
 import type {
   AnalyticsRepository,
   AnalyticsSetRecord,
@@ -123,14 +124,19 @@ export function createAnalyticsService(options: AnalyticsServiceOptions): Analyt
       return toExerciseSummary(exerciseId, rows);
     },
     async getWeeklyVolume(userId, input) {
-      const rows = await options.repository.findWeeklyVolumeSets({
+      const filters = {
         userId,
         startDate: input.startDate,
         endDate: input.endDate,
         muscleGroupIds: input.muscleGroupIds
-      });
+      };
+      const [rows, regionRows] = await Promise.all([
+        options.repository.findWeeklyVolumeSets(filters),
+        options.repository.findWeeklyVolumeRegionSets(filters)
+      ]);
 
-      return toWeeklyVolume(rows);
+      const timedRegions = await options.repository.findTimedVolumeRegions?.({ userId, startDate: input.startDate, endDate: input.endDate, muscleGroupIds: input.muscleGroupIds }) ?? [];
+      return addTimedRegionVolume(toWeeklyVolume(rows, regionRows), timedRegions);
     }
   };
 }

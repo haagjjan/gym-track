@@ -9,6 +9,7 @@ import type {
 export const exerciseSelection = [
   "exercises.id as id",
   "exercises.name as name",
+  "exercises.tracking_mode as trackingMode",
   "exercises.equipment as equipment",
   "exercises.exercise_type as exerciseType",
   "exercises.created_by_user_id as createdByUserId",
@@ -36,6 +37,9 @@ export async function listExerciseRows(
     .innerJoin("muscle_groups", "muscle_groups.id", "exercises.primary_muscle_group_id")
     .select(exerciseSelection)
     .where("exercises.deleted_at", "is", null)
+    .$if(!filters.includeTracked, (builder) => builder.where("exercises.tracking_mode", "=", "reps"))
+    .$if(filters.trackingMode === "strength", (builder) => builder.where("exercises.tracking_mode", "<>", "cardio"))
+    .$if(filters.trackingMode !== undefined && filters.trackingMode !== "strength", (builder) => builder.where("exercises.tracking_mode", "=", filters.trackingMode as "reps" | "time" | "cardio"))
     .$if(filters.primaryMuscleGroupId !== undefined, (builder) =>
       builder.where(sql<boolean>`exists (
         select 1 from exercise_muscle_groups emg
@@ -115,6 +119,9 @@ export async function countExerciseRows(
     .selectFrom("exercises")
     .select((eb) => eb.fn.countAll<string>().as("total"))
     .where("deleted_at", "is", null)
+    .$if(!filters.includeTracked, (builder) => builder.where("tracking_mode", "=", "reps"))
+    .$if(filters.trackingMode === "strength", (builder) => builder.where("tracking_mode", "<>", "cardio"))
+    .$if(filters.trackingMode !== undefined && filters.trackingMode !== "strength", (builder) => builder.where("tracking_mode", "=", filters.trackingMode as "reps" | "time" | "cardio"))
     .$if(filters.primaryMuscleGroupId !== undefined, (builder) =>
       builder.where(sql<boolean>`exists (
         select 1 from exercise_muscle_groups emg
@@ -262,6 +269,7 @@ export async function replaceExerciseMuscles(
 }
 
 type ExerciseRow = {
+  trackingMode: "reps" | "time" | "cardio";
   id: string;
   name: string;
   equipment: string | null;
@@ -290,6 +298,7 @@ export function toExerciseRecord(
 
   return {
     id: row.id,
+    trackingMode: row.trackingMode,
     name: row.name,
     equipment: row.equipment,
     exerciseType: row.exerciseType,

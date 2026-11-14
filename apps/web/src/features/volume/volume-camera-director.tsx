@@ -3,15 +3,17 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import * as THREE from "three";
-import { FRONT_AZIMUTH, type FigureFrame, type RegionSlug } from "./heatmap";
+import { FRONT_AZIMUTH, type FigureFrame } from "./heatmap";
+import { muscleGroupOf } from "./muscle-regions";
 
-export const ORBIT_TARGET = new THREE.Vector3(0, 1.15, 0);
-// Fills the shorter phone stage: feet near the bottom edge, hands near the top.
-const DEFAULT_RADIUS = 3.45;
-const FOCUS_RADIUS = 2.3;
+export const ORBIT_TARGET = new THREE.Vector3(0, 1.27, 0);
+// Fills the shorter phone stage: feet near the bottom edge, crown near the top.
+export const DEFAULT_RADIUS = 3.35;
+const FOCUS_RADIUS = 2.1;
 const FOCUS_DAMP = 3;
 
-const REGION_FOCUS: Partial<Record<RegionSlug, { yn: number; side: "front" | "back" }>> = {
+/** Where the camera looks for a muscle group, and for the regions that sit apart from their group. */
+const REGION_FOCUS: Record<string, { yn: number; side: "front" | "back" }> = {
   chest: { yn: 0.75, side: "front" },
   back: { yn: 0.68, side: "back" },
   traps: { yn: 0.83, side: "back" },
@@ -23,7 +25,15 @@ const REGION_FOCUS: Partial<Record<RegionSlug, { yn: number; side: "front" | "ba
   glutes: { yn: 0.52, side: "back" },
   quads: { yn: 0.46, side: "front" },
   hamstrings: { yn: 0.4, side: "back" },
-  calves: { yn: 0.23, side: "back" }
+  calves: { yn: 0.23, side: "back" },
+  delts_rear: { yn: 0.82, side: "back" },
+  lats: { yn: 0.68, side: "back" },
+  upper_back: { yn: 0.76, side: "back" },
+  lower_back: { yn: 0.58, side: "back" },
+  neck: { yn: 0.88, side: "front" },
+  obliques: { yn: 0.62, side: "front" },
+  abductors: { yn: 0.55, side: "back" },
+  adductors: { yn: 0.45, side: "front" }
 };
 
 export interface OrbitControlsLike {
@@ -54,7 +64,7 @@ export function CameraDirector({
   const goalRef = useRef<{ targetY: number; radius: number; theta: number | null } | null>(null);
 
   useEffect(() => {
-    const focus = selectedSlug ? REGION_FOCUS[selectedSlug as RegionSlug] : undefined;
+    const focus = selectedSlug ? REGION_FOCUS[selectedSlug] ?? REGION_FOCUS[muscleGroupOf(selectedSlug)] : undefined;
     goalRef.current = focus && frame
       ? {
           targetY: frame.feetY + focus.yn * (frame.headY - frame.feetY),

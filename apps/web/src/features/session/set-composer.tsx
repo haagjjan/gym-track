@@ -54,7 +54,7 @@ export function SetComposer(props: SetComposerProps): ReactNode {
         <Button className="mt-2 -ml-4" onClick={() => setShowNote(true)} size="compact" variant="plain">Add note</Button>
       )}
 
-      <div className="mt-4 grid grid-cols-[1fr_auto] gap-2">
+      <div className="mt-4 grid grid-cols-[1fr_auto] gap-2" data-sheet-actions>
         <Button className={props.savedFlash ? "!bg-success" : ""} disabled={props.isSaving} onClick={props.onSave}>
           {props.savedFlash ?? (props.isSaving ? "Saving…" : "Save set")}
         </Button>

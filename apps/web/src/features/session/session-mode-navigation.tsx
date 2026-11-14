@@ -22,7 +22,7 @@ export function SessionModeNavigation(props: SessionModeNavigationProps): ReactN
         <IconBack /> Exercises
       </button>
       <p className="num min-w-0 flex-1 text-center text-footnote text-text-secondary">
-        Exercise {props.position + 1} of {props.total}
+        <span className="max-[359px]:hidden">Exercise </span>{props.position + 1} of {props.total}
       </p>
       <button aria-label="Previous exercise" className={stepButton} disabled={props.position <= 0} onClick={props.onPrevious} type="button">
         <IconChevronDown className="rotate-180" />

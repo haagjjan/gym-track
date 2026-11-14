@@ -133,8 +133,8 @@ In Tailwind v4, the raw values live as CSS variables on `:root` and `[data-theme
 | `--text` | `#f1f3f5` | `#0f1215` | Primary text |
 | `--text-secondary` | `#a7b0b9` | `#4a535c` | Secondary text |
 | `--text-muted` | `#8a949e` | `#5f6871` | Metadata, inactive tabs |
-| `--accent` | `#2dd4e6` | `#0b6f7c` | Primary buttons, active tab, links, focus ring |
-| `--on-accent` | `#04191c` | `#ffffff` | Text on accent fills |
+| `--accent` | `#2dd4e6` | `#2dd4e6` | Primary buttons, active tab, links, focus ring |
+| `--on-accent` | `#04191c` | `#04191c` | Text on accent fills |
 | `--success` | `#34d399` | `#15803d` | Completed, saved |
 | `--warning` | `#fbbf24` | `#b45309` | Needs attention |
 | `--danger` | `#f87171` | `#c81e1e` | Destructive actions, errors |
@@ -158,14 +158,14 @@ Rules:
 
 ### Data colors
 
-- **3D stages follow the theme** (`--stage`, mirrored in `STAGE_COLOR`): `#0f1317` dark, `#dfe5ec` light. The figure itself stays dark in both, so the one heat ramp still works; on the light stage it reads as a dark silhouette. In dark mode the Volume figure gets a camera-relative slate rim (`uRim`) so it never melts into the background. The Home bay switches to a pale room in light mode (lifted floor, light wall), keeping figure and pedestal unchanged until the 3D rework.
+- **3D stages follow the theme.** Volume uses `--stage` (`#0f1317` dark, `#dfe5ec` light). Home uses the dark stage in dark mode and the page's `--bg` in light mode, including its static edge fade. Both load the same neutral body, simple disc pedestal, and three-light rig; no reflective room or environment-map generation. Resting muscles are slate in dark mode and pale in light mode; trained regions use the same purple ramp in both themes. Each muscle region is a separate skinned mesh, so colour and picking use exactly its surface.
 - **Muscle-volume heat ramp** (sequential, one hue). On a dark figure it runs from dim to bright, so the most-trained muscle is the most visible. The current ramp does the opposite: its top stage is only 1.6:1 against the figure.
 
   | Untrained | Stage 1 | 2 | 3 | 4 | Stage 5 |
   |---|---|---|---|---|---|
-  | `#2f353c` | `#7048c0` | `#8a5ce6` | `#a47cff` | `#c2a6ff` | `#e2d6ff` |
+  | `#2f353c` | `#e2d6ff` | `#c2a6ff` | `#a47cff` | `#8a5ce6` | `#7048c0` |
 
-  Contrast against the figure (`#171a20`) rises from 2.8:1 to 12.7:1. Stage 1 is 2.0:1 against "untrained". Neighbouring stages are close (about 1.4:1), so the legend with set ranges is always visible, and tapping a muscle names its stage and set count in words. Because the stage stays dark, the same ramp is used in the light theme.
+  Contrast against the figure (`#171a20`) rises from 2.8:1 to 12.7:1. Stage 1 is 2.0:1 against "untrained". Neighbouring stages are close (about 1.4:1), so the legend with set ranges is always visible, and tapping a muscle names its stage and set count in words. The same heat ramp is used in the light theme; the legend and selected-muscle readout carry the numerical meaning.
 - **Charts** (Progress): weight (or est. 1RM) in `--accent` on the left axis, reps in `--chart-reps` on a right axis; each axis's ticks and its legend chip take the series color, so it's clear which line a scale belongs to. Grid lines in `--line`. The chart always holds every logged day; 1W/1M/3M/Max set how much fits on screen, newest at the right, and the plot swipes back in time. No hover tooltip: a short tap picks a day (a pan never does), shown as a dashed marker and a readout with previous/next day buttons under the chart. A table view of the same data sits one tap away.
 - **Stat tiles:** label (sentence case, `subhead`, `--text-secondary`), value (`--font-numeric`, `title-1`, `--text`), unit in `callout` next to the value, optional delta with direction word ("up 12% vs last week"). Tiles never hold a chart and a number at the same size.
 
@@ -247,7 +247,7 @@ Write like a friendly coach texting you, not like a terminal.
 ## 3D figure and volume map
 
 - **Home:** the figure sits in one card under the header, about 240 px tall on phones (not 36 dvh). Under it, three stat tiles for this week: workouts, sets, volume. The bay stays but is quieter: no connector beams, no motes, a softer floor glow.
-- **Volume:** Front/Back and the time range sit above a compact stage (about 42% of the screen on phones, framed so the figure fills it). No summary tiles. Tapping a muscle turns the camera to it and shows its card directly under the stage (no page jump; a tap in the muscle list glides back up to the figure first). For 1W the card shows sets in the last 7 days and workouts; longer windows show per-week average and total. The legend is one strip of six outlined swatches with upper bounds and a link to the full-color setting. List bars have a neutral track and an outlined fill. On phones the canvas owns every touch: sideways drags rotate, vertical swipes scroll the page with momentum. Show a one-time gesture hint, not a permanent label.
+- **Volume:** Front/Back and the time range sit above a compact stage (about 42% of the screen on phones, framed so the figure fills it). No summary tiles. Tapping a muscle turns the camera to it and shows its card directly under the stage (no page jump; a tap in the muscle list glides back up to the figure first). For 1W the card shows sets in the last 7 days and workouts; longer windows show per-week average and total. Primary working sets count as 1 and secondary working sets as 0.5; the legend explains this, fractional counts remain visible, and the total is labeled "Muscle sets". The legend is one strip of six outlined swatches with upper bounds and a link to the full-color setting. List bars have a neutral track and an outlined fill. On phones sideways drags rotate; vertical swipes use native page scrolling, including momentum and cancellation. Show a one-time gesture hint, not a permanent label.
 - The figure must stay readable with no data: when nothing is trained, raise its base light so the anatomy is visible.
 - Never let 3D push the primary action below the fold on a 390 × 844 screen.
 - The canvas must not cover UI. Overlays such as the guide card and sheets stack above the canvas and its ambience layers (fixes the step 6 guide defect).
@@ -264,7 +264,7 @@ Write like a friendly coach texting you, not like a terminal.
 | Asset | Status | Note |
 |---|---|---|
 | 3D figure, pedestal, bay | Have | Restyle lighting and remove the decorative layers only |
-| Region maps for the volume mask | Have | The owner draws any new art |
+| Body model and muscle regions | Have | Shared local rigged GLB; named meshes replace SVG masks; source credit in Settings |
 | Icons | Partly (`shared/ui/icons.tsx`) | Extend to the full outline set needed by the new navigation |
 | App icon and splash | Missing | Needed for the mobile work, not this rework |
 
@@ -297,3 +297,27 @@ Write like a friendly coach texting you, not like a terminal.
 - **2026-11-09: Volume rework** (owner): see the Volume rule above. The touch split replaced native pan-y scrolling from the canvas, which Chromium ignored and WebKit fought with the hand-made scroll.
 - **2026-11-09: Settings is one short list** (owner): account card, then Training, Appearance, Privacy and data, Help and legal, and Sign out / Delete account. Each row shows its current value; editors (rest timer, pinned lifts, full-color sets, body profile, merge duplicates, privacy choices, data download, account deletion) open in a sheet with a title and Done. Theme and figure spin stay inline.
 - **2026-11-09: the guided example is a 4-step tour** (owner): Log a set, Finish the workout, Check your progress, See your muscle volume. It covers only the core loop; starting a workout, History rows and editing a set explain themselves. It opens straight in the example workout, each step completes on the action itself and moves on after a short check mark, and the only chrome is one line under the top bar (progress dots, the instruction, an End tour button). The example screens use the same components as the real ones. Lesson ids stay `log`, `finish`, `progress`, `volume`, so stored flags still match (ADR 0020); ending the tour mid-step records that step as skipped.
+
+## Optional time and cardio flow
+
+Behind the off-by-default extended-tracking flag, workout detail adds one Time and cardio section. Time sets use seconds, an optional added load and working/warmup type; a start/stop timer fills seconds. Cardio uses seconds, optional kilometres and heart rate. Editors use existing sheets, keep failed drafts, and require reopening a changed record before overwriting it. Cardio never appears in muscle volume.
+
+Progress adds a Strength / Time and cardio control. Both views use the same exercise
+picker (a subtitle opening a searchable sheet on phones, a list on desktop),
+1W/1M/3M/Max visible spans, pinned axes, native horizontal panning, tap-to-inspect,
+previous/next-day readout and chart/table toggle. Switching views retains the time
+window. Each chart plots one best working entry per local calendar day across all
+workouts; warm-ups are excluded. Older days remain plotted and can be reached by
+swiping, even with a short visible span. Changed values use filled dots; unchanged
+values use hollow dots.
+
+Time exercises compare duration or added weight. Cardio compares duration or
+distance. The highest selected measure wins; equal-duration entries favor more
+weight/distance, equal-weight holds favor a longer duration, and equal-distance
+cardio favors a shorter duration. The help control explains that longer duration
+measures endurance, not speed. Entries without distance remain available under
+duration and do not produce zero-distance points. Summary count and total time
+cover the selected window; the best selected measure covers all time. The table
+shows the same daily winners, newest first. History retains every logged entry.
+Its separate time/cardio CSV control explains that imports create completed
+workouts. Help offers local practice with no account writes.

@@ -9,5 +9,5 @@ export const metadata = { title: "Help & tutorial" };
 export default async function HelpPage(): Promise<ReactNode> {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  return <AppShell user={user}><HelpScreen /></AppShell>;
+  return <AppShell user={user}><HelpScreen extendedTracking={process.env.ENABLE_EXTENDED_TRACKING === "true"} /></AppShell>;
 }

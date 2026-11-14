@@ -170,7 +170,24 @@ interface MuscleGroupsTable {
   sort_order: number;
 }
 
+interface MuscleRegionsTable {
+  id: ColumnType<string, string | undefined, string>;
+  slug: string;
+  name: string;
+  muscle_group_id: string;
+  sort_order: number;
+  is_group_default: ColumnType<boolean, boolean | undefined, boolean>;
+}
+
+interface ExerciseMuscleRegionsTable {
+  exercise_id: string;
+  muscle_region_id: string;
+  role: "PRIMARY" | "SECONDARY";
+  created_at: TimestampColumn;
+}
+
 interface ExercisesTable {
+  tracking_mode: ColumnType<"reps" | "time" | "cardio", "reps" | "time" | "cardio" | undefined, "reps" | "time" | "cardio">;
   id: string;
   name: string;
   equipment: string | null;
@@ -251,7 +268,34 @@ interface SetsTable {
   deleted_at: NullableTimestampColumn;
 }
 
+interface ExtendedEntryColumns {
+  id: string;
+  workout_session_id: string;
+  duration_seconds: number;
+  note: string | null;
+  create_fingerprint: string;
+  revision: ColumnType<number, number | undefined, number>;
+  created_at: TimestampColumn;
+  updated_at: TimestampColumn;
+  deleted_at: NullableTimestampColumn;
+}
+interface TimedSetsTable extends ExtendedEntryColumns {
+  exercise_tracking_mode: ColumnType<"time", "time" | undefined, "time">;
+  exercise_id: string;
+  set_type: "warmup" | "working";
+  added_weight_kg: ColumnType<string | null, string | number | null, string | number | null>;
+}
+interface CardioEntriesTable extends ExtendedEntryColumns {
+  activity: string;
+  exercise_id: string | null;
+  calories: number | null;
+  distance_metres: ColumnType<string | null, string | number | null, string | number | null>;
+  average_heart_rate: number | null;
+}
+
 export interface AppDatabase {
+  timed_sets: TimedSetsTable;
+  cardio_entries: CardioEntriesTable;
   account_deletion_tokens: AccountDeletionTokensTable;
   admin_audit_events: AdminAuditEventsTable;
   app_events: AppEventsTable;
@@ -261,11 +305,13 @@ export interface AppDatabase {
   campaigns: CampaignsTable;
   campaign_targets: CampaignTargetsTable;
   exercise_muscle_groups: ExerciseMuscleGroupsTable;
+  exercise_muscle_regions: ExerciseMuscleRegionsTable;
   exercise_secondary_muscles: ExerciseSecondaryMusclesTable;
   exercises: ExercisesTable;
   erasure_tombstones: ErasureTombstonesTable;
   message_deliveries: MessageDeliveriesTable;
   muscle_groups: MuscleGroupsTable;
+  muscle_regions: MuscleRegionsTable;
   session_exercises: SessionExercisesTable;
   sets: SetsTable;
   users: UsersTable;

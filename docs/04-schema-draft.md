@@ -265,7 +265,7 @@ Ordered sets inside a session exercise.
 | `client_mutation_id` | `uuid` | Nullable for historical rows; required by the API for new creates |
 | `set_order` | `integer` | Required, positive |
 | `set_type` | `text` | Required: `warmup` or `working` |
-| `weight_kg` | `numeric(6,2)` | Required, positive |
+| `weight_kg` | `numeric(6,2)` | Required, 0 or more (0 = bodyweight) |
 | `reps` | `integer` | Required, positive |
 | `rir` | `integer` | Required, 0-10 |
 | `rest_time_seconds` | `integer` | Nullable, non-negative |
@@ -313,7 +313,7 @@ Rules:
 | Q13 Add exercise | `exercises`, lower-name uniqueness, optional `created_by_user_id` audit |
 | Q14 Exercise progress | Join `workout_sessions` -> `session_exercises` -> `sets` by user, exercise, date range |
 | Q15 Exercise summary | Same raw tables as Q14, computed aggregates on read |
-| Q16 Weekly sets per muscle | `sets` where `set_type = 'working'`, joined to exercise primary muscle |
+| Q16 Weekly sets per muscle | Working `sets` / enabled `timed_sets`, joined to current muscle roles (primary 1, secondary 0.5), computed on read |
 | Q17 Exercise muscle search/filter | `exercise_muscle_groups`, `muscle_groups`, lower-name B-tree and `pg_trgm` search indexes |
 | Q18 Template management | `workout_templates`, `workout_template_exercises` |
 | Q19 Template/session copying | template rows copied to `workout_sessions`, `session_exercises` transactionally |
@@ -339,3 +339,23 @@ Migration `20260929120000000_onboarding_demo_invitation.sql` merges
 flags, and raises their version to at least 2. New accounts default to version 2 with empty
 steps and receive the invitation. Rollback restores the version default only; it preserves
 recorded user choices. No example workout rows or new tables are introduced.
+
+## Optional time/cardio extension (ADR 0026)
+
+Migrations `20261110130000000_add_time_tracking.sql` and
+`20261110140000000_add_cardio_entries.sql` are additive and independent of the
+body-region migration. `exercises.tracking_mode` defaults to `reps`, with a unique
+`(id, tracking_mode)` key. `timed_sets` references `(exercise_id, 'time')` via a
+constant-mode composite FK, plus its workout; it stores set type, positive
+seconds, nullable added kg and note. `cardio_entries` references its workout and
+stores activity, seconds, nullable metres/heart rate and note.
+`20261113130000000_unify_tracking_exercises.sql` adds the `cardio` tracking mode,
+`cardio_entries.exercise_id` and `cardio_entries.calories`, and seeds starter time
+and cardio exercises. `20261113140000000_correct_exercise_muscles.sql` corrects
+the regions and groups of 125 catalog exercises after a full audit; groups are
+derived from the regions.
+
+Both tables have client UUID primary keys, immutable create fingerprints,
+positive revisions, created/updated timestamps and nullable deletion timestamps.
+Active-list indexes cover workout/date order; full FK indexes support tombstones
+and erasure. No operation-receipt table or native outbox is implemented.

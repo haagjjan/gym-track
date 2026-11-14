@@ -1,5 +1,6 @@
 "use client";
 
+import { TrackingProgress } from "../tracking/tracking-progress";
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 import type { CompletedExercise, ExerciseProgressItem, ExerciseSummaryPayload } from "../../shared/api/types";
@@ -19,25 +20,23 @@ import {
   initialProgressViewPreferences,
   updateProgressViewPreferences
 } from "./progress-preferences";
+import { progressTimeWindows } from "./progress-selection";
 import { ProgressSummaryMetrics } from "./progress-summary-metrics";
 import { progressSummaryRange } from "./progress-summary";
-
-const timeWindows: { label: string; value: ChartWindow }[] = [
-  { label: "1W", value: "7" },
-  { label: "1M", value: "30" },
-  { label: "3M", value: "90" },
-  { label: "Max", value: "all" }
-];
 
 /**
  * Single-exercise strength analysis: pick one exercise, read the trend, decide
  * what to load next time. Working sets drive the signal.
  */
-export function ProgressScreen(): ReactNode {
+export function ProgressScreen({ extendedTracking = false }: { extendedTracking?: boolean }): ReactNode {
   const completedExercises = useCompletedExercises();
   // `?exercise=<id>` opens that exercise (the shortcut from the workout logger).
-  const requestedId = useSearchParams().get("exercise");
+  const searchParams = useSearchParams();
+  const requestedId = searchParams.get("exercise");
+  // `?tracked=<id>&kind=time|cardio` opens a time or cardio exercise (the shortcut from the workout logger).
+  const requestedTracked = searchParams.get("tracked");
   const [selectedId, setSelectedId] = useState<string | null>(requestedId);
+  const [trackingView, setTrackingView] = useState<"strength" | "extended">(requestedTracked ? "extended" : "strength");
   const [view, setView] = useState(initialProgressViewPreferences);
   const { window } = view;
 
@@ -63,12 +62,22 @@ export function ProgressScreen(): ReactNode {
   const allTimeSummary = useExerciseSummary(selectedId);
   const rangeSummary = useExerciseSummary(selectedId, summaryRange);
 
-  return <ProgressView completedExercises={completedExercises} exercises={exercises} selectedId={selectedId} onSelect={setSelectedId}
+  const strength = <ProgressView hideTitle={extendedTracking} completedExercises={completedExercises} exercises={exercises} selectedId={selectedId} onSelect={setSelectedId}
     progress={progress} allTimeSummary={allTimeSummary} rangeSummary={rangeSummary} view={view} setView={setView} />;
+  if (!extendedTracking) return strength;
+  return <>
+    <div className="mx-auto max-w-5xl space-y-4 px-4 pt-4 lg:px-6">
+      <h1 className="text-large-title text-text">Progress</h1>
+      <Segmented label="Progress tracking" onChange={setTrackingView} options={[{ value: "strength", label: "Strength" }, { value: "extended", label: "Time and cardio" }]} value={trackingView} />
+    </div>
+    {trackingView === "strength" ? strength : <TrackingProgress initialChoice={requestedTracked ?? ""} initialKind={searchParams.get("kind") === "cardio" ? "cardio" : "time"} window={window} onWindowChange={(next) => setView((current) => updateProgressViewPreferences(current, { window: next }))} />}
+  </>;
+
 }
 
 interface ViewQuery<T> { data: T | undefined; isLoading: boolean; isError: boolean; error: Error | null; refetch: () => unknown; }
-export function ProgressView({ completedExercises, exercises, selectedId, onSelect, progress, allTimeSummary, rangeSummary, view, setView, onInspectPoint, autoCollapseSelector = true }: {
+export function ProgressView({ hideTitle = false, completedExercises, exercises, selectedId, onSelect, progress, allTimeSummary, rangeSummary, view, setView, onInspectPoint, autoCollapseSelector = true }: {
+  hideTitle?: boolean;
   autoCollapseSelector?: boolean;
   completedExercises: ViewQuery<CompletedExercise[]>; exercises: CompletedExercise[]; selectedId: string | null;
   onSelect: (id: string) => void; progress: ViewQuery<ExerciseProgressItem[]>;
@@ -80,7 +89,7 @@ export function ProgressView({ completedExercises, exercises, selectedId, onSele
 
   return (
     <div className="mx-auto max-w-5xl space-y-4 px-4 pb-8 pt-4 lg:px-6">
-      <h1 className="text-large-title text-text">Progress</h1>
+      {!hideTitle ? <h1 className="text-large-title text-text">Progress</h1> : null}
 
       {completedExercises.isError ? (
         <ErrorState
@@ -120,10 +129,10 @@ export function ProgressView({ completedExercises, exercises, selectedId, onSele
             ) : null}
 
             <div>
-              <Segmented label="Time window" onChange={(next: ChartWindow) => setView((current) => updateProgressViewPreferences(current, { window: next }))} options={timeWindows} value={window} />
+              <Segmented label="Time window" onChange={(next: ChartWindow) => setView((current) => updateProgressViewPreferences(current, { window: next }))} options={progressTimeWindows} value={window} />
             </div>
 
-            <div className="mt-3 rounded-[var(--radius-card)] bg-surface px-4 py-3">
+            <div className="mt-3 rounded-[var(--radius-card)] bg-surface px-2 py-2">
               {!selected ? (
                 completedExercises.isLoading ? <Skeleton className="h-64" /> : (
                   <p className="py-6 text-center text-body text-text-secondary">Choose an exercise to see how it has progressed.</p>

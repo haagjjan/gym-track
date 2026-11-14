@@ -15,7 +15,7 @@ export default async function WorkoutsPage(): Promise<ReactNode> {
 
   return (
     <AppShell user={user}>
-      <HistoryScreen userId={user.id} />
+      <HistoryScreen extendedTracking={process.env.ENABLE_EXTENDED_TRACKING === "true"} userId={user.id} />
     </AppShell>
   );
 }

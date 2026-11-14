@@ -82,11 +82,13 @@ Web features: `admin`, `analytics`, `auth`, `avatar`, `dashboard`, `exercises`, 
   shell and design primitives belong in `shared/`.
 - Route files in `app/` stay thin: metadata, rendering mode and one screen component.
 - Derived numbers (estimated 1RM, weekly volume, progress) are computed on read, not stored.
+- The optional time/cardio batch (ADR 0026) uses separate tables, client UUIDs and revisions behind an off-by-default flag. It adds no native local store or sync worker; ADR 0025 remains proposed.
 - Device-local preferences (body profile, favourite lifts, display, rest timer) go through
   `useScopedLocalStorage`, which scopes keys per user and honours the device-storage choice.
 - The 3D scenes (`features/avatar`, `features/volume`) render inside bounded canvases, use
-  emissive materials and sprites instead of post-processing, and fall back to static content when
-  WebGL is missing. Muscle regions come from the SVG maps in `apps/web/public/volume/`.
+  a shared local GLB, lighting and simple pedestal without post-processing or environment-map
+  generation, and fall back to static content when WebGL is missing. Muscle regions are named
+  skinned meshes; raycasts and per-region materials share the same geometry (ADR 0027).
 - Cross-app shared packages (`packages/shared`) are only added once both apps need the same code.
   None exists today.
 

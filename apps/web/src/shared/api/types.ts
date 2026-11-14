@@ -8,7 +8,11 @@ export interface ExerciseMuscleGroup extends MuscleGroup {
   role: "PRIMARY" | "SECONDARY";
 }
 
+export type TrackingMode = "time" | "cardio";
+
 export interface Exercise {
+  /** Absent for weight-and-reps exercises. */
+  trackingMode?: TrackingMode;
   id: string;
   name: string;
   equipment: string | null;
@@ -58,6 +62,7 @@ export interface SessionExercise {
 }
 
 export interface WorkoutSummary {
+  cardioEntries?: number;
   id: string;
   title: string | null;
   workoutType: string | null;
@@ -131,9 +136,14 @@ export interface ExerciseSummaryPayload {
 
 export interface WeeklyVolumeWeekItem {
   muscleGroup: MuscleGroup;
+  /** Weighted muscle sets: primary 1, secondary 0.5 per working set. */
   workingSets: number;
   exercises: { id: string; name: string; workingSets: number }[];
   recentSessions: { workoutId: string; sessionDate: string; workingSets: number }[];
+}
+
+export interface WeeklyVolumeWeekRegionItem extends Omit<WeeklyVolumeWeekItem, "muscleGroup"> {
+  muscleRegion: { id: string; slug: string; name: string; muscleGroupSlug: string };
 }
 
 export interface WeeklyVolumePayload {
@@ -141,6 +151,8 @@ export interface WeeklyVolumePayload {
     weekStart: string;
     weekEnd: string;
     items: WeeklyVolumeWeekItem[];
+    /** The same sets by finer muscle region. Absent in example data. */
+    regionItems?: WeeklyVolumeWeekRegionItem[];
   }[];
 }
 
@@ -176,6 +188,7 @@ export interface CreateExerciseInput {
   primaryMuscleGroupIds: string[];
   secondaryMuscleGroupIds: string[];
   confirmNameWarning?: boolean;
+  trackingMode?: "reps" | TrackingMode;
 }
 
 export type UpdateExerciseInput = CreateExerciseInput;

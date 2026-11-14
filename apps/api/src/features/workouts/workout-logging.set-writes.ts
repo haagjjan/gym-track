@@ -123,6 +123,9 @@ async function lockSessionExercise(
     .where("id", "=", sessionExerciseId)
     .where("workout_session_id", "=", workoutId)
     .where("deleted_at", "is", null)
+    // Rep sets belong to rep exercises; time and cardio have their own entries.
+    .where((eb) => eb.exists(eb.selectFrom("exercises").select("exercises.id")
+      .whereRef("exercises.id", "=", "session_exercises.exercise_id").where("exercises.tracking_mode", "=", "reps")))
     .forUpdate()
     .executeTakeFirst();
 

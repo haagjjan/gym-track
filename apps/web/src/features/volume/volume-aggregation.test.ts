@@ -59,3 +59,14 @@ function exercise(id: string, name: string, workingSets: number) {
 function session(workoutId: string, sessionDate: string, workingSets: number) {
   return { workoutId, sessionDate, workingSets };
 }
+
+it("preserves half-set credits in totals, weekly averages, exercises and workouts", () => {
+  const payload: WeeklyVolumePayload = { weeks: [week("2026-07-06", 0.5,
+    [exercise("press", "Chest press", 0.5)], [session("one", "2026-07-07T10:00:00Z", 0.5)])] };
+  const item = aggregateVolume(payload, 2).get("chest")!;
+  assert.equal(item.totalSets, 0.5);
+  assert.equal(item.weeklyAvg, 0.25);
+  assert.equal(item.latestWeekSets, 0.5);
+  assert.equal(item.exercises[0]!.sets, 0.5);
+  assert.equal(item.sessions[0]!.sets, 0.5);
+});

@@ -6,12 +6,11 @@ import { buttonClass } from "../../shared/ui/button";
 import { IconChevronDown } from "../../shared/ui/icons";
 import { Sheet } from "../../shared/ui/sheet";
 import { Skeleton } from "../../shared/ui/ui";
-import type { CompletedExercise } from "../../shared/api/types";
 import { formatDay } from "../../shared/format";
-import { ExerciseOption } from "./progress-panels";
+import { ExerciseOption, type ProgressExerciseChoice } from "./progress-panels";
 
 interface ProgressExerciseSelectorProps {
-  exercises: CompletedExercise[];
+  exercises: ProgressExerciseChoice[];
   /** Keep the list on screen on phones too (the guided example teaches with it). */
   inline?: boolean;
   isLoading: boolean;
@@ -44,7 +43,7 @@ export function ProgressExerciseSelector(props: ProgressExerciseSelectorProps): 
           >
             <span className="min-w-0">
               <span className="block truncate text-title-3 text-text">{selected.name}</span>
-              <span className="block truncate text-footnote text-text-secondary">{selected.primaryMuscleGroup.name}, last trained {formatDay(selected.lastDoneAt)}</span>
+              <span className="block truncate text-footnote text-text-secondary">{selected.category ?? selected.primaryMuscleGroup?.name ?? "Exercise"}, last trained {formatDay(selected.lastDoneAt)}</span>
             </span>
             <IconChevronDown className="shrink-0 text-accent" />
           </button>
@@ -70,26 +69,26 @@ function ExercisePicker(props: ProgressExerciseSelectorProps): ReactNode {
 
   const muscleGroups = useMemo(() => {
     const seen = new Map<string, string>();
-    for (const exercise of props.exercises) seen.set(exercise.primaryMuscleGroup.slug, exercise.primaryMuscleGroup.name);
+    for (const exercise of props.exercises) if (exercise.primaryMuscleGroup) seen.set(exercise.primaryMuscleGroup.slug, exercise.primaryMuscleGroup.name);
     return [...seen.entries()].map(([slug, name]) => ({ slug, name }));
   }, [props.exercises]);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
     return props.exercises.filter((exercise) => {
-      if (muscleSlug && exercise.primaryMuscleGroup.slug !== muscleSlug) return false;
+      if (muscleSlug && exercise.primaryMuscleGroup?.slug !== muscleSlug) return false;
       return query.length === 0 || exercise.name.toLowerCase().includes(query);
     });
   }, [muscleSlug, props.exercises, search]);
 
   return (
     <section>
-      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2">
+      <div className={`grid gap-2 ${muscleGroups.length ? "grid-cols-2" : "grid-cols-1"}`}>
         <input aria-label="Search exercises" className={fieldClass} onChange={(event) => setSearch(event.currentTarget.value)} placeholder="Search" type="search" value={search} />
-        <select aria-label="Filter by muscle group" className={fieldClass} onChange={(event) => setMuscleSlug(event.currentTarget.value)} value={muscleSlug}>
+        {muscleGroups.length ? <select aria-label="Filter by muscle group" className={fieldClass} onChange={(event) => setMuscleSlug(event.currentTarget.value)} value={muscleSlug}>
           <option value="">All muscles</option>
           {muscleGroups.map((group) => <option key={group.slug} value={group.slug}>{group.name}</option>)}
-        </select>
+        </select> : null}
       </div>
       <div className={`mt-3 ${props.inline ? "max-h-[46dvh] overflow-y-auto" : "lg:max-h-[58dvh] lg:overflow-y-auto"}`}>
         {props.isLoading ? <div className="space-y-2"><Skeleton className="h-14" /><Skeleton className="h-14" /><Skeleton className="h-14" /></div> : filtered.length === 0 ? (

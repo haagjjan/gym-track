@@ -28,6 +28,7 @@ interface SessionExerciseShape {
   exercise: {
     id: string;
     name: string;
+    trackingMode?: "time" | "cardio";
     primaryMuscleGroup: MuscleGroupShape;
     primaryMuscleGroups: MuscleGroupShape[];
     secondaryMuscleGroups: MuscleGroupShape[];
@@ -78,6 +79,7 @@ export interface WorkoutList {
 }
 
 interface WorkoutSummary {
+  cardioEntries?: number;
   id: string;
   startedAt: string;
   endedAt: string | null;
@@ -106,6 +108,7 @@ export function toWorkoutSummary(record: WorkoutListRecord): WorkoutSummary {
     workoutType: record.workoutType,
     title: record.title,
     notes: record.notes,
+    ...(record.cardioEntries !== undefined ? { cardioEntries: record.cardioEntries } : {}),
     totalExercises: record.totalExercises,
     totalSets: record.totalSets,
     tonnageKg: record.tonnageKg,

@@ -21,7 +21,7 @@ const historySortOptions = [
 ];
 const historySortValues = ["newest", "oldest", "name"] as const;
 
-export function HistoryScreen({ userId }: { userId: string }): ReactNode {
+export function HistoryScreen({ userId, extendedTracking = false }: { userId: string; extendedTracking?: boolean }): ReactNode {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const { clear, filters, setFilters, setSort, sort } = usePersistentFilters({
@@ -47,6 +47,10 @@ export function HistoryScreen({ userId }: { userId: string }): ReactNode {
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-4 pb-8 pt-4">
       <h1 className="text-large-title text-text">History</h1>
+      <nav aria-label="Workout library" className="grid grid-cols-2 gap-3">
+        <Link className={buttonClass("secondary", "compact")} href="/workouts/templates">Templates</Link>
+        <Link className={buttonClass("secondary", "compact")} href="/workouts/exercises">Exercises</Link>
+      </nav>
 
       {workouts.isLoading ? (
         <Skeleton className="h-[4.25rem] rounded-[var(--radius-card)]" />
@@ -90,6 +94,7 @@ export function HistoryScreen({ userId }: { userId: string }): ReactNode {
               <ul className="divide-y divide-line overflow-hidden rounded-[var(--radius-card)] bg-surface">
                 {group.items.map((workout) => (
                   <HistoryRow
+                    extendedTracking={extendedTracking}
                     isExpanded={expandedId === workout.id}
                     key={workout.id}
                     onToggle={() => setExpandedId((current) => (current === workout.id ? null : workout.id))}
@@ -107,7 +112,7 @@ export function HistoryScreen({ userId }: { userId: string }): ReactNode {
           {workouts.isFetchingNextPage ? "Loading…" : `Show more (${items.length} of ${total})`}
         </Button>
       ) : null}
-      <CsvPanel onImported={() => void workouts.refetch()} />
+      <CsvPanel extendedTracking={extendedTracking} onImported={() => void workouts.refetch()} />
     </div>
   );
 }

@@ -16,6 +16,7 @@ import { Sheet } from "../../shared/ui/sheet";
 import { DisplayPanel } from "./display-panel";
 import { FavoriteLiftsPanel } from "./favorite-lifts-panel";
 import { HeatCeilingPanel } from "./heat-ceiling-panel";
+import { BodyCredits } from "./body-credits";
 import { HelpSupportPanel } from "./help-support-panel";
 import { MergeExercisesPanel } from "./merge-exercises-panel";
 import { PrivacyDataPanel } from "./privacy-data-panel";
@@ -80,6 +81,7 @@ export function SettingsScreen({ supportUrl, user }: { supportUrl?: string | und
 
       <Section title="Help and legal">
         <HelpSupportPanel supportUrl={supportUrl} />
+        <Group><SheetRow label="Credits"><BodyCredits /></SheetRow></Group>
       </Section>
 
       <Group>
@@ -106,7 +108,7 @@ function SheetRow({ children, danger = false, label, value }: { children: ReactN
         onClick={() => setOpen(true)}
         type="button"
       >
-        <span className={`min-w-0 flex-1 truncate text-body ${danger ? "text-danger" : "text-text"}`}>{label}</span>
+        <span className={`min-w-0 flex-1 text-body ${danger ? "text-danger" : "text-text"}`}>{label}</span>
         {value ? <span className="num shrink-0 text-body text-text-secondary">{value}</span> : null}
         <IconForward aria-hidden className="shrink-0 text-text-muted" />
       </button>

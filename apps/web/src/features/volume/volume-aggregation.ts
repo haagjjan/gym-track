@@ -16,9 +16,11 @@ interface AggregateState {
   sessionIds: Set<string>;
 }
 
+/** Totals per muscle group, or per finer muscle region with `by: "region"`. */
 export function aggregateVolume(
   payload: WeeklyVolumePayload | undefined,
-  weeksCount: number
+  weeksCount: number,
+  by: "group" | "region" = "group"
 ): Map<string, MuscleAggregate> {
   const states = new Map<string, AggregateState>();
   if (!payload) return new Map();
@@ -30,8 +32,12 @@ export function aggregateVolume(
   );
 
   for (const week of payload.weeks) {
-    for (const item of week.items) {
-      const state = getAggregateState(states, item.muscleGroup.slug, item.muscleGroup.name);
+    const items = by === "region"
+      ? (week.regionItems ?? []).map((item) => ({ ...item, muscle: item.muscleRegion }))
+      : week.items.map((item) => ({ ...item, muscle: item.muscleGroup }));
+
+    for (const item of items) {
+      const state = getAggregateState(states, item.muscle.slug, item.muscle.name);
       const aggregate = state.value;
 
       aggregate.totalSets += item.workingSets;

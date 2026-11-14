@@ -15,7 +15,6 @@ import {
 import type { AuthUser } from "../auth/auth-types";
 import type { ExerciseSummaryPayload } from "../../shared/api/types";
 import { formatDayTime, formatCompactNumber } from "../../shared/format";
-import { BayAmbience } from "../avatar/bay-ambience";
 import { useStartSession } from "../session/use-start-session";
 import { HomeHeaderActions } from "../shell/home-header-actions";
 import {
@@ -115,7 +114,7 @@ export function DashboardScreen({ user }: { user: AuthUser }): ReactNode {
     return latest?.items.reduce((total, item) => total + item.workingSets, 0) ?? 0;
   }, [weeklyVolume.data]);
 
-  // Readiness: weekly working sets vs a 48-set target drives the rim glow.
+  // Weekly weighted muscle sets against a 48-set target drive the rim glow.
   const systemCharge = Math.max(12, Math.min(100, Math.round((weeklySets / 48) * 100)));
 
   // Cockpit display prefs (Settings): idle turntable spin is user-toggleable.
@@ -145,12 +144,15 @@ export function DashboardScreen({ user }: { user: AuthUser }): ReactNode {
 
   return (
     <div className="mx-auto max-w-7xl px-4 pb-6 pt-2 lg:px-6">
-      <header className="flex items-end justify-between gap-2 pt-2">
-        <div className="min-w-0">
-          <p className="text-subhead text-text-secondary">{dateLabel}</p>
-          <h1 className="text-large-title text-text [overflow-wrap:anywhere]">Hi, {user.username}</h1>
+      {/* Actions share the date row so a long username can't push them down or squeeze the greeting. */}
+      <header className="pt-2">
+        <div className="flex items-center justify-between gap-2">
+          <p className="min-w-0 text-subhead text-text-secondary">{dateLabel}</p>
+          <HomeHeaderActions user={user} />
         </div>
-        <HomeHeaderActions user={user} />
+        <h1 className="line-clamp-2 text-large-title text-text [overflow-wrap:anywhere]" title={user.username}>
+          Hi, {user.username}
+        </h1>
       </header>
 
       <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
@@ -178,9 +180,7 @@ export function DashboardScreen({ user }: { user: AuthUser }): ReactNode {
           <section aria-labelledby="week-title">
             <h2 className="mb-2 px-1 text-title-3 text-text" id="week-title">This week</h2>
             <div className="overflow-hidden rounded-[var(--radius-card)] bg-surface">
-              {/* Dark stage in both themes. Ambience and canvas stay inside this card. */}
-              <div className="relative isolate h-60 overflow-hidden bg-stage">
-                <BayAmbience contained />
+              <div className="home-stage relative isolate h-60 overflow-hidden">
                 <div className="relative z-10 h-full">
                   <AvatarStage autoSpin={displaySettings.autoSpin} readiness={systemCharge} />
                 </div>

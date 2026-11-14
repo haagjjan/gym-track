@@ -22,6 +22,7 @@ export interface MuscleGroupRecord {
 }
 
 export interface ExerciseRecord {
+  trackingMode?: "reps" | "time" | "cardio";
   id: string;
   name: string;
   equipment: string | null;
@@ -48,12 +49,16 @@ export interface ExerciseListFilters {
   exerciseType: string | "unspecified" | undefined;
   ownership: "editable" | "readOnly" | undefined;
   userId: string | undefined;
+  /** Time and cardio exercises are listed only while extended tracking is on. */
+  includeTracked?: boolean;
+  trackingMode?: "reps" | "time" | "cardio" | "strength";
   sort: "name" | "muscle" | "equipment" | "type";
   limit: number;
   offset: number;
 }
 
 export interface NewExercise {
+  trackingMode?: "reps" | "time" | "cardio";
   id: string;
   name: string;
   equipment: string | null;
@@ -182,6 +187,7 @@ export function createExerciseRepository(db: Kysely<AppDatabase>): ExerciseRepos
               equipment: input.equipment,
               exercise_type: input.exerciseType,
               primary_muscle_group_id: input.primaryMuscleGroupIds[0]!,
+              tracking_mode: input.trackingMode ?? "reps",
               created_by_user_id: input.createdByUserId
             })
             .returning("id")

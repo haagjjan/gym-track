@@ -1,0 +1,109 @@
+{
+ "build": {
+  "delts_front": 0.024,
+  "delts_side": 0.026,
+  "delts_rear": 0.022,
+  "traps": 0.018,
+  "upper_back": 0.01,
+  "biceps": 0.02,
+  "triceps": 0.02,
+  "forearms": 0.008,
+  "abs": 0.004,
+  "obliques": 0.002,
+  "lower_back": 0.006,
+  "glutes": 0.016,
+  "abductors": 0.006,
+  "quads": 0.02,
+  "adductors": 0.006,
+  "hamstrings": 0.015,
+  "calves": 0.014,
+  "neck": 0.005,
+  "chest": 0.02
+ },
+ "abs": {
+  "z_min": 0.8,
+  "z_max": 1.19,
+  "half_width": [
+   [
+    0.8,
+    0.032
+   ],
+   [
+    0.9,
+    0.06
+   ],
+   [
+    1.0,
+    0.068
+   ],
+   [
+    1.1,
+    0.07
+   ],
+   [
+    1.19,
+    0.066
+   ]
+  ]
+ },
+ "lats": {
+  "axis_y": -0.08,
+  "offset": 0.004,
+  "skin_depth": -0.004,
+  "max_lift": 0.032,
+  "thickness": 0.006,
+  "smooth": 2,
+  "fill_passes": 60,
+  "relax_passes": 12,
+  "max_edge": 0.03,
+  "outline": [
+   [
+    6,
+    1.17
+   ],
+   [
+    45,
+    1.215
+   ],
+   [
+    78,
+    1.255
+   ],
+   [
+    96,
+    1.21
+   ],
+   [
+    98,
+    1.05
+   ],
+   [
+    94,
+    0.955
+   ],
+   [
+    72,
+    0.93
+   ],
+   [
+    48,
+    0.93
+   ],
+   [
+    32,
+    0.975
+   ],
+   [
+    16,
+    1.07
+   ]
+  ]
+ },
+ "skin": {
+  "head_z": 1.435,
+  "foot_z": 0.075,
+  "hand_x": 0.22,
+  "hand_z": 0.843,
+  "arm_x": 0.17
+ }
+}

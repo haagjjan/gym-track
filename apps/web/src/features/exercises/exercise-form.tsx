@@ -1,5 +1,8 @@
 "use client";
 
+import { useExtendedTracking } from "../../shared/extended-tracking";
+import { radioGroupKeyDown } from "../../shared/ui/radio-group";
+import type { TrackingMode } from "../../shared/api/types";
 import { useEffect, useState, type ReactNode } from "react";
 import { ConfirmDialog } from "../../shared/ui/confirm-dialog";
 import { Button } from "../../shared/ui/button";
@@ -10,6 +13,8 @@ import { useExerciseNameSuggestions, useExerciseOptions, useMuscleGroups } from 
 import type { CreateExerciseInput, Exercise, ExerciseNameReviewDetails, MuscleGroup } from "../../shared/api/types";
 
 interface ExerciseFormProps {
+  /** Preselects "Logged by" for a new exercise. */
+  defaultTrackingMode?: "reps" | TrackingMode;
   initial?: Exercise | null;
   isSubmitting: boolean;
   onCancel: () => void;
@@ -18,7 +23,14 @@ interface ExerciseFormProps {
   submitLabel?: string;
 }
 
+const TRACKING_CHOICES: Array<{ value: "reps" | TrackingMode; label: string; hint: string }> = [
+  { value: "reps", label: "Weight & reps", hint: "Sets with weight, reps and RIR, such as a bench press." },
+  { value: "time", label: "Time", hint: "Holds timed in minutes and seconds, such as a plank or dead hang." },
+  { value: "cardio", label: "Cardio", hint: "Duration with optional distance, calories and heart rate, such as a run." }
+];
+
 export function ExerciseForm({
+  defaultTrackingMode = "reps",
   initial = null,
   isSubmitting,
   onCancel,
@@ -34,6 +46,8 @@ export function ExerciseForm({
   const [exerciseType, setExerciseType] = useState(initial?.exerciseType ?? "");
   const [primaryIds, setPrimaryIds] = useState(initial?.primaryMuscleGroups.map((group) => group.id) ?? []);
   const [secondaryIds, setSecondaryIds] = useState(initial?.secondaryMuscleGroups.map((group) => group.id) ?? []);
+  const trackingEnabled = useExtendedTracking();
+  const [trackingMode, setTrackingMode] = useState<"reps" | TrackingMode>(defaultTrackingMode);
   const [error, setError] = useState<string | null>(null);
   const [review, setReview] = useState<{ details: ExerciseNameReviewDetails; blocked: boolean } | null>(null);
   // The "Did you mean?" list floats over the fields below the name. Without a
@@ -66,7 +80,8 @@ export function ExerciseForm({
         exerciseType: exerciseType || null,
         primaryMuscleGroupIds: primaryIds,
         secondaryMuscleGroupIds: secondaryIds,
-        confirmNameWarning
+        confirmNameWarning,
+        ...(!initial && trackingMode !== "reps" ? { trackingMode } : {})
       });
     } catch (caught) {
       if (caught instanceof ApiError && isNameReviewError(caught.code)) {
@@ -140,6 +155,28 @@ export function ExerciseForm({
         ) : null}
       </div>
 
+      {trackingEnabled && !initial ? (
+        <div>
+          <p className={labelClass} id="tracked-by-label">Logged by</p>
+          <div aria-labelledby="tracked-by-label" className="mt-1.5 grid grid-cols-3 gap-1 rounded-full bg-surface p-1" onKeyDown={radioGroupKeyDown} role="radiogroup">
+            {TRACKING_CHOICES.map((choice) => (
+              <button
+                aria-checked={trackingMode === choice.value}
+                className={`min-h-11 rounded-full px-1 text-subhead transition-colors duration-200 ${trackingMode === choice.value ? "bg-surface-raised font-semibold text-text shadow-sm" : "text-text-secondary"}`}
+                key={choice.value}
+                onClick={() => setTrackingMode(choice.value)}
+                role="radio"
+                tabIndex={trackingMode === choice.value ? 0 : -1}
+                type="button"
+              >
+                {choice.label}
+              </button>
+            ))}
+          </div>
+          <p className="mt-1.5 text-footnote text-text-secondary">{TRACKING_CHOICES.find((choice) => choice.value === trackingMode)?.hint}</p>
+        </div>
+      ) : null}
+
       <div className="grid gap-3 sm:grid-cols-2">
         <ClassificationSelect label="Equipment" onChange={setEquipment} options={options.data?.equipment ?? []} value={equipment} />
         <ClassificationSelect label="Type" onChange={setExerciseType} options={options.data?.exerciseTypes ?? []} value={exerciseType} />
@@ -160,6 +197,7 @@ export function ExerciseForm({
             onChange={(id) => { setSecondaryIds(toggle(secondaryIds, id)); setPrimaryIds(primaryIds.filter((item) => item !== id)); }}
             selected={secondaryIds}
           />
+          <p className="text-footnote text-text-secondary">{trackingMode === "cardio" ? "Cardio does not count toward muscle volume." : "In Volume, each working set counts as 1 for primary muscles and 0.5 for secondary muscles."}</p>
         </div>
       )}
       {review?.blocked ? <BlockedNameReview review={review} /> : null}

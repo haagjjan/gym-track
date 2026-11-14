@@ -27,6 +27,7 @@ export interface SpinState {
 /** Raw pointer listeners on the canvas that feed the turntable spin state. */
 export function TurntableDrag({ spinRef }: { spinRef: RefObject<SpinState> }): ReactNode {
   const gl = useThree((state) => state.gl);
+  const invalidate = useThree((state) => state.invalidate);
 
   useEffect(() => {
     const element = gl.domElement;
@@ -66,6 +67,7 @@ export function TurntableDrag({ spinRef }: { spinRef: RefObject<SpinState> }): R
       // Drag right → figure turns right (positive yaw), like spinning a globe.
       spinRef.current.pendingDelta += (event.clientX - lastX) * DRAG_SPIN_SPEED;
       lastX = event.clientX;
+      invalidate();
     };
 
     const onUp = (event: PointerEvent): void => {
@@ -91,7 +93,7 @@ export function TurntableDrag({ spinRef }: { spinRef: RefObject<SpinState> }): R
       element.style.cursor = "";
       element.style.touchAction = "";
     };
-  }, [gl, spinRef]);
+  }, [gl, invalidate, spinRef]);
 
   return null;
 }
@@ -116,7 +118,8 @@ export function StageDriver({
   const ringCyan = useMemo(() => new THREE.Color(RIM_CYAN), []);
   const ringGreen = useMemo(() => new THREE.Color(PULSE_GREEN), []);
 
-  useFrame((_, delta) => {
+  useFrame((_, elapsed) => {
+    const delta = Math.min(elapsed, 0.05);
     const state = stateRef.current;
 
     state.pulse = Math.max(0, state.pulse - delta / 3);
@@ -135,7 +138,7 @@ export function StageDriver({
       return;
     }
 
-    if (spin.dragging) {
+    if (spin.dragging || spin.pendingDelta !== 0) {
       // Follow the pointer 1:1 and remember the speed for release inertia.
       turntable.current.rotation.y += spin.pendingDelta;
       spin.velocity = delta > 0 ? spin.pendingDelta / delta : spin.velocity;
@@ -145,6 +148,7 @@ export function StageDriver({
       // disabled auto-spin (Settings) or prefers reduced motion.
       const idleSpeed = reducedMotion || !autoSpin ? 0 : IDLE_SPIN_SPEED;
 
+      if (reducedMotion) spin.velocity = 0;
       spin.velocity = THREE.MathUtils.damp(spin.velocity, idleSpeed, 2.2, delta);
       turntable.current.rotation.y += spin.velocity * delta;
     }
