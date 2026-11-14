@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 export type FilterSurface = "history" | "templates" | "exercises";
 
 export interface StoredFacetFilters {
-  muscleGroupIds: string[];
+  muscleRegionIds: string[];
   equipment: string;
   exerciseType: string;
   ownership: "" | "editable" | "readOnly";
@@ -106,7 +106,7 @@ export function clearFilterState(
 }
 
 export function emptyStoredFacetFilters(): StoredFacetFilters {
-  return { muscleGroupIds: [], equipment: "", exerciseType: "", ownership: "" };
+  return { muscleRegionIds: [], equipment: "", exerciseType: "", ownership: "" };
 }
 
 function parseFilterState<Sort extends string>(
@@ -116,13 +116,14 @@ function parseFilterState<Sort extends string>(
   if (!isRecord(value) || !isRecord(value.filters) || typeof value.sort !== "string") return null;
   const filters = value.filters;
   if (!allowedSorts.includes(value.sort as Sort)) return null;
-  if (!isStringArray(filters.muscleGroupIds)) return null;
+  const regionIds = filters.muscleRegionIds ?? [];
+  if (!isStringArray(regionIds)) return null;
   if (!isEquipment(filters.equipment) || !isExerciseType(filters.exerciseType)) return null;
   if (!isOwnership(filters.ownership)) return null;
 
   return {
     filters: {
-      muscleGroupIds: [...new Set(filters.muscleGroupIds)],
+      muscleRegionIds: [...new Set(regionIds)],
       equipment: filters.equipment,
       exerciseType: filters.exerciseType,
       ownership: filters.ownership

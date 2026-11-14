@@ -165,4 +165,4 @@ function TemplateActionsSheet({ isDuplicating, onClose, onDelete, onDuplicate, o
 }
 
 function TemplateSkeleton(): ReactNode { return <div className="space-y-2"><Skeleton className="h-[3.75rem]" /><Skeleton className="h-[3.75rem]" /><Skeleton className="h-[3.75rem]" /></div>; }
-function hasFilters(filters: FacetFilterValue): boolean { return filters.muscleGroupIds.length > 0 || Boolean(filters.equipment || filters.exerciseType); }
+function hasFilters(filters: FacetFilterValue): boolean { return filters.muscleRegionIds.length > 0 || Boolean(filters.equipment || filters.exerciseType); }

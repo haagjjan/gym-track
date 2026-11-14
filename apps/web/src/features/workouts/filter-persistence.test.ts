@@ -28,7 +28,7 @@ describe("filter persistence", () => {
     const storage = memoryStorage();
     const state = {
       filters: {
-        muscleGroupIds: [
+        muscleRegionIds: [
           "11111111-1111-4111-8111-111111111111",
           "22222222-2222-4222-8222-222222222222"
         ],
@@ -52,7 +52,7 @@ describe("filter persistence", () => {
       JSON.stringify({ filters: validFilters(), sort: "newest" }),
       JSON.stringify({ filters: { ...validFilters(), ownership: "mine" }, sort: "name" }),
       JSON.stringify({ filters: { ...validFilters(), equipment: "sled" }, sort: "name" }),
-      JSON.stringify({ filters: { ...validFilters(), muscleGroupIds: ["not-a-uuid"] }, sort: "name" })
+      JSON.stringify({ filters: { ...validFilters(), muscleRegionIds: ["not-a-uuid"] }, sort: "name" })
     ];
 
     for (const value of invalidValues) {
@@ -60,6 +60,17 @@ describe("filter persistence", () => {
       storage.setItem(filterStorageKey(options.userId, options.surface), value);
       assert.equal(readFilterState(storage, options), null);
     }
+  });
+
+  it("drops legacy group selections while preserving other facets", () => {
+    const storage = memoryStorage();
+    storage.setItem(filterStorageKey(options.userId, options.surface), JSON.stringify({
+      filters: { muscleGroupIds: ["00000000-0000-4000-8000-000000000003"], equipment: "cable", exerciseType: "", ownership: "" },
+      sort: "muscle"
+    }));
+    assert.deepEqual(readFilterState(storage, options)?.filters, {
+      muscleRegionIds: [], equipment: "cable", exerciseType: "", ownership: ""
+    });
   });
 
   it("removes only the selected user's selected surface", () => {
@@ -75,7 +86,7 @@ describe("filter persistence", () => {
 });
 
 function validFilters(): Record<string, unknown> {
-  return { muscleGroupIds: [], equipment: "", exerciseType: "", ownership: "" };
+  return { muscleRegionIds: [], equipment: "", exerciseType: "", ownership: "" };
 }
 
 function memoryStorage(): Pick<Storage, "getItem" | "setItem" | "removeItem"> {

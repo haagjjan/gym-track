@@ -5,7 +5,7 @@ import { useModalBehavior } from "../../shared/ui/use-modal-behavior";
 import { Button } from "../../shared/ui/button";
 import { SheetGrabber, sheetPanelClass } from "../../shared/ui/sheet";
 import { IconChevronDown, IconClose } from "../../shared/ui/icons";
-import { useExerciseOptions, useMuscleGroups } from "../../shared/api/hooks";
+import { useExerciseOptions, useMuscleRegions } from "../../shared/api/hooks";
 import { emptyStoredFacetFilters, type StoredFacetFilters } from "./filter-persistence";
 
 export type FacetFilterValue = StoredFacetFilters;
@@ -26,9 +26,9 @@ export function FacetFilters(props: FacetFiltersProps): ReactNode {
     isOpen: sheetOpen,
     onClose: () => setSheetOpen(false)
   });
-  const muscles = useMuscleGroups();
+  const muscles = useMuscleRegions();
   const options = useExerciseOptions();
-  const activeCount = props.filters.muscleGroupIds.length
+  const activeCount = props.filters.muscleRegionIds.length
     + (props.filters.equipment ? 1 : 0)
     + (props.filters.exerciseType ? 1 : 0)
     + (props.filters.ownership ? 1 : 0);
@@ -99,15 +99,15 @@ function FilterFields({
     <>
       <details className="relative md:w-48">
         <summary className={`${selectClassName} flex cursor-pointer list-none items-center justify-between`}>
-          Muscles{filters.muscleGroupIds.length > 0 ? ` (${filters.muscleGroupIds.length})` : ""}<IconChevronDown />
+          Muscles{filters.muscleRegionIds.length > 0 ? ` (${filters.muscleRegionIds.length})` : ""}<IconChevronDown />
         </summary>
         <div className="mt-2 space-y-1 rounded-[var(--radius-card)] border border-line bg-surface p-2 md:absolute md:z-20 md:max-h-72 md:w-64 md:overflow-y-auto md:bg-surface-raised md:shadow-lg">
           {muscleOptions.map((muscle) => (
             <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-[var(--radius-control)] px-2 text-body text-text" key={muscle.id}>
               <input
-                checked={filters.muscleGroupIds.includes(muscle.id)}
+                checked={filters.muscleRegionIds.includes(muscle.id)}
                 className="size-5 accent-[var(--accent)]"
-                onChange={() => onChange({ ...filters, muscleGroupIds: toggle(filters.muscleGroupIds, muscle.id) })}
+                onChange={() => onChange({ ...filters, muscleRegionIds: toggle(filters.muscleRegionIds, muscle.id) })}
                 type="checkbox"
               />
               {muscle.name}

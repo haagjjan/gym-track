@@ -137,7 +137,7 @@ function HistorySkeleton(): ReactNode {
 }
 
 function hasFilters(filters: FacetFilterValue): boolean {
-  return filters.muscleGroupIds.length > 0 || Boolean(filters.equipment || filters.exerciseType);
+  return filters.muscleRegionIds.length > 0 || Boolean(filters.equipment || filters.exerciseType);
 }
 
 function groupWorkouts(items: WorkoutSummary[], sort: string): Array<{ label: string | null; items: WorkoutSummary[] }> {
