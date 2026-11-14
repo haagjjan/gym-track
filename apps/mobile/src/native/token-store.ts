@@ -1,4 +1,4 @@
-import { SecureStorage } from "@aparajita/capacitor-secure-storage";
+import { KeychainAccess, SecureStorage } from "@aparajita/capacitor-secure-storage";
 import type { SessionTokenStore } from "../../../web/src/shared/api/transport";
 
 const TOKEN_KEY = "session-token";
@@ -39,7 +39,8 @@ export const secureTokenStore: SessionTokenStore = {
     return typeof value === "string" && value.length > 0 ? value : null;
   },
   async save(token) {
-    await SecureStorage.set(TOKEN_KEY, token);
+    // Not synced to iCloud and not restored onto another device from a backup.
+    await SecureStorage.set(TOKEN_KEY, token, false, false, KeychainAccess.afterFirstUnlockThisDeviceOnly);
     mark(false);
   },
   async clear() {

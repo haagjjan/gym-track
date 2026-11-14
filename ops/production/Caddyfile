@@ -12,6 +12,7 @@
 				request>headers>Cf-Access-Authenticated-User-Email delete
 				request>headers>Cf-Access-Client-Id delete
 				request>headers>Cf-Access-Client-Secret delete
+				request>headers>Authorization delete
 				request>headers>X-Gym-Client-Ip delete
 				request>headers>X-Gym-Client-Signature delete
 				request>uri query {
@@ -42,13 +43,40 @@
 		X-Content-Type-Options "nosniff"
 	}
 
-	reverse_proxy web:3000 {
-		header_up -X-Gym-Client-IP
-		header_up -X-Gym-Client-Signature
-		transport http {
-			dial_timeout 5s
-			response_header_timeout 60s
-			keepalive 30s
+	# Mobile app route (ADR 0023). Only the paths the app uses reach the API; admin,
+	# metrics and health stay internal. The API is reached with a bearer token, never
+	# a cookie, and sees the client address Cloudflare reports.
+	@mobile_api {
+		path_regexp ^/api/v1/(auth|workouts|workout-templates|exercises|muscle-groups|sets|analytics|tracking|users/me|messages|status-metrics)(/.*)?$
+		header Cf-Connecting-Ip *
+	}
+	handle @mobile_api {
+		header Cache-Control "no-store"
+		reverse_proxy api:4000 {
+			header_up -Cookie
+			header_up -X-Gym-Client-IP
+			header_up -X-Gym-Client-Signature
+			header_up X-Forwarded-For {http.request.header.Cf-Connecting-Ip}
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 60s
+				keepalive 30s
+			}
+		}
+	}
+	handle /api/v1/* {
+		respond 404
+	}
+
+	handle {
+		reverse_proxy web:3000 {
+			header_up -X-Gym-Client-IP
+			header_up -X-Gym-Client-Signature
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 60s
+				keepalive 30s
+			}
 		}
 	}
 }

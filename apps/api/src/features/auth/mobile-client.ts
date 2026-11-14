@@ -37,11 +37,13 @@ export function registerMobileClient(server: FastifyInstance, options: MobileCli
     const origin = singleHeader(request.headers.origin);
     const allowedOrigin = origin !== null && origins.has(origin);
 
+    // Always vary on Origin, so a shared cache never serves one origin's answer to another.
+    void reply.header("vary", "Origin");
+
     if (allowedOrigin) {
       // No Access-Control-Allow-Credentials: cookies never travel on this path.
       void reply.header("access-control-allow-origin", origin);
       void reply.header("access-control-expose-headers", EXPOSED_HEADERS);
-      void reply.header("vary", "Origin");
     }
 
     if (request.method === "OPTIONS" && request.headers["access-control-request-method"]) {
@@ -61,6 +63,14 @@ export function registerMobileClient(server: FastifyInstance, options: MobileCli
 
     if (singleHeader(request.headers[CLIENT_HEADER]) !== "app") {
       return;
+    }
+
+    // Administrators use the web (ADR 0024). A session token must not open the
+    // admin routes through the public app path.
+    if (isAdminPath(request.url)) {
+      return reply.status(404).send({
+        error: { code: "NOT_FOUND", message: "Not found." }
+      });
     }
 
     request.mobileClient = true;
@@ -119,6 +129,12 @@ export function compareVersions(left: Version, right: Version): number {
   }
 
   return 0;
+}
+
+function isAdminPath(url: string): boolean {
+  const path = url.split("?", 1)[0] ?? "";
+
+  return path === "/api/v1/admin" || path.startsWith("/api/v1/admin/");
 }
 
 function isHealthPath(url: string): boolean {

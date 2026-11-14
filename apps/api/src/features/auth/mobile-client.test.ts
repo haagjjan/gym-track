@@ -124,6 +124,19 @@ describe("mobile client transport", () => {
     assert.deepEqual(seenTokens, ["app-session-token-0001", undefined]);
   });
 
+  it("hides the admin routes from app requests", async () => {
+    const { server, seenTokens } = await buildServer();
+    const response = await server.inject({
+      method: "GET",
+      url: "/api/v1/admin/overview?range=7d",
+      headers: { ...APP_HEADERS, authorization: "Bearer app-session-token-0001" }
+    });
+
+    assert.equal(response.statusCode, 404);
+    assert.equal(response.headers.vary, "Origin");
+    assert.deepEqual(seenTokens, []);
+  });
+
   it("ignores a bearer token on requests that are not from the app", async () => {
     const { server, seenTokens } = await buildServer();
     const response = await server.inject({

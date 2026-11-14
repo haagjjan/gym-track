@@ -2,8 +2,9 @@
 
 ## Status
 
-Proposed, 2026-11-14. The owner reviews this before the mobile app ships. The spike on branch
-`mobile/app` is built against it behind a flag that defaults off.
+Accepted by the owner on 2026-11-14, on condition of an independent security check. That
+check (two reviewers, both "approve with changes") is recorded under "Security review
+2026-11-14". Its open items must be closed before the flag is turned on in production.
 
 ## Context
 
@@ -75,13 +76,23 @@ is not stored in the Keychain or Keystore.
 
 ## Consequences
 
-- **Deployment change needed before the app can reach production.** The API must be
-  reachable from phones. Proposed: Caddy routes `app.gymtrack.ch/api/v1/*` to `api:4000`.
-  The web's own BFF routes live under `/api/<name>` without `v1`, so the paths do not
-  collide. Caddy must strip incoming `X-Gym-Client-IP` and `X-Gym-Client-Signature` on that
-  route as it does for the web, and the API must trust only Caddy as a proxy. This is a
-  deployment decision and stays with the owner; nothing on staging or production changes on
-  the spike branch.
+- **Deployment change needed before the app can reach production.** The app needs a
+  backend it can reach from the internet. Today phones can only reach the website; the
+  browser talks to the website's own server (the BFF), and only that server talks to the
+  API. Two routes were possible: teach the BFF to accept bearer tokens and CORS, or let
+  Caddy pass the app's API paths straight through. The second is chosen: it adds no second
+  auth path to the web server and keeps the cookie and bearer worlds apart.
+- **The route** (`ops/production/Caddyfile`, `compose.yaml`): Caddy sends an allow-list of
+  `app.gymtrack.ch/api/v1/...` paths (auth, workouts, templates, exercises, muscle groups,
+  sets, analytics, tracking, own account, messages, status metrics) to `api:4000` over a
+  network that only the proxy and the API share. Every other `/api/v1` path answers 404
+  at the proxy, so admin, metrics and health stay internal. The web's BFF routes live under
+  `/api/<name>` without `v1`, so the paths do not collide. On this route Caddy removes
+  cookies and the BFF signature headers, replaces `X-Forwarded-For` with Cloudflare's
+  `CF-Connecting-IP`, and keeps `Authorization` out of the access log. The API trusts that
+  one header (`API_TRUST_PROXY=true`) for rate limits. The route is committed but inert
+  until `ENABLE_MOBILE_TOKEN_AUTH=true`: without the flag every such request gets
+  `403 BFF_REQUIRED`. Deploying it is a normal release and stays with the owner.
 - The API becomes a public surface. Every route's own authorization already runs in the API
   (the BFF adds none), but the launch-gate IDOR matrix should be re-run against the bearer
   path before release, and admin routes should stay unreachable from the public route or be
@@ -92,6 +103,50 @@ is not stored in the Keychain or Keystore.
   stay signed in longer, that is a later change to the session policy, not to this design.
 - The minimum-client-version header (`X-App-Version`) is defined in
   [ADR 0024](0024-mobile-static-export.md).
+
+## Security review 2026-11-14
+
+Two independent reviews (`gpt-6.1-sol` and `gemini-4-argon-high`) read this ADR, the API
+code and the production config. Both: approve with changes. Confirmed sound: 256-bit
+tokens stored only as hashes, revocation and expiry on the row, cookies ignored on app
+requests, the CSRF boundary, no bypass with the flag off, log redaction.
+
+Fixed on the branch:
+
+- Admin routes answer 404 to app requests in the API, and admin, metrics and health are not
+  routed by Caddy (path allow-list).
+- Proxy and API share a dedicated internal network; the client address comes from
+  `CF-Connecting-IP`; cookies are stripped on the route.
+- `Vary: Origin` is always sent; the API bounds request time (60 s).
+- The Keychain entry is device-only (`afterFirstUnlockThisDeviceOnly`, no iCloud sync), so
+  the token is not restored onto another device.
+
+Also fixed on the branch (2026-11-14, second pass):
+
+- Login is limited to 10 attempts per 15 minutes per account name, whatever the address, on
+  top of the account lock. App requests get 60 per 15 minutes per address on auth routes
+  (phones share carrier addresses); the web keeps 10.
+- Requests without any credential are limited to 120 per minute per address; all requests
+  to 300 per minute per address.
+- A wrong password always answers "invalid credentials", also for locked or suspended
+  accounts. Password reset and verification mails are sent in the background and limited
+  to 3 per hour per address, without changing the answer.
+
+Open before the flag goes on in production:
+
+- **Edge rate limit (owner, Cloudflare dashboard).** The API now limits itself (see
+  below), but a flood should be stopped before it reaches the home server. See
+  "Edge protection" in `ops/production/README.md`.
+- **Cloudflare.** Any Access policy or WAF rule on `app.gymtrack.ch` must let
+  `/api/v1/*` through without a browser challenge, and Caddy must only be reachable from
+  the tunnel, because anyone who can reach Caddy directly can forge `CF-Connecting-IP`
+  (effect: rate-limit evasion only).
+- **Session lifetime.** A bearer token lives 30 days like a web session. Accepted for now;
+  revisit with sliding renewal if phones should stay signed in.
+- **`X-Gym-Client: app` is not proof of the app.** Anyone can send it. It only selects the
+  transport. A stolen web session token would also work as a bearer token, as it would as
+  a cookie; the admin block above limits what it can reach.
+- Re-run the IDOR matrix against the bearer path (unchanged from above).
 
 ## Verification gates
 
