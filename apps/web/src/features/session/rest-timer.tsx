@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { haptic } from "../../shared/platform/native";
+import { useRestNotification } from "./use-rest-notification";
 import { formatClock } from "../../shared/format";
 
 const RING_RADIUS = 18;
@@ -25,6 +27,7 @@ export function RestTimer({
 }): ReactNode {
   const [now, setNow] = useState(() => Date.now());
   const doneRef = useRef(false);
+  useRestNotification(startedAt, seconds);
 
   useEffect(() => {
     const interval = window.setInterval(() => setNow(Date.now()), 250);
@@ -41,9 +44,7 @@ export function RestTimer({
     if (isDone && !doneRef.current) {
       doneRef.current = true;
 
-      if ("vibrate" in navigator) {
-        navigator.vibrate?.([180, 90, 180]);
-      }
+      if (document.visibilityState === "visible") haptic("heavy");
     }
 
     if (!isDone) {

@@ -1,6 +1,7 @@
 import { Browser } from "@capacitor/browser";
 import { Directory, Filesystem } from "@capacitor/filesystem";
 import { Haptics, ImpactStyle, NotificationType } from "@capacitor/haptics";
+import { LocalNotifications } from "@capacitor/local-notifications";
 import { Share } from "@capacitor/share";
 import type { NativeBridge } from "../../../web/src/shared/platform/native";
 
@@ -26,8 +27,32 @@ export const capacitorBridge: NativeBridge = {
     }
   },
 
+  async scheduleNotification({ at, repeatWeekly, ...notification }) {
+    await LocalNotifications.schedule({ notifications: [{
+      ...notification,
+      foreground: false,
+      isExactNotification: false,
+      schedule: repeatWeekly ? { on: repeatWeekly, repeats: true } : { at }
+    }] });
+  },
+
+  async cancelNotifications(ids) {
+    await LocalNotifications.cancel({ notifications: ids.map((id) => ({ id })) });
+  },
+
+  async notificationPermission() {
+    const { display } = await LocalNotifications.checkPermissions();
+    return display === "prompt-with-rationale" ? "prompt" : display;
+  },
+
+  async requestNotificationPermission() {
+    return (await LocalNotifications.requestPermissions()).display === "granted";
+  },
+
   haptic(kind) {
-    const run = kind === "light"
+    const run = kind === "selection" ? Haptics.selectionChanged()
+      : kind === "heavy" ? Haptics.impact({ style: ImpactStyle.Heavy })
+      : kind === "light"
       ? Haptics.impact({ style: ImpactStyle.Light })
       : Haptics.notification({ type: kind === "success" ? NotificationType.Success : NotificationType.Warning });
 

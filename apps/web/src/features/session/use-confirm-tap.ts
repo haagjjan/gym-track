@@ -1,5 +1,7 @@
 "use client";
 
+import { haptic } from "../../shared/platform/native";
+
 import { useEffect, useRef, useState } from "react";
 
 /**
@@ -32,6 +34,7 @@ export function useConfirmTap(action: () => void, windowMs = 2600): {
       return;
     }
 
+    haptic("light");
     setIsArmed(true);
     timeoutRef.current = window.setTimeout(() => setIsArmed(false), windowMs);
   }

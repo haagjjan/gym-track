@@ -1,5 +1,7 @@
 "use client";
 
+import { haptic } from "../../shared/platform/native";
+
 import type { ReactNode } from "react";
 import { Button } from "../../shared/ui/button";
 import { IconCheck24 } from "../../shared/ui/icons";
@@ -22,7 +24,7 @@ export function SessionBottomBar({
   /** The example workout runs inside the app shell, so it sits above the tab bar. */
   aboveTabBar?: boolean;
 }): ReactNode {
-  const confirmEnd = useConfirmTap(onEnd);
+  const confirmEnd = useConfirmTap(() => { haptic("success"); onEnd(); });
 
   return (
     <div className={`sticky z-30 mt-6 border-t border-line bg-bg px-4 pt-3 ${aboveTabBar ? "bottom-[calc(var(--tabbar-height)+env(safe-area-inset-bottom))] pb-3 lg:bottom-0" : "bottom-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]"}`}>
