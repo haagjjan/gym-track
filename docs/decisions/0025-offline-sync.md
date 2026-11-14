@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed, 2026-11-10. The owner reviews this decision before the native offline
+Proposed, 2026-11-10; offline window, retention and rollout stages added 2026-11-14. The owner reviews this decision before the native offline
 implementation. Time and cardio storage may adopt the ID and revision rules now.
 
 ## Context
@@ -42,6 +42,13 @@ owner, entity or payload is rejected without exposing another owner's receipt.
 
 Retention of tombstones and operation receipts must exceed the supported offline
 window; that window and expiry recovery are a prerequisite of the native build.
+
+Proposed values (2026-11-14, for the owner's review): the supported offline window is
+30 days. Tombstones and operation receipts are kept for 90 days. An outbox item older
+than 30 days is not replayed silently: the app keeps the local data, marks the workout
+"not synced", and offers to send it again as new entries or to export it. A device that
+last synced more than 90 days ago discards its read cache and downloads a fresh snapshot
+before replaying anything.
 
 Outbox items are ordered by parent dependencies: workout, exercise occurrence,
 then sets or cardio. Operations on one entity form a durable chain (create →
@@ -92,6 +99,19 @@ The web remains online-only until a separate decision changes its rendering
 model. This ADR adds no service worker, local database dependency, token scheme,
 native plugin, deployment change or background-execution guarantee. Those stay
 behind the mobile spike and their own gates.
+
+## Rollout stages
+
+1. **Spike (branch `mobile/app`).** The app queues set creates and session-exercise
+   creates only. They replay through the existing endpoints with the client mutation IDs
+   of ADR 0014, so no server change is needed. Edits, deletes and reorders need a
+   connection and say so. A read cache lets the active workout, the exercise catalog and
+   templates open without a network.
+2. **Full protocol.** Revisions, receipts, tombstones and the sync cursor, in one
+   coordinated release for every writer, as described above.
+
+Stage 1 is the offline behaviour of the first store build unless stage 2 is finished
+first. It must not be described to users as full offline support.
 
 ## Consequences and verification gates
 
