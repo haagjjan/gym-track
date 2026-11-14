@@ -98,6 +98,9 @@ Stage 1 of ADR 0025:
 
 - The app opens without a network when a session is stored, using the last confirmed user.
 - Screens show the last answers the API gave (kept on the device for up to 30 days).
+- While the API does not answer, the app counts as offline: refreshes pause instead of
+  failing, and resume when a request gets through again. The WebView's own online flag is
+  not trusted; it can stay on in airplane mode.
 - A set logged without a connection is kept in an outbox and sent when the phone is back
   online, with the same mutation ID, so it cannot be stored twice.
 - Editing or deleting a set, reordering, adding an exercise, and starting or finishing a

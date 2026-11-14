@@ -188,6 +188,17 @@ describe("apiRequest", () => {
     assert.deepEqual(failures, ["save", "clear"]);
   });
 
+  it("reports whether the API could be reached", async () => {
+    const reachable: boolean[] = [];
+    configureAppTransport({ apiOrigin: ORIGIN, appVersion: "1.0.0", tokenStore: memoryStore("stored-token"), onReachabilityChange: (value) => { reachable.push(value); } });
+    globalThis.fetch = (async () => { throw new TypeError("Failed to fetch"); }) as typeof fetch;
+    await assert.rejects(apiRequest("/api/workouts"));
+    stubFetch(() => json(503, { error: { code: "UNAVAILABLE" } }));
+    await apiRequest("/api/workouts");
+
+    assert.deepEqual(reachable, [false, true]);
+  });
+
   it("reports a required update and keeps the session", async () => {
     const store = memoryStore("stored-token");
     let updates = 0;

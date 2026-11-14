@@ -29,6 +29,8 @@ export interface AppTransportConfig {
   onSessionChange?: (event: SessionEvent) => void;
   /** The API no longer serves this app version. */
   onUpdateRequired?: () => void;
+  /** Whether the last request reached the API at all (any response counts). */
+  onReachabilityChange?: (reachable: boolean) => void;
   /**
    * The device's secure storage refused a write. After a failed "save" the session
    * lasts until the app closes; after a failed "clear" the store must drop the
@@ -110,11 +112,23 @@ export async function apiRequest(url: string, init: RequestInit = {}): Promise<R
   }
 
   // Cookies play no part in the app: the API ignores them on app requests.
-  const response = await fetch(appApiUrl(url, current.config.apiOrigin), {
-    ...init,
-    headers,
-    credentials: "omit"
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(appApiUrl(url, current.config.apiOrigin), {
+      ...init,
+      headers,
+      credentials: "omit"
+    });
+  } catch (error) {
+    if (!(error instanceof DOMException && error.name === "AbortError")) {
+      current.config.onReachabilityChange?.(false);
+    }
+
+    throw error;
+  }
+
+  current.config.onReachabilityChange?.(true);
 
   if (response.status === 426) {
     current.config.onUpdateRequired?.();

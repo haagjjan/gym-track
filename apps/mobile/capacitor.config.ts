@@ -9,6 +9,9 @@ const config: CapacitorConfig = {
   appName: "GymTrack",
   webDir: "out",
   backgroundColor: "#0b0d10",
+  // Plugin calls are logged with their results, which include the session token.
+  // Only emulator builds may log.
+  loggingBehavior: dev ? "debug" : "none",
   plugins: {
     SystemBars: { insetsHandling: "native" },
     Keyboard: { resizeOnFullScreen: true }

@@ -1,4 +1,5 @@
 import { Capacitor } from "@capacitor/core";
+import { onlineManager } from "@tanstack/react-query";
 import { configureAppTransport } from "../../web/src/shared/api/transport";
 import { setNativeBridge } from "../../web/src/shared/platform/native";
 import { appConfig } from "./config";
@@ -33,6 +34,12 @@ if (typeof window !== "undefined") {
       if (event === "expired") {
         window.location.replace("/login/");
       }
+    },
+    // A WebView can report "online" in airplane mode. What counts is whether the API
+    // answers: while it does not, queries pause and keep showing the stored answers
+    // instead of failing (ADR 0025, stage 1).
+    onReachabilityChange: (reachable) => {
+      onlineManager.setOnline(reachable);
     },
     onStorageError: (operation) => {
       console.warn(`Secure storage ${operation} failed.`);

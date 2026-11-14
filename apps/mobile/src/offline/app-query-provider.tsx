@@ -8,6 +8,26 @@ const CACHE_KEY = "gymtrack.app.query-cache.v1";
 const MAX_CACHE_BYTES = 3_000_000;
 const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 const SAVE_DELAY_MS = 1_000;
+// In-memory lifetime of unused answers. Must stay below the 2^31 ms timer limit,
+// or the timer fires at once and the restored cache is dropped.
+const MEMORY_LIFETIME_MS = 24 * 60 * 60 * 1000;
+/**
+ * Query families kept on the device: what the logger, launcher, History and the
+ * tab roots need to open. The full exercise search results are left out; they are
+ * large and adding an exercise needs a connection anyway.
+ */
+const KEPT_QUERIES = new Set([
+  "workouts",
+  "workouts-infinite",
+  "workout",
+  "workout-templates",
+  "workout-template",
+  "exercise-options",
+  "muscle-groups",
+  "user-preferences",
+  "completed-exercises",
+  "weekly-volume"
+]);
 
 function clearReadCache(): void {
   try {
@@ -31,7 +51,16 @@ function restore(client: QueryClient): void {
 
 function save(client: QueryClient): void {
   try {
-    const state = dehydrate(client, { shouldDehydrateQuery: (query) => query.state.status === "success" });
+    // Keep every answer that has data, also when its latest refresh failed: an
+    // offline start must not wipe what the last online run stored.
+    const state = dehydrate(client, {
+      shouldDehydrateQuery: (query) => query.state.data !== undefined && KEPT_QUERIES.has(String(query.queryKey[0]))
+    });
+
+    for (const query of state.queries) {
+      query.state = { ...query.state, status: "success", error: null, fetchStatus: "idle", fetchFailureCount: 0, fetchFailureReason: null };
+    }
+
     const serialized = JSON.stringify({ savedAt: Date.now(), state });
 
     if (serialized.length <= MAX_CACHE_BYTES) {
@@ -52,7 +81,7 @@ export function AppQueryProvider({ children }: { children: ReactNode }): ReactNo
   const [client] = useState(() => {
     const created = new QueryClient({
       defaultOptions: {
-        queries: { retry: 1, staleTime: 15_000, gcTime: MAX_AGE_MS, refetchOnWindowFocus: false },
+        queries: { retry: 1, staleTime: 15_000, gcTime: MEMORY_LIFETIME_MS, refetchOnWindowFocus: false },
         mutations: { networkMode: "always" }
       }
     });
@@ -66,13 +95,22 @@ export function AppQueryProvider({ children }: { children: ReactNode }): ReactNo
 
   useEffect(() => {
     let timer: number | undefined;
+    // Throttled, not debounced: a busy cache must not postpone the save forever.
     const unsubscribe = client.getQueryCache().subscribe(() => {
-      window.clearTimeout(timer);
-      timer = window.setTimeout(() => save(client), SAVE_DELAY_MS);
+      timer ??= window.setTimeout(() => {
+        timer = undefined;
+        save(client);
+      }, SAVE_DELAY_MS);
     });
+    const saveNow = (): void => {
+      if (document.visibilityState === "hidden") save(client);
+    };
+
+    document.addEventListener("visibilitychange", saveNow);
 
     return () => {
       window.clearTimeout(timer);
+      document.removeEventListener("visibilitychange", saveNow);
       unsubscribe();
     };
   }, [client]);
