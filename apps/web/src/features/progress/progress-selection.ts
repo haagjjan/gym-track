@@ -1,6 +1,10 @@
 import type { ExerciseProgressItem } from "../../shared/api/types";
 
 export type ChartWindow = "7" | "30" | "90" | "all";
+export const progressTimeWindows: { label: string; value: ChartWindow }[] = [
+  { label: "1W", value: "7" }, { label: "1M", value: "30" },
+  { label: "3M", value: "90" }, { label: "Max", value: "all" }
+];
 export type ChartMode = "loadReps" | "estimated";
 
 export function windowStart(window: ChartWindow, now = Date.now()): number | null {
@@ -33,7 +37,7 @@ export function selectBestWorkingSets(
   );
 }
 
-function localDayKey(value: string): string {
+export function localDayKey(value: string): string {
   const date = new Date(value);
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }

@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react";
 import { Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
-import type { ChartRow } from "./progress-chart-data";
 
 /**
  * The plot takes the height the screen has left over: never shorter than a
@@ -16,11 +15,11 @@ export const Y_AXIS_WIDTH = 36;
  * A y-axis pinned over the scrolling plot so its values stay readable. Its
  * ticks take the series color, so each axis reads as "this line's scale".
  */
-export function PinnedAxis({ color, dataKey, rows, side }: { color: string; dataKey: "weight" | "reps" | "est1rm"; rows: ChartRow[]; side: "left" | "right" }): ReactNode {
+export function PinnedAxis({ color, dataKey, rows, side, formatValue, width = Y_AXIS_WIDTH }: { color: string; dataKey: string; rows: object[]; side: "left" | "right"; formatValue?: ((value: number) => string) | undefined; width?: number }): ReactNode {
   return (
-    <div aria-hidden className={`pointer-events-none absolute inset-y-0 z-10 bg-surface ${side === "left" ? "left-0" : "right-0"}`} style={{ width: Y_AXIS_WIDTH }}>
+    <div aria-hidden className={`pointer-events-none absolute inset-y-0 z-10 bg-surface ${side === "left" ? "left-0" : "right-0"}`} style={{ width }}>
       <ResponsiveContainer height="100%" width="100%">
-        <LineChart data={rows} margin={{ top: 8, right: 0, bottom: 4, left: 0 }}>
+        <LineChart accessibilityLayer={false} data={rows} margin={{ top: 8, right: 0, bottom: 4, left: 0 }}>
           <XAxis axisLine={false} dataKey="time" height={X_AXIS_HEIGHT} tick={false} tickLine={false} type="number" />
           <YAxis
             allowDecimals={dataKey !== "reps"}
@@ -28,8 +27,9 @@ export function PinnedAxis({ color, dataKey, rows, side }: { color: string; data
             orientation={side}
             stroke={color}
             tick={{ fill: color, fontSize: 12, fontWeight: 600 }}
+            {...(formatValue ? { tickFormatter: formatValue } : {})}
             tickLine={false}
-            width={Y_AXIS_WIDTH}
+            width={width}
             yAxisId={side}
           />
           <Line dataKey={dataKey} dot={false} isAnimationActive={false} stroke="none" yAxisId={side} />

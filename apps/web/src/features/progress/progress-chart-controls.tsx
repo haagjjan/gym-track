@@ -20,11 +20,18 @@ export function ProgressChartControls({ mode, onModeChange, onViewChange, view }
   return (
     <div className="relative flex items-center gap-1 px-1">
       <div className="min-w-0 flex-1"><Segmented label="Chart mode" onChange={onModeChange} options={modes} value={mode} /></div>
-      <InfoHint label="How estimated 1RM is calculated">
+      <ProgressInfoHint label="How estimated 1RM is calculated">
         <span className="block">Estimated 1RM projects the weight you could lift once from a working set. It becomes less reliable at high rep counts.</span>
         <span className="num mt-1 block text-text">e1RM = weight × (1 + reps ÷ 30)</span>
         <span className="mt-2 block text-text-muted">This is a calculation from sets you already recorded, not a recommendation to attempt that lift.</span>
-      </InfoHint>
+      </ProgressInfoHint>
+      <ProgressChartViewToggle view={view} onViewChange={onViewChange} />
+    </div>
+  );
+}
+
+export function ProgressChartViewToggle({ view, onViewChange }: { view: "chart" | "table"; onViewChange: (view: "chart" | "table") => void }): ReactNode {
+  return (
       <button
         aria-label={view === "chart" ? "Show as table" : "Show as chart"}
         className="flex size-11 shrink-0 items-center justify-center rounded-full text-text-secondary active:bg-surface-raised"
@@ -33,7 +40,6 @@ export function ProgressChartControls({ mode, onModeChange, onViewChange, view }
       >
         {view === "chart" ? <IconTable /> : <IconTrend />}
       </button>
-    </div>
   );
 }
 
@@ -77,7 +83,7 @@ function SeriesChip({ colorClass, isActive, label, onClick, reverse = false, tex
   );
 }
 
-function InfoHint({ children, label }: { children: ReactNode; label: string }): ReactNode {
+export function ProgressInfoHint({ children, label }: { children: ReactNode; label: string }): ReactNode {
   const [open, setOpen] = useState(false);
 
   return (
