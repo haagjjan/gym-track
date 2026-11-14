@@ -1,5 +1,7 @@
 "use client";
 
+import { primaryMuscleName } from "../../shared/exercise-muscles";
+
 import { useExtendedTracking } from "../../shared/extended-tracking";
 import type { TrackingModeFilterValue } from "../../shared/api/catalog-hooks";
 import { TrackingModeFilter } from "./tracking-mode-filter";
@@ -137,5 +139,5 @@ function ExerciseResult({ exercise, isSubmitting, onSelect, selected, selectionM
 }
 
 function primaryMuscle(exercise: Exercise): string {
-  return exercise.muscleGroups.find((muscle) => muscle.role === "PRIMARY")?.name ?? "Other";
+  return primaryMuscleName(exercise);
 }

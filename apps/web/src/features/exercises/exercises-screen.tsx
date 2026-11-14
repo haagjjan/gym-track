@@ -1,5 +1,7 @@
 "use client";
 
+import { primaryMuscleName } from "../../shared/exercise-muscles";
+
 import { useExtendedTracking } from "../../shared/extended-tracking";
 import type { TrackingModeFilterValue } from "../../shared/api/catalog-hooks";
 import { TrackingModeFilter } from "./tracking-mode-filter";
@@ -111,6 +113,6 @@ function ReadOnlyInfo({ exerciseId, system }: { exerciseId: string; system: bool
   return <span className="shrink-0 px-3 text-footnote text-text-muted" id={`read-only-help-${exerciseId}`}>{system ? "Built in" : "Shared"}</span>;
 }
 
-function sortGroup(exercise: Exercise, sort: string): string { if (sort === "muscle") return exercise.primaryMuscleGroups[0]?.name ?? "Other"; if (sort === "equipment") return exercise.equipment ?? "Unspecified"; if (sort === "type") return exercise.exerciseType ?? "Unspecified"; return ""; }
+function sortGroup(exercise: Exercise, sort: string): string { if (sort === "muscle") return primaryMuscleName(exercise); if (sort === "equipment") return exercise.equipment ?? "Unspecified"; if (sort === "type") return exercise.exerciseType ?? "Unspecified"; return ""; }
 function displayLabel(value: string): string { return value.charAt(0).toUpperCase() + value.slice(1); }
 function ExerciseSkeleton(): ReactNode { return <div className="space-y-2"><Skeleton className="h-[3.75rem]" /><Skeleton className="h-[3.75rem]" /><Skeleton className="h-[3.75rem]" /></div>; }

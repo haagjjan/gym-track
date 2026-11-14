@@ -1,9 +1,10 @@
+import { exerciseMuscles } from "../../shared/exercise-muscles";
 import type { ReactNode } from "react";
 import type { Exercise } from "../../shared/api/types";
 
-export function ExerciseMuscleBadges({ exercise }: { exercise: Pick<Exercise, "muscleGroups" | "trackingMode"> }): ReactNode {
-  const primary = exercise.muscleGroups.filter((muscle) => muscle.role === "PRIMARY").map((muscle) => muscle.name);
-  const secondary = exercise.muscleGroups.filter((muscle) => muscle.role === "SECONDARY").map((muscle) => muscle.name);
+export function ExerciseMuscleBadges({ exercise }: { exercise: Pick<Exercise, "muscleGroups" | "muscleRegions" | "trackingMode"> }): ReactNode {
+  const primary = exerciseMuscles(exercise).filter((muscle) => muscle.role === "PRIMARY").map((muscle) => muscle.name);
+  const secondary = exerciseMuscles(exercise).filter((muscle) => muscle.role === "SECONDARY").map((muscle) => muscle.name);
   const tracked = exercise.trackingMode === "time" ? "Logged by time" : exercise.trackingMode === "cardio" ? "Cardio" : null;
   if (primary.length === 0 && secondary.length === 0 && !tracked) return null;
 

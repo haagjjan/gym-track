@@ -166,7 +166,7 @@ export function ActiveExercisePanel(props: ActiveExercisePanelProps): ReactNode 
 }
 
 function muscleList(exercise: SessionExercise): string {
-  const names = (exercise.exercise.primaryMuscleGroups ?? [exercise.exercise.primaryMuscleGroup]).map((muscle) => muscle.name);
+  const names = (exercise.exercise.muscleRegions?.filter((region) => region.role === "PRIMARY") ?? exercise.exercise.primaryMuscleGroups ?? [exercise.exercise.primaryMuscleGroup]).map((muscle) => muscle.name);
   if (names.length <= 1) return names[0] ?? "";
   return `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
 }
