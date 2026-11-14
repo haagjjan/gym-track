@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { apiFetch } from "../../shared/api/client";
+import { ExternalLink } from "../../shared/ui/external-link";
 import { Skeleton } from "../../shared/ui/ui";
 
 interface InboxMessage {
@@ -27,7 +28,7 @@ export function MessageInbox(): ReactNode {
             <span className="shrink-0 text-footnote text-text-secondary">{message.respondedAt ? "Answered" : message.dismissedAt ? "Dismissed" : message.shownAt ? "Seen" : "New"}</span>
           </div>
           <p className="mt-1 whitespace-pre-wrap break-words text-subhead text-text-secondary">{message.body}</p>
-          {message.actionUrl ? <a className="inline-flex min-h-11 items-center break-all text-body text-accent" href={message.actionUrl} rel="noreferrer" target="_blank">Open related link</a> : null}
+          {message.actionUrl ? <ExternalLink className="inline-flex min-h-11 items-center break-all text-body text-accent" href={message.actionUrl}>Open related link</ExternalLink> : null}
         </li>
       ))}
     </ul>

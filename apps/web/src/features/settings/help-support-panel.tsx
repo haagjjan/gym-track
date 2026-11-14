@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { ExternalLink } from "../../shared/ui/external-link";
 import { IconForward } from "../../shared/ui/icons";
 import { Group } from "./settings-ui";
 
@@ -21,10 +22,10 @@ export function HelpSupportPanel({ supportUrl }: { supportUrl?: string | undefin
         <SettingsLink href="/cookies">Cookies and storage</SettingsLink>
         <SettingsLink href="/terms">Terms</SettingsLink>
         {supportUrl ? (
-          <a className={rowClass} href={supportUrl} rel="noreferrer" target="_blank">
+          <ExternalLink className={rowClass} href={supportUrl}>
             <span className="min-w-0">Support the project<span className="block text-footnote text-text-secondary">Voluntary, with no extra access or priority. The external provider’s terms apply.</span></span>
             <IconForward aria-hidden className="shrink-0 text-text-muted" />
-          </a>
+          </ExternalLink>
         ) : null}
       </Group>
     </nav>
