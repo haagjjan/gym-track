@@ -6,6 +6,7 @@ import { useEffect, useId, useRef, useState, type FormEvent, type MouseEvent, ty
 import { Button } from "../../shared/ui/button";
 import { ApiError, apiFetch } from "../../shared/api/client";
 import { PUBLIC_PRIVACY_VERSION, PUBLIC_TERMS_VERSION } from "../../shared/public-policy";
+import { readSignupConsent, signupConsentError } from "./signup-consent";
 
 /**
  * Reading the Terms or Privacy notice from signup leaves this page, which would
@@ -101,11 +102,19 @@ export function AuthScreen({
     };
 
     if (mode === "signup") {
+      // The form sets noValidate, so this is the only check of the two boxes.
+      const consent = readSignupConsent(formData);
+      const missingConsent = signupConsentError(consent);
+
+      if (missingConsent) {
+        setFormError(missingConsent);
+        return;
+      }
+
       body.email = String(formData.get("email") ?? "").trim();
-      // The form only submits once both required checkboxes are ticked.
       body.termsVersion = PUBLIC_TERMS_VERSION;
       body.privacyVersion = PUBLIC_PRIVACY_VERSION;
-      body.adultAttested = true;
+      body.adultAttested = consent.adult;
     }
 
     setIsPending(true);

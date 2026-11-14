@@ -32,6 +32,16 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   await page.getByLabel(/Email address/i).fill(`${username}@example.com`);
   await page.getByLabel(/^Username$/i).fill(username);
   await page.getByLabel(/^Password \(at least 10 characters\)$/i).fill(password);
+  // Unticked consent must never reach the API: the form claims only what the user ticked.
+  let signupRequests = 0;
+  const countSignup = (request: { url(): string; method(): string }): void => {
+    if (request.method() === "POST" && request.url().endsWith("/api/auth/signup")) signupRequests += 1;
+  };
+  page.on("request", countSignup);
+  await page.getByRole("button", { name: "CREATE ACCOUNT" }).click();
+  await expect(page.getByRole("alert").filter({ hasText: /at least 18/i })).toBeVisible();
+  expect(signupRequests).toBe(0);
+  page.off("request", countSignup);
   await page.getByLabel(/at least 18 and live in Switzerland/i).check();
   await page.getByLabel(/I accept the Terms/i).check();
   await page.getByRole("button", { name: "CREATE ACCOUNT" }).click();
