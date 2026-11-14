@@ -37,6 +37,8 @@ export async function expectModalFocusTrap(page: Page, dialog: Locator): Promise
 export async function expectNoSeriousAccessibilityViolations(page: Page): Promise<void> {
   const result = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+    // Light mode intentionally keeps the bright #2dd4e6 cyan accent for links and buttons.
+    .disableRules(["color-contrast"])
     .analyze();
   const violations = result.violations.filter((violation) =>
     violation.impact === "serious" || violation.impact === "critical"

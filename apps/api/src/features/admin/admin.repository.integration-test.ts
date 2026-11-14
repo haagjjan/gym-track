@@ -82,14 +82,16 @@ describe("administrator containment repository", {
   it("counts accounts exactly and reports per-account activity", async () => {
     const now = new Date();
     // Other integration files run in parallel against the same database and may
-    // create users at any moment, so bracket the overview between two counts.
-    const countUsers = async () => Number((await db.selectFrom("users")
-      .select((eb) => eb.fn.countAll<string>().as("count")).executeTakeFirstOrThrow()).count);
-    const before = await countUsers();
-    const overview = await repository.getOverview(now);
-    const after = await countUsers();
-    assert.ok(overview.totalAccounts >= before && overview.totalAccounts <= after,
-      `admin counts are exact, not thresholded (${before} <= ${overview.totalAccounts} <= ${after})`);
+    // create or erase users at any moment, so read the count and overview in one
+    // repeatable-read snapshot.
+    const { expected, overview } = await db.transaction().setIsolationLevel("repeatable read").execute(async (trx) => {
+      const countRow = await trx.selectFrom("users")
+        .select((eb) => eb.fn.countAll<string>().as("count")).executeTakeFirstOrThrow();
+      const snapshotOverview = await createAdminRepository(trx).getOverview(now);
+      return { expected: Number(countRow.count), overview: snapshotOverview };
+    });
+    assert.equal(overview.totalAccounts, expected,
+      `admin counts are exact, not thresholded (${overview.totalAccounts} === ${expected})`);
     assert.ok(overview.unverifiedEmails >= 1, "the unverified test admin is counted");
     const member = (await repository.listUsers(now)).find((user) => user.id === targetId);
     assert.ok(member);
