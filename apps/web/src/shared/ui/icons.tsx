@@ -159,3 +159,31 @@ export function IconMinus24(props: SVGProps<SVGSVGElement>): ReactNode {
 export function IconAlert(props: SVGProps<SVGSVGElement>): ReactNode {
   return <Icon24 {...props}><circle cx="12" cy="12" r="8.5" /><path d="M12 8v4.5M12 16h.01" /></Icon24>;
 }
+
+export function IconSun(props: SVGProps<SVGSVGElement>): ReactNode {
+  return (
+    <Icon24 {...props}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2.5v2M12 19.5v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2.5 12h2M19.5 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+    </Icon24>
+  );
+}
+
+export function IconMoon(props: SVGProps<SVGSVGElement>): ReactNode {
+  return (
+    <Icon24 {...props}>
+      <path d="M20 14.2A7.8 7.8 0 0 1 9.8 4a8 8 0 1 0 10.2 10.2z" />
+    </Icon24>
+  );
+}
+
+export function IconThemeSystem(props: SVGProps<SVGSVGElement>): ReactNode {
+  return (
+    <Icon24 {...props}>
+      <path d="M4.5 19.5 19.5 4.5" />
+      <path d="M8.82 15.18a4.5 4.5 0 0 1 6.36-6.36" />
+      <path d="M12 4.2v1.6M6.5 6.5l1.1 1.1M4.2 12h1.6" />
+      <path d="M20.5 16.7a4.1 4.1 0 0 1-5.1-5.1 4.4 4.4 0 1 0 5.1 5.1z" />
+    </Icon24>
+  );
+}
