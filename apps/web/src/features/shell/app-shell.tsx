@@ -29,7 +29,7 @@ import { OnboardingInvitation } from "../onboarding/onboarding-invitation";
 import { MessageCenter } from "../messages/message-center";
 import { StatusBarScrim } from "../../shared/ui/status-bar-scrim";
 import { formatElapsed } from "../../shared/format";
-import { workoutHref } from "../../shared/platform/routes";
+import { normalizePathname, workoutHref } from "../../shared/platform/routes";
 
 type IconComponent = (props: SVGProps<SVGSVGElement>) => ReactNode;
 
@@ -81,7 +81,7 @@ export function AppShell({
   user: AuthUser;
   demo?: boolean;
 }): ReactNode {
-  const pathname = usePathname();
+  const pathname = normalizePathname(usePathname());
   const tab = activeTab(pathname, demo);
   const pushed = !demo && !isTabRoot(pathname);
   const openWorkout = useOpenWorkout(!demo);

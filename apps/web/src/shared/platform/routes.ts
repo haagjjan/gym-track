@@ -24,3 +24,11 @@ export function demoWorkoutHref(workoutId: string, app = isAppRuntime()): string
 
   return app ? `/help/demo/history/?workout=${id}` : `/help/demo/history/${id}`;
 }
+
+/**
+ * The static export serves every route with a trailing slash. Screens compare
+ * against the plain form, so normalise before comparing.
+ */
+export function normalizePathname(pathname: string): string {
+  return pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
+}
