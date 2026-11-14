@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyReply } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { noopEventTracker } from "../../shared/events.js";
 import { sendValidationError } from "../../shared/http-validation.js";
 import { registerAuthActionRoutes } from "./auth-action.routes.js";
@@ -9,7 +9,8 @@ import {
   type AuthRouteOptions
 } from "./auth-route-config.js";
 import { loginRequestSchema, signupRequestSchema } from "./auth.schemas.js";
-import type { AuthenticatedUser } from "./auth.service.js";
+import type { AuthenticatedUser, PublicUser } from "./auth.service.js";
+import { isMobileClient, sessionTokenFrom } from "./mobile-client.js";
 
 export async function registerAuthRoutes(
   server: FastifyInstance,
@@ -50,12 +51,8 @@ export async function registerAuthRoutes(
       }
 
       events.track("user_signed_up", result.value.user.id);
-      setSessionCookie(reply, options.cookie, result.value);
-
       return reply.status(201).send({
-        data: {
-          user: result.value.user
-        }
+        data: startSession(request, reply, options.cookie, result.value)
       });
     }
   );
@@ -93,23 +90,22 @@ export async function registerAuthRoutes(
     }
 
     events.track("user_logged_in", result.value.user.id);
-    setSessionCookie(reply, options.cookie, result.value);
-
     return reply.send({
-      data: {
-        user: result.value.user
-      }
+      data: startSession(request, reply, options.cookie, result.value)
     });
   });
 
   server.post("/api/v1/auth/logout", async (request, reply) => {
-    await options.service.logout(request.cookies[options.cookie.name]);
-    reply.clearCookie(options.cookie.name, {
-      httpOnly: true,
-      path: "/",
-      sameSite: "lax",
-      secure: options.cookie.secure
-    });
+    await options.service.logout(sessionTokenFrom(request, options.cookie.name));
+
+    if (!isMobileClient(request)) {
+      reply.clearCookie(options.cookie.name, {
+        httpOnly: true,
+        path: "/",
+        sameSite: "lax",
+        secure: options.cookie.secure
+      });
+    }
 
     return reply.send({
       data: {
@@ -119,7 +115,7 @@ export async function registerAuthRoutes(
   });
 
   server.get("/api/v1/auth/me", async (request, reply) => {
-    const result = await options.service.currentUser(request.cookies[options.cookie.name]);
+    const result = await options.service.currentUser(sessionTokenFrom(request, options.cookie.name));
 
     if (!result.ok) {
       return reply.status(401).send({
@@ -138,6 +134,35 @@ export async function registerAuthRoutes(
   });
 
   registerAuthActionRoutes(server, options);
+}
+
+interface SessionStartPayload {
+  user: PublicUser;
+  sessionToken?: string;
+  expiresAt?: string;
+}
+
+/**
+ * The web gets the session as an HttpOnly cookie. The mobile app gets the token in
+ * the body instead and keeps it in the device's secure storage (ADR 0023).
+ */
+function startSession(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  options: AuthCookieOptions,
+  authenticated: AuthenticatedUser
+): SessionStartPayload {
+  if (isMobileClient(request)) {
+    return {
+      user: authenticated.user,
+      sessionToken: authenticated.sessionToken,
+      expiresAt: authenticated.expiresAt.toISOString()
+    };
+  }
+
+  setSessionCookie(reply, options, authenticated);
+
+  return { user: authenticated.user };
 }
 
 function setSessionCookie(

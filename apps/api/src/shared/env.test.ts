@@ -24,6 +24,8 @@ describe("readEnv", () => {
       EMAIL_FROM: "Gym Progress Tracker <onboarding@resend.dev>",
       LOG_LEVEL: "info",
       ENABLE_EXTENDED_TRACKING: false,
+      ENABLE_MOBILE_TOKEN_AUTH: false,
+      MOBILE_APP_ORIGINS: ["capacitor://localhost", "https://localhost"],
       METRICS_ENABLED: false,
       NODE_ENV: "development",
       REGISTRATION_MODE: "ENABLED"

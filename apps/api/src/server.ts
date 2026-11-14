@@ -52,6 +52,7 @@ import { registerApiMetrics, type ApiMetricsOptions } from "./shared/metrics.js"
 import { createRateLimitResponse } from "./shared/rate-limit-response.js";
 import { createRequestId, registerApiRequestLogging } from "./shared/request-logging.js";
 import { trustedClientKey, verifiedClientIp } from "./shared/client-attribution.js";
+import { isMobileClient, registerMobileClient, type MobileClientOptions } from "./features/auth/mobile-client.js";
 import { registerLifecycleScheduler } from "./features/lifecycle/lifecycle-scheduler.js";
 import { createMessageRepository } from "./features/messages/message.repository.js";
 import { registerMessageRoutes } from "./features/messages/message.routes.js";
@@ -89,6 +90,8 @@ export interface ServerExtras {
   /** Shared only by the web BFF and API to authenticate edge-derived client IPs. */
   clientIpSecret?: string;
   supportEmail?: string;
+  /** Bundled mobile app transport (ADR 0023). Off unless set. */
+  mobileClient?: MobileClientOptions;
 }
 
 // One JSON payload should never need more than this; CSV imports are the
@@ -109,10 +112,15 @@ export async function buildServer(
     genReqId: (request) => createRequestId(request.headers["x-request-id"])
   });
   registerApiRequestLogging(server);
+  if (extras.mobileClient) {
+    registerMobileClient(server, extras.mobileClient);
+  } else {
+    server.decorateRequest("mobileClient", false);
+  }
   if (extras.clientIpSecret) {
     server.addHook("onRequest", async (request, reply) => {
       const path = request.url.split("?", 1)[0];
-      if (path === "/api/v1/health" || path === "/api/v1/metrics" || verifiedClientIp(request, extras.clientIpSecret)) {
+      if (path === "/api/v1/health" || path === "/api/v1/metrics" || isMobileClient(request) || verifiedClientIp(request, extras.clientIpSecret)) {
         return;
       }
       return reply.status(403).send({ error: { code: "BFF_REQUIRED", message: "Requests must use the public web application." } });

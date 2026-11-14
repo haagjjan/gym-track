@@ -37,6 +37,9 @@ const rawEnvSchema = z.object({
   EMAIL_RECIPIENT_ALLOWLIST: optionalEnvironmentValue(emailRecipientAllowlistSchema),
   LOG_LEVEL: logLevelSchema.default("info"),
   ENABLE_EXTENDED_TRACKING: z.enum(["true", "false"]).default("false"),
+  ENABLE_MOBILE_TOKEN_AUTH: z.enum(["true", "false"]).default("false"),
+  MOBILE_APP_ORIGINS: z.string().default("capacitor://localhost,https://localhost"),
+  MOBILE_MIN_APP_VERSION: optionalEnvironmentValue(z.string().regex(/^\d{1,5}\.\d{1,5}\.\d{1,5}$/)),
   METRICS_ENABLED: z.enum(["true", "false"]).optional(),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   REGISTRATION_MODE: z.enum(["ENABLED", "DISABLED"]).optional(),
@@ -136,6 +139,8 @@ const envSchema = rawEnvSchema
         : env.AUTH_COOKIE_SECURE === "true",
     EMAIL_FROM: env.EMAIL_FROM ?? "Gym Progress Tracker <onboarding@resend.dev>",
     ENABLE_EXTENDED_TRACKING: env.ENABLE_EXTENDED_TRACKING === "true",
+    ENABLE_MOBILE_TOKEN_AUTH: env.ENABLE_MOBILE_TOKEN_AUTH === "true",
+    MOBILE_APP_ORIGINS: env.MOBILE_APP_ORIGINS.split(",").map((origin) => origin.trim()).filter(Boolean),
     METRICS_ENABLED: env.METRICS_ENABLED === "true",
     REGISTRATION_MODE:
       env.REGISTRATION_MODE ?? (env.NODE_ENV === "production" ? "DISABLED" : "ENABLED")
