@@ -1,5 +1,7 @@
 "use client";
 
+import { haptic } from "../../shared/platform/native";
+
 import { useState, type ReactNode } from "react";
 import { Button } from "../../shared/ui/button";
 import { errorMessage } from "../../shared/api/client";
@@ -12,7 +14,7 @@ import { RirChips, RirLabel, SET_TYPE_LABEL, SetTypeControl } from "./set-compos
 import { Stepper } from "../../shared/ui/stepper";
 import { validateSetDraft } from "./validate-set-draft";
 import { useConfirmTap } from "./use-confirm-tap";
-import { isPendingSetId } from "../../shared/offline/set-outbox";
+import { isWaitingId } from "../../shared/offline/outbox-store";
 
 export function SessionSetRow({
   onEdit,
@@ -26,7 +28,7 @@ export function SessionSetRow({
   const warmup = set.setType === "warmup";
   const edited = isRetroactivelyEdited(set, workoutEndedAt);
   // Logged without a connection in the phone app; it can be edited once it is sent.
-  const waiting = isPendingSetId(set.id);
+  const waiting = isWaitingId(set.id);
 
   return (
     <li>
@@ -88,6 +90,7 @@ export function SetEditor({ isHistorical, isSaving, isDeleting, onSave, onDelete
   const confirmSave = useConfirmTap(save);
 
   function remove(): void {
+    haptic("warning");
     void onDelete().then(onClose).catch((caught) => onError(errorMessage(caught, "Couldn't delete this set. Check your connection and try again.")));
   }
 

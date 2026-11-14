@@ -4,6 +4,7 @@ import { configureAppTransport } from "../../web/src/shared/api/transport";
 import { setNativeBridge } from "../../web/src/shared/platform/native";
 import { appConfig } from "./config";
 import { capacitorBridge } from "./native/bridge";
+import { deviceRemove } from "./offline/device-store";
 import { secureTokenStore } from "./native/token-store";
 import { forgetUser } from "./session/user-cache";
 
@@ -12,7 +13,7 @@ const CACHE_KEY = "gymtrack.app.query-cache.v1";
 /** Another account must never see the previous account's cached answers. */
 function clearReadCache(): void {
   try {
-    window.localStorage.removeItem(CACHE_KEY);
+    deviceRemove(CACHE_KEY);
   } catch {
     // Nothing stored.
   }

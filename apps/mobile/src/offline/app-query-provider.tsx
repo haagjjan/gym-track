@@ -3,6 +3,9 @@
 import "../bootstrap";
 import { dehydrate, hydrate, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
+import { setCatalogStorage } from "../../../web/src/shared/offline/exercise-catalog";
+import { setOutboxStorage } from "../../../web/src/shared/offline/outbox-store";
+import { deviceGet, deviceKey, deviceRemove, deviceSet, deviceStoreReady } from "./device-store";
 
 const CACHE_KEY = "gymtrack.app.query-cache.v1";
 const MAX_CACHE_BYTES = 3_000_000;
@@ -31,7 +34,7 @@ const KEPT_QUERIES = new Set([
 
 function clearReadCache(): void {
   try {
-    window.localStorage.removeItem(CACHE_KEY);
+    deviceRemove(CACHE_KEY);
   } catch {
     // Nothing stored.
   }
@@ -39,7 +42,7 @@ function clearReadCache(): void {
 
 function restore(client: QueryClient): void {
   try {
-    const stored = JSON.parse(window.localStorage.getItem(CACHE_KEY) ?? "null") as { savedAt?: number; state?: unknown } | null;
+    const stored = JSON.parse(deviceGet(CACHE_KEY) ?? "null") as { savedAt?: number; state?: unknown } | null;
 
     if (stored?.state && typeof stored.savedAt === "number" && Date.now() - stored.savedAt < MAX_AGE_MS) {
       hydrate(client, stored.state);
@@ -64,7 +67,7 @@ function save(client: QueryClient): void {
     const serialized = JSON.stringify({ savedAt: Date.now(), state });
 
     if (serialized.length <= MAX_CACHE_BYTES) {
-      window.localStorage.setItem(CACHE_KEY, serialized);
+      deviceSet(CACHE_KEY, serialized);
     }
   } catch {
     // Storage full or blocked: the app still works online.
@@ -78,6 +81,21 @@ function save(client: QueryClient): void {
  * can take over.
  */
 export function AppQueryProvider({ children }: { children: ReactNode }): ReactNode {
+  const [storeOpen, setStoreOpen] = useState(false);
+
+  useEffect(() => {
+    // Nothing reads or writes logged data before the device store is open.
+    void deviceStoreReady().then(() => {
+      setOutboxStorage(deviceKey("gymtrack.workout-outbox.v2"));
+      setCatalogStorage(deviceKey("gymtrack.exercise-catalog.v1"));
+      setStoreOpen(true);
+    });
+  }, []);
+
+  return storeOpen ? <QueryCache>{children}</QueryCache> : null;
+}
+
+function QueryCache({ children }: { children: ReactNode }): ReactNode {
   const [client] = useState(() => {
     const created = new QueryClient({
       defaultOptions: {

@@ -2,8 +2,9 @@
 
 ## Status
 
-Proposed, 2026-11-10; offline window, retention and rollout stages added 2026-11-14. The owner reviews this decision before the native offline
-implementation. Time and cardio storage may adopt the ID and revision rules now.
+Accepted by the owner on 2026-11-14, with the 30-day offline window, the 90-day retention and
+the staged rollout, and with the rule that local data is never deleted because of its age
+(see "Local data is kept"). Proposed 2026-11-10.
 
 ## Context
 
@@ -49,6 +50,20 @@ than 30 days is not replayed silently: the app keeps the local data, marks the w
 "not synced", and offers to send it again as new entries or to export it. A device that
 last synced more than 90 days ago discards its read cache and downloads a fresh snapshot
 before replaying anything.
+
+**Local data is kept (owner decision, 2026-11-14).** The 30 and 90 days limit only how long
+an entry can still be merged automatically. They never delete anything on the phone:
+
+- Everything logged on a device stays in its local store, synced or not, until the user
+  deletes it or signs out after a successful sync.
+- An entry that passed the window stays readable and exportable on the device and can be
+  sent again as new entries.
+- The 90-day refresh replaces only the copy of server data. Unsynced local entries are
+  kept and shown as "not synced".
+- The local store is therefore a durable record, not only a queue. It must live in app
+  storage the system does not clear on its own (SQLite in the app container, not web
+  storage). This is also what a later local-only mode, which never sends data to a server,
+  would build on.
 
 Outbox items are ordered by parent dependencies: workout, exercise occurrence,
 then sets or cardio. Operations on one entity form a durable chain (create →
@@ -107,11 +122,33 @@ behind the mobile spike and their own gates.
    of ADR 0014, so no server change is needed. Edits, deletes and reorders need a
    connection and say so. A read cache lets the active workout, the exercise catalog and
    templates open without a network.
-2. **Full protocol.** Revisions, receipts, tombstones and the sync cursor, in one
-   coordinated release for every writer, as described above.
+2. **Whole workouts offline (built 2026-11-14).** The app queues every change the logger
+   makes: starting a workout (empty or from a template), adding, removing and reordering
+   exercises, adding, editing and deleting sets, renaming, finishing and discarding. The
+   queue is sent in order through the existing endpoints. Things created on the phone
+   carry a local ID until the server answers; creates use the mutation IDs of ADR 0014, so
+   a lost answer cannot create a duplicate. The exercise list is copied to the phone, so
+   exercises can be searched and added offline. The queue, that copy and the cached
+   screens live in SQLite.
 
-Stage 1 is the offline behaviour of the first store build unless stage 2 is finished
-first. It must not be described to users as full offline support.
+   Limits of this stage, accepted by the owner's goal of "train for a week without a
+   connection, then sync":
+   - An edit or delete made offline wins over a change made on another device in the
+     meantime. This is what the online app does today (last write wins); it is only
+     delayed. Revisions (stage 3) remove this.
+   - A workout started from a template offline loses its link to the template.
+   - If another workout is still open on the account, the offline one waits and the app
+     says so. Finishing the open one sends it.
+   - A change the server refuses is kept on the phone and shown with "Try again". It is
+     never dropped silently.
+   - Time sets and cardio entries, creating a new exercise, templates, CSV and settings
+     still need a connection.
+3. **Full protocol.** Revisions, receipts, tombstones and the sync cursor, in one
+   coordinated release for every writer, as described above. Needed before two devices
+   may edit the same workout offline, and before the stores are told "full offline
+   support".
+
+Stage 2 is the offline behaviour of the first store build.
 
 ## Consequences and verification gates
 

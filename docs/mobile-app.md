@@ -4,7 +4,7 @@ How the iOS and Android apps are built and run. Decisions are in
 [ADR 0021](decisions/0021-mobile-app-stack.md) (Capacitor),
 [ADR 0023](decisions/0023-mobile-token-auth.md) (token auth),
 [ADR 0024](decisions/0024-mobile-static-export.md) (build target) and
-[ADR 0025](decisions/0025-offline-sync.md) (offline). ADRs 0023 to 0025 are still proposed.
+[ADR 0025](decisions/0025-offline-sync.md) (offline). ADRs 0023 to 0025 are accepted.
 
 ## What it is
 
@@ -59,12 +59,13 @@ through `shared/api` (`apiFetch` or `apiRequest`).
    adb shell am start -n ch.gymtrack.app/.MainActivity
    ```
 
-4. iOS (simulator, no signing needed):
+4. iOS (simulator). Sign locally (`CODE_SIGN_IDENTITY=-`): an unsigned build cannot write to
+   the Keychain, so the session is lost at every restart.
 
    ```sh
    cd apps/mobile/ios/App
    xcodebuild -project App.xcodeproj -scheme App -configuration Debug -sdk iphonesimulator \
-     -destination 'id=<simulator id>' -derivedDataPath /tmp/gymtrack-ios CODE_SIGNING_ALLOWED=NO build
+     -destination 'id=<simulator id>' -derivedDataPath /tmp/gymtrack-ios CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES build
    xcrun simctl install <simulator id> /tmp/gymtrack-ios/Build/Products/Debug-iphonesimulator/App.app
    xcrun simctl launch <simulator id> ch.gymtrack.app
    ```
@@ -94,20 +95,35 @@ API settings: `ENABLE_MOBILE_TOKEN_AUTH`, `MOBILE_APP_ORIGINS`, `MOBILE_MIN_APP_
 
 ## What works offline
 
-Stage 1 of ADR 0025:
+Stage 2 of ADR 0025:
 
 - The app opens without a network when a session is stored, using the last confirmed user.
 - Screens show the last answers the API gave (kept on the device for up to 30 days).
 - While the API does not answer, the app counts as offline: refreshes pause instead of
   failing, and resume when a request gets through again. The WebView's own online flag is
   not trusted; it can stay on in airplane mode.
-- A set logged without a connection is kept in an outbox and sent when the phone is back
-  online, with the same mutation ID, so it cannot be stored twice.
-- Editing or deleting a set, reordering, adding an exercise, and starting or finishing a
-  workout need a connection.
+- A whole workout can be logged without a connection: start it (empty or from a template),
+  add, remove and reorder exercises, add, edit and delete sets, rename, finish or discard.
+  Each change goes into a queue on the phone (`shared/offline/outbox-*.ts`) and is sent in
+  order when the API answers again (`apps/mobile/src/offline/outbox-sync.tsx`). Creates
+  carry a mutation ID, so nothing is stored twice.
+- Online, with an empty queue, changes go straight to the API as before. A change is queued
+  only when the API is unreachable, when earlier changes are still waiting, or when it is
+  about something that exists only on the phone so far.
+- Screens show the server copy with the queued changes on top
+  (`shared/offline/outbox-overlay.ts`). Sets that have not reached the server are labelled
+  "Waiting to sync". A change the server refuses stays on the phone and shows a notice with
+  "Try again".
+- The exercise list is copied to the phone once a day (`shared/offline/exercise-catalog.ts`),
+  so the picker searches it offline.
+- The queue, the exercise copy, the cached screens and the cached user are stored in a
+  SQLite file in the app's data folder (`apps/mobile/src/offline/device-store.ts`), which
+  the system does not clear. A desktop browser uses web storage instead.
+- Still needing a connection: time sets and cardio, creating a new exercise, templates,
+  CSV, messages, settings and account actions.
 
-The outbox and the read cache use web storage in this stage. ADR 0025 names SQLite as the
-target store.
+Evidence (browser build, API requests blocked): `offline-workout-check.mjs` and
+`offline-edit-check.mjs` in `~/.agents/plans/artifacts/gym-mobile-app/`.
 
 ## Checks
 
@@ -119,12 +135,13 @@ target store.
 
 ## Not built yet
 
-- Production route to the API for phones (see ADR 0023, Consequences). Until then the app
-  cannot reach production.
+- The production route to the API exists in `ops/production` but is not deployed, and the
+  flag is off (ADR 0023).
 - Signing, TestFlight and Play tracks; app icons and splash screens (the projects still
   carry the Capacitor defaults).
 - Push notifications and the rest-timer notification.
 - Universal Links and App Links for emailed links. They open the website.
-- The full sync protocol of ADR 0025.
+- Revisions and conflict handling between two devices (ADR 0025, stage 3).
+- Remote push notifications.
 - Checks on physical phones (3D frame rate and heat, keyboard, gestures).
 - In the app, legal and support pages open the website in the browser sheet.

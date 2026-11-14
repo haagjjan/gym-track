@@ -5,37 +5,43 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState, type ReactNode } from "react";
 import { Button, buttonClass } from "../../shared/ui/button";
 import { ErrorState, Skeleton } from "../../shared/ui/ui";
-import { apiFetch, errorMessage } from "../../shared/api/client";
+import { errorMessage } from "../../shared/api/client";
 import {
   useTemplateMutations,
   useTemplates,
+  useWorkoutMutations,
   useWorkouts
 } from "../../shared/api/hooks";
-import type { WorkoutDetail, WorkoutTemplate } from "../../shared/api/types";
+import type { WorkoutTemplate } from "../../shared/api/types";
 import { formatDayTime } from "../../shared/format";
 import { workoutHref } from "../../shared/platform/routes";
 import { IconForward } from "../../shared/ui/icons";
+
+const OPEN_WORKOUT_MESSAGE = "Finish or discard your open workout before starting a new one.";
 
 export function LaunchScreen(): ReactNode {
   const router = useRouter();
   const workouts = useWorkouts(20);
   const templates = useTemplates();
   const templateMutations = useTemplateMutations();
+  const workoutMutations = useWorkoutMutations();
   const [pendingChoice, setPendingChoice] = useState<string | null>(null);
   const [launchError, setLaunchError] = useState<string | null>(null);
   const items = useMemo(() => workouts.data?.items ?? [], [workouts.data]);
   const activeWorkout = items.find((workout) => workout.isOpen) ?? null;
 
   async function startFromScratch(): Promise<void> {
+    if (activeWorkout) {
+      setLaunchError(OPEN_WORKOUT_MESSAGE);
+      return;
+    }
+
     setPendingChoice("scratch");
     setLaunchError(null);
 
     try {
-      const payload = await apiFetch<{ workout: WorkoutDetail }>("/api/workouts", {
-        method: "POST",
-        body: {}
-      });
-      router.push(workoutHref(payload.workout.id, { focusName: true }));
+      const workout = await workoutMutations.createWorkout.mutateAsync();
+      router.push(workoutHref(workout.id, { focusName: true }));
     } catch (caught) {
       setLaunchError(errorMessage(caught, "Couldn't start the workout. Check your connection and try again."));
       await workouts.refetch();
@@ -44,6 +50,11 @@ export function LaunchScreen(): ReactNode {
   }
 
   async function startFromTemplate(templateId: string): Promise<void> {
+    if (activeWorkout) {
+      setLaunchError(OPEN_WORKOUT_MESSAGE);
+      return;
+    }
+
     setPendingChoice(templateId);
     setLaunchError(null);
 

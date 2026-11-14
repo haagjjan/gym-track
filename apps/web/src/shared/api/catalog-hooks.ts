@@ -2,6 +2,7 @@
 
 import {
   keepPreviousData,
+  onlineManager,
   useInfiniteQuery,
   useMutation,
   useQuery,
@@ -11,6 +12,12 @@ import {
   type UseQueryResult
 } from "@tanstack/react-query";
 import { apiFetch } from "./client";
+import { normalizeExercise } from "./normalize-exercise";
+import { filterCatalog, readCatalog } from "../offline/exercise-catalog";
+import { isConnectionError } from "../offline/outbox-flush";
+import { enqueueOp, newLocalId, outboxUser } from "../offline/outbox-store";
+import { isAppRuntime } from "../platform/runtime";
+import { runOrQueue } from "../offline/use-outbox";
 import { appendExerciseFilters, queryKeys } from "./query-keys";
 import type {
   CreateExerciseInput,
@@ -74,13 +81,33 @@ export function useExercisesInfinite(
   return useInfiniteQuery({
     queryKey: ["exercise-list-infinite", options],
     initialPageParam: 0,
+    // In the phone app this also runs offline and answers from the phone's copy.
+    ...(isAppRuntime() ? { networkMode: "always" as const } : {}),
     queryFn: async ({ pageParam, signal }) => {
       const params = new URLSearchParams({
         limit: String(EXERCISE_PAGE_SIZE),
         offset: String(pageParam)
       });
       appendExerciseFilters(params, options);
-      return apiFetch<ExerciseListPayload>(`/api/exercises?${params}`, { signal });
+      const fromPhone = (): ExerciseListPayload | null => {
+        const catalog = isAppRuntime() ? readCatalog() : null;
+        if (!catalog) return null;
+        const items = filterCatalog(catalog, options, outboxUser());
+        return { items: items.slice(pageParam, pageParam + EXERCISE_PAGE_SIZE), pagination: { total: items.length, limit: EXERCISE_PAGE_SIZE, offset: pageParam } };
+      };
+
+      if (isAppRuntime() && !onlineManager.isOnline()) {
+        const local = fromPhone();
+        if (local) return local;
+      }
+
+      try {
+        return await apiFetch<ExerciseListPayload>(`/api/exercises?${params}`, { signal });
+      } catch (error) {
+        const local = isConnectionError(error) ? fromPhone() : null;
+        if (!local) throw error;
+        return local;
+      }
     },
     getNextPageParam: (lastPage, pages) => {
       const loaded = pages.reduce((total, page) => total + page.items.length, 0);
@@ -214,7 +241,24 @@ export function useTemplateMutations(): TemplateMutations {
   const update = useTemplateMutation(async ({ templateId, ...input }: { templateId: string; name?: string; exerciseIds?: string[] }) => (await apiFetch<{ template: WorkoutTemplate }>(`/api/workout-templates/${templateId}`, { method: "PATCH", body: input })).template);
   const duplicate = useTemplateMutation(async ({ templateId }: { templateId: string }) => (await apiFetch<{ template: WorkoutTemplate }>(`/api/workout-templates/${templateId}/duplicate`, { method: "POST", body: {} })).template);
   const remove = useTemplateMutation(({ templateId }: { templateId: string }) => apiFetch(`/api/workout-templates/${templateId}`, { method: "DELETE" }));
-  const start = useTemplateMutation(async ({ templateId }: { templateId: string }) => (await apiFetch<{ workout: { workoutId: string } }>(`/api/workout-templates/${templateId}/start`, { method: "POST", body: {} })).workout);
+  const start = useTemplateMutation(({ templateId }: { templateId: string }) => runOrQueue(
+    [],
+    async () => (await apiFetch<{ workout: { workoutId: string } }>(`/api/workout-templates/${templateId}/start`, { method: "POST", body: {} })).workout,
+    // Without a connection the phone builds the workout from its copy of the template.
+    (userId) => {
+      const template = queryClient.getQueriesData<WorkoutTemplate[]>({ queryKey: ["workout-templates"] })
+        .flatMap(([, list]) => Array.isArray(list) ? list : [])
+        .find((item) => item.id === templateId);
+      if (!template) throw new Error("Couldn't start this template without a connection.");
+      const workoutId = newLocalId();
+      enqueueOp({ kind: "startWorkout", userId, workoutId, startedAt: new Date().toISOString() });
+      enqueueOp({ kind: "updateWorkout", userId, workoutId, input: { title: template.name } });
+      for (const item of [...template.exercises].sort((left, right) => left.position - right.position)) {
+        enqueueOp({ kind: "addExercise", userId, workoutId, sessionExerciseId: newLocalId(), exercise: normalizeExercise(item.exercise) });
+      }
+      return { workoutId };
+    }
+  ));
   const createFromWorkout = useTemplateMutation(async ({ workoutId, name }: { workoutId: string; name: string }) => (await apiFetch<{ template: WorkoutTemplate }>(`/api/workouts/${workoutId}/templates`, { method: "POST", body: { name } })).template);
   const updateFromWorkout = useTemplateMutation(async ({ templateId, workoutId }: { templateId: string; workoutId: string }) => (await apiFetch<{ template: WorkoutTemplate }>(`/api/workout-templates/${templateId}/from-workout`, { method: "POST", body: { workoutId } })).template);
   return { create, update, duplicate, remove, start, createFromWorkout, updateFromWorkout };
