@@ -4,6 +4,8 @@ import { useMutation, useQueryClient, type UseMutationResult } from "@tanstack/r
 import { apiFetch } from "./client";
 import { useExerciseMutations } from "./catalog-hooks";
 import { queryKeys } from "./query-keys";
+import { enqueueSet, isConnectionError, optimisticSet, type QueuedSet } from "../offline/set-outbox";
+import { isAppRuntime } from "../platform/runtime";
 import type {
   CreateExerciseInput,
   Exercise,
@@ -31,7 +33,7 @@ interface SessionMutations {
   createExercise: UseMutationResult<Exercise, Error, CreateExerciseInput>;
 }
 
-export function useSessionMutations({ workoutId }: { workoutId: string }): SessionMutations {
+export function useSessionMutations({ userId, workoutId }: { userId?: string; workoutId: string }): SessionMutations {
   const queryClient = useQueryClient();
   const exerciseMutations = useExerciseMutations();
   const refresh = (): void => {
@@ -81,8 +83,26 @@ export function useSessionMutations({ workoutId }: { workoutId: string }): Sessi
   });
   const addSet = useMutation({
     mutationFn: async ({ clientMutationId, sessionExerciseId, input }: { clientMutationId: string; sessionExerciseId: string; input: SetInput }) => {
-      const payload = await apiFetch<{ replayed: boolean; set: WorkoutSet }>(`/api/workouts/${workoutId}/exercises/${sessionExerciseId}/sets`, { method: "POST", body: { ...input, clientMutationId } });
-      return payload.set;
+      try {
+        const payload = await apiFetch<{ replayed: boolean; set: WorkoutSet }>(`/api/workouts/${workoutId}/exercises/${sessionExerciseId}/sets`, { method: "POST", body: { ...input, clientMutationId } });
+        return payload.set;
+      } catch (error) {
+        // In the phone app a set logged without a connection is kept on the device
+        // and sent later with the same mutation ID (ADR 0025, stage 1).
+        if (!isAppRuntime() || !userId || !isConnectionError(error)) throw error;
+        const queued: QueuedSet = { clientMutationId, userId, workoutId, sessionExerciseId, input, queuedAt: new Date().toISOString() };
+        enqueueSet(queued);
+        const current = queryClient.getQueryData<WorkoutDetail>(queryKeys.workout(workoutId));
+        const sets = current?.exercises.find((exercise) => exercise.id === sessionExerciseId)?.sets ?? [];
+        const pending = optimisticSet(queued, sets.length + 1);
+        queryClient.setQueryData<WorkoutDetail>(queryKeys.workout(workoutId), (detail) => detail && {
+          ...detail,
+          exercises: detail.exercises.map((exercise) => exercise.id === sessionExerciseId && !exercise.sets.some((set) => set.id === pending.id)
+            ? { ...exercise, sets: [...exercise.sets, pending] }
+            : exercise)
+        });
+        return pending;
+      }
     },
     onSettled: refresh
   });

@@ -129,6 +129,65 @@ describe("apiRequest", () => {
     assert.deepEqual(events, []);
   });
 
+  it("ignores a late 401 from a request sent under an older session", async () => {
+    const store = memoryStore("old-token");
+    const events: string[] = [];
+    configureAppTransport({ apiOrigin: ORIGIN, appVersion: "1.0.0", tokenStore: store, onSessionChange: (event) => { events.push(event); } });
+    let releaseOld: (response: Response) => void = () => undefined;
+    globalThis.fetch = (async (input: RequestInfo | URL) => String(input).endsWith("/workouts")
+      ? new Promise<Response>((resolve) => { releaseOld = resolve; })
+      : json(200, { data: { user: { id: "u1" }, sessionToken: "new-token" } })) as typeof fetch;
+
+    const slow = apiRequest("/api/workouts");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await apiRequest("/api/auth/login", { method: "POST", body: "{}" });
+    releaseOld(json(401, { error: { code: "UNAUTHORIZED" } }));
+    await slow;
+
+    assert.equal(store.value, "new-token");
+    assert.deepEqual(events, ["started"]);
+  });
+
+  it("does not bring a session back when login answers after logout", async () => {
+    const store = memoryStore(null);
+    const events: string[] = [];
+    configureAppTransport({ apiOrigin: ORIGIN, appVersion: "1.0.0", tokenStore: store, onSessionChange: (event) => { events.push(event); } });
+    let releaseLogin: (response: Response) => void = () => undefined;
+    globalThis.fetch = (async (input: RequestInfo | URL) => String(input).endsWith("/auth/login")
+      ? new Promise<Response>((resolve) => { releaseLogin = resolve; })
+      : json(200, { data: { loggedOut: true } })) as typeof fetch;
+
+    const login = apiRequest("/api/auth/login", { method: "POST", body: "{}" });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await apiRequest("/api/auth/logout", { method: "POST" });
+    releaseLogin(json(200, { data: { user: { id: "u1" }, sessionToken: "late-token" } }));
+    await login;
+
+    assert.equal(store.value, null);
+    assert.equal(await hasAppSession(), false);
+    assert.deepEqual(events, ["ended"]);
+  });
+
+  it("reports secure-storage failures instead of hiding them", async () => {
+    const failures: string[] = [];
+    const store: SessionTokenStore = {
+      async load() { return "stored-token"; },
+      async save() { throw new Error("keychain locked"); },
+      async clear() { throw new Error("keychain locked"); }
+    };
+    configureAppTransport({ apiOrigin: ORIGIN, appVersion: "1.0.0", tokenStore: store, onStorageError: (operation) => { failures.push(operation); } });
+    stubFetch((url) => url.endsWith("/auth/login")
+      ? json(200, { data: { user: { id: "u1" }, sessionToken: "fresh-token" } })
+      : json(200, { data: { loggedOut: true } }));
+
+    await apiRequest("/api/auth/login", { method: "POST", body: "{}" });
+    assert.equal(await hasAppSession(), true);
+    await apiRequest("/api/auth/logout", { method: "POST" });
+
+    assert.equal(await hasAppSession(), false);
+    assert.deepEqual(failures, ["save", "clear"]);
+  });
+
   it("reports a required update and keeps the session", async () => {
     const store = memoryStore("stored-token");
     let updates = 0;

@@ -29,11 +29,23 @@ export interface AppTransportConfig {
   onSessionChange?: (event: SessionEvent) => void;
   /** The API no longer serves this app version. */
   onUpdateRequired?: () => void;
+  /**
+   * The device's secure storage refused a write. After a failed "save" the session
+   * lasts until the app closes; after a failed "clear" the store must drop the
+   * token itself on the next start.
+   */
+  onStorageError?: (operation: "save" | "clear") => void;
 }
 
 interface TransportState {
   config: AppTransportConfig;
   token: Promise<string | null>;
+  /**
+   * Counts session changes. A response may only change the session it was sent
+   * under, so a slow 401 cannot sign out a newer login and a slow login cannot
+   * bring a session back after logout.
+   */
+  generation: number;
 }
 
 let state: TransportState | null = null;
@@ -47,7 +59,7 @@ const SESSION_START_PATHS = new Set(["/api/auth/login", "/api/auth/signup"]);
 const LOGOUT_PATH = "/api/auth/logout";
 
 export function configureAppTransport(config: AppTransportConfig): void {
-  state = { config, token: config.tokenStore.load().catch(() => null) };
+  state = { config, token: config.tokenStore.load().catch(() => null), generation: 0 };
 }
 
 /** True once a stored session token is available. Always false on the web. */
@@ -87,6 +99,7 @@ export async function apiRequest(url: string, init: RequestInit = {}): Promise<R
   const current = state;
   const path = pathOf(url);
   const token = await current.token;
+  const generation = path === LOGOUT_PATH ? (current.generation += 1) : current.generation;
   const headers = new Headers(init.headers);
 
   headers.set("x-gym-client", "app");
@@ -109,7 +122,10 @@ export async function apiRequest(url: string, init: RequestInit = {}): Promise<R
   }
 
   if (SESSION_START_PATHS.has(path) && response.ok) {
-    await storeSessionFrom(response.clone(), current);
+    if (current.generation === generation) {
+      await storeSessionFrom(response.clone(), current);
+    }
+
     return response;
   }
 
@@ -119,7 +135,7 @@ export async function apiRequest(url: string, init: RequestInit = {}): Promise<R
     return response;
   }
 
-  if (response.status === 401 && token && !SESSION_START_PATHS.has(path)) {
+  if (response.status === 401 && token && !SESSION_START_PATHS.has(path) && current.generation === generation) {
     await forgetSession(current);
     current.config.onSessionChange?.("expired");
   }
@@ -135,14 +151,27 @@ async function storeSessionFrom(response: Response, current: TransportState): Pr
     return;
   }
 
+  current.generation += 1;
   current.token = Promise.resolve(token);
-  await current.config.tokenStore.save(token).catch(() => undefined);
+
+  try {
+    await current.config.tokenStore.save(token);
+  } catch {
+    current.config.onStorageError?.("save");
+  }
+
   current.config.onSessionChange?.("started");
 }
 
 async function forgetSession(current: TransportState): Promise<void> {
+  current.generation += 1;
   current.token = Promise.resolve(null);
-  await current.config.tokenStore.clear().catch(() => undefined);
+
+  try {
+    await current.config.tokenStore.clear();
+  } catch {
+    current.config.onStorageError?.("clear");
+  }
 }
 
 /** Test hook: drops the configured transport. */
