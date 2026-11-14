@@ -59,7 +59,7 @@ test("hands-on example uses real controls and cannot pollute the account", async
   await page.getByRole("button", { name: /^Barbell Bench Press/ }).click();
   await page.getByRole("button", { name: "Add set", exact: true }).click();
   const editor = page.getByRole("dialog", { name: "New set", exact: true });
-  await editor.getByRole("textbox", { name: /^Weight/ }).fill("0");
+  await editor.getByRole("textbox", { name: /^Weight/ }).fill("-1");
   await editor.getByRole("button", { name: "Save set", exact: true }).click();
   await expect(editor.getByRole("alert")).toContainText("Enter a weight");
   await editor.getByRole("textbox", { name: /^Weight/ }).fill("20");
