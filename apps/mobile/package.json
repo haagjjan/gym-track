@@ -1,0 +1,38 @@
+{
+  "name": "@gym-progress-tracker/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "sync-public": "rm -rf public && cp -R ../web/public public",
+    "build": "pnpm sync-public && next build && node scripts/write-csp.mjs",
+    "lint": "eslint . --no-error-on-unmatched-pattern --max-warnings=0",
+    "type-check": "tsc --noEmit --project tsconfig.json --pretty false",
+    "dev": "pnpm sync-public && next dev --port ${MOBILE_WEB_PORT:-3100}",
+    "cap:sync": "cap sync"
+  },
+  "dependencies": {
+    "@aparajita/capacitor-secure-storage": "^8.0.1",
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/browser": "^8.0.5",
+    "@capacitor/core": "^8.6.2",
+    "@capacitor/filesystem": "^8.1.5",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/ios": "^8.6.2",
+    "@capacitor/keyboard": "^8.0.6",
+    "@capacitor/share": "^8.0.3",
+    "@gym-progress-tracker/web": "workspace:*",
+    "@tailwindcss/postcss": "^4.3.2",
+    "@tanstack/react-query": "^5.101.2",
+    "next": "^15.5.21",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwindcss": "^4.3.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.6.2",
+    "@types/node": "20.17.6",
+    "@types/react": "^19.0.12",
+    "@types/react-dom": "^19.0.4"
+  }
+}
