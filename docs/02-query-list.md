@@ -90,6 +90,26 @@ The database schema, constraints, and indexes will be designed to support these 
 - Output: exercise_id
 - Rule: exercise names are globally unique, case-insensitively
 
+### Region facets (2026-11-14)
+
+Exercise, History and Template queries accept `muscleRegionIds` alongside the
+existing group filters. Every selected region must match the same exercise, in
+primary or secondary role, together with the other facets. Explicit region rows
+win within their group; other groups fall back to their default region and role.
+Filter predicates and result hydration share this effective-region definition.
+Counts apply these predicates before pagination. Muscle sorting uses the lowest
+primary region sort order, then exercise name. Exercise, workout-detail, template
+and completed-exercise results expose current `muscleRegions` without replacing
+group fields. The group lookup additionally returns the 20 region options.
+Browser filters persist region IDs; legacy stored group selections are dropped
+while valid equipment/type/ownership and sort selections survive.
+
+The catalog repair audits 840 names from the migrations (820 imported names plus
+20 later additions), joins names case-insensitively and excludes user exercises.
+Only missing or differing region rows are replaced. Five alternating-raise and
+upright-row variants additionally receive primary Side delts. Down restores the
+classification from earlier migrations, including absent rows on older IDs.
+
 ### Q17. Search and filter selectable exercises
 - Input: current user, optional search, multiple muscle IDs, equipment, type, ownership (`editable` or `readOnly`), entity-specific sort, limit, and offset.
 - Output: unique selectable exercises with structured primary and secondary assignments and matching pagination totals.

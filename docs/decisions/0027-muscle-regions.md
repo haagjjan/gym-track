@@ -47,3 +47,14 @@ separate from structural and picking verification.
   includes a compatibility adapter for timed working sets using default regions.
 - Body regeneration must preserve region names, bilateral visibility, local
   asset loading and the geometry/size budgets checked by the validator.
+
+## Implementation note — 2026-11-14
+
+Exercise library/picker, History, Templates and Progress muscle filters now use
+the 20 regions in either role. Badges and muscle sorting use region names.
+Existing API group parameters and CSV stay compatible; additive region fields
+and parameters serve the new controls. Explicit assignments win within a group,
+and remaining group assignments use their default region and role. Old stored
+group filter selections are dropped. A name-based catalog repair covers older
+catalog IDs skipped by the original UUID-based region seed, and promotes Side
+delts for alternating raises and upright-row variants.

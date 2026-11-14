@@ -1062,7 +1062,8 @@ Query parameters:
 - `search` string, optional
 - `primaryMuscleGroupId` UUID, optional legacy primary-role filter
 - `muscleGroupId` UUID, optional legacy either-role filter
-- `muscleGroupIds` repeated or comma-separated UUIDs, optional; every selected muscle must match the exercise in either role
+- `muscleGroupIds` repeated or comma-separated UUIDs, optional; every selected group must match the exercise in either role
+- `muscleRegionIds` repeated or comma-separated UUIDs, optional; every selected region must match the same exercise in either role
 - `equipment` canonical value or `unspecified`, optional
 - `exerciseType` canonical value or `unspecified`, optional
 - `ownership=editable|readOnly`, optional; omitted means all selectable exercises
@@ -1195,9 +1196,29 @@ Blocked-name response `422`:
 }
 ```
 
+### Region classification and facet filters (2026-11-14)
+
+Exercise list/create/update responses, workout-detail exercises, template exercises,
+and completed analytics exercises add `muscleRegions: [{ id, slug, name, role }]`.
+The optional tracking progress endpoint adds that field to time/cardio entries too.
+Existing group fields and CSV columns remain unchanged. Region arrays put primary
+assignments first, then follow region sort order. Lists sorted by muscle use the
+first primary region for ordering and display grouping.
+
+`GET /api/v1/exercises`, `GET /api/v1/workouts` and
+`GET /api/v1/workout-templates` accept additive `muscleRegionIds` (repeated or
+comma-separated UUIDs, at most 20). All selected regions, group filters and other
+exercise facets must match the same exercise before pagination. Either role counts.
+Explicit region assignments take precedence within their group; each remaining
+group uses its default region with the group's role. This includes custom exercises
+without any region rows. Legacy group parameters keep their original behavior.
+Progress filters match either role in the returned current regions.
+
 ### `GET /api/v1/muscle-groups`
 
-Lists seeded muscle groups.
+Lists seeded muscle groups in `items` and all 20 muscle regions in the additive
+`regions` array. Both arrays contain `{ id, slug, name }`, in anatomical sort order.
+Group items retain their original IDs and meaning. The web filter controls use `regions`.
 
 Requires authentication.
 

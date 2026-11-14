@@ -38,7 +38,7 @@ Features (`src/features/`), each with routes, schemas, services, repositories an
 | `lifecycle` | scheduler for auth cleanup, due deletions and retention |
 | `workouts` | workouts, session exercises, sets, retroactive edits, CSV import/export |
 | `templates` | workout templates and starting a workout from one |
-| `exercises` | catalog (about 820 system exercises), search, custom exercises, merge, muscle groups |
+| `exercises` | catalog (about 840 system exercises), search, custom exercises, merge, muscle groups and region facets |
 | `analytics` | completed exercises, exercise progress and summaries, weighted group/region volume (primary 1, secondary 0.5) |
 | `tracking` | gated time sets/cardio, revisions, progress, separate CSV, optional region compatibility |
 | `messages` | in-app messages, campaigns, deliveries, responses |
@@ -49,7 +49,7 @@ Features (`src/features/`), each with routes, schemas, services, repositories an
 Routes are mounted under `/api/v1/*`. Errors use
 `{ "error": { "code", "message", "fields", "details" } }`.
 
-Database: 16 migrations in `db/migrations/` (core schema, muscle seed, auth hardening and
+Database: 17 migrations in `db/migrations/` (core schema, muscle seed, auth hardening and
 events, exercise muscles and templates, canonical classifications, catalog expansion and search,
 public beta foundation, workout mutation safety, onboarding demo). Tables: `users`,
 `user_sessions`, `auth_action_tokens`, `account_deletion_tokens`, `erasure_tombstones`,
@@ -86,7 +86,7 @@ Shared code (`src/shared/`):
   `ui.tsx` (skeleton, error state).
 - `api/`: browser API client, TanStack Query hooks, types, CSV helpers.
 - `format.ts`: dates, durations, clock and numbers. `workout-edits.ts`, `public-policy.ts`,
-  `query-provider.tsx`, client diagnostics and server logging helpers.
+  `query-provider.tsx`, `exercise-muscles.ts` (region labels and matching), client diagnostics and server logging helpers.
 
 Features (`src/features/`):
 
