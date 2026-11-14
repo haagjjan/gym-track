@@ -3,12 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "sync-public": "rm -rf public && cp -R ../web/public public",
     "build": "pnpm sync-public && next build && node scripts/write-csp.mjs",
-    "lint": "eslint . --no-error-on-unmatched-pattern --max-warnings=0",
-    "type-check": "tsc --noEmit --project tsconfig.json --pretty false",
+    "cap:sync": "cap sync",
     "dev": "pnpm sync-public && next dev --port ${MOBILE_WEB_PORT:-3100}",
-    "cap:sync": "cap sync"
+    "lint": "eslint . --no-error-on-unmatched-pattern --max-warnings=0",
+    "sync-public": "rm -rf public && cp -R ../web/public public",
+    "test": "node scripts/check-routes.mjs",
+    "type-check": "tsc --noEmit --project tsconfig.json --pretty false"
   },
   "dependencies": {
     "@aparajita/capacitor-secure-storage": "^8.0.1",
