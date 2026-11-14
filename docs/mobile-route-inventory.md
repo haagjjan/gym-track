@@ -143,3 +143,28 @@ Enforced by `apps/web/src/middleware.ts` (matcher: `/((?!_next/static|_next/imag
   - `X-Content-Type-Options: nosniff`
   - `X-Frame-Options: DENY`
   - `Strict-Transport-Security: max-age=31536000; includeSubDomains` (only when `HSTS_ENABLED=true`, `canonicalOrigin` starts with `https://`, and request hostname matches `canonicalHostname`).
+
+## Part D: App treatment (branch `mobile/app`)
+
+How the app replaces what Parts A to C list (ADR 0024).
+
+- **BFF handlers.** The app calls `apps/api` directly through
+  `apps/web/src/shared/api/transport.ts`: `/api/<path>` becomes `/api/v1/<path>` on the API
+  origin with the bearer token. `/api/public-status` maps to `/api/v1/status-metrics`. The
+  two handlers that read a server flag need nothing in the app, because the API enforces
+  both flags itself; the app only reads a build-time copy to decide what to show.
+- **Admin handlers and `/admin`.** Not in the app.
+- **Signed-in pages.** Client pages in `apps/mobile/src/app` wrapped in `Authed`
+  (`apps/mobile/src/session/session.tsx`).
+- **Login and signup.** Wrapped in `GuestOnly`.
+- **`/workouts/[workoutId]`.** `/workouts/session/?id=<workoutId>`, linked through
+  `workoutHref` in `apps/web/src/shared/platform/routes.ts`.
+- **`/help/demo/[[...screen]]`.** The six example screens are pre-rendered; an example
+  workout's detail is `/help/demo/history/?workout=<id>` (`demoWorkoutHref`).
+- **`/privacy`, `/terms`, `/cookies`, `/support`.** Open the website in the browser sheet.
+- **`/verify-email`, `/reset-password`, `/cancel-deletion`.** Exist in the app, but emailed
+  links still open the website until Universal Links and App Links are set up.
+- **Middleware.** The host guard does not apply. Each exported page carries a
+  Content-Security-Policy meta tag written at build time.
+
+`apps/mobile/scripts/check-routes.mjs` fails the tests when the two page trees drift apart.

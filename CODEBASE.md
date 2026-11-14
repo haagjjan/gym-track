@@ -10,6 +10,7 @@ directory listing is in [docs/repository-structure.md](docs/repository-structure
   `compose.monitoring.yaml` (local monitoring overlay), `render.yaml` (alternative host).
 - `apps/api`: Fastify API, Kysely data access, SQL migrations, API tests.
 - `apps/web`: Next.js App Router app, same-origin BFF routes, UI, Playwright specs.
+- `apps/mobile`: static export of the same screens plus the Capacitor iOS and Android projects. See [docs/mobile-app.md](docs/mobile-app.md).
 - `ops/`: production and staging Compose definitions, monitoring, logging, backup, status page.
 - `docs/`: requirements, data and API contracts, design system, ADRs, live runbooks.
   Finished material is in `docs/archive/`.
@@ -115,6 +116,16 @@ the BodyParts3D credit. The former FBX assets and SVG projection pipeline are re
 Tests: unit tests next to the code (`*.test.ts`, Node test runner). Playwright specs in
 `apps/web/e2e/`: `auth-workout-smoke`, `workout-templates`, `onboarding-demo`, `public-status`,
 `volume-mobile-gesture`.
+
+## Mobile (`apps/mobile`)
+
+Client-only pages in `src/app` wrap the screens from `apps/web/src/features`; `src/session`
+guards them. `src/bootstrap.ts` points the shared API layer at `apps/api` and registers the
+Capacitor plugins from `src/native`. `src/offline` keeps the read cache and sends the set
+outbox. The shared pieces live in the web tree: `shared/platform` (runtime switch, links,
+native interface, Android back order), `shared/api/transport.ts` and
+`shared/offline/set-outbox.ts`. The API side is `features/auth/mobile-client.ts`, behind
+`ENABLE_MOBILE_TOKEN_AUTH`. Build and run steps: [docs/mobile-app.md](docs/mobile-app.md).
 
 ## Scripts
 
