@@ -1,3 +1,5 @@
+import { apiRequest } from "./transport";
+
 export class ApiError extends Error {
   readonly status: number;
   readonly code: string | undefined;
@@ -41,7 +43,7 @@ export async function apiFetch<T>(url: string, options: RequestOptions = {}): Pr
   let response: Response;
 
   try {
-    response = await fetch(url, init);
+    response = await apiRequest(url, init);
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
       throw error;

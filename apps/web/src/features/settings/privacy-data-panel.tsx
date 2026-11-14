@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { ApiError, apiFetch } from "../../shared/api/client";
+import { apiRequest } from "../../shared/api/transport";
 import { saveFile } from "../../shared/save-file";
 import { Button } from "../../shared/ui/button";
 import { ConfirmDialog } from "../../shared/ui/confirm-dialog";
@@ -33,7 +34,7 @@ export function PrivacyDataPanel({ section }: { section: "choices" | "download" 
 
   async function exportAccount(): Promise<void> {
     setState("Preparing your data…");
-    const response = await fetch("/api/users/me/export", {
+    const response = await apiRequest("/api/users/me/export", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ password })
