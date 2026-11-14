@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed, 2026-11-14. The owner reviews this before the mobile app ships. The spike on branch
+Accepted by the owner on 2026-11-14 (Option B). Proposed the same day; the spike on branch
 `mobile/app` is built against it.
 
 ## Context
