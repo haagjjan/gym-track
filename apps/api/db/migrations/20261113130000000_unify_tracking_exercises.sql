@@ -3,6 +3,12 @@
 -- Time and cardio become ordinary exercises: both are picked from the exercise
 -- list and sit in a workout's exercise order. Cardio entries point at an
 -- exercise; `activity` keeps the name as logged.
+-- Earlier migrations in the same transaction may have queued deferred triggers
+-- on `exercises`; flush them before altering the table, then restore deferred
+-- checking for the seed inserts below.
+SET CONSTRAINTS ALL IMMEDIATE;
+SET CONSTRAINTS ALL DEFERRED;
+
 ALTER TABLE exercises DROP CONSTRAINT exercises_tracking_mode_check;
 ALTER TABLE exercises ADD CONSTRAINT exercises_tracking_mode_check
   CHECK (tracking_mode IN ('reps', 'time', 'cardio'));
