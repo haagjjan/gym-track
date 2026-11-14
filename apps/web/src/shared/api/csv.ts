@@ -1,6 +1,7 @@
 import { ApiError } from "./client";
 
 export const CSV_EXPORT_URL = "/api/workouts/export.csv";
+export const TRACKING_CSV_EXPORT_URL = "/api/tracking/export.csv";
 
 export interface CsvReviewItem {
   row: number;
@@ -57,10 +58,24 @@ export function importWorkoutCsv(file: File, confirmNameWarnings: boolean): Prom
   return postCsv(url, file);
 }
 
+/** Time and cardio import: no preview, row errors come back in error.details.errors. */
+export async function importTrackingCsv(text: string): Promise<number> {
+  const response = await fetch("/api/tracking/import.csv", { method: "POST", headers: { "content-type": "text/csv" }, body: text });
+  const payload = (await response.json().catch(() => null)) as {
+    data?: { importedRows: number };
+    error?: { message?: string; details?: { errors?: { row: number; message: string }[] } };
+  } | null;
+  if (!response.ok) {
+    const rows = payload?.error?.details?.errors?.slice(0, 4).map((error) => `Row ${error.row}: ${error.message}`) ?? [];
+    throw new Error(rows.join("\n") || payload?.error?.message || "Couldn't import this CSV.");
+  }
+  return payload?.data?.importedRows ?? 0;
+}
+
 /** Flatten the row-keyed field errors the CSV endpoints return into short lines. */
 export function csvErrorLines(error: unknown): string[] {
   if (!(error instanceof ApiError)) {
-    return ["CSV request failed."];
+    return error instanceof Error && error.message ? error.message.split("\n") : ["CSV request failed."];
   }
 
   const rowLines = Object.entries(error.fields ?? {})

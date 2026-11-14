@@ -281,7 +281,7 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   // ---- History shows the session with its set detail ----
   await page.goto("/workouts");
   await expect(page.getByRole("heading", { name: "History", exact: true })).toBeVisible();
-  const csvTrigger = page.getByRole("button", { name: "View CSV format" });
+  const csvTrigger = page.getByRole("button", { name: "CSV format" });
   await csvTrigger.click();
   const csvGuide = page.getByRole("dialog", { name: "Workout CSV guide" });
   await expect(csvGuide.getByRole("button", { name: "Close CSV format guide" })).toBeFocused();
@@ -360,7 +360,7 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
 
   await page.goto("/help");
   await expect(page.getByRole("link", { name: "Take the tour", exact: true })).toBeVisible();
-  await expect(page.getByText("Working and warmup sets", { exact: true })).toBeVisible();
+  await expect(page.getByText("Working and warm-up sets", { exact: true })).toBeVisible();
   await expectNoSeriousAccessibilityViolations(page);
 
   await page.setViewportSize({ width: 320, height: 568 });

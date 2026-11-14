@@ -1,6 +1,5 @@
 "use client";
 
-import { TrackingCsvPanel } from "../tracking/tracking-csv-panel";
 import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Button, buttonClass } from "../../shared/ui/button";
@@ -113,8 +112,7 @@ export function HistoryScreen({ userId, extendedTracking = false }: { userId: st
           {workouts.isFetchingNextPage ? "Loading…" : `Show more (${items.length} of ${total})`}
         </Button>
       ) : null}
-      <CsvPanel onImported={() => void workouts.refetch()} />
-      {extendedTracking ? <TrackingCsvPanel /> : null}
+      <CsvPanel extendedTracking={extendedTracking} onImported={() => void workouts.refetch()} />
     </div>
   );
 }

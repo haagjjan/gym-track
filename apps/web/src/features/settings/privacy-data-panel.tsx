@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { ApiError, apiFetch } from "../../shared/api/client";
+import { saveFile } from "../../shared/save-file";
 import { Button } from "../../shared/ui/button";
 import { ConfirmDialog } from "../../shared/ui/confirm-dialog";
 import { clearUserDeviceData, useDevicePrivacy } from "../privacy/device-privacy";
@@ -39,13 +40,9 @@ export function PrivacyDataPanel({ section }: { section: "choices" | "download" 
     });
     if (!response.ok) { setState("That password isn't right. Check it and try again."); return; }
     const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `gym-progress-account-${new Date().toISOString().slice(0, 10)}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-    setState("Your data was downloaded.");
+    const file = new File([blob], `gym-progress-account-${new Date().toISOString().slice(0, 10)}.json`, { type: "application/json" });
+    const result = await saveFile(file);
+    setState(result === "saved" ? "Your data is ready." : result === "needs-tap" ? "Tap Download again to save the file." : null);
   }
 
   async function deleteAccount(): Promise<void> {
