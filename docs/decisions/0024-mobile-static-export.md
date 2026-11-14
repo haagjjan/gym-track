@@ -74,8 +74,12 @@ Rules that follow:
 7. **Admin is not in the app.** The admin routes are not exported. Administrators use the
    web.
 8. **Security headers.** The bundle is served from the app's own scheme, so the host guard
-   does not apply. The exported HTML carries a `Content-Security-Policy` meta tag that allows
-   scripts and styles from the bundle only and connections to the API origin only.
+   does not apply. A Next.js export contains inline bootstrap and hydration scripts, so a
+   plain `script-src 'self'` would stop the app from starting. A post-build step therefore
+   hashes every inline script of each exported HTML file and writes a
+   `Content-Security-Policy` meta tag into that file: scripts from the bundle plus those
+   hashes, styles from the bundle, connections to the API origin only, no `eval`. The
+   build fails if a page has an inline script the step did not hash.
 9. **Minimum client version.** The app sends `X-App-Version: <semver>` on every API request.
    When `MOBILE_MIN_APP_VERSION` is set and the header is lower, the API answers
    `426 Upgrade Required` with code `APP_UPDATE_REQUIRED`, and the app shows a blocking
@@ -109,3 +113,5 @@ Expo fallback.
 - The exported bundle runs in a real Capacitor project on the iOS simulator and the Android
   emulator, logged in through the token endpoint (ADR 0021 criterion 1).
 - `pnpm smoke:web` still passes against the web build.
+- With the CSP meta tag in place, every exported screen hydrates and client navigation
+  works in WKWebView and Android WebView, with no CSP violation in the console.
