@@ -3,7 +3,7 @@ import { sendValidationError } from "../../shared/http-validation.js";
 import { authenticateRequest } from "../auth/authenticate-request.js";
 import type { AuthService } from "../auth/auth.service.js";
 import { cancelDeletionSchema, onboardingSchema, privacyPreferencesSchema, reauthenticateSchema } from "./user-account.schemas.js";
-import { AccountEmailDeliveryError, type UserAccountService } from "./user-account.service.js";
+import { AccountEmailDeliveryError, PasswordRequiredError, type UserAccountService } from "./user-account.service.js";
 
 export async function registerUserAccountRoutes(server: FastifyInstance, options: {
   authService: AuthService;
@@ -42,7 +42,13 @@ export async function registerUserAccountRoutes(server: FastifyInstance, options
     if (!user) return;
     const input = reauthenticateSchema.safeParse(request.body);
     if (!input.success) return sendValidationError(reply, input.error);
-    const exported = await options.service.exportAccount(user.id, input.data.password);
+    let exported;
+    try {
+      exported = await options.service.exportAccount(user.id, input.data.password);
+    } catch (error) {
+      if (error instanceof PasswordRequiredError) return reply.status(403).send({ error: { code: "PASSWORD_REQUIRED", message: error.message } });
+      throw error;
+    }
     if (!exported) return reply.status(403).send({ error: { code: "REAUTHENTICATION_FAILED", message: "The password was not accepted." } });
     reply.header("content-disposition", `attachment; filename="gym-progress-account-${new Date().toISOString().slice(0, 10)}.json"`);
     return reply.type("application/json").send(exported);
@@ -58,6 +64,7 @@ export async function registerUserAccountRoutes(server: FastifyInstance, options
     try {
       result = await options.service.requestDeletion(user.id, input.data.password);
     } catch (error) {
+      if (error instanceof PasswordRequiredError) return reply.status(403).send({ error: { code: "PASSWORD_REQUIRED", message: error.message } });
       if (error instanceof AccountEmailDeliveryError) {
         return reply.status(503).send({ error: {
           code: "EMAIL_DELIVERY_FAILED",

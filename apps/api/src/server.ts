@@ -1,3 +1,7 @@
+import { createProviderRepository } from "./features/auth/provider.repository.js";
+import { createProviderService } from "./features/auth/provider.service.js";
+import { createProviderTokenVerifier } from "./features/auth/provider-token.js";
+import { signInUser } from "./features/auth/auth.service.js";
 import { createTrackingCsvRepository } from "./features/tracking/tracking-csv.repository.js";
 import { registerTrackingCsvRoutes } from "./features/tracking/tracking-csv.routes.js";
 import { createTrackingRepository } from "./features/tracking/tracking.repository.js";
@@ -68,6 +72,7 @@ export interface ServerAuthConfig {
 }
 
 export interface ServerExtras {
+  providerSignIn?: { appleClientIds: string[]; googleClientIds: string[] };
   extendedTracking?: boolean;
   /** Email transport for verification/reset mail. Defaults to a no-op sender. */
   mailer?: Mailer;
@@ -204,6 +209,18 @@ export async function buildServer(
   await registerStatusRoutes(server, statusService);
   await registerAuthRoutes(server, {
     service: authService,
+    ...(extras.providerSignIn ? { providerService: createProviderService({
+      repository: createProviderRepository(db),
+      verify: createProviderTokenVerifier({ audiences: {
+        apple: extras.providerSignIn.appleClientIds, google: extras.providerSignIn.googleClientIds
+      } }),
+      signIn: (user) => signInUser(user, {
+        repository: createAuthRepository(db), sessionTokens: cryptoSessionTokenGenerator,
+        sessionTtlDays: authConfig.sessionTtlDays
+      }),
+      sessionTokens: cryptoSessionTokenGenerator, sessionTtlDays: authConfig.sessionTtlDays,
+      registrationMode: authConfig.registrationMode ?? (authConfig.registrationEnabled === false ? "DISABLED" : "ENABLED")
+    }) } : {}),
     events,
     cookie: {
       name: authConfig.cookieName,

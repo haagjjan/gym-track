@@ -612,3 +612,18 @@ it("returns reset acknowledgements before even the account lookup completes", { 
   releaseLookup(null);
   await setImmediate();
 });
+
+it("passwordless login verifies the dummy hash and always rejects credentials", async () => {
+  let verifications = 0;
+  const repository = new FakeAuthRepository(userRecord({ passwordHash: null }));
+  const service = createAuthService({
+    repository, passwordHasher: passwordHasher(true, () => { verifications++; }),
+    sessionTokens: sessionTokens(), sessionTtlDays: 30
+  });
+  assert.deepEqual(await service.login({ username: "jan", password: "anything" }), {
+    ok: false, reason: "invalid_credentials"
+  });
+  assert.equal(verifications, 1);
+  assert.equal(repository.createdSession, null);
+  assert.equal(repository.failedLoginCount, 0);
+});

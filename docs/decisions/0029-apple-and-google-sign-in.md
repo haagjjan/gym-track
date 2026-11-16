@@ -2,9 +2,9 @@
 
 ## Status
 
-Proposed, 2026-11-14. Requested by the owner for the mobile release. Nothing is built. The
-store-rule statements below are from memory and must be checked against the primary sources
-before this ADR is accepted (see Verification gates).
+Accepted by the owner on 2026-11-14 with one change: Apple sign-in is not offered in the
+Android app (item 1). Nothing is built. The store rules were checked against Apple's pages
+the same day; see "Source check".
 
 ## Context
 
@@ -25,7 +25,15 @@ would not trigger the rule.
 
 ## Proposed decision
 
-1. **Providers.** Apple and Google, both on iOS, Android and the web. Email and password stays.
+1. **Providers.** Email and password stays everywhere. In addition:
+   - iPhone app: Apple and Google.
+   - Android app: Google only. Apple sign-in belongs to Apple devices and is not offered
+     there.
+   - Website: Apple and Google, so someone who signed up with Apple on an iPhone can also
+     use the website.
+
+   Someone who signed up with Apple and later moves to an Android phone signs in there with
+   a password, which they can set through the reset flow (item 8).
 2. **The provider proves identity; GymTrack still owns the session.** The client gets an OpenID
    Connect ID token from the provider and sends it to the API. The API verifies the signature
    against the provider's published keys and checks issuer, audience (our client IDs only),
@@ -33,7 +41,8 @@ would not trigger the rule.
    as a password login (cookie on the web, bearer token in the app). No provider access or
    refresh token is stored, except what Apple requires for revocation (item 7).
 3. **Clients.** In the app: the native system sheets through Capacitor plugins (Apple's
-   AuthenticationServices on iOS, Credential Manager on Android), not a web redirect. On the
+   AuthenticationServices on iOS for Apple, Credential Manager on Android for Google), not a
+   web redirect. On the
    web: the providers' redirect flow, handled by the BFF so the session cookie rules do not
    change.
 4. **Data model (additive).** A new table `user_identities` (`user_id`, `provider`,
@@ -69,10 +78,30 @@ would not trigger the rule.
 - Passkeys would give similar ease without a third party. They are not excluded, but they do
   not answer the wish for Apple and Google accounts, so they are a later option.
 
+## Build state (2026-11-14)
+
+- Built behind `ENABLE_PROVIDER_SIGN_IN` (off): the API (token check, nonces, sign-in, signup
+  with consent, linking), with unit and database tests.
+- Not built: the native sign-in sheets (they need the Apple capability and the Google client
+  IDs), the website redirect flow, and revoking the Apple token on account deletion (needs
+  the owner's Apple key). The flag must stay off until these exist.
+
+## Source check (2026-11-14)
+
+- Guideline 4.8, https://developer.apple.com/app-store/review/guidelines/: an app that uses a
+  third-party or social login must also offer an equivalent login that limits data to name
+  and email, lets users keep their email private and does not collect interactions for
+  advertising without consent. An app that only uses its own account system is exempt. The
+  page was read through a summarising fetch, so the wording here is not a verbatim quote;
+  read the paragraph once more before submitting to review.
+- Account deletion, https://developer.apple.com/support/offering-account-deletion-in-your-app/
+  (verbatim): "Apps that support Sign in with Apple should use the Sign in with Apple REST
+  API to revoke user tokens."
+- Not checked yet: Google's current sign-in APIs for Android and iOS.
+
 ## Verification gates
 
-- Primary-source check of Guideline 4.8, the Apple token-revocation requirement on account
-  deletion, and Google's current Android and iOS sign-in APIs, before acceptance.
+- Primary-source check of Google's current Android and iOS sign-in APIs before building.
 - API tests: wrong audience, wrong issuer, expired token, replayed nonce, unverified email,
   linking rules in item 5, flag off.
 - Sol and Argon security review of the implementation.

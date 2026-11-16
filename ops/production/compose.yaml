@@ -145,6 +145,8 @@ services:
     security_opt:
       - no-new-privileges:true
     environment:
+      APPLE_TEAM_ID: ${APPLE_TEAM_ID:-}
+      ANDROID_CERT_SHA256: ${ANDROID_CERT_SHA256:-}
       API_BASE_URL: http://api:4000/api/v1
       APP_BASE_URL: https://app.gymtrack.ch
       APP_ENV: production

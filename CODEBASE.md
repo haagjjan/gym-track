@@ -34,7 +34,7 @@ Features (`src/features/`), each with routes, schemas, services, repositories an
 
 | Feature | Owns |
 | --- | --- |
-| `auth` | signup, login, logout, me, email verification, password reset, sessions, lockout |
+| `auth` | signup, login, logout, me, email verification, password reset, sessions, lockout; flagged Apple/Google sign-in and identity management |
 | `users` | preferences, onboarding state, data export, account deletion, cancellation and erasure |
 | `lifecycle` | scheduler for auth cleanup, due deletions and retention |
 | `workouts` | workouts, session exercises, sets, retroactive edits, CSV import/export |
@@ -50,10 +50,10 @@ Features (`src/features/`), each with routes, schemas, services, repositories an
 Routes are mounted under `/api/v1/*`. Errors use
 `{ "error": { "code", "message", "fields", "details" } }`.
 
-Database: 16 migrations in `db/migrations/` (core schema, muscle seed, auth hardening and
+Database: 17 migrations in `db/migrations/` (core schema, muscle seed, auth hardening and
 events, exercise muscles and templates, canonical classifications, catalog expansion and search,
 public beta foundation, workout mutation safety, onboarding demo). Tables: `users`,
-`user_sessions`, `auth_action_tokens`, `account_deletion_tokens`, `erasure_tombstones`,
+`user_sessions`, `user_identities`, `auth_action_tokens`, `account_deletion_tokens`, `erasure_tombstones`,
 `app_events`, `admin_audit_events`, `muscle_groups`, `exercises`, `exercise_muscle_groups`,
 `exercise_secondary_muscles`, `muscle_regions`, `exercise_muscle_regions`, `workout_sessions`, `session_exercises`, `sets`, `timed_sets`, `cardio_entries`,
 `workout_templates`, `workout_template_exercises`, `campaigns`, `campaign_targets`,
@@ -170,3 +170,10 @@ green `main`.
 - Device-local preferences are not synced to the API.
 
 Optional tracking UI lives in `apps/web/src/features/tracking/`; the BFF is `app/api/tracking/[...path]`. Enable `ENABLE_EXTENDED_TRACKING=true` on both servers to expose it. The migration guard check is `apps/api/scripts/check-tracking-migrations.ts`.
+
+Provider auth (ADR 0029): `apps/api/src/features/auth/provider-token.ts` verifies cached
+Apple/Google RS256 key sets with configured audiences; `provider-nonce.ts` owns bounded
+single-use nonces, `provider.service.ts` applies signup/linking policy,
+`provider.repository.ts` persists identity ownership, and `provider.routes.ts` registers
+routes only when enabled. `auth.service.ts` shares account checks and session creation
+with password login; `auth-response.ts` shares cookie/bearer responses.

@@ -25,6 +25,9 @@ const server = await buildServer(
     ...(env.BFF_CLIENT_IP_SECRET ? { clientIpSecret: env.BFF_CLIENT_IP_SECRET } : {}),
     ...(env.SUPPORT_EMAIL ? { supportEmail: env.SUPPORT_EMAIL } : {}),
     extendedTracking: env.ENABLE_EXTENDED_TRACKING,
+    ...(env.ENABLE_PROVIDER_SIGN_IN ? { providerSignIn: {
+      appleClientIds: env.APPLE_CLIENT_IDS, googleClientIds: env.GOOGLE_CLIENT_IDS
+    } } : {}),
     ...(env.ENABLE_MOBILE_TOKEN_AUTH
       ? {
           mobileClient: {

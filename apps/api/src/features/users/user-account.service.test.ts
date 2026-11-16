@@ -6,6 +6,7 @@ import type { SessionTokenGenerator } from "../auth/session-token.js";
 import type { UserAccountRepository } from "./user-account.repository.js";
 import {
   AccountEmailDeliveryError,
+  PasswordRequiredError,
   createUserAccountService
 } from "./user-account.service.js";
 
@@ -123,4 +124,18 @@ describe("user account email delivery", () => {
     });
     assert.deepEqual(finalized, ["user-1", "user-2"]);
   });
+});
+
+it("passwordless accounts must set a password before export or deletion", async () => {
+  const repository = createRepository({
+    async getCredentials() {
+      return { id: "user-1", email: "person@example.test", username: "person",
+        passwordHash: null, accountStatus: "ACTIVE" };
+    },
+    async exportAccount() { assert.fail("must not export"); },
+    async requestDeletion() { assert.fail("must not schedule deletion"); }
+  });
+  const service = createService(repository, { async send() { assert.fail("must not send mail"); } });
+  await assert.rejects(service.exportAccount("user-1", "anything"), PasswordRequiredError);
+  await assert.rejects(service.requestDeletion("user-1", "anything"), PasswordRequiredError);
 });

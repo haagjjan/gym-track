@@ -1862,3 +1862,63 @@ with one leading apostrophe for spreadsheet safety. Import removes exactly one,
 so original apostrophes, formula-like notes and maximum-length notes round-trip.
 Use an exported file as the template. The legacy strength importer rejects names
 that belong to time exercises rather than storing repetition sets against them.
+
+## Apple and Google sign-in (ADR 0029)
+
+All routes below are absent (404) unless `ENABLE_PROVIDER_SIGN_IN=true`.
+`APPLE_CLIENT_IDS` and `GOOGLE_CLIENT_IDS` contain comma-separated accepted audiences;
+empty lists make that provider unavailable. No provider access or refresh tokens are stored.
+
+| Method | Endpoint | Request / successful response (`data`) |
+| --- | --- | --- |
+| POST | `/api/v1/auth/provider/nonce` | No body; `{ nonce }` |
+| POST | `/api/v1/auth/provider` | `{ provider: "apple" \| "google", idToken, nonce, signup?: { termsVersion, privacyVersion, adultAttested: true } }`; same response and session transport as password login |
+| GET | `/api/v1/users/me/identities` | Signed in; `{ identities: [{ provider, created_at }] }` |
+| POST | `/api/v1/users/me/identities` | Signed in; `{ provider, idToken, nonce }`; `{ linked: true }` |
+| DELETE | `/api/v1/users/me/identities/:provider` | Signed in; `{ unlinked: true }` |
+
+Nonces contain 32 random bytes encoded as base64url, expire after 10 minutes and are
+single use, including failed token verification or consent-required attempts. They are
+stored in a bounded process-local store; deployments with multiple API processes must
+route the attempt back to its issuing process. The token nonce claim may contain the raw
+nonce or its lowercase SHA-256 hex digest (native Apple). Both credential POST routes and
+nonce issuance use `authRateLimit`; unlinking also uses this limit.
+
+Provider subject plus provider identifies the account, independently of changing email.
+An unknown identity auto-links by email only when both the provider and the local account
+have verified that email. Otherwise the user signs in first and links in Settings.
+Existing identities can sign in while registration is closed. New accounts require open
+registration and explicit policy, age and Swiss residence consent. A consent-required
+response creates nothing; repeat with consent and a fresh nonce/token. Signup stores a
+null password hash and creates the user, identity and session atomically. Provider-verified
+email is marked verified; unverified email remains unverified. Missing email uses a unique
+`@provider.invalid` placeholder, remains unverified and cannot receive password reset mail.
+Usernames derive from the email local part (or `user`) with a random suffix.
+
+Web responses set the existing HttpOnly session cookie and return `{ user }`. App responses
+return `{ user, sessionToken, expiresAt }`, without a cookie. Account lockout and account
+status rules match password login. Unlinking removes identities for that provider and is
+refused unless a password or another provider remains. Linking an identity already owned
+by this account is idempotent; ownership cannot be transferred.
+
+| HTTP | Error code | Meaning |
+| --- | --- | --- |
+| 422 | `VALIDATION_ERROR` | Invalid request fields (existing validation envelope) |
+| 401 | `INVALID_PROVIDER_TOKEN` | Invalid signature/claims/nonce claim, unknown signing key, or key-fetch failure |
+| 401 | `INVALID_PROVIDER_NONCE` | Nonce was not issued here, expired, evicted, or already used |
+| 401 | `UNAUTHORIZED` | Identity management requires a current session |
+| 403 | `REGISTRATION_DISABLED` | New account creation is closed, same as password signup |
+| 403 | `ACCOUNT_UNAVAILABLE` | Account is suspended or pending deletion |
+| 403 | `PASSWORD_REQUIRED` | Password-confirmed export/deletion requires setting a password through reset first |
+| 409 | `PROVIDER_SIGNUP_CONSENT_REQUIRED` | Repeat with explicit signup consent and fresh credentials |
+| 409 | `PROVIDER_LINK_REQUIRES_SIGN_IN` | Matching email is not verified on both sides; link after signing in |
+| 409 | `PROVIDER_IDENTITY_CONFLICT` | Identity already belongs to another account |
+| 409 | `LAST_SIGN_IN_METHOD` | Unlinking would leave no sign-in method |
+| 409 | `AUTH_CONFLICT` | Concurrent account/identity creation conflict; retry with fresh credentials |
+| 423 | `ACCOUNT_LOCKED` | Existing temporary login lockout |
+| 429 | `RATE_LIMITED` | Existing auth rate limit |
+| 503 | `PROVIDER_UNAVAILABLE` | Requested provider has no configured client IDs |
+
+Password login for an account with a null password hash always returns the existing
+`INVALID_CREDENTIALS` error after dummy hash verification. Such accounts can set a
+password through the existing password reset flow when they have a deliverable email.

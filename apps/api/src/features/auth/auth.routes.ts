@@ -1,17 +1,17 @@
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance, FastifyReply } from "fastify";
 import { createIdentifierLimiter } from "../../shared/identifier-limiter.js";
 import { createRateLimitResponse } from "../../shared/rate-limit-response.js";
 import { noopEventTracker } from "../../shared/events.js";
 import { sendValidationError } from "../../shared/http-validation.js";
+import { sendLoginFailure, startSession } from "./auth-response.js";
+import { registerProviderRoutes } from "./provider.routes.js";
 import { registerAuthActionRoutes } from "./auth-action.routes.js";
 import {
   authRateLimit,
   registrationMode,
-  type AuthCookieOptions,
   type AuthRouteOptions
 } from "./auth-route-config.js";
 import { loginRequestSchema, signupRequestSchema } from "./auth.schemas.js";
-import type { AuthenticatedUser, PublicUser } from "./auth.service.js";
 import { isMobileClient, sessionTokenFrom } from "./mobile-client.js";
 
 export async function registerAuthRoutes(
@@ -77,26 +77,7 @@ export async function registerAuthRoutes(
     const result = await options.service.login(parsed.data);
 
     if (!result.ok) {
-      if (result.reason === "account_unavailable") {
-        return reply.status(403).send({
-          error: { code: "ACCOUNT_UNAVAILABLE", message: "This account is not currently available." }
-        });
-      }
-      if (result.reason === "locked") {
-        return reply.status(423).send({
-          error: {
-            code: "ACCOUNT_LOCKED",
-            message: "Too many failed attempts. Try again in a few minutes."
-          }
-        });
-      }
-
-      return reply.status(401).send({
-        error: {
-          code: "INVALID_CREDENTIALS",
-          message: "Username or password is incorrect."
-        }
-      });
+      return sendLoginFailure(reply, result.reason);
     }
 
     events.track("user_logged_in", result.value.user.id);
@@ -144,50 +125,7 @@ export async function registerAuthRoutes(
   });
 
   registerAuthActionRoutes(server, options);
-}
-
-interface SessionStartPayload {
-  user: PublicUser;
-  sessionToken?: string;
-  expiresAt?: string;
-}
-
-/**
- * The web gets the session as an HttpOnly cookie. The mobile app gets the token in
- * the body instead and keeps it in the device's secure storage (ADR 0023).
- */
-function startSession(
-  request: FastifyRequest,
-  reply: FastifyReply,
-  options: AuthCookieOptions,
-  authenticated: AuthenticatedUser
-): SessionStartPayload {
-  if (isMobileClient(request)) {
-    return {
-      user: authenticated.user,
-      sessionToken: authenticated.sessionToken,
-      expiresAt: authenticated.expiresAt.toISOString()
-    };
-  }
-
-  setSessionCookie(reply, options, authenticated);
-
-  return { user: authenticated.user };
-}
-
-function setSessionCookie(
-  reply: FastifyReply,
-  options: AuthCookieOptions,
-  authenticated: AuthenticatedUser
-): void {
-  reply.setCookie(options.name, authenticated.sessionToken, {
-    expires: authenticated.expiresAt,
-    httpOnly: true,
-    maxAge: options.maxAgeSeconds,
-    path: "/",
-    sameSite: "lax",
-    secure: options.secure
-  });
+  if (options.providerService) await registerProviderRoutes(server, options);
 }
 
 function sendRegistrationDisabled(reply: FastifyReply): void {

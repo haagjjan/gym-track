@@ -194,5 +194,14 @@ repository.
    attempts per 15 minutes, then the account lock. These counters live in the API process
    and reset on restart.
 
+Dashboard verification on 2026-11-14: `Mobile API flood protection` is active for
+`app.gymtrack.ch` with URI path starting `/api/v1/`, counting by IP, at 150 requests per
+10 seconds with a 10-second block. It uses the Free plan's single rate-limiting rule.
+Bot Fight Mode and Under Attack Mode are off. The existing production Access application
+has an Everyone bypass; staging and SSH have separate Access applications. Browser
+Integrity Check remains on. Verify real iOS and Android API traffic through this edge
+before release; the dashboard check does not prove native compatibility or enforcement
+under load.
+
 Caddy must only be reachable through the tunnel (`PRODUCTION_PROXY_BIND`). Anyone who can
 reach it directly can set `CF-Connecting-IP` and so choose their own rate-limit bucket.

@@ -62,4 +62,5 @@ Use sequential numbering and keep each record focused on one decision.
 - [ADR 0027 - Muscle Regions (proposed)](0027-muscle-regions.md)
 
 - [ADR 0028 - Half Credit for Secondary Muscle Volume](0028-secondary-muscle-volume.md)
-- [ADR 0029 - Sign in with Apple and Google (proposed)](0029-apple-and-google-sign-in.md)
+- [ADR 0029 - Sign in with Apple and Google](0029-apple-and-google-sign-in.md)
+- [ADR 0030 - Push Notifications (proposed)](0030-push-notifications.md)

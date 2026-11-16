@@ -2,6 +2,7 @@ import type { FastifyRequest } from "fastify";
 import { isMobileClient } from "./mobile-client.js";
 import type { EventTracker } from "../../shared/events.js";
 import type { AuthService } from "./auth.service.js";
+import type { ProviderService } from "./provider.service.js";
 
 export interface AuthCookieOptions {
   name: string;
@@ -10,6 +11,7 @@ export interface AuthCookieOptions {
 }
 
 export interface AuthRouteOptions {
+  providerService?: ProviderService;
   service: AuthService;
   cookie: AuthCookieOptions;
   events?: EventTracker;

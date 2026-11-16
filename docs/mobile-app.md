@@ -93,6 +93,33 @@ it for a release build. The app version sent to the API comes from
 API settings: `ENABLE_MOBILE_TOKEN_AUTH`, `MOBILE_APP_ORIGINS`, `MOBILE_MIN_APP_VERSION`
 (see `.env.example`).
 
+## Links from emails
+
+Verification, password reset and deletion cancellation emails use
+`https://app.gymtrack.ch/verify-email?token=...`, `/reset-password?token=...` and
+`/cancel-deletion?token=...`. Installed apps open these pages inside the app, preserving
+query parameters, including on a cold start. Other links keep their normal behavior.
+
+To make this live, enable Associated Domains for the Apple app identifier and sign with
+that provisioning profile. Set `APPLE_TEAM_ID` to the Apple Developer Team ID and
+`ANDROID_CERT_SHA256` to the SHA-256 fingerprint of the **Play app signing key** (not the
+upload key); multiple fingerprints can be comma-separated. Deploy the website with both
+variables. Its public `/.well-known/apple-app-site-association` and
+`/.well-known/assetlinks.json` endpoints serve JSON without redirects; each returns 404
+while its variable is empty. Install a build with the native link configuration.
+
+Test with the app installed, both closed and already open:
+
+```sh
+adb shell am start -a android.intent.action.VIEW -d "https://app.gymtrack.ch/verify-email?token=test" ch.gymtrack.app
+xcrun simctl openurl booted "https://app.gymtrack.ch/verify-email?token=test"
+```
+
+Repeat for `reset-password` and `cancel-deletion`. The dummy token should reach the
+matching screen and be rejected as invalid. Android must be signed with a listed key;
+iOS needs the matching signed entitlement and a reachable association file. Also tap an
+email link on a physical phone to verify the operating system association.
+
 ## What works offline
 
 Stage 2 of ADR 0025:
@@ -125,6 +152,39 @@ Stage 2 of ADR 0025:
 Evidence (browser build, API requests blocked): `offline-workout-check.mjs` and
 `offline-edit-check.mjs` in `~/.agents/plans/artifacts/gym-mobile-app/`.
 
+## Release builds
+
+The version shown in the stores, sent to the API (`X-App-Version`) and used by Android comes
+from `apps/mobile/package.json`. On iOS set the same value as `MARKETING_VERSION` in Xcode.
+
+1. Production bundle (talks to `https://app.gymtrack.ch` only, no HTTP, no plugin logging):
+
+   ```sh
+   pnpm --filter @gym-progress-tracker/mobile build:release
+   ```
+
+   The production API must have the `/api/v1` route deployed and
+   `ENABLE_MOBILE_TOKEN_AUTH=true` (ADR 0023), or the app cannot sign in.
+
+2. Android. Create the upload key once and copy `android/keystore.properties.example` to
+   `android/keystore.properties` (ignored by git). Then, with a higher `versionCode` for
+   every upload:
+
+   ```sh
+   cd apps/mobile/android
+   JAVA_HOME=$(/usr/libexec/java_home -v 21) ./gradlew bundleRelease -PversionCode=2
+   ```
+
+   Upload `app/build/outputs/bundle/release/app-release.aab` in the Play Console. Without
+   `keystore.properties` the bundle is unsigned and Play rejects it.
+
+3. iOS. Open `apps/mobile/ios/App/App.xcodeproj` in Xcode, choose your team under Signing &
+   Capabilities (automatic signing), raise the build number, then Product → Archive and
+   Distribute App → App Store Connect. The build appears in TestFlight after processing.
+
+Icons and splash screens are generated from the GymTrack mark:
+`node apps/mobile/scripts/make-icons.mjs`.
+
 ## Checks
 
 - `pnpm --filter @gym-progress-tracker/mobile type-check`, `lint`, `build`
@@ -137,10 +197,9 @@ Evidence (browser build, API requests blocked): `offline-workout-check.mjs` and
 
 - The production route to the API exists in `ops/production` but is not deployed, and the
   flag is off (ADR 0023).
-- Signing, TestFlight and Play tracks; app icons and splash screens (the projects still
-  carry the Capacitor defaults).
+- Uploads to TestFlight and the Play tracks (need the developer accounts; the builds are
+  prepared, see "Release builds").
 - Push notifications and the rest-timer notification.
-- Universal Links and App Links for emailed links. They open the website.
 - Revisions and conflict handling between two devices (ADR 0025, stage 3).
 - Remote push notifications.
 - Checks on physical phones (3D frame rate and heat, keyboard, gestures).
