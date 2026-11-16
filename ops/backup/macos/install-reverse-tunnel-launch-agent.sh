@@ -8,6 +8,7 @@ readonly SOURCE_PLIST="${SCRIPT_DIR}/${LABEL}.plist"
 readonly TARGET_DIRECTORY="${HOME}/Library/LaunchAgents"
 readonly TARGET_PLIST="${TARGET_DIRECTORY}/${LABEL}.plist"
 readonly LOG_DIRECTORY="${HOME}/Library/Logs/GymTrackerBackup"
+readonly SUPPORT_DIRECTORY="${HOME}/Library/Application Support/GymTrackerBackup"
 readonly DOMAIN="gui/$(id -u)"
 
 if [[ "${EUID}" -eq 0 ]]; then
@@ -20,6 +21,13 @@ fi
   exit 1
 }
 /usr/bin/plutil -lint "${SOURCE_PLIST}" >/dev/null
+[[ -x /opt/homebrew/bin/cloudflared && -x /usr/bin/lockf ]] || {
+  printf 'ERROR: cloudflared or macOS lockf is unavailable\n' >&2
+  exit 1
+}
+for script in reverse-tunnel.sh browser/open; do
+  /bin/bash -n "${SCRIPT_DIR}/${script}"
+done
 /usr/bin/nc -z -w 2 127.0.0.1 22 >/dev/null 2>&1 || {
   printf 'ERROR: macOS Remote Login is unavailable on local port 22\n' >&2
   exit 1
@@ -33,7 +41,12 @@ configured_host="$(/usr/bin/ssh -G gym-prod-remote 2>/dev/null | awk '$1 == "hos
 /usr/bin/install -d -m 0755 "${TARGET_DIRECTORY}"
 /usr/bin/install -d -m 0700 "${LOG_DIRECTORY}"
 /bin/launchctl bootout "${DOMAIN}/${LABEL}" >/dev/null 2>&1 || true
+/usr/bin/install -d -m 0700 "${SUPPORT_DIRECTORY}" "${SUPPORT_DIRECTORY}/browser"
+/usr/bin/install -m 0700 "${SCRIPT_DIR}/reverse-tunnel.sh" "${SUPPORT_DIRECTORY}/reverse-tunnel.sh"
+/usr/bin/install -m 0700 "${SCRIPT_DIR}/browser/open" "${SUPPORT_DIRECTORY}/browser/open"
 /usr/bin/install -m 0644 "${SOURCE_PLIST}" "${TARGET_PLIST}"
+/usr/bin/plutil -replace ProgramArguments.1 -string \
+  "${SUPPORT_DIRECTORY}/reverse-tunnel.sh" "${TARGET_PLIST}"
 /usr/bin/plutil -insert StandardOutPath -string \
   "${LOG_DIRECTORY}/reverse-tunnel.log" "${TARGET_PLIST}"
 /usr/bin/plutil -insert StandardErrorPath -string \

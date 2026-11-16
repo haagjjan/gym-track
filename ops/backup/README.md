@@ -25,9 +25,25 @@ required server secrets ──────┘                                   
 The destination uses a dedicated hidden macOS account forced into internal SFTP and chrooted to `/private/var/gym-backup`. The backup key cannot start a shell, request a terminal, or forward traffic. The Restic password has a separate recovery copy outside that chroot and should also be stored in the owner's password manager.
 
 The owner runs `macos/install-reverse-tunnel-launch-agent.sh` without `sudo`. The per-user
-`launchd` agent keeps the existing `gym-prod-remote` SSH connection open and forwards production
+`launchd` agent keeps a `gym-prod-remote` SSH connection open and forwards production
 `127.0.0.1:2222` back to Mac loopback port 22. The production listener is not exposed to the LAN
-or Internet. An expired Cloudflare Access grant still requires an interactive owner login.
+or Internet. Failed connections retry every five minutes; a running tunnel is left alone.
+There is no KeepAlive restart loop. Background connection attempts allow two minutes for login.
+
+The installed background runner gives only its own processes a rate-limited macOS browser
+opener. If Cloudflare requires login, it opens at most one tab per rolling 24 hours; the
+timestamp persists across job reinstalls, logout and reboot. Other reconnect attempts stay
+silent. Manual `ssh gym-prod-remote` keeps the normal browser login behavior and is not subject
+to that limit. Cloudflare may briefly serialize concurrent login attempts through its token
+lock; a background attempt times out after two minutes. An ignored tab can expire, so use
+manual SSH for a fresh login rather than reusing an old tab.
+
+Set the **Gym Tracker SSH** Access application's session duration to **23 hours**, with its
+Allow policy inheriting that duration. New authentication tokens use the updated duration;
+existing tokens retain their original expiry. This is an authentication reuse period, not
+a scheduled disconnect or a backup interval. Backups continue on their existing schedule
+while the Mac is awake and reachable through the tunnel, and may be delayed while the tunnel
+is disconnected pending login. No unattended machine credential is introduced.
 
 Recent macOS releases require Remote Login to be enabled interactively under **System Settings → General → Sharing**. Allow only `gym-backup` and do not grant remote users Full Disk Access. The setup script validates and reports this requirement instead of weakening macOS privacy controls.
 
@@ -75,6 +91,11 @@ MacBook tunnel commands:
 ops/backup/macos/install-reverse-tunnel-launch-agent.sh
 launchctl print gui/$(id -u)/ch.gymtracker.backup-reverse-tunnel
 ```
+
+Run `bash ops/backup/macos/test-browser-prompt.sh` locally to check the prompt cooldown,
+concurrent attempts, stale lock files and invalid inputs without opening a browser.
+The macOS opener relies on `cloudflared` resolving `open` through PATH (verified with
+version 2026.7.3); recheck this behavior when upgrading the client.
 
 The erasure-replay drill requires an older snapshot that predates at least one unexpired
 tombstone. It restores that database and the newest ledger from separate snapshots, requires

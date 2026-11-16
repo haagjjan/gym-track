@@ -6,31 +6,13 @@
   <string>ch.gymtracker.backup-reverse-tunnel</string>
   <key>ProgramArguments</key>
   <array>
-    <string>/usr/bin/ssh</string>
-    <string>-N</string>
-    <string>-T</string>
-    <string>-o</string>
-    <string>BatchMode=yes</string>
-    <string>-o</string>
-    <string>ConnectTimeout=15</string>
-    <string>-o</string>
-    <string>ExitOnForwardFailure=yes</string>
-    <string>-o</string>
-    <string>ServerAliveInterval=60</string>
-    <string>-o</string>
-    <string>ServerAliveCountMax=3</string>
-    <string>-o</string>
-    <string>TCPKeepAlive=yes</string>
-    <string>-R</string>
-    <string>127.0.0.1:2222:127.0.0.1:22</string>
-    <string>gym-prod-remote</string>
+    <string>/bin/bash</string>
+    <string>__RUNNER_PATH__</string>
   </array>
   <key>RunAtLoad</key>
   <true/>
-  <key>KeepAlive</key>
-  <true/>
-  <key>ThrottleInterval</key>
-  <integer>60</integer>
+  <key>StartInterval</key>
+  <integer>300</integer>
   <key>ProcessType</key>
   <string>Background</string>
   <key>LowPriorityIO</key>
