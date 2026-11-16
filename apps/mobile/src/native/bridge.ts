@@ -1,3 +1,4 @@
+import { Capacitor } from "@capacitor/core";
 import { Browser } from "@capacitor/browser";
 import { Directory, Filesystem } from "@capacitor/filesystem";
 import { Haptics, ImpactStyle, NotificationType } from "@capacitor/haptics";
@@ -7,6 +8,16 @@ import type { NativeBridge } from "../../../web/src/shared/platform/native";
 
 /** The native side of the UI's platform interface, backed by Capacitor plugins. */
 export const capacitorBridge: NativeBridge = {
+  platform() {
+    const platform = Capacitor.getPlatform();
+    return platform === "ios" || platform === "android" ? platform : "web";
+  },
+
+  // Stub until the owner supplies client IDs and native provider plugins are added.
+  async providerSignIn() {
+    throw new Error("Sign-in with this provider is not set up in this build.");
+  },
+
   async openExternal(url) {
     await Browser.open({ url });
   },

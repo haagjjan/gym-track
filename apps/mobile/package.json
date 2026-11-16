@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "pnpm sync-public && next build && node scripts/write-csp.mjs",
+    "build:release": "NEXT_PUBLIC_API_ORIGIN=https://app.gymtrack.ch pnpm build && cap sync",
     "cap:sync": "cap sync",
     "dev": "pnpm sync-public && next dev --port ${MOBILE_WEB_PORT:-3100}",
     "lint": "eslint . --no-error-on-unmatched-pattern --max-warnings=0",

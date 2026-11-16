@@ -21,6 +21,7 @@ import { BodyCredits } from "./body-credits";
 import { HelpSupportPanel } from "./help-support-panel";
 import { MergeExercisesPanel } from "./merge-exercises-panel";
 import { PrivacyDataPanel } from "./privacy-data-panel";
+import { SignInMethodsPanel } from "./sign-in-methods-panel";
 import { RemindersPanel } from "./reminders-panel";
 import { RestTimerPanel } from "./rest-timer-panel";
 import { Group, Row, Section, SavedStatus, inputClass, useSavedFlash } from "./settings-ui";
@@ -49,6 +50,8 @@ export function SettingsScreen({ supportUrl, user }: { supportUrl?: string | und
       <h1 className="text-large-title text-text">Settings</h1>
 
       <AccountCard user={user} />
+
+      <SignInMethodsPanel />
 
       <Section title="Training">
         <Group>

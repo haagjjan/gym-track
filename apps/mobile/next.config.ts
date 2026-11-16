@@ -17,6 +17,7 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_API_ORIGIN: process.env.NEXT_PUBLIC_API_ORIGIN ?? "http://localhost:4000",
     // Public web origin, for pages the app opens in the browser (legal, support).
     NEXT_PUBLIC_WEB_ORIGIN: process.env.NEXT_PUBLIC_WEB_ORIGIN ?? "https://app.gymtrack.ch",
+    NEXT_PUBLIC_ENABLE_PROVIDER_SIGN_IN: process.env.NEXT_PUBLIC_ENABLE_PROVIDER_SIGN_IN ?? "false",
     NEXT_PUBLIC_ENABLE_EXTENDED_TRACKING: process.env.NEXT_PUBLIC_ENABLE_EXTENDED_TRACKING ?? "false",
     NEXT_PUBLIC_REGISTRATION_MODE: process.env.NEXT_PUBLIC_REGISTRATION_MODE ?? "ENABLED",
     NEXT_PUBLIC_SUPPORT_URL: process.env.NEXT_PUBLIC_SUPPORT_URL ?? ""

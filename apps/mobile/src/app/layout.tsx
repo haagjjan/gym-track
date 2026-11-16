@@ -4,6 +4,7 @@ import { NavigationTracker } from "../../../web/src/features/shell/app-history";
 import { THEME_BACKGROUND, themeBootstrapScript } from "../../../web/src/features/shell/theme";
 import { ExtendedTrackingProvider } from "../../../web/src/shared/extended-tracking";
 import { appConfig } from "../config";
+import { AppLinks } from "../native/app-links";
 import { AndroidBack } from "../native/android-back";
 import { AppQueryProvider } from "../offline/app-query-provider";
 import { OutboxSync } from "../offline/outbox-sync";
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: ReactNode }): React
       <body>
         <NavigationTracker />
         <AndroidBack />
+        <AppLinks />
         <AppQueryProvider>
           <OutboxSync />
           <ExtendedTrackingProvider enabled={appConfig.extendedTracking}>{children}</ExtendedTrackingProvider>

@@ -57,7 +57,7 @@ const PATH_OVERRIDES: Readonly<Record<string, string>> = {
   "/api/public-status": "/api/v1/status-metrics"
 };
 
-const SESSION_START_PATHS = new Set(["/api/auth/login", "/api/auth/signup"]);
+const SESSION_START_PATHS = new Set(["/api/auth/login", "/api/auth/signup", "/api/auth/provider"]);
 const LOGOUT_PATH = "/api/auth/logout";
 
 export function configureAppTransport(config: AppTransportConfig): void {
@@ -150,6 +150,12 @@ export async function apiRequest(url: string, init: RequestInit = {}): Promise<R
   }
 
   if (response.status === 401 && token && !SESSION_START_PATHS.has(path) && current.generation === generation) {
+    // A rejected provider credential during linking says nothing about the
+    // bearer session used to authorize the request.
+    const payload = path === "/api/users/me/identities" && init.method === "POST"
+      ? await response.clone().json().catch(() => null) as { error?: { code?: string } } | null
+      : null;
+    if (current.generation !== generation || payload?.error?.code === "INVALID_PROVIDER_TOKEN" || payload?.error?.code === "INVALID_PROVIDER_NONCE") return response;
     await forgetSession(current);
     current.config.onSessionChange?.("expired");
   }

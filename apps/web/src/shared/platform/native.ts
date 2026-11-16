@@ -14,6 +14,8 @@ export interface NativeNotification {
  * interface keeps Capacitor out of the web bundle.
  */
 export interface NativeBridge {
+  platform(): "ios" | "android" | "web";
+  providerSignIn(provider: "apple" | "google", nonce: string): Promise<{ idToken: string } | "cancelled">;
   /** Opens a link outside the app, in the system browser sheet. */
   openExternal(url: string): Promise<void>;
   /** Hands a file to the system share sheet. */
