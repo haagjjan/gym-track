@@ -6,6 +6,7 @@ import { useId, type ReactNode } from "react";
 import { useWorkout } from "../../shared/api/hooks";
 import type { SessionExercise, WorkoutDetail, WorkoutSummary } from "../../shared/api/types";
 import { formatDay, formatKgValue, formatMinutes } from "../../shared/format";
+import { workoutHref } from "../../shared/platform/routes";
 import { buttonClass } from "../../shared/ui/button";
 import { IconChevronDown } from "../../shared/ui/icons";
 import { Skeleton } from "../../shared/ui/ui";
@@ -61,7 +62,7 @@ export function HistoryRow({
         <div className="border-t border-line px-4 pb-4 pt-3" id={panelId}>
           {detail ? <QuickView detail={detail} showEmpty={!extendedTracking} /> : <FetchedQuickView extendedTracking={extendedTracking} workoutId={workout.id} />}
           {extendedTracking ? <TrackingReadout workoutId={workout.id} /> : null}
-          <Link className={`${buttonClass("secondary")} mt-4 w-full`} href={detailHref ?? `/workouts/${workout.id}`}>
+          <Link className={`${buttonClass("secondary")} mt-4 w-full`} href={detailHref ?? workoutHref(workout.id)}>
             Open workout
           </Link>
         </div>

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { apiFetch, errorMessage } from "../../shared/api/client";
 import { Button } from "../../shared/ui/button";
+import { ExternalLink } from "../../shared/ui/external-link";
 import { useModalBehavior } from "../../shared/ui/use-modal-behavior";
 
 interface UserMessage {
@@ -75,7 +76,7 @@ export function MessageCenter({ inline = false }: { inline?: boolean }): ReactNo
         <button aria-label="Dismiss message" className="min-h-11 shrink-0 px-3 text-body text-accent disabled:text-text-muted" data-modal-initial-focus disabled={busy} onClick={() => void dismiss()} type="button">Close</button>
       </div>
       <p className="mt-2 whitespace-pre-wrap break-words text-body text-text-secondary">{message.body}</p>
-      {message.actionUrl ? <a className="mt-1 inline-flex min-h-11 items-center break-all text-body text-accent" href={message.actionUrl} rel="noreferrer" target="_blank">Open related link</a> : null}
+      {message.actionUrl ? <ExternalLink className="mt-1 inline-flex min-h-11 items-center break-all text-body text-accent" href={message.actionUrl}>Open related link</ExternalLink> : null}
       <form className="mt-5 space-y-3" onSubmit={(event) => void respond(event)}>
         <ResponseInput message={message} choice={choice} rating={rating} setChoice={setChoice} setRating={setRating} setText={setText} text={text} />
         {error ? <p className="text-subhead text-danger" role="alert">{error}</p> : null}

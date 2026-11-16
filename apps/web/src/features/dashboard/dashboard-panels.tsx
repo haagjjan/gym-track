@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { Skeleton } from "../../shared/ui/ui";
 import type { ExerciseSummaryPayload, WorkoutSummary } from "../../shared/api/types";
 import { formatDay, formatKgValue, formatMinutes } from "../../shared/format";
+import { workoutHref } from "../../shared/platform/routes";
 import { IconForward } from "../../shared/ui/icons";
 
 export interface PerformanceRowItem {
@@ -98,7 +99,7 @@ export function SessionRows({ isLoading, sessions }: { isLoading: boolean; sessi
     <ul className={groupClass}>
       {sessions.map((session) => (
         <li key={session.id}>
-          <Link className="flex min-h-[60px] items-center gap-3 px-4 py-2.5" href={`/workouts/${session.id}`}>
+          <Link className="flex min-h-[60px] items-center gap-3 px-4 py-2.5" href={workoutHref(session.id)}>
             <span className="min-w-0 flex-1">
               <span className="line-clamp-2 block text-headline text-text">{sessionTitle(session)}</span>
               <span className="block text-subhead text-text-secondary">{`${formatDay(session.startedAt)}, ${session.totalSets} sets, ${formatMinutes(session.startedAt, session.endedAt)}`}</span>

@@ -1,0 +1,34 @@
+import { isAppRuntime } from "./runtime";
+
+/**
+ * Link to one workout. The web uses a path parameter. The bundled app is a static
+ * export and cannot pre-render per-workout pages, so it uses a query parameter
+ * (ADR 0024).
+ */
+export function workoutHref(workoutId: string, options: { focusName?: boolean } = {}, app = isAppRuntime()): string {
+  const id = encodeURIComponent(workoutId);
+
+  if (app) {
+    return `/workouts/session/?id=${id}${options.focusName ? "&focusName=1" : ""}`;
+  }
+
+  return `/workouts/${id}${options.focusName ? "?focusName=1" : ""}`;
+}
+
+/**
+ * Link to one workout inside the hands-on example. Example workouts can be created
+ * on the device, so the app cannot pre-render their pages either.
+ */
+export function demoWorkoutHref(workoutId: string, app = isAppRuntime()): string {
+  const id = encodeURIComponent(workoutId);
+
+  return app ? `/help/demo/history/?workout=${id}` : `/help/demo/history/${id}`;
+}
+
+/**
+ * The static export serves every route with a trailing slash. Screens compare
+ * against the plain form, so normalise before comparing.
+ */
+export function normalizePathname(pathname: string): string {
+  return pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
+}

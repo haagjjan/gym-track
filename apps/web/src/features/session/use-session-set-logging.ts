@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { errorMessage } from "../../shared/api/client";
+import { haptic } from "../../shared/platform/native";
 import { useSessionMutations } from "../../shared/api/hooks";
 import type { SessionExercise } from "../../shared/api/types";
 import {
@@ -111,6 +112,7 @@ export function useSessionSetLogging(options: SessionSetLoggingOptions) {
       const restSeconds = readRestSeconds(options.userId);
       setRestTimer(restSeconds > 0 ? { seconds: restSeconds, startedAt: now } : null);
       options.onError(null);
+      haptic("success");
       options.onStatus(`Set ${saved.setOrder} logged.`);
       return true;
     } catch (caught) {

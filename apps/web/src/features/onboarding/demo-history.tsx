@@ -5,6 +5,7 @@ import { HistoryRow } from "../history/history-row";
 import { formatKgValue } from "../../shared/format";
 import { workoutSummary } from "./demo-data";
 import { useDemo, useDemoWorkouts } from "./demo-provider";
+import { demoWorkoutHref } from "../../shared/platform/routes";
 
 export function DemoHistory({ workoutId }: { workoutId?: string | undefined }): ReactNode {
   const { record } = useDemo();
@@ -28,7 +29,7 @@ export function DemoHistory({ workoutId }: { workoutId?: string | undefined }): 
   return <div className="mx-auto max-w-3xl space-y-4 px-4 py-4 lg:px-6">
     <h1 className="text-title-1 text-text">Workout history</h1>
     <p className="text-body text-text-secondary">{workouts.length} example workouts. Tap one to see its sets.</p>
-    <ul className="divide-y divide-line overflow-hidden rounded-[var(--radius-card)] bg-surface">{workouts.map((workout) => <HistoryRow detail={workout} detailHref={`/help/demo/history/${workout.id}`} isExpanded={expandedId === workout.id} key={workout.id}
+    <ul className="divide-y divide-line overflow-hidden rounded-[var(--radius-card)] bg-surface">{workouts.map((workout) => <HistoryRow detail={workout} detailHref={demoWorkoutHref(workout.id)} isExpanded={expandedId === workout.id} key={workout.id}
       onToggle={() => { record("expanded"); setExpandedId((current) => current === workout.id ? null : workout.id); }} workout={workoutSummary(workout)} />)}</ul>
   </div>;
 }

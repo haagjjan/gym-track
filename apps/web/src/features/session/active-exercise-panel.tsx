@@ -1,5 +1,7 @@
 "use client";
 
+import { haptic } from "../../shared/platform/native";
+
 import { useState, type ReactNode } from "react";
 import { Button } from "../../shared/ui/button";
 import { ConfirmDialog } from "../../shared/ui/confirm-dialog";
@@ -39,6 +41,7 @@ export function ActiveExercisePanel(props: ActiveExercisePanelProps): ReactNode 
   const sets = props.exercise.sets;
 
   function removeExercise(): void {
+    haptic("warning");
     props.onError(null);
     props.mutations.removeExercise.mutate(
       { sessionExerciseId: props.exercise.id },

@@ -1,3 +1,7 @@
+import { createProviderRepository } from "./features/auth/provider.repository.js";
+import { createProviderService } from "./features/auth/provider.service.js";
+import { createProviderTokenVerifier } from "./features/auth/provider-token.js";
+import { signInUser } from "./features/auth/auth.service.js";
 import { createTrackingCsvRepository } from "./features/tracking/tracking-csv.repository.js";
 import { registerTrackingCsvRoutes } from "./features/tracking/tracking-csv.routes.js";
 import { createTrackingRepository } from "./features/tracking/tracking.repository.js";
@@ -49,9 +53,11 @@ import { createEventTracker, noopEventTracker, type EventTracker } from "./share
 import { createMailerFromEnv, type Mailer } from "./shared/mailer.js";
 import type { ApiLogger } from "./shared/logger.js";
 import { registerApiMetrics, type ApiMetricsOptions } from "./shared/metrics.js";
+import { registerGlobalRateLimits } from "./shared/global-rate-limit.js";
 import { createRateLimitResponse } from "./shared/rate-limit-response.js";
 import { createRequestId, registerApiRequestLogging } from "./shared/request-logging.js";
 import { trustedClientKey, verifiedClientIp } from "./shared/client-attribution.js";
+import { isMobileClient, registerMobileClient, type MobileClientOptions } from "./features/auth/mobile-client.js";
 import { registerLifecycleScheduler } from "./features/lifecycle/lifecycle-scheduler.js";
 import { createMessageRepository } from "./features/messages/message.repository.js";
 import { registerMessageRoutes } from "./features/messages/message.routes.js";
@@ -66,6 +72,7 @@ export interface ServerAuthConfig {
 }
 
 export interface ServerExtras {
+  providerSignIn?: { appleClientIds: string[]; googleClientIds: string[] };
   extendedTracking?: boolean;
   /** Email transport for verification/reset mail. Defaults to a no-op sender. */
   mailer?: Mailer;
@@ -89,6 +96,8 @@ export interface ServerExtras {
   /** Shared only by the web BFF and API to authenticate edge-derived client IPs. */
   clientIpSecret?: string;
   supportEmail?: string;
+  /** Bundled mobile app transport (ADR 0023). Off unless set. */
+  mobileClient?: MobileClientOptions;
 }
 
 // One JSON payload should never need more than this; CSV imports are the
@@ -104,19 +113,17 @@ export async function buildServer(
   const server = fastify({
     logger,
     bodyLimit: BODY_LIMIT_BYTES,
+    // Bound how long a client may take to send a request (slow-request guard).
+    requestTimeout: 60_000,
     trustProxy: extras.trustProxy ?? false,
     logController: new LogController({ disableRequestLogging: true }),
     genReqId: (request) => createRequestId(request.headers["x-request-id"])
   });
   registerApiRequestLogging(server);
-  if (extras.clientIpSecret) {
-    server.addHook("onRequest", async (request, reply) => {
-      const path = request.url.split("?", 1)[0];
-      if (path === "/api/v1/health" || path === "/api/v1/metrics" || verifiedClientIp(request, extras.clientIpSecret)) {
-        return;
-      }
-      return reply.status(403).send({ error: { code: "BFF_REQUIRED", message: "Requests must use the public web application." } });
-    });
+  if (extras.mobileClient) {
+    registerMobileClient(server, extras.mobileClient);
+  } else {
+    server.decorateRequest("mobileClient", false);
   }
   const operationalMetrics = registerApiMetrics(server, extras.metrics);
   const events =
@@ -178,9 +185,9 @@ export async function buildServer(
   await server.register(helmet, {
     contentSecurityPolicy: false
   });
-  // Baseline abuse ceiling per client IP; auth routes carry stricter
-  // per-route limits (see auth.routes.ts).
+  // Route buckets supplement independent global address ceilings.
   await server.register(rateLimit, {
+    global: false,
     max: 300,
     timeWindow: "1 minute",
     keyGenerator: (request) => trustedClientKey(request, extras.clientIpSecret),
@@ -188,10 +195,32 @@ export async function buildServer(
     errorResponseBuilder: (_request, context) => createRateLimitResponse(context)
   });
   await server.register(cookie);
+  registerGlobalRateLimits(server, authConfig.cookieName, extras.clientIpSecret);
+  if (extras.clientIpSecret) {
+    server.addHook("onRequest", async (request, reply) => {
+      const path = request.url.split("?", 1)[0];
+      if (path === "/api/v1/health" || path === "/api/v1/metrics" || isMobileClient(request) || verifiedClientIp(request, extras.clientIpSecret)) {
+        return;
+      }
+      return reply.status(403).send({ error: { code: "BFF_REQUIRED", message: "Requests must use the public web application." } });
+    });
+  }
   await registerHealthRoutes(server, databaseHealth);
   await registerStatusRoutes(server, statusService);
   await registerAuthRoutes(server, {
     service: authService,
+    ...(extras.providerSignIn ? { providerService: createProviderService({
+      repository: createProviderRepository(db),
+      verify: createProviderTokenVerifier({ audiences: {
+        apple: extras.providerSignIn.appleClientIds, google: extras.providerSignIn.googleClientIds
+      } }),
+      signIn: (user) => signInUser(user, {
+        repository: createAuthRepository(db), sessionTokens: cryptoSessionTokenGenerator,
+        sessionTtlDays: authConfig.sessionTtlDays
+      }),
+      sessionTokens: cryptoSessionTokenGenerator, sessionTtlDays: authConfig.sessionTtlDays,
+      registrationMode: authConfig.registrationMode ?? (authConfig.registrationEnabled === false ? "DISABLED" : "ENABLED")
+    }) } : {}),
     events,
     cookie: {
       name: authConfig.cookieName,

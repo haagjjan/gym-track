@@ -29,6 +29,7 @@ import { OnboardingInvitation } from "../onboarding/onboarding-invitation";
 import { MessageCenter } from "../messages/message-center";
 import { StatusBarScrim } from "../../shared/ui/status-bar-scrim";
 import { formatElapsed } from "../../shared/format";
+import { normalizePathname, workoutHref } from "../../shared/platform/routes";
 
 type IconComponent = (props: SVGProps<SVGSVGElement>) => ReactNode;
 
@@ -80,7 +81,7 @@ export function AppShell({
   user: AuthUser;
   demo?: boolean;
 }): ReactNode {
-  const pathname = usePathname();
+  const pathname = normalizePathname(usePathname());
   const tab = activeTab(pathname, demo);
   const pushed = !demo && !isTabRoot(pathname);
   const openWorkout = useOpenWorkout(!demo);
@@ -245,7 +246,7 @@ function WorkoutMiniBar({ workout }: { workout: WorkoutSummary }): ReactNode {
     <Link
       aria-label={`Resume ${workoutTitle(workout)}, ${elapsed} elapsed`}
       className="mx-auto flex h-[var(--minibar-height)] max-w-[45rem] items-center gap-3 border-t border-line bg-surface px-[max(1rem,env(safe-area-inset-left))]"
-      href={`/workouts/${workout.id}`}
+      href={workoutHref(workout.id)}
     >
       <span aria-hidden className="size-2.5 flex-none rounded-full bg-success" />
       <span className="min-w-0 flex-1 truncate text-headline text-text">{workoutTitle(workout)}</span>
@@ -289,7 +290,7 @@ function DesktopSidebar({
         {openWorkout && pathname !== "/workout" ? (
           <Link
             className="mt-4 flex min-h-11 items-center gap-3 rounded-lg bg-surface-raised px-3 py-2"
-            href={`/workouts/${openWorkout.id}`}
+            href={workoutHref(openWorkout.id)}
           >
             <span aria-hidden className="size-2.5 flex-none rounded-full bg-success" />
             <span className="min-w-0 flex-1">

@@ -46,7 +46,10 @@ export function ExercisesScreen({ userId }: { userId: string }): ReactNode {
 
   return (
     <div className="mx-auto max-w-3xl space-y-4 px-4 pb-6 pt-4 lg:px-6">
-      <h1 className="text-title-1 text-text">Exercise library</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-title-1 text-text">Exercise library</h1>
+        <Button className="-mr-4 shrink-0" onClick={() => setEditing("new")} size="compact" variant="plain">New exercise</Button>
+      </div>
       <input aria-label="Search exercises" className="min-h-[3.125rem] w-full rounded-[var(--radius-control)] border border-control-line bg-surface-raised px-3 text-body text-text placeholder:text-text-muted" onChange={(event) => setSearchInput(event.currentTarget.value)} placeholder="Search by exercise, muscle or equipment" type="search" value={searchInput} />
       {trackingEnabled ? <TrackingModeFilter onChange={setTrackingMode} value={trackingMode} /> : null}
       <FacetFilters filters={filters} onChange={setFilters} onClear={clear} onSortChange={(value) => setSort(value as typeof sort)} showEditability sort={sort} sortOptions={sortOptions} />
@@ -58,7 +61,6 @@ export function ExercisesScreen({ userId }: { userId: string }): ReactNode {
       ) : (
         <ExerciseList exercises={exercises.data ?? []} onEdit={setEditing} sort={sort} userId={userId} />
       )}
-      <Button className="w-full" onClick={() => setEditing("new")}>New exercise</Button>
       <ExerciseEditorDialog
         exercise={editing}
         isSaving={mutations.create.isPending || mutations.update.isPending}

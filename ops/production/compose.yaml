@@ -78,7 +78,12 @@ services:
     environment:
       API_HOST: 0.0.0.0
       API_PORT: 4000
-      API_TRUST_PROXY: "false"
+      # "true" only together with the /api/v1 route in the Caddyfile, which overwrites
+      # X-Forwarded-For with the address Cloudflare reports.
+      API_TRUST_PROXY: ${API_TRUST_PROXY:-false}
+      ENABLE_MOBILE_TOKEN_AUTH: ${ENABLE_MOBILE_TOKEN_AUTH:-false}
+      MOBILE_APP_ORIGINS: ${MOBILE_APP_ORIGINS:-capacitor://localhost,https://localhost}
+      MOBILE_MIN_APP_VERSION: ${MOBILE_MIN_APP_VERSION:-}
       APP_BASE_URL: https://app.gymtrack.ch
       APP_ENV: production
       APP_RELEASE: ${APP_RELEASE:?Set APP_RELEASE to the full deployed Git SHA}
@@ -127,6 +132,7 @@ services:
       - database
       - monitoring
       - api-egress
+      - mobile-api
     logging: *bounded-logging
 
   web:
@@ -139,6 +145,8 @@ services:
     security_opt:
       - no-new-privileges:true
     environment:
+      APPLE_TEAM_ID: ${APPLE_TEAM_ID:-}
+      ANDROID_CERT_SHA256: ${ANDROID_CERT_SHA256:-}
       API_BASE_URL: http://api:4000/api/v1
       APP_BASE_URL: https://app.gymtrack.ch
       APP_ENV: production
@@ -235,6 +243,7 @@ services:
     networks:
       - frontend
       - edge
+      - mobile-api
     logging: *bounded-logging
 
   prometheus:
@@ -510,6 +519,9 @@ networks:
     internal: true
   edge: {}
   application:
+    internal: true
+  # Proxy to API only, for the mobile app route (ADR 0023).
+  mobile-api:
     internal: true
   api-egress: {}
   database:

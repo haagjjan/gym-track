@@ -1,7 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Button, buttonClass } from "../../shared/ui/button";
+import { saveFile } from "../../shared/save-file";
+import { Button } from "../../shared/ui/button";
 import { Sheet } from "../../shared/ui/sheet";
 
 const columns = [
@@ -33,6 +34,11 @@ const exerciseTypes = "compound, isolation, isometric, other";
 const muscleGroups = "chest, back, shoulders, biceps, triceps, forearms, quads, hamstrings, glutes, calves, abs, traps";
 
 export function CsvFormatDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }): ReactNode {
+  function handleDownloadSample(): void {
+    const file = new File([sampleCsv], "gym-workouts-sample.csv", { type: "text/csv;charset=utf-8" });
+    void saveFile(file);
+  }
+
   return (
     <Sheet className="max-h-[92dvh] overflow-y-auto" isOpen={isOpen} labelledBy="csv-format-title" onClose={onClose} portal width="3xl">
       <header className="flex items-center justify-between gap-3">
@@ -61,7 +67,7 @@ export function CsvFormatDialog({ isOpen, onClose }: { isOpen: boolean; onClose:
       </div>
 
       <div className="mt-4 grid gap-2 sm:grid-cols-2">
-        <a className={buttonClass("secondary")} download="gym-workouts-sample.csv" href={`data:text/csv;charset=utf-8,${encodeURIComponent(sampleCsv)}`}>Download sample CSV</a>
+        <Button onClick={handleDownloadSample} variant="secondary">Download sample CSV</Button>
         <Button onClick={onClose} variant="primary">Close</Button>
       </div>
     </Sheet>

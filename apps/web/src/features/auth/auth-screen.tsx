@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, type FormEvent, type MouseEvent, type ReactNode } from "react";
+import { ProviderButtons } from "./provider-buttons";
 import { Button } from "../../shared/ui/button";
 import { ApiError, apiFetch } from "../../shared/api/client";
 import { PUBLIC_PRIVACY_VERSION, PUBLIC_TERMS_VERSION } from "../../shared/public-policy";
@@ -92,6 +93,7 @@ export function AuthScreen({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
+    if (isPending) return;
     setFormError(null);
     setFieldErrors({});
 
@@ -204,6 +206,8 @@ export function AuthScreen({
           {isPending ? details.pending : details.submit}
         </Button>
       </form>
+
+      <ProviderButtons pending={isPending} setPending={setIsPending} />
 
       {mode === "signup" || registrationEnabled ? (
         <p className="mt-4 flex flex-wrap items-center justify-center gap-x-2 text-body text-text-secondary">

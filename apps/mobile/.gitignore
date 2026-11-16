@@ -1,0 +1,16 @@
+public/
+out/
+.next/
+next-env.d.ts
+
+# native build output
+ios/App/App/public/
+ios/App/Pods/
+ios/DerivedData/
+android/app/src/main/assets/public/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/capacitor-cordova-android-plugins/
+ios/capacitor-cordova-ios-plugins/

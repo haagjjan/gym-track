@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { sessionTokenFrom } from "./mobile-client.js";
 import { noopEventTracker } from "../../shared/events.js";
 import { sendValidationError } from "../../shared/http-validation.js";
 import { authRateLimit, type AuthRouteOptions } from "./auth-route-config.js";
@@ -44,7 +45,7 @@ export function registerAuthActionRoutes(
     "/api/v1/auth/resend-verification",
     { config: authRateLimit },
     async (request, reply) => {
-      const current = await options.service.currentUser(request.cookies[options.cookie.name]);
+      const current = await options.service.currentUser(sessionTokenFrom(request, options.cookie.name));
 
       if (!current.ok) {
         return reply.status(401).send({

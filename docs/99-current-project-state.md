@@ -10,7 +10,13 @@ A short handoff for someone (or a model) who can't look around the repository. L
   live in Switzerland (ADR 0022). It is self-hosted on a home server behind Cloudflare Tunnel and
   Caddy, with monitoring, alerting, encrypted off-machine backups and a public status page.
 - **Mobile apps** will be Capacitor shells around a bundled build of the web UI (ADR 0021,
-  accepted with a spike gate). Nothing native ships yet.
+  accepted with a spike gate). Nothing native ships yet. Branch `mobile/app` (2026-11-14,
+  not merged) holds the spike and most of the app: `apps/mobile` with iOS and Android
+  projects, token auth on the API behind `ENABLE_MOBILE_TOKEN_AUTH`, every non-admin route,
+  and an outbox for sets logged offline. On the Android emulator the bundled app logs in,
+  logs sets online and offline, and syncs them once; on the iOS simulator it builds and
+  shows Login, with sign-in not yet exercised there. ADRs 0023 to 0025 are proposed and
+  wait for the owner. See [mobile-app.md](mobile-app.md).
 - **UX rework** (branch `ux-rework`) got the web UI ready to ship as that app. Done and signed
   off on 2026-11-09:
   - a new design system in [DESIGN.md](DESIGN.md): system font, one cyan accent, light and dark

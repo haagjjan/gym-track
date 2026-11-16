@@ -154,3 +154,20 @@ reclassifying an existing exercise. Down migrations refuse logged data, custom
 time exercises or a changed seed; disabling the flag is the normal rollback.
 Account export and erasure include new entries even while disabled. Erasure
 preserves any shared time exercise referenced by another account.
+
+### Provider identities (ADR 0029)
+
+- `user_identities` stores UUID `id`, cascading `user_id`, checked `provider` (`apple` or
+  `google`), `provider_subject`, nullable `email_at_link`, and defaulted `created_at`.
+  `(provider, provider_subject)` is unique; `user_id` is indexed.
+- Users may have a null password hash. Password login is impossible until reset sets a
+  password. Password-confirmed account actions return `PASSWORD_REQUIRED` first.
+- Auto-linking requires verified email at both the provider and GymTrack. Explicit linking
+  requires a current session; another account's identity cannot be claimed.
+- New provider accounts retain the same policy/consent evidence as password signup.
+  Missing email gets a unique reserved `@provider.invalid` placeholder to preserve the
+  existing non-null email schema; it is unverified and cannot receive mail.
+- Creation of user, identity and session is atomic. Unlinking locks the user to preserve
+  at least one password or provider sign-in method under concurrent requests.
+- Deleting the user cascades to provider identities. Apple token revocation remains a
+  separate release prerequisite requiring the owner's Apple credentials.

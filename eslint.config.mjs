@@ -29,7 +29,10 @@ const eslintConfig = [
       "**/dist/**",
       "**/next-env.d.ts",
       "**/node_modules/**",
-      "**/out/**"
+      "**/out/**",
+      "apps/mobile/public/**",
+      "apps/mobile/ios/**",
+      "apps/mobile/android/**"
     ]
   },
   js.configs.recommended,

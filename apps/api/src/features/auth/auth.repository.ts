@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { sql, type Kysely } from "kysely";
 import type { AppDatabase } from "../../db/database.js";
 
@@ -5,7 +6,7 @@ export interface AuthUserRecord {
   id: string;
   email: string;
   username: string;
-  passwordHash: string;
+  passwordHash: string | null;
   emailVerifiedAt: Date | null;
   failedLoginAttempts: number;
   lockedUntil: Date | null;
@@ -18,10 +19,11 @@ export interface NewAuthUser {
   id: string;
   email: string;
   username: string;
-  passwordHash: string;
+  passwordHash: string | null;
   termsVersion: string;
   privacyVersion: string;
   adultAttestedAt: Date;
+  emailVerifiedAt?: Date | null;
 }
 
 export interface NewAuthSession {
@@ -61,7 +63,8 @@ const userColumns = [
 export interface AuthRepository {
   createUserWithSession(
     user: NewAuthUser,
-    session: NewAuthSession
+    session: NewAuthSession,
+    identity?: { provider: "apple" | "google"; subject: string; email: string | null }
   ): Promise<CreateUserWithSessionResult>;
   createSession(session: NewAuthSession): Promise<void>;
   findUserByUsername(username: string): Promise<AuthUserRecord | null>;
@@ -87,7 +90,7 @@ export interface AuthRepository {
 
 export function createAuthRepository(db: Kysely<AppDatabase>): AuthRepository {
   return {
-    async createUserWithSession(user, session) {
+    async createUserWithSession(user, session, identity) {
       try {
         const createdUser = await db.transaction().execute(async (trx) => {
           const insertedUser = await trx
@@ -97,6 +100,7 @@ export function createAuthRepository(db: Kysely<AppDatabase>): AuthRepository {
               email: user.email,
               username: user.username,
               password_hash: user.passwordHash,
+              email_verified_at: user.emailVerifiedAt ?? null,
               terms_version: user.termsVersion,
               privacy_version: user.privacyVersion,
               policy_accepted_at: user.adultAttestedAt,
@@ -126,6 +130,12 @@ export function createAuthRepository(db: Kysely<AppDatabase>): AuthRepository {
             })
             .execute();
 
+          if (identity) {
+            await trx.insertInto("user_identities").values({
+              id: randomUUID(), user_id: user.id, provider: identity.provider,
+              provider_subject: identity.subject, email_at_link: identity.email
+            }).execute();
+          }
           return insertedUser;
         });
 

@@ -14,6 +14,7 @@ interface ModalBehaviorOptions {
 interface ModalEntry {
   element: HTMLElement;
   onClose: () => void;
+  mayClose: () => boolean;
 }
 
 // Generous enough to outlast a pending mutation settling into a re-render,
@@ -60,7 +61,7 @@ function activateModal(
   onClose: () => void,
   mayCloseOnEscape: () => boolean
 ): () => void {
-  const entry: ModalEntry = { element, onClose };
+  const entry: ModalEntry = { element, onClose, mayClose: mayCloseOnEscape };
   const restoreFocus = document.activeElement instanceof HTMLElement
     ? document.activeElement
     : null;
@@ -158,6 +159,23 @@ function isFocusable(element: HTMLElement): boolean {
     && getComputedStyle(element).visibility !== "hidden"
     && !element.matches(":disabled")
     && !element.closest("[inert]");
+}
+
+/**
+ * Closes the top sheet or dialog the way Escape does. Used by the Android back
+ * button in the phone shell. Returns true when a modal was open, also when it
+ * may not close right now (a pending confirmation), so Back never skips past it.
+ */
+export function closeTopModal(): boolean {
+  const entry = topModal();
+  if (!entry) return false;
+  if (entry.mayClose()) entry.onClose();
+  return true;
+}
+
+/** True while any sheet or dialog is open. */
+export function hasOpenModal(): boolean {
+  return modalStack.length > 0;
 }
 
 function topModal(): ModalEntry | undefined {

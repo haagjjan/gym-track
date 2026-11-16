@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import { normalizePathname } from "../../shared/platform/routes";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { backTarget, recordVisit, titleFor, type BackTarget } from "./navigation";
 
@@ -28,7 +29,7 @@ function writeHistory(history: string[]): void {
  * the full-screen live workout that runs outside the app shell.
  */
 export function NavigationTracker(): ReactNode {
-  const pathname = usePathname();
+  const pathname = normalizePathname(usePathname());
 
   useEffect(() => {
     writeHistory(recordVisit(readHistory(), pathname));
@@ -46,7 +47,7 @@ export interface AppBack {
 
 /** Back control for pushed screens. A screen never picks its own target. */
 export function useAppBack(signedIn = true): AppBack {
-  const pathname = usePathname();
+  const pathname = normalizePathname(usePathname());
   const router = useRouter();
   const [history, setHistory] = useState<string[]>([]);
 

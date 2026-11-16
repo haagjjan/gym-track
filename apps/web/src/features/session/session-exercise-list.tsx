@@ -1,5 +1,8 @@
 "use client";
 
+import { haptic } from "../../shared/platform/native";
+
+import { useDndMonitor } from "@dnd-kit/core";
 import { useEffect, useRef, type ReactNode } from "react";
 import { Button } from "../../shared/ui/button";
 import { SortableItem, SortableList } from "../../shared/ui/sortable-list";
@@ -55,6 +58,7 @@ export function SessionExerciseList(props: SessionExerciseListProps): ReactNode 
             ids={props.exercises.map((exercise) => exercise.id)}
             onReorder={props.onReorder}
           >
+            <ReorderHaptics />
             {props.exercises.map((exercise) => (
               <SortableItem
                 disabled={!props.canEdit || props.isReordering}
@@ -91,7 +95,7 @@ export function SessionExerciseList(props: SessionExerciseListProps): ReactNode 
       )}
 
       {props.canEdit ? (
-        <Button className="mt-3 w-full" onClick={props.onAdd} variant={empty ? "primary" : "secondary"}>
+        <Button className="mt-3 w-full" onClick={props.onAdd} variant={!cardio && empty ? "primary" : "secondary"}>
           <IconPlus24 /> {cardio ? "Add cardio" : "Add exercises"}
         </Button>
       ) : null}
@@ -106,4 +110,14 @@ function setCountLabel(exercise: SessionExercise, entryCounts: Map<string, numbe
   const [one, many] = mode === "cardio" ? ["entry", "entries"] : ["set", "sets"];
   if (count === 0) return canEdit ? `No ${many} yet` : `No ${many}`;
   return `${count} ${count === 1 ? one : many}`;
+}
+
+function ReorderHaptics(): null {
+  useDndMonitor({
+    onDragStart: () => haptic("selection"),
+    onDragOver: () => haptic("selection"),
+    onDragEnd: () => haptic("selection"),
+    onDragCancel: () => haptic("selection")
+  });
+  return null;
 }

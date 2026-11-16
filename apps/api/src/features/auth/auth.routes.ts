@@ -1,15 +1,18 @@
 import type { FastifyInstance, FastifyReply } from "fastify";
+import { createIdentifierLimiter } from "../../shared/identifier-limiter.js";
+import { createRateLimitResponse } from "../../shared/rate-limit-response.js";
 import { noopEventTracker } from "../../shared/events.js";
 import { sendValidationError } from "../../shared/http-validation.js";
+import { sendLoginFailure, startSession } from "./auth-response.js";
+import { registerProviderRoutes } from "./provider.routes.js";
 import { registerAuthActionRoutes } from "./auth-action.routes.js";
 import {
   authRateLimit,
   registrationMode,
-  type AuthCookieOptions,
   type AuthRouteOptions
 } from "./auth-route-config.js";
 import { loginRequestSchema, signupRequestSchema } from "./auth.schemas.js";
-import type { AuthenticatedUser } from "./auth.service.js";
+import { isMobileClient, sessionTokenFrom } from "./mobile-client.js";
 
 export async function registerAuthRoutes(
   server: FastifyInstance,
@@ -17,6 +20,7 @@ export async function registerAuthRoutes(
 ): Promise<void> {
   const events = options.events ?? noopEventTracker;
   const mode = registrationMode(options);
+  const loginLimiter = createIdentifierLimiter({ max: 10, windowMs: 15 * 60 * 1000 });
 
   server.post(
     "/api/v1/auth/signup",
@@ -50,12 +54,8 @@ export async function registerAuthRoutes(
       }
 
       events.track("user_signed_up", result.value.user.id);
-      setSessionCookie(reply, options.cookie, result.value);
-
       return reply.status(201).send({
-        data: {
-          user: result.value.user
-        }
+        data: startSession(request, reply, options.cookie, result.value)
       });
     }
   );
@@ -67,49 +67,36 @@ export async function registerAuthRoutes(
       return sendValidationError(reply, parsed.error);
     }
 
+    const limit = loginLimiter.consume(parsed.data.username);
+    if (!limit.allowed) {
+      return reply.header("retry-after", limit.retryAfterSeconds).status(429).send(
+        createRateLimitResponse({ statusCode: 429, after: `${limit.retryAfterSeconds} seconds` })
+      );
+    }
+
     const result = await options.service.login(parsed.data);
 
     if (!result.ok) {
-      if (result.reason === "account_unavailable") {
-        return reply.status(403).send({
-          error: { code: "ACCOUNT_UNAVAILABLE", message: "This account is not currently available." }
-        });
-      }
-      if (result.reason === "locked") {
-        return reply.status(423).send({
-          error: {
-            code: "ACCOUNT_LOCKED",
-            message: "Too many failed attempts. Try again in a few minutes."
-          }
-        });
-      }
-
-      return reply.status(401).send({
-        error: {
-          code: "INVALID_CREDENTIALS",
-          message: "Username or password is incorrect."
-        }
-      });
+      return sendLoginFailure(reply, result.reason);
     }
 
     events.track("user_logged_in", result.value.user.id);
-    setSessionCookie(reply, options.cookie, result.value);
-
     return reply.send({
-      data: {
-        user: result.value.user
-      }
+      data: startSession(request, reply, options.cookie, result.value)
     });
   });
 
   server.post("/api/v1/auth/logout", async (request, reply) => {
-    await options.service.logout(request.cookies[options.cookie.name]);
-    reply.clearCookie(options.cookie.name, {
-      httpOnly: true,
-      path: "/",
-      sameSite: "lax",
-      secure: options.cookie.secure
-    });
+    await options.service.logout(sessionTokenFrom(request, options.cookie.name));
+
+    if (!isMobileClient(request)) {
+      reply.clearCookie(options.cookie.name, {
+        httpOnly: true,
+        path: "/",
+        sameSite: "lax",
+        secure: options.cookie.secure
+      });
+    }
 
     return reply.send({
       data: {
@@ -119,7 +106,7 @@ export async function registerAuthRoutes(
   });
 
   server.get("/api/v1/auth/me", async (request, reply) => {
-    const result = await options.service.currentUser(request.cookies[options.cookie.name]);
+    const result = await options.service.currentUser(sessionTokenFrom(request, options.cookie.name));
 
     if (!result.ok) {
       return reply.status(401).send({
@@ -138,21 +125,7 @@ export async function registerAuthRoutes(
   });
 
   registerAuthActionRoutes(server, options);
-}
-
-function setSessionCookie(
-  reply: FastifyReply,
-  options: AuthCookieOptions,
-  authenticated: AuthenticatedUser
-): void {
-  reply.setCookie(options.name, authenticated.sessionToken, {
-    expires: authenticated.expiresAt,
-    httpOnly: true,
-    maxAge: options.maxAgeSeconds,
-    path: "/",
-    sameSite: "lax",
-    secure: options.secure
-  });
+  if (options.providerService) await registerProviderRoutes(server, options);
 }
 
 function sendRegistrationDisabled(reply: FastifyReply): void {

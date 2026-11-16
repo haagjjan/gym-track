@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type { AuthService, PublicUser } from "./auth.service.js";
+import { sessionTokenFrom } from "./mobile-client.js";
 
 export interface RequestAuthOptions {
   authService: AuthService;
@@ -11,7 +12,7 @@ export async function authenticateRequest(
   reply: FastifyReply,
   options: RequestAuthOptions
 ): Promise<PublicUser | null> {
-  const result = await options.authService.currentUser(request.cookies[options.cookieName]);
+  const result = await options.authService.currentUser(sessionTokenFrom(request, options.cookieName));
 
   if (result.ok) {
     return result.value;

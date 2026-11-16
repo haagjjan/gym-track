@@ -10,6 +10,9 @@ import {
   type UseQueryResult
 } from "@tanstack/react-query";
 import { apiFetch } from "./client";
+import { overlayWorkout, overlayWorkoutList } from "../offline/outbox-overlay";
+import { enqueueOp, isLocalId, newLocalId, readOutbox, resolveId } from "../offline/outbox-store";
+import { runOrQueue, useOutbox } from "../offline/use-outbox";
 import { appendExerciseFilters, queryKeys } from "./query-keys";
 import type {
   CompletedExercise,
@@ -80,23 +83,39 @@ export function useExerciseProgress(
 }
 
 export function useWorkouts(limit = 10): UseQueryResult<ListWorkoutsPayload> {
+  const outbox = useOutbox();
+
   return useQuery({
     queryKey: queryKeys.workouts(limit),
+    // In the phone app the list also shows what is still waiting to be sent.
+    ...(outbox ? { select: (payload: ListWorkoutsPayload) => overlayWorkoutList(payload, outbox.state, outbox.userId) } : {}),
     queryFn: ({ signal }) =>
       apiFetch<ListWorkoutsPayload>(`/api/workouts?limit=${limit}&offset=0`, { signal })
   });
 }
 
 export function useWorkout(workoutId: string): UseQueryResult<WorkoutDetail> {
-  return useQuery({
-    queryKey: queryKeys.workout(workoutId),
+  const outbox = useOutbox();
+  const id = outbox ? resolveId(workoutId, outbox.state.idMap) : workoutId;
+  // A workout started on the phone has no server copy until it is sent.
+  const onlyOnPhone = isLocalId(id);
+
+  return useQuery<WorkoutDetail | null, Error, WorkoutDetail>({
+    queryKey: queryKeys.workout(id),
     queryFn: async ({ signal }) => {
+      if (onlyOnPhone) return null;
       const payload = await apiFetch<{ workout: WorkoutDetail }>(
-        `/api/workouts/${workoutId}`,
+        `/api/workouts/${id}`,
         { signal }
       );
 
       return sortWorkout(payload.workout);
+    },
+    ...(onlyOnPhone ? { networkMode: "always" as const, staleTime: Infinity } : {}),
+    select: (workout) => {
+      const shown = outbox ? overlayWorkout(workout, outbox.state, outbox.userId, workoutId) : workout;
+      if (!shown) throw new Error("This workout is no longer on this phone.");
+      return shown;
     }
   });
 }
@@ -179,51 +198,80 @@ export function useWorkoutMutations(): WorkoutMutations {
     void queryClient.invalidateQueries({ queryKey: ["tracking-progress"] });
   };
 
-  const createWorkout = useMutation({
-    mutationFn: async () => {
-      const payload = await apiFetch<{ workout: WorkoutDetail }>("/api/workouts", {
-        method: "POST",
-        body: {}
-      });
+  const serverId = (id: string): string => resolveId(id, readOutbox().idMap);
+  /** The workout with queued changes applied, for the answer of a queued change. */
+  const shown = (userId: string, workoutId: string): WorkoutDetail => {
+    const workout = overlayWorkout(queryClient.getQueryData<WorkoutDetail>(queryKeys.workout(serverId(workoutId))) ?? null, readOutbox(), userId, workoutId);
+    if (!workout) throw new Error("This workout is no longer on this phone.");
+    return workout;
+  };
 
-      return payload.workout;
-    },
+  const createWorkout = useMutation({
+    mutationFn: () => runOrQueue(
+      [],
+      async () => {
+        const payload = await apiFetch<{ workout: WorkoutDetail }>("/api/workouts", {
+          method: "POST",
+          body: {}
+        });
+
+        return payload.workout;
+      },
+      (userId) => {
+        const workoutId = newLocalId();
+        enqueueOp({ kind: "startWorkout", userId, workoutId, startedAt: new Date().toISOString() });
+        return shown(userId, workoutId);
+      }
+    ),
     onSuccess: invalidate
   });
 
   const endWorkout = useMutation({
-    mutationFn: async (workoutId: string) => {
-      const payload = await apiFetch<{ workout: WorkoutDetail }>(
-        `/api/workouts/${workoutId}/end`,
-        { method: "POST", body: {} }
-      );
+    mutationFn: (workoutId: string) => runOrQueue(
+      [workoutId],
+      async () => {
+        const payload = await apiFetch<{ workout: WorkoutDetail }>(
+          `/api/workouts/${serverId(workoutId)}/end`,
+          { method: "POST", body: {} }
+        );
 
-      return payload.workout;
-    },
+        return payload.workout;
+      },
+      (userId) => {
+        enqueueOp({ kind: "endWorkout", userId, workoutId, endedAt: new Date().toISOString() });
+        return shown(userId, workoutId);
+      }
+    ),
     onSuccess: invalidate
   });
 
   const updateWorkout = useMutation({
-    mutationFn: async ({
-      workoutId,
-      input
-    }: {
-      workoutId: string;
-      input: UpdateWorkoutInput;
-    }) => {
-      const payload = await apiFetch<{ workout: WorkoutDetail }>(
-        `/api/workouts/${workoutId}`,
-        { method: "PATCH", body: input }
-      );
+    mutationFn: ({ workoutId, input }: { workoutId: string; input: UpdateWorkoutInput }) => runOrQueue(
+      [workoutId],
+      async () => {
+        const payload = await apiFetch<{ workout: WorkoutDetail }>(
+          `/api/workouts/${serverId(workoutId)}`,
+          { method: "PATCH", body: input }
+        );
 
-      return payload.workout;
-    },
+        return payload.workout;
+      },
+      (userId) => {
+        enqueueOp({ kind: "updateWorkout", userId, workoutId, input });
+        return shown(userId, workoutId);
+      }
+    ),
     onSuccess: invalidate
   });
 
   const deleteWorkout = useMutation({
-    mutationFn: (workoutId: string) =>
-      apiFetch<void>(`/api/workouts/${workoutId}`, { method: "DELETE" }),
+    mutationFn: (workoutId: string) => runOrQueue<void>(
+      [workoutId],
+      () => apiFetch<void>(`/api/workouts/${serverId(workoutId)}`, { method: "DELETE" }),
+      (userId) => {
+        enqueueOp({ kind: "deleteWorkout", userId, workoutId });
+      }
+    ),
     onSuccess: invalidate
   });
 

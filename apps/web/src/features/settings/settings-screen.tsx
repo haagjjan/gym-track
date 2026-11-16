@@ -5,6 +5,7 @@ import { useEffect, useId, useState, type ReactNode } from "react";
 import { Button } from "../../shared/ui/button";
 import { apiFetch } from "../../shared/api/client";
 import { useUserPreferences } from "../../shared/api/hooks";
+import { isAppRuntime } from "../../shared/platform/runtime";
 import type { AuthUser } from "../auth/auth-types";
 import { emptyBiometrics, useBiometrics, type Biometrics } from "../dashboard/use-biometrics";
 import { MAX_FAVORITE_LIFTS, useFavoriteLifts } from "../dashboard/use-favorite-lifts";
@@ -20,6 +21,8 @@ import { BodyCredits } from "./body-credits";
 import { HelpSupportPanel } from "./help-support-panel";
 import { MergeExercisesPanel } from "./merge-exercises-panel";
 import { PrivacyDataPanel } from "./privacy-data-panel";
+import { SignInMethodsPanel } from "./sign-in-methods-panel";
+import { RemindersPanel } from "./reminders-panel";
 import { RestTimerPanel } from "./rest-timer-panel";
 import { Group, Row, Section, SavedStatus, inputClass, useSavedFlash } from "./settings-ui";
 
@@ -48,6 +51,8 @@ export function SettingsScreen({ supportUrl, user }: { supportUrl?: string | und
 
       <AccountCard user={user} />
 
+      <SignInMethodsPanel />
+
       <Section title="Training">
         <Group>
           <SheetRow label="Rest between sets" value={restLoaded ? (restSeconds === 0 ? "Off" : formatRestSeconds(restSeconds)) : ""}>
@@ -68,6 +73,8 @@ export function SettingsScreen({ supportUrl, user }: { supportUrl?: string | und
         </Group>
       </Section>
 
+      {isAppRuntime() ? <Section title="Reminders"><Group><SheetRow label="Workout reminders"><RemindersPanel /></SheetRow></Group></Section> : null}
+
       <Section title="Appearance">
         <DisplayPanel />
       </Section>
@@ -75,7 +82,7 @@ export function SettingsScreen({ supportUrl, user }: { supportUrl?: string | und
       <Section title="Privacy and data">
         <Group>
           <SheetRow label="Privacy choices"><PrivacyDataPanel section="choices" /></SheetRow>
-          <SheetRow label="Download your data"><PrivacyDataPanel section="download" /></SheetRow>
+          <SheetRow label={isAppRuntime() ? "Export your data" : "Download your data"}><PrivacyDataPanel section="download" /></SheetRow>
         </Group>
       </Section>
 

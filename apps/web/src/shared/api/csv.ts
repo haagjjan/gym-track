@@ -1,4 +1,5 @@
 import { ApiError } from "./client";
+import { apiRequest } from "./transport";
 
 export const CSV_EXPORT_URL = "/api/workouts/export.csv";
 export const TRACKING_CSV_EXPORT_URL = "/api/tracking/export.csv";
@@ -23,7 +24,7 @@ export interface CsvImportResult {
 }
 
 async function postCsv<T>(url: string, file: File): Promise<T> {
-  const response = await fetch(url, {
+  const response = await apiRequest(url, {
     method: "POST",
     headers: { "content-type": "text/csv" },
     body: await file.text()
@@ -60,7 +61,7 @@ export function importWorkoutCsv(file: File, confirmNameWarnings: boolean): Prom
 
 /** Time and cardio import: no preview, row errors come back in error.details.errors. */
 export async function importTrackingCsv(text: string): Promise<number> {
-  const response = await fetch("/api/tracking/import.csv", { method: "POST", headers: { "content-type": "text/csv" }, body: text });
+  const response = await apiRequest("/api/tracking/import.csv", { method: "POST", headers: { "content-type": "text/csv" }, body: text });
   const payload = (await response.json().catch(() => null)) as {
     data?: { importedRows: number };
     error?: { message?: string; details?: { errors?: { row: number; message: string }[] } };

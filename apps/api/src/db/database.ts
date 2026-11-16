@@ -14,7 +14,7 @@ interface UsersTable {
   id: string;
   email: string;
   username: string;
-  password_hash: string;
+  password_hash: string | null;
   volume_heat_ceiling: ColumnType<number, number | undefined, number>;
   email_verified_at: NullableTimestampColumn;
   failed_login_attempts: ColumnType<number, number | undefined, number>;
@@ -293,7 +293,17 @@ interface CardioEntriesTable extends ExtendedEntryColumns {
   average_heart_rate: number | null;
 }
 
+interface UserIdentitiesTable {
+  id: string;
+  user_id: string;
+  provider: "apple" | "google";
+  provider_subject: string;
+  email_at_link: string | null;
+  created_at: TimestampColumn;
+}
+
 export interface AppDatabase {
+  user_identities: UserIdentitiesTable;
   timed_sets: TimedSetsTable;
   cardio_entries: CardioEntriesTable;
   account_deletion_tokens: AccountDeletionTokensTable;

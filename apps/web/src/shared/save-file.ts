@@ -1,3 +1,6 @@
+import { apiRequest } from "./api/transport";
+import { getNativeBridge } from "./platform/native";
+
 export type SaveFileResult = "saved" | "cancelled" | "needs-tap";
 
 /**
@@ -9,6 +12,9 @@ export type SaveFileResult = "saved" | "cancelled" | "needs-tap";
  * and the caller then offers a button that calls this again with the same file.
  */
 export async function saveFile(file: File): Promise<SaveFileResult> {
+  const native = getNativeBridge();
+  if (native) return native.shareFile(file);
+
   const touch = typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
   if (touch && typeof navigator.canShare === "function" && navigator.canShare({ files: [file] })) {
     try {
@@ -32,7 +38,7 @@ export async function saveFile(file: File): Promise<SaveFileResult> {
 
 /** Fetches a file from the app's own API (cookies included) as a named File. */
 export async function fetchFile(url: string, fallbackName: string, init?: RequestInit): Promise<File> {
-  const response = await fetch(url, { credentials: "same-origin", ...init });
+  const response = await apiRequest(url, { credentials: "same-origin", ...init });
   if (!response.ok) throw new Error("Couldn't prepare the file. Check your connection and try again.");
   const blob = await response.blob();
   const name = /filename="?([^";]+)"?/i.exec(response.headers.get("content-disposition") ?? "")?.[1] ?? fallbackName;

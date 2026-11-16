@@ -16,14 +16,14 @@ ERD-level PostgreSQL schema for the MVP. The initial SQL migrations in `apps/api
 
 ### `users`
 
-Stores application accounts for email/password login.
+Stores application accounts for password and provider login (ADR 0029).
 
 | Column | Type | Rules |
 | --- | --- | --- |
 | `id` | `uuid` | Primary key |
 | `email` | `text` | Required, globally unique case-insensitively |
 | `username` | `text` | Required, globally unique case-insensitively |
-| `password_hash` | `text` | Required |
+| `password_hash` | `text` | Nullable for accounts that have not set a password |
 | `email_verified_at` | `timestamptz` | Nullable; set after successful verification or password reset |
 | `failed_login_attempts` | `integer` | Required, default 0 |
 | `locked_until` | `timestamptz` | Nullable; temporary login lockout deadline |
@@ -35,6 +35,23 @@ Constraints and indexes:
 
 - Unique index on `lower(email)`.
 - Unique index on `lower(username)`.
+
+### `user_identities`
+
+Provider identities from ADR 0029; the subject, never the email, identifies the user.
+
+| Column | Type | Rules |
+| --- | --- | --- |
+| `id` | `uuid` | Primary key |
+| `user_id` | `uuid` | Required FK to `users.id`, ON DELETE CASCADE |
+| `provider` | `text` | Required, CHECK in `apple`, `google` |
+| `provider_subject` | `text` | Required; unique together with provider |
+| `email_at_link` | `text` | Nullable; provider email at linking, not an identity key |
+| `created_at` | `timestamptz` | Required, default now() |
+
+Index on `user_id` supports listing and unlinking. Migration
+`20261115090000000_add_user_identities.sql` also makes `users.password_hash` nullable.
+Rollback refuses to restore NOT NULL while passwordless accounts exist.
 
 ### `user_sessions`
 

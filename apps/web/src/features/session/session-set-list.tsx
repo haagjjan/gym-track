@@ -1,5 +1,7 @@
 "use client";
 
+import { haptic } from "../../shared/platform/native";
+
 import { useState, type ReactNode } from "react";
 import { Button } from "../../shared/ui/button";
 import { errorMessage } from "../../shared/api/client";
@@ -12,6 +14,7 @@ import { RirChips, RirLabel, SET_TYPE_LABEL, SetTypeControl } from "./set-compos
 import { Stepper } from "../../shared/ui/stepper";
 import { validateSetDraft } from "./validate-set-draft";
 import { useConfirmTap } from "./use-confirm-tap";
+import { isWaitingId } from "../../shared/offline/outbox-store";
 
 export function SessionSetRow({
   onEdit,
@@ -24,12 +27,15 @@ export function SessionSetRow({
 }): ReactNode {
   const warmup = set.setType === "warmup";
   const edited = isRetroactivelyEdited(set, workoutEndedAt);
+  // Logged without a connection in the phone app; it can be edited once it is sent.
+  const waiting = isWaitingId(set.id);
 
   return (
     <li>
       <button
-        aria-label={`Set ${set.setOrder}${warmup ? ", warm-up" : ""}: ${formatKgValue(set.weightKg)} kg × ${set.reps}, RIR ${set.rir}${edited ? ", edited" : ""}. Edit`}
+        aria-label={`Set ${set.setOrder}${warmup ? ", warm-up" : ""}: ${formatKgValue(set.weightKg)} kg × ${set.reps}, RIR ${set.rir}${edited ? ", edited" : ""}. ${waiting ? "Waiting to sync" : "Edit"}`}
         className="flex min-h-[3.25rem] w-full items-center gap-3 px-4 text-left active:bg-surface-raised"
+        disabled={waiting}
         onClick={onEdit}
         type="button"
       >
@@ -38,8 +44,8 @@ export function SessionSetRow({
         </span>
         <span aria-hidden className="min-w-0 flex-1">
           <span className="num block text-body text-text">{formatKgValue(set.weightKg)} kg × {set.reps}</span>
-          {warmup || edited ? (
-            <span className="block text-footnote text-text-muted">{[warmup ? SET_TYPE_LABEL.warmup : null, edited ? "Edited" : null].filter(Boolean).join(", ")}</span>
+          {warmup || edited || waiting ? (
+            <span className="block text-footnote text-text-muted">{[warmup ? SET_TYPE_LABEL.warmup : null, edited ? "Edited" : null, waiting ? "Waiting to sync" : null].filter(Boolean).join(", ")}</span>
           ) : null}
         </span>
         <span aria-hidden className="num flex-none text-subhead text-text-secondary">RIR {set.rir}</span>
@@ -84,6 +90,7 @@ export function SetEditor({ isHistorical, isSaving, isDeleting, onSave, onDelete
   const confirmSave = useConfirmTap(save);
 
   function remove(): void {
+    haptic("warning");
     void onDelete().then(onClose).catch((caught) => onError(errorMessage(caught, "Couldn't delete this set. Check your connection and try again.")));
   }
 

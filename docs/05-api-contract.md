@@ -307,7 +307,7 @@ Disabled response `403`:
 
 ### `POST /api/v1/auth/login`
 
-Logs in with username and password.
+Logs in with a username or email identifier and password.
 
 Request:
 
@@ -337,8 +337,9 @@ Response `200`:
 Behavior:
 
 - Sets the auth session cookie.
-- Returns `401` for invalid credentials.
-- After 10 failed attempts, temporarily locks the account for 15 minutes and returns `423` while the lock is active.
+- Returns `401 INVALID_CREDENTIALS` for a wrong password, including locked, suspended, or deletion-pending accounts. Unknown users still perform dummy password-hash verification.
+- After 10 failed attempts, temporarily locks the account for 15 minutes. Only a correct password reveals `423 ACCOUNT_LOCKED` during the lock or `403 ACCOUNT_UNAVAILABLE` for a non-active account.
+- Independently of the address, allows 10 attempts per 15 minutes per trimmed, lower-case identifier as typed (username and email are separate identifiers), including unknown accounts and successful attempts. Further attempts return `429 RATE_LIMITED` with `Retry-After` in seconds.
 - A successful login clears prior failure and lockout state.
 
 ### `POST /api/v1/auth/logout`
@@ -403,7 +404,7 @@ Returns `400` with `INVALID_TOKEN` when the token is invalid, expired, already u
 
 ### `POST /api/v1/auth/resend-verification`
 
-Attempts to send a new verification email for the authenticated user.
+Queues a new verification email for the authenticated user.
 
 Response `200`:
 
@@ -415,7 +416,7 @@ Response `200`:
 }
 ```
 
-`status` is `SENT`, `NOT_REQUIRED`, or `FAILED`. A new request supersedes every unused verification token for that account. Returns `401` without a valid auth session.
+`status` is always `SENT`: acknowledgement of the request, not delivery confirmation. The response does not wait for account lookup, token issuance, or mail delivery. Already-verified, unknown, throttled, and delivery-failure cases have the same acknowledgement. Allows 3 requests per hour per normalized account email; further requests send nothing and keep the same `200` response. An accepted send supersedes every unused verification token for that account. Returns `401` without a valid auth session.
 
 ### `POST /api/v1/auth/forgot-password`
 
@@ -439,7 +440,7 @@ Response `200`:
 }
 ```
 
-The response is identical whether the email exists or email delivery succeeds, preventing account enumeration. For an existing account, a new request supersedes every unused reset token and attempts delivery of a replacement token that expires after 60 minutes. The delivery outcome is internal only.
+The response is identical whether the email exists or email delivery succeeds, preventing account enumeration. For an existing account, a new request supersedes every unused reset token and attempts delivery of a replacement token that expires after 60 minutes. The delivery outcome is internal only. Allows 3 requests per hour per trimmed, lower-case email, including unknown addresses; further requests send nothing and keep the same `200` response. The HTTP answer does not wait for account lookup, token issuance, or delivery. Errors in background work are logged internally.
 
 ### `POST /api/v1/auth/reset-password`
 
@@ -1766,6 +1767,20 @@ Unavailable upstream service returns `502 API_UNAVAILABLE` without cached data.
 
 The single API process owns a single-flight lifecycle runner. It runs once during startup and hourly thereafter. Auth-token cleanup, due deletions, retention cleanup, and completion notifications are isolated phases: one failure does not stop later phases, later due accounts, or the next scheduled run. The runner processes the entire due-deletion list and reports bounded metrics described under `GET /api/v1/metrics`.
 
+Address limits apply per API process using the trusted client address:
+
+| Scope | Limit | Excess behavior |
+| --- | --- | --- |
+| All requests, aggregated across routes | 300/minute/address | `429 RATE_LIMITED`, `Retry-After` |
+| No session cookie and no Authorization header; except `/api/v1/health` and `/api/v1/status-metrics` | Additional 120/minute/address | `429 RATE_LIMITED`, `Retry-After` |
+| Auth credential/action routes, web/BFF | 10/15 minutes/address/route | `429 RATE_LIMITED`, `Retry-After` |
+| Auth credential/action routes, app (`isMobileClient`) | 60/15 minutes/address/route | `429 RATE_LIMITED`, `Retry-After` |
+| Login identifier, across addresses | 10/15 minutes/identifier | `429 RATE_LIMITED`, `Retry-After` |
+| Forgot-password email, across addresses | 3/hour/email | Identical `200`, no send |
+| Resend-verification email, across addresses | 3/hour/email | Identical `200`, no send |
+
+Session-looking requests are classified by credential presence, not validity. Health and status-metrics retain the 300/minute ceiling. Route and address limits can still return `429` on email-action requests; only the per-email limit is silent. Identifier/email buckets use SHA-256 keys over trimmed, lower-case values, fixed windows starting with the first attempt, and at most 50,000 keys per limiter with oldest-first eviction. Limits reset on process restart and are not shared between API replicas. Background email work is best effort and is not a durable queue.
+
 All public/auth/export/deletion/feedback/admin mutation groups have endpoint-specific limits. Production client attribution accepts only a valid BFF HMAC; browser-supplied forwarding headers are not trusted by the API.
 
 ### Onboarding version 2: hands-on example
@@ -1868,3 +1883,63 @@ with one leading apostrophe for spreadsheet safety. Import removes exactly one,
 so original apostrophes, formula-like notes and maximum-length notes round-trip.
 Use an exported file as the template. The legacy strength importer rejects names
 that belong to time exercises rather than storing repetition sets against them.
+
+## Apple and Google sign-in (ADR 0029)
+
+All routes below are absent (404) unless `ENABLE_PROVIDER_SIGN_IN=true`.
+`APPLE_CLIENT_IDS` and `GOOGLE_CLIENT_IDS` contain comma-separated accepted audiences;
+empty lists make that provider unavailable. No provider access or refresh tokens are stored.
+
+| Method | Endpoint | Request / successful response (`data`) |
+| --- | --- | --- |
+| POST | `/api/v1/auth/provider/nonce` | No body; `{ nonce }` |
+| POST | `/api/v1/auth/provider` | `{ provider: "apple" \| "google", idToken, nonce, signup?: { termsVersion, privacyVersion, adultAttested: true } }`; same response and session transport as password login |
+| GET | `/api/v1/users/me/identities` | Signed in; `{ identities: [{ provider, created_at }] }` |
+| POST | `/api/v1/users/me/identities` | Signed in; `{ provider, idToken, nonce }`; `{ linked: true }` |
+| DELETE | `/api/v1/users/me/identities/:provider` | Signed in; `{ unlinked: true }` |
+
+Nonces contain 32 random bytes encoded as base64url, expire after 10 minutes and are
+single use, including failed token verification or consent-required attempts. They are
+stored in a bounded process-local store; deployments with multiple API processes must
+route the attempt back to its issuing process. The token nonce claim may contain the raw
+nonce or its lowercase SHA-256 hex digest (native Apple). Both credential POST routes and
+nonce issuance use `authRateLimit`; unlinking also uses this limit.
+
+Provider subject plus provider identifies the account, independently of changing email.
+An unknown identity auto-links by email only when both the provider and the local account
+have verified that email. Otherwise the user signs in first and links in Settings.
+Existing identities can sign in while registration is closed. New accounts require open
+registration and explicit policy, age and Swiss residence consent. A consent-required
+response creates nothing; repeat with consent and a fresh nonce/token. Signup stores a
+null password hash and creates the user, identity and session atomically. Provider-verified
+email is marked verified; unverified email remains unverified. Missing email uses a unique
+`@provider.invalid` placeholder, remains unverified and cannot receive password reset mail.
+Usernames derive from the email local part (or `user`) with a random suffix.
+
+Web responses set the existing HttpOnly session cookie and return `{ user }`. App responses
+return `{ user, sessionToken, expiresAt }`, without a cookie. Account lockout and account
+status rules match password login. Unlinking removes identities for that provider and is
+refused unless a password or another provider remains. Linking an identity already owned
+by this account is idempotent; ownership cannot be transferred.
+
+| HTTP | Error code | Meaning |
+| --- | --- | --- |
+| 422 | `VALIDATION_ERROR` | Invalid request fields (existing validation envelope) |
+| 401 | `INVALID_PROVIDER_TOKEN` | Invalid signature/claims/nonce claim, unknown signing key, or key-fetch failure |
+| 401 | `INVALID_PROVIDER_NONCE` | Nonce was not issued here, expired, evicted, or already used |
+| 401 | `UNAUTHORIZED` | Identity management requires a current session |
+| 403 | `REGISTRATION_DISABLED` | New account creation is closed, same as password signup |
+| 403 | `ACCOUNT_UNAVAILABLE` | Account is suspended or pending deletion |
+| 403 | `PASSWORD_REQUIRED` | Password-confirmed export/deletion requires setting a password through reset first |
+| 409 | `PROVIDER_SIGNUP_CONSENT_REQUIRED` | Repeat with explicit signup consent and fresh credentials |
+| 409 | `PROVIDER_LINK_REQUIRES_SIGN_IN` | Matching email is not verified on both sides; link after signing in |
+| 409 | `PROVIDER_IDENTITY_CONFLICT` | Identity already belongs to another account |
+| 409 | `LAST_SIGN_IN_METHOD` | Unlinking would leave no sign-in method |
+| 409 | `AUTH_CONFLICT` | Concurrent account/identity creation conflict; retry with fresh credentials |
+| 423 | `ACCOUNT_LOCKED` | Existing temporary login lockout |
+| 429 | `RATE_LIMITED` | Existing auth rate limit |
+| 503 | `PROVIDER_UNAVAILABLE` | Requested provider has no configured client IDs |
+
+Password login for an account with a null password hash always returns the existing
+`INVALID_CREDENTIALS` error after dummy hash verification. Such accounts can set a
+password through the existing password reset flow when they have a deliverable email.

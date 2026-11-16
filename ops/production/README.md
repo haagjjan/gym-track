@@ -168,3 +168,40 @@ previous image tags together with the current redacted Caddyfile. Never restore 
 predates the access-log credential filter. If the migration changed live data incompatibly, keep
 writes closed and restore the verified pre-migration backup plus newest erasure ledger before
 reopening. Never run the destructive public-beta down migration on production.
+
+## Edge protection for the app route
+
+Once `ENABLE_MOBILE_TOKEN_AUTH=true`, `app.gymtrack.ch/api/v1/*` is a public API. Three
+layers limit abuse; the first one is configured in the Cloudflare dashboard, not in this
+repository.
+
+1. **Cloudflare (owner sets this up).** Under Security → WAF → Rate limiting rules, add
+   one rule for the zone:
+   - When: URI path starts with `/api/v1/`
+   - Count by: IP address
+   - Threshold: 150 requests per 10 seconds (the free plan allows one rule with a
+     10-second window; check the current plan limits in the dashboard)
+   - Action: block, for the shortest duration offered
+   This stops a flood at Cloudflare, so it never reaches the tunnel or the home server.
+   Leave "Bot Fight Mode" off for this path or add a skip rule: the app is not a browser
+   and cannot solve a challenge. If Cloudflare Access protects the hostname, exempt
+   `/api/v1/*` (the API has its own authentication).
+2. **Caddy.** Only the app's paths are passed on; everything else under `/api/v1` answers
+   404 without touching the API. Request bodies are capped at 10 MB by Caddy and 1 MB by the
+   API.
+3. **API.** Per address: 300 requests a minute, 120 a minute without a credential, 60 per
+   15 minutes on sign-in routes for the app (10 for the web). Per account: 10 sign-in
+   attempts per 15 minutes, then the account lock. These counters live in the API process
+   and reset on restart.
+
+Dashboard verification on 2026-11-14: `Mobile API flood protection` is active for
+`app.gymtrack.ch` with URI path starting `/api/v1/`, counting by IP, at 150 requests per
+10 seconds with a 10-second block. It uses the Free plan's single rate-limiting rule.
+Bot Fight Mode and Under Attack Mode are off. The existing production Access application
+has an Everyone bypass; staging and SSH have separate Access applications. Browser
+Integrity Check remains on. Verify real iOS and Android API traffic through this edge
+before release; the dashboard check does not prove native compatibility or enforcement
+under load.
+
+Caddy must only be reachable through the tunnel (`PRODUCTION_PROXY_BIND`). Anyone who can
+reach it directly can set `CF-Connecting-IP` and so choose their own rate-limit bucket.

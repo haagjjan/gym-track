@@ -21,6 +21,7 @@ export function createUserAccountService(options: {
   async function reauthenticate(userId: string, password: string) {
     const credentials = await options.repository.getCredentials(userId);
     if (!credentials || credentials.accountStatus !== "ACTIVE") return null;
+    if (credentials.passwordHash === null) throw new PasswordRequiredError();
     return await options.passwordHasher.verify(credentials.passwordHash, password) ? credentials : null;
   }
 
@@ -131,3 +132,10 @@ async function sendInformationalMail(
 }
 
 export type UserAccountService = ReturnType<typeof createUserAccountService>;
+
+export class PasswordRequiredError extends Error {
+  public constructor() {
+    super("Set a password through password reset before using this action.");
+    this.name = "PasswordRequiredError";
+  }
+}

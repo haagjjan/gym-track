@@ -6,7 +6,7 @@ export interface AccountCredentials {
   id: string;
   email: string;
   username: string;
-  passwordHash: string;
+  passwordHash: string | null;
   accountStatus: "ACTIVE" | "DELETION_PENDING" | "SUSPENDED";
 }
 

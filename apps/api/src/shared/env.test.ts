@@ -24,6 +24,11 @@ describe("readEnv", () => {
       EMAIL_FROM: "Gym Progress Tracker <onboarding@resend.dev>",
       LOG_LEVEL: "info",
       ENABLE_EXTENDED_TRACKING: false,
+      ENABLE_MOBILE_TOKEN_AUTH: false,
+      ENABLE_PROVIDER_SIGN_IN: false,
+      APPLE_CLIENT_IDS: [],
+      GOOGLE_CLIENT_IDS: [],
+      MOBILE_APP_ORIGINS: ["capacitor://localhost", "https://localhost"],
       METRICS_ENABLED: false,
       NODE_ENV: "development",
       REGISTRATION_MODE: "ENABLED"
@@ -297,4 +302,13 @@ describe("readEnv", () => {
   it("rejects missing DATABASE_URL", () => {
     assert.throws(() => readEnv({}));
   });
+});
+
+it("parses provider audiences and permits unavailable providers", () => {
+  const env = readEnv({ DATABASE_URL: databaseUrl, ENABLE_PROVIDER_SIGN_IN: "true",
+    APPLE_CLIENT_IDS: " app.one, app.two , ", GOOGLE_CLIENT_IDS: "" });
+  assert.equal(env.ENABLE_PROVIDER_SIGN_IN, true);
+  assert.deepEqual(env.APPLE_CLIENT_IDS, ["app.one", "app.two"]);
+  assert.deepEqual(env.GOOGLE_CLIENT_IDS, []);
+  assert.throws(() => readEnv({ DATABASE_URL: databaseUrl, ENABLE_PROVIDER_SIGN_IN: "yes" }));
 });

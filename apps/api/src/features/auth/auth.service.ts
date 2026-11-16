@@ -118,18 +118,10 @@ export function createAuthService(options: AuthServiceOptions): AuthService {
     async login(input) {
       const user = await findUserByIdentifier(input.username);
 
-      if (!user) {
+      if (!user || user.passwordHash === null) {
         await options.passwordHasher.verify(UNKNOWN_USER_PASSWORD_HASH, input.password);
 
         return { ok: false, reason: "invalid_credentials" };
-      }
-
-      if (user.lockedUntil && user.lockedUntil > now()) {
-        return { ok: false, reason: "locked" };
-      }
-
-      if (user.accountStatus && user.accountStatus !== "ACTIVE") {
-        return { ok: false, reason: "account_unavailable" };
       }
 
       const passwordMatches = await options.passwordHasher.verify(
@@ -150,16 +142,7 @@ export function createAuthService(options: AuthServiceOptions): AuthService {
         return { ok: false, reason: "invalid_credentials" };
       }
 
-      if (user.failedLoginAttempts > 0 || user.lockedUntil) {
-        await options.repository.clearLoginFailures(user.id);
-      }
-
-      const session = createSession(user.id, options.sessionTtlDays, now(), options.sessionTokens);
-
-      await options.repository.createSession(session);
-      await options.repository.incrementLoginCount?.(user.id, now());
-
-      return authenticatedUser(user, session);
+      return signInUser(user, options);
     },
     async logout(sessionToken) {
       if (sessionToken) {
@@ -199,7 +182,7 @@ export function createAuthService(options: AuthServiceOptions): AuthService {
   };
 }
 
-function createSession(
+export function createSession(
   userId: string,
   sessionTtlDays: number,
   now: Date,
@@ -217,7 +200,7 @@ function createSession(
   };
 }
 
-function authenticatedUser(
+export function authenticatedUser(
   user: AuthUserRecord,
   session: NewAuthSession & { rawToken: string }
 ): AuthResult<AuthenticatedUser> {
@@ -241,4 +224,28 @@ function toPublicUser(user: AuthUserRecord): PublicUser {
     accountStatus: user.accountStatus ?? "ACTIVE",
     createdAt: user.createdAt.toISOString()
   };
+}
+
+export async function signInUser(user: AuthUserRecord, options: Pick<AuthServiceOptions,
+  "repository" | "sessionTtlDays" | "sessionTokens" | "now"
+>): Promise<AuthResult<AuthenticatedUser>> {
+  const now = options.now ?? (() => new Date());
+  if (user.lockedUntil && user.lockedUntil > now()) {
+    return { ok: false, reason: "locked" };
+  }
+
+  if (user.accountStatus && user.accountStatus !== "ACTIVE") {
+    return { ok: false, reason: "account_unavailable" };
+  }
+
+  if (user.failedLoginAttempts > 0 || user.lockedUntil) {
+    await options.repository.clearLoginFailures(user.id);
+  }
+
+  const session = createSession(user.id, options.sessionTtlDays, now(), options.sessionTokens);
+
+  await options.repository.createSession(session);
+  await options.repository.incrementLoginCount?.(user.id, now());
+
+  return authenticatedUser(user, session);
 }
