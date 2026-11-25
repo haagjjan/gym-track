@@ -18,6 +18,7 @@ describe("public status metrics", () => {
         generatedAt: generatedAt.toISOString(),
         activeBetaAccounts: { kind: "below_threshold", threshold: 5 },
         activeAccounts: { kind: "below_threshold", threshold: 5 },
+        setsLogged: 0,
         completedWorkoutsLast30Days: 0,
         completedWorkoutsByWeek: statusWindow(generatedAt).weekStarts.map((weekStart) => ({ weekStart, count: 0 })),
         workoutRecordsProcessed: 123
@@ -44,7 +45,7 @@ function repository(
 ): StatusRepository {
   return {
     async getMetricCounts() {
-      return { activeBetaAccounts, activeAccounts: activeBetaAccounts, workoutRecordsProcessed, completedWorkoutsLast30Days: 0, completedWorkoutsByWeek: [] };
+      return { activeBetaAccounts, activeAccounts: activeBetaAccounts, workoutRecordsProcessed, setsLogged: 0, completedWorkoutsLast30Days: 0, completedWorkoutsByWeek: [] };
     }
   };
 }
@@ -59,6 +60,7 @@ describe("admin-inclusive public activity", () => {
           assert.equal(at, generatedAt);
           return {
             activeBetaAccounts: 7, activeAccounts: 8, workoutRecordsProcessed: 105,
+            setsLogged: 1420,
             completedWorkoutsLast30Days: 3,
             completedWorkoutsByWeek: [{ weekStart: "2026-08-31", count: 2 }]
           };
@@ -69,6 +71,7 @@ describe("admin-inclusive public activity", () => {
     assert.equal(calls, 1);
     assert.deepEqual(metrics.activeBetaAccounts, { kind: "exact", value: 7 });
     assert.deepEqual(metrics.activeAccounts, { kind: "exact", value: 8 });
+    assert.equal(metrics.setsLogged, 1420);
     assert.equal(metrics.completedWorkoutsByWeek.length, 8);
     assert.equal(metrics.completedWorkoutsByWeek[0]?.count, 0);
     assert.deepEqual(metrics.completedWorkoutsByWeek[7], { weekStart: "2026-08-31", count: 2 });

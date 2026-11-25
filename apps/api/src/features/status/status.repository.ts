@@ -8,6 +8,7 @@ export interface StatusMetricCounts {
   activeBetaAccounts: number;
   activeAccounts: number;
   workoutRecordsProcessed: number;
+  setsLogged: number;
   completedWorkoutsLast30Days: number;
   completedWorkoutsByWeek: WeeklyWorkoutCount[];
 }
@@ -23,13 +24,17 @@ export function createStatusRepository(db: Kysely<AppDatabase>): StatusRepositor
       const completed = db.selectFrom("workout_sessions")
         .where("deleted_at", "is", null).where("ended_at", "is not", null)
         .where("ended_at", "<", at);
-      const [accounts, workouts, recent, weeks] = await Promise.all([
+      const [accounts, workouts, sets, timedSets, recent, weeks] = await Promise.all([
         db.selectFrom("users").where("account_status", "=", "ACTIVE")
           .select((eb) => [
             eb.fn.countAll<string>().as("all"),
             eb.fn.countAll<string>().filterWhere("role", "=", "USER").as("beta")
           ]).executeTakeFirstOrThrow(),
         db.selectFrom("workout_sessions")
+          .select((eb) => eb.fn.countAll<string>().as("count")).executeTakeFirstOrThrow(),
+        db.selectFrom("sets").where("deleted_at", "is", null)
+          .select((eb) => eb.fn.countAll<string>().as("count")).executeTakeFirstOrThrow(),
+        db.selectFrom("timed_sets").where("deleted_at", "is", null)
           .select((eb) => eb.fn.countAll<string>().as("count")).executeTakeFirstOrThrow(),
         completed.where("ended_at", ">=", since30Days)
           .select((eb) => eb.fn.countAll<string>().as("count")).executeTakeFirstOrThrow(),
@@ -42,6 +47,7 @@ export function createStatusRepository(db: Kysely<AppDatabase>): StatusRepositor
       return {
         activeBetaAccounts: Number(accounts.beta), activeAccounts: Number(accounts.all),
         workoutRecordsProcessed: Number(workouts.count),
+        setsLogged: Number(sets.count) + Number(timedSets.count),
         completedWorkoutsLast30Days: Number(recent.count),
         completedWorkoutsByWeek: weeks.map((week) => ({ weekStart: week.weekStart, count: Number(week.count) }))
       };

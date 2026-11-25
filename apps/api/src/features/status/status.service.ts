@@ -11,6 +11,7 @@ export interface PublicStatusMetrics {
   generatedAt: string;
   activeBetaAccounts: ThresholdedCount;
   activeAccounts: ThresholdedCount;
+  setsLogged: number;
   completedWorkoutsLast30Days: number;
   completedWorkoutsByWeek: WeeklyWorkoutCount[];
   workoutRecordsProcessed: number;
@@ -37,6 +38,7 @@ export function createStatusService(options: StatusServiceOptions): StatusServic
       return {
         generatedAt: at.toISOString(),
         activeAccounts: thresholdCount(counts.activeAccounts),
+        setsLogged: counts.setsLogged,
         completedWorkoutsLast30Days: counts.completedWorkoutsLast30Days,
         completedWorkoutsByWeek: statusWindow(at).weekStarts.map((weekStart) => ({ weekStart, count: weeks.get(weekStart) ?? 0 })),
         activeBetaAccounts: thresholdCount(counts.activeBetaAccounts),

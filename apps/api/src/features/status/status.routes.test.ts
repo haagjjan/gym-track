@@ -11,6 +11,7 @@ describe("status metrics route", () => {
         return {
           generatedAt: "2026-09-01T12:00:00.000Z",
           activeAccounts: { kind: "exact", value: 13 },
+          setsLogged: 5432,
           completedWorkoutsLast30Days: 0,
           completedWorkoutsByWeek: [],
           activeBetaAccounts: { kind: "exact", value: 12 },
@@ -26,6 +27,7 @@ describe("status metrics route", () => {
     assert.deepEqual(response.json(), {
       data: {
         activeAccounts: { kind: "exact", value: 13 },
+        setsLogged: 5432,
         completedWorkoutsLast30Days: 0,
         completedWorkoutsByWeek: [],
         generatedAt: "2026-09-01T12:00:00.000Z",

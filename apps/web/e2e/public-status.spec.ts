@@ -14,10 +14,11 @@ test("public aggregate BFF is registered and usable by independent probes and th
     const { data } = await response.json();
     expect(Object.keys(data).sort()).toEqual([
       "activeAccounts", "activeBetaAccounts", "completedWorkoutsByWeek",
-      "completedWorkoutsLast30Days", "generatedAt", "workoutRecordsProcessed"
+      "completedWorkoutsLast30Days", "generatedAt", "setsLogged", "workoutRecordsProcessed"
     ]);
     expect(Number.isFinite(Date.parse(data.generatedAt))).toBeTruthy();
     expect(data.workoutRecordsProcessed).toBeGreaterThanOrEqual(0);
+    expect(data.setsLogged).toBeGreaterThanOrEqual(0);
     expect(data.completedWorkoutsLast30Days).toBeGreaterThanOrEqual(0);
     expect(data.completedWorkoutsByWeek).toHaveLength(8);
   }
