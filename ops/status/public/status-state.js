@@ -105,7 +105,7 @@ export function qualityPresentation(channel, now) {
   const state = evidenceState(channel, "verifiedAt", QUALITY_MAX_AGE, now);
   const messages = {
     checking: "Loading build evidence…", unavailable: "Build evidence is unavailable.",
-    stale: "Out of date — this evidence was generated over 14 days ago.",
+    stale: "Out of date. This evidence was generated over 14 days ago.",
     invalid: "Build evidence has an invalid or future generation time."
   };
   return { state, message: messages[state] ?? "" };

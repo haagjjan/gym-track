@@ -92,6 +92,29 @@ export function formatAvailability(value) {
   return `${(value * 100).toFixed(2)}%`;
 }
 
+export function buildTimelineDays(history, rangeDays, now = Date.now()) {
+  const byDay = new Map((Array.isArray(history) ? history : []).map((entry) => [entry.day, entry]));
+  const todayUtc = new Date(now);
+  todayUtc.setUTCHours(0, 0, 0, 0);
+  const days = [];
+  for (let offset = rangeDays - 1; offset >= 0; offset--) {
+    const day = new Date(todayUtc.getTime() - offset * 86_400_000).toISOString().slice(0, 10);
+    const entry = byDay.get(day);
+    days.push(entry ? { ...entry } : { day, state: "nodata", downtimeDuration: null, maintenanceDuration: null });
+  }
+  return days;
+}
+
+export function windowAvailability(days, fallbackAvailability = null) {
+  const monitored = days.filter((entry) => entry.state !== "nodata");
+  if (!monitored.length) return parseAvailability(fallbackAvailability);
+  const hasDurations = monitored.every((entry) => typeof entry.downtimeDuration === "number");
+  if (!hasDurations) return parseAvailability(fallbackAvailability);
+  const totalDowntime = monitored.reduce((sum, entry) => sum + entry.downtimeDuration, 0);
+  const totalSeconds = monitored.length * 86_400;
+  return Math.max(0, Math.min(1, 1 - totalDowntime / totalSeconds));
+}
+
 function componentKey(value) {
   return typeof value === "string"
     ? value.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") : "";

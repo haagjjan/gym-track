@@ -1,11 +1,44 @@
 import { createActivityRenderer } from "./status-activity.js";
-import { STATUS_LABELS, formatAvailability, historySummary } from "./status-data.js";
+import { STATUS_LABELS, buildTimelineDays, formatAvailability, historySummary, windowAvailability } from "./status-data.js";
 import { monitoringPresentation, qualityPresentation, REPOSITORY_URL } from "./status-state.js";
 
 const SERVICE_NAMES = {
   "web-application": "Web application", "api-and-database": "Public metrics endpoint",
   "independent-status-page": "Independent status page"
 };
+
+function formatDayDate(day) {
+  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })
+    .format(new Date(`${day}T00:00:00Z`));
+}
+
+function formatDuration(seconds) {
+  if (!seconds || seconds <= 0) return "0 min";
+  if (seconds < 60) return `${seconds} sec`;
+  const mins = Math.round(seconds / 60);
+  if (mins < 60) return `${mins} min`;
+  const hrs = Math.floor(mins / 60);
+  const rem = mins % 60;
+  return rem ? `${hrs} hr ${rem} min` : `${hrs} hr`;
+}
+
+function dayDetailText(entry) {
+  if (entry.state === "nodata") return "No monitoring data recorded for this day.";
+  const parts = [];
+  if (typeof entry.downtimeDuration === "number") {
+    const pct = Math.max(0, Math.min(1, 1 - entry.downtimeDuration / 86_400));
+    parts.push(`${(pct * 100).toFixed(2)}% uptime`);
+    parts.push(entry.downtimeDuration > 0 ? `Downtime: ${formatDuration(entry.downtimeDuration)}` : "No downtime recorded");
+  }
+  if (typeof entry.maintenanceDuration === "number" && entry.maintenanceDuration > 0) {
+    parts.push(`Maintenance: ${formatDuration(entry.maintenanceDuration)}`);
+  }
+  return parts.join(" · ") || "No downtime recorded";
+}
+
+function dayStatusLabel(state) {
+  return state === "nodata" ? "No data" : STATUS_LABELS[state] ?? state;
+}
 
 export function absoluteTime(value) {
   return new Intl.DateTimeFormat("en-GB", {
@@ -27,10 +60,16 @@ export function createStatusRenderer(document) {
   const text = (id, value) => { if (byId(id).textContent !== value) byId(id).textContent = value; };
   const show = (id, visible) => { byId(id).hidden = !visible; };
   const signatures = new Map();
+  const pinnedDays = new Map();
   let announced = "";
+  let rangeDays = 30;
+  let lastState = null;
+  let lastNow = Date.now();
   const renderActivity = createActivityRenderer(document);
 
   function render(state, now) {
+    lastState = state;
+    lastNow = now;
     const monitoring = monitoringPresentation(state.monitoring, now);
     byId("overall").dataset.state = monitoring.state;
     text("overall-title", monitoring.title);
@@ -41,7 +80,7 @@ export function createStatusRenderer(document) {
       announced = announcement;
     }
     renderRetrieval(state.monitoring, now);
-    renderServices(state.monitoring, monitoring);
+    renderServices(state.monitoring, monitoring, now);
     renderIncidents(state.monitoring, monitoring);
     renderHistory(state.monitoring, monitoring);
     renderActivity(state.metrics, now);
@@ -54,17 +93,23 @@ export function createStatusRenderer(document) {
     }
   }
 
-  function renderRetrieval(channel, now) {
-    show("retrieval", Number.isFinite(channel.retrievedAt));
-    if (!Number.isFinite(channel.retrievedAt)) return;
-    const prefix = channel.error ? "Last retrieved" : "Retrieved";
-    text("retrieval-age", `${prefix} ${relativeTime(channel.retrievedAt, now)}`);
-    const time = byId("retrieval-time");
-    time.dateTime = new Date(channel.retrievedAt).toISOString();
-    time.textContent = absoluteTime(channel.retrievedAt);
+  function showInspector(wrap, entry) {
+    const inspector = wrap.querySelector(".timeline-inspector");
+    if (!inspector) return;
+    if (!entry) {
+      inspector.hidden = true;
+      return;
+    }
+    inspector.hidden = false;
+    inspector.dataset.dayState = entry.state;
+    inspector.querySelector(".inspector-date").textContent = formatDayDate(entry.day);
+    inspector.querySelector(".inspector-status").textContent = dayStatusLabel(entry.state);
+    inspector.querySelector(".inspector-detail").textContent = dayDetailText(entry);
   }
 
-  function renderServices(channel, presentation) {
+  function renderServices(channel, presentation, now) {
+    const list = byId("service-list");
+    if (list) list.dataset.range = String(rangeDays);
     for (const row of document.querySelectorAll("[data-component]")) {
       const key = row.dataset.component;
       const component = channel.data?.components.find((item) => item.key === key);
@@ -73,45 +118,71 @@ export function createStatusRenderer(document) {
       row.dataset.state = state;
       row.querySelector(".service-state").textContent = STATUS_LABELS[state];
 
+      const days = presentation.confirmed && component ? buildTimelineDays(component.history, rangeDays, now) : null;
+      const uptime = days ? formatAvailability(windowAvailability(days, component.availability)) : null;
+
       const uptimeEl = row.querySelector(".service-uptime");
-      const formatted = presentation.confirmed && component ? formatAvailability(component.availability) : null;
       if (uptimeEl) {
-        uptimeEl.hidden = !formatted;
-        uptimeEl.textContent = formatted ? `${formatted} uptime` : "";
+        uptimeEl.hidden = !uptime;
+        uptimeEl.textContent = uptime ?? "";
       }
 
       const wrap = row.querySelector(".service-timeline-wrap");
-      const history = presentation.confirmed && component?.history?.length ? component.history : null;
       if (!wrap) continue;
-      wrap.hidden = !history;
-      if (!history) continue;
+      wrap.hidden = !days;
+      if (!days) continue;
 
       const sigKey = `timeline:${key}`;
-      const signature = JSON.stringify([history, formatted]);
+      const signature = JSON.stringify([rangeDays, days]);
       if (signatures.get(sigKey) === signature) continue;
       signatures.set(sigKey, signature);
 
       const bar = wrap.querySelector(".service-timeline");
-      const bars = history.map((entry) => {
-        const segment = document.createElement("span");
-        segment.className = "timeline-day";
-        segment.dataset.dayState = entry.state;
-        const label = STATUS_LABELS[entry.state] ?? entry.state;
-        segment.title = `${entry.day}: ${label}`;
-        return segment;
+      const pinned = pinnedDays.get(key) ?? null;
+      let pinnedEntry = null;
+      const buttons = days.map((entry) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "timeline-day";
+        button.dataset.day = entry.day;
+        button.dataset.dayState = entry.state;
+        const isPinned = pinned === entry.day;
+        if (isPinned) pinnedEntry = entry;
+        button.setAttribute("aria-pressed", String(isPinned));
+        button.setAttribute("aria-label", `${formatDayDate(entry.day)}: ${dayStatusLabel(entry.state)}. ${dayDetailText(entry)}`);
+        button.addEventListener("mouseenter", () => showInspector(wrap, entry));
+        button.addEventListener("focus", () => showInspector(wrap, entry));
+        button.addEventListener("click", () => {
+          const nextPinned = pinnedDays.get(key) === entry.day ? null : entry.day;
+          if (nextPinned) pinnedDays.set(key, nextPinned);
+          else pinnedDays.delete(key);
+          for (const item of bar.querySelectorAll(".timeline-day")) {
+            item.setAttribute("aria-pressed", String(item.dataset.day === nextPinned));
+          }
+          showInspector(wrap, nextPinned ? entry : null);
+        });
+        return button;
       });
-      bar.replaceChildren(...bars);
-      const nonOp = history.filter((entry) => entry.state !== "operational").length;
-      bar.setAttribute(
-        "aria-label",
-        `${SERVICE_NAMES[key]} daily status timeline from ${history[0].day} to ${history.at(-1).day}: ${history.length} days, ${nonOp} non-operational${formatted ? `, ${formatted} uptime` : ""}.`
-      );
-      wrap.querySelector(".timeline-from").textContent = history[0].day;
-      wrap.querySelector(".timeline-to").textContent = history.at(-1).day;
-      wrap.querySelector(".timeline-summary").textContent = formatted
-        ? `${formatted} · ${history.length} days`
-        : `${history.length} days`;
+      bar.replaceChildren(...buttons);
+      bar.onmouseleave = () => {
+        const currentPinned = pinnedDays.get(key);
+        const match = currentPinned ? days.find((entry) => entry.day === currentPinned) : null;
+        showInspector(wrap, match ?? null);
+      };
+      wrap.querySelector(".timeline-from").textContent = `${rangeDays} days ago`;
+      wrap.querySelector(".timeline-to").textContent = "Today";
+      showInspector(wrap, pinnedEntry);
     }
+  }
+
+  function renderRetrieval(channel, now) {
+    show("retrieval", Number.isFinite(channel.retrievedAt));
+    if (!Number.isFinite(channel.retrievedAt)) return;
+    const prefix = channel.error ? "Last retrieved" : "Retrieved";
+    text("retrieval-age", `${prefix} ${relativeTime(channel.retrievedAt, now)}`);
+    const time = byId("retrieval-time");
+    time.dateTime = new Date(channel.retrievedAt).toISOString();
+    time.textContent = absoluteTime(channel.retrievedAt);
   }
 
   function replace(id, value, build) {
@@ -128,7 +199,7 @@ export function createStatusRenderer(document) {
     const unconfirmed = !presentation.confirmed;
     show("active-incidents", active.length > 0 || incomplete || unconfirmed);
     show("active-title", active.length > 0);
-    text("active-title", unconfirmed ? "Last received incident — current state unconfirmed" : "Active incidents");
+    text("active-title", unconfirmed ? "Last received incident (current state unconfirmed)" : "Active incidents");
     const notice = unconfirmed ? presentation.state === "checking"
       ? "Checking incident information…" : "Current incident information is unavailable."
       : incomplete ? "Some incident information could not be verified. Check the monitoring source." : "";
@@ -220,5 +291,10 @@ export function createStatusRenderer(document) {
     node.textContent = content;
     return node;
   }
+  render.setRange = (days) => {
+    if (![7, 30, 90].includes(days) || days === rangeDays) return;
+    rangeDays = days;
+    if (lastState) render(lastState, lastNow);
+  };
   return render;
 }
