@@ -215,12 +215,30 @@ This endpoint is an operations boundary, not a browser API:
       "reps": 8,
       "rir": 1,
       "setType": "working"
-    }
+    },
+    "sets": [
+      {
+        "setId": "uuid",
+        "setOrder": 1,
+        "weightKg": "60.00",
+        "reps": 10,
+        "rir": 3,
+        "setType": "warmup"
+      },
+      {
+        "setId": "uuid",
+        "setOrder": 2,
+        "weightKg": "82.50",
+        "reps": 8,
+        "rir": 1,
+        "setType": "working"
+      }
+    ]
   }
 }
 ```
 
-`previousPerformance` is nullable. It selects only the authenticated user's non-deleted completed workouts strictly before the current workout. The latest workout containing an active working set for the exercise qualifies; its best set is highest weight, then higher reps, then lower set order.
+`previousPerformance` is nullable. It selects only the authenticated user's non-deleted completed workouts strictly before the current workout. The latest workout containing an active working set for the exercise qualifies; `bestSet` is its best working set (highest weight, then higher reps, then lower set order), and `sets` lists all non-deleted sets (warm-up and working) for that exercise in that workout in set order.
 
 ### `WorkoutSummary`
 

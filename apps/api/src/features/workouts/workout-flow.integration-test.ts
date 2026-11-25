@@ -52,6 +52,14 @@ interface WorkoutPayload {
           rir: number;
           setType: "working";
         };
+        sets: Array<{
+          setId: string;
+          setOrder: number;
+          weightKg: string;
+          reps: number;
+          rir: number;
+          setType: "working" | "warmup";
+        }>;
       } | null;
     }[];
   };
@@ -563,6 +571,7 @@ describe("workout API database flow", { skip: databaseUrl ? false : "INTEGRATION
         previousWorkoutId,
         exerciseId
       );
+      await addSet(server, owner.cookie, previousWorkoutId, previousExerciseId, { setType: "warmup", weightKg: "60.00", reps: 10 });
       await addSet(server, owner.cookie, previousWorkoutId, previousExerciseId, { weightKg: "90.00", reps: 10 });
       await addSet(server, owner.cookie, previousWorkoutId, previousExerciseId, { weightKg: "100.00", reps: 5 });
       await addSet(server, owner.cookie, previousWorkoutId, previousExerciseId, { weightKg: "100.00", reps: 6, rir: 1 });
@@ -590,8 +599,17 @@ describe("workout API database flow", { skip: databaseUrl ? false : "INTEGRATION
       assert.equal(previous?.workoutId, previousWorkoutId);
       assert.equal(previous?.bestSet.weightKg, "100.00");
       assert.equal(previous?.bestSet.reps, 6);
-      assert.equal(previous?.bestSet.setOrder, 3);
+      assert.equal(previous?.bestSet.setOrder, 4);
       assert.equal(previous?.bestSet.setType, "working");
+      assert.deepEqual(
+        previous?.sets.map((set) => ({ setOrder: set.setOrder, setType: set.setType, weightKg: set.weightKg, reps: set.reps })),
+        [
+          { setOrder: 1, setType: "warmup", weightKg: "60.00", reps: 10 },
+          { setOrder: 2, setType: "working", weightKg: "90.00", reps: 10 },
+          { setOrder: 3, setType: "working", weightKg: "100.00", reps: 5 },
+          { setOrder: 4, setType: "working", weightKg: "100.00", reps: 6 }
+        ]
+      );
     } finally {
       await server.close();
     }

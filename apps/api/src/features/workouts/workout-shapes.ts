@@ -22,6 +22,15 @@ interface WorkoutSetShape {
   updatedAt: string;
 }
 
+interface PreviousPerformanceSetShape {
+  setId: string;
+  setOrder: number;
+  weightKg: string;
+  reps: number;
+  rir: number;
+  setType: "working" | "warmup";
+}
+
 interface SessionExerciseShape {
   id: string;
   position: number;
@@ -40,14 +49,8 @@ interface SessionExerciseShape {
     workoutId: string;
     workoutTitle: string | null;
     workoutStartedAt: string;
-    bestSet: {
-      setId: string;
-      setOrder: number;
-      weightKg: string;
-      reps: number;
-      rir: number;
-      setType: "working";
-    };
+    bestSet: PreviousPerformanceSetShape & { setType: "working" };
+    sets: PreviousPerformanceSetShape[];
   } | null;
 }
 
@@ -137,7 +140,8 @@ export function toWorkoutDetail(record: WorkoutDetailRecord): WorkoutDetail {
         workoutId: item.previousPerformance.workoutId,
         workoutTitle: item.previousPerformance.workoutTitle,
         workoutStartedAt: item.previousPerformance.workoutStartedAt.toISOString(),
-        bestSet: item.previousPerformance.bestSet
+        bestSet: item.previousPerformance.bestSet,
+        sets: item.previousPerformance.sets
       } : null
     }))
   };
