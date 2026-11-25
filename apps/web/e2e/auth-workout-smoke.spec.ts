@@ -301,7 +301,7 @@ test("completes the core workout loop on the cockpit UI", async ({ page }) => {
   await expect(csvTrigger).toBeFocused();
   await csvTrigger.click();
   await expect(csvGuide.getByText("workout_started_at", { exact: true })).toBeVisible();
-  await expect(csvGuide.getByRole("link", { name: "Download sample CSV" })).toBeVisible();
+  await expect(csvGuide.getByRole("button", { name: "Download sample CSV" })).toBeVisible();
   await csvGuide.getByRole("button", { name: "Close", exact: true }).click();
   // A history row opens a quick view of the sets; "Open workout" opens the full page.
   await page.getByRole("button", { name: /^Gym Smoke/ }).first().click();
