@@ -19,6 +19,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { ReactNode } from "react";
+import { IconDragHandle } from "./icons";
 
 export function SortableList({
   children,
@@ -89,11 +90,7 @@ export function SortableItem({
       ref={sortable.setActivatorNodeRef}
       type="button"
     >
-      <span aria-hidden className="grid grid-cols-2 gap-[3px]">
-        {Array.from({ length: 6 }, (_, index) => (
-          <span className="size-[3px] rounded-full bg-current" key={index} />
-        ))}
-      </span>
+      <IconDragHandle className="size-5" />
     </button>
   );
 

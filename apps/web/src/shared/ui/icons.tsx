@@ -132,6 +132,10 @@ export function IconChevronDown(props: SVGProps<SVGSVGElement>): ReactNode {
   return <Icon24 strokeWidth="2" {...props}><path d="m6 9 6 6 6-6" /></Icon24>;
 }
 
+export function IconDragHandle(props: SVGProps<SVGSVGElement>): ReactNode {
+  return <Icon24 {...props}><path d="M5 8h14M5 12h14M5 16h14" /></Icon24>;
+}
+
 export function IconTable(props: SVGProps<SVGSVGElement>): ReactNode {
   return <Icon24 strokeWidth="2" {...props}><path d="M4 5h16v14H4zM4 10h16M4 15h16M10 5v14" /></Icon24>;
 }
