@@ -9,9 +9,10 @@ history, and incidents.
 
 | Surface | Source | Failure behavior |
 | --- | --- | --- |
-| Overall/component state and incidents | Better Stack public `/index.json` feed | Unavailable, incomplete or stale; no retained green claim |
-| Daily history and recently resolved incidents | Valid entries returned by the same feed | No invented dates, period or uptime percentage |
-| Enabled accounts, workout records and recent completed workouts | `https://app.gymtrack.ch/api/public-status` | Activity alone becomes unavailable or out of date |
+| Overall/component state, timelines and incidents | Better Stack public `/index.json` feed | Unavailable, incomplete or stale; no retained green claim |
+| Daily history and uptime percentage | Valid `status_history` and `availability` from the same feed | Withheld when unconfirmed or invalid |
+| Enabled accounts, workout records, sets logged and weekly activity | `https://app.gymtrack.ch/api/public-status` | Activity alone becomes unavailable or out of date |
+| Interactive app preview | Embedded `https://app.gymtrack.ch/demo` iframe (sample data, no login) | Unavailable during app outage while status page stays online |
 | Coverage and verified commit | Workflow-generated `quality.json` | Missing/invalid evidence is unavailable; the whole record is qualified after 14 days |
 
 Monitoring freshness is elapsed time since this browser successfully retrieved and validated a

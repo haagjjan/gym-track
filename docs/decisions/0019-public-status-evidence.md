@@ -91,3 +91,17 @@ can still use an unconfigured state; the browser retains fail-closed behavior. T
 original publication behavior that allowed a new unconfigured production bundle to be deployed.
 Coverage values and their unchanged `c8 --all` method remain available in a native disclosure;
 verified checks, source revision and generation time remain visible independently of service health.
+
+### Embedded preview, Better Stack timelines and sets logged (2026-11-24)
+
+- The static showcase screenshots are replaced with an embedded browser preview of the public,
+  unauthenticated `/demo` route hosted on `app.gymtrack.ch` (which uses client-only sample data and
+  allows `frame-ancestors` from `https://status.gymtrack.ch` only on `/demo`).
+- Product context ("What it does well", "Who it’s for", "Why I built it") is published directly in
+  static HTML on the status page.
+- Better Stack's per-resource `availability` percentages and daily `status_history` timelines are
+  displayed directly on the main Services section when the monitoring feed is confirmed current,
+  superseding the earlier decision to withhold the provider's scalar availability figure.
+- The public metrics endpoint adds `setsLogged` (total non-deleted rows across `sets` and
+  `timed_sets`) while retaining `completedWorkoutsLast30Days` for backward compatibility. The status
+  page replaces "Completed in 30 days" with **Sets logged**.
