@@ -198,7 +198,7 @@ Rules:
 - **Segmented controls:** for 2–4 views of the same data (1W, 1M, 3M, Max; Front and Back). Each segment is at least 44 px tall, and the selected one gets a `--surface` pill.
 - **Set logger** (live workout, as built in Step 10):
   - **Exercise list:** a grouped list with a drag handle, the exercise name and its set count. A row opens that exercise. "Add exercises" sits under the list; it is the primary button only while the list is empty.
-  - **Exercise view:** "Exercises" back control, "Exercise 2 of 5" with previous and next, the name as the heading, the muscles, then the previous best set ("100 kg × 8", the workout and its day).
+  - **Exercise view:** "Exercises" back control, "Exercise 2 of 5" with previous and next, the name as the heading, the muscles, then the previous best set ("100 kg × 8", the workout and its day; tapping the card expands all sets from that previous workout as chips matching History).
   - **Set rows:** set number (W for warm-up), "60 kg × 8", RIR, and a chevron. Warm-up and Edited appear as words under the weight. A row opens the set editor sheet.
   - **New set and edit set** open in a sheet: Working or Warm-up as a segmented control, weight and reps steppers (−, value, unit, +; the value opens a number pad), RIR chips 0–5 with an info button, an optional note, then Save and Cancel. Delete is in the edit sheet and needs a second tap ("Tap again to delete"). Swipe-to-delete isn't built, so nothing depends on swiping.
   - **Saving a set** is what completes it. There's no pre-filled row with a done check: the composer opens with the last set's values (or the previous best weight for a first set), so a repeat set is Add set, then Save.

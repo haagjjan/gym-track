@@ -42,6 +42,15 @@ export interface WorkoutSet {
   updatedAt: string;
 }
 
+export interface PreviousPerformanceSet {
+  setId: string;
+  setOrder: number;
+  weightKg: string;
+  reps: number;
+  rir: number;
+  setType: SetType;
+}
+
 export interface SessionExercise {
   id: string;
   position: number;
@@ -51,14 +60,8 @@ export interface SessionExercise {
     workoutId: string;
     workoutTitle: string | null;
     workoutStartedAt: string;
-    bestSet: {
-      setId: string;
-      setOrder: number;
-      weightKg: string;
-      reps: number;
-      rir: number;
-      setType: "working";
-    };
+    bestSet: PreviousPerformanceSet & { setType: "working" };
+    sets?: PreviousPerformanceSet[];
   } | null;
 }
 

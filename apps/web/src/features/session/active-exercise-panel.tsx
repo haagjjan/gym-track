@@ -2,14 +2,14 @@
 
 import { haptic } from "../../shared/platform/native";
 
-import { useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { Button } from "../../shared/ui/button";
 import { ConfirmDialog } from "../../shared/ui/confirm-dialog";
 import { errorMessage } from "../../shared/api/client";
 import { useSessionMutations } from "../../shared/api/hooks";
 import type { SessionExercise } from "../../shared/api/types";
 import Link from "next/link";
-import { IconPlus24, IconTrend } from "../../shared/ui/icons";
+import { IconChevronDown, IconPlus24, IconTrend } from "../../shared/ui/icons";
 import { SetComposer } from "./set-composer";
 import type { SetDraft } from "./set-draft-storage";
 import { SessionEditorDock } from "./session-editor-dock";
@@ -83,7 +83,7 @@ export function ActiveExercisePanel(props: ActiveExercisePanelProps): ReactNode 
         <TrackedEntries canEdit={props.canEdit} exercise={props.exercise} key={props.exercise.id} onError={props.onError} workoutId={props.workoutId} />
       ) : (
       <>
-      <PreviousPerformance exercise={props.exercise} />
+      <PreviousPerformance exercise={props.exercise} key={props.exercise.id} />
 
       <h3 className="mt-6 mb-2 px-1 text-footnote font-semibold text-text-secondary">
         {sets.length === 0 ? "Sets" : `${sets.length} ${sets.length === 1 ? "set" : "sets"}`}
@@ -175,21 +175,59 @@ function muscleList(exercise: SessionExercise): string {
 }
 
 function PreviousPerformance({ exercise }: { exercise: SessionExercise }): ReactNode {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const panelId = useId();
   const previous = exercise.previousPerformance;
-  return (
-    <section aria-label="Previous best set" className="mt-4 flex items-center justify-between gap-3 rounded-[var(--radius-card)] bg-surface px-4 py-3">
-      <div className="min-w-0">
+
+  if (!previous) {
+    return (
+      <section aria-label="Previous best set" className="mt-4 rounded-[var(--radius-card)] bg-surface px-4 py-3">
         <p className="text-footnote text-text-secondary">Previous best set</p>
         <p className="mt-0.5 break-words text-subhead text-text-muted">
-          {previous
-            ? `${previous.workoutTitle?.trim() || "Earlier workout"}, ${formatDay(previous.workoutStartedAt)}`
-            : "None yet. Your first working set sets it."}
+          None yet. Your first working set sets it.
         </p>
-      </div>
-      {previous ? (
-        <span className="num flex-none text-headline text-text">
-          {formatKgValue(previous.bestSet.weightKg)} kg × {previous.bestSet.reps}
+      </section>
+    );
+  }
+
+  const previousSets = previous.sets?.length ? previous.sets : [previous.bestSet];
+
+  return (
+    <section aria-label="Previous best set" className="mt-4 overflow-hidden rounded-[var(--radius-card)] bg-surface">
+      <button
+        aria-controls={panelId}
+        aria-expanded={isExpanded}
+        className="flex min-h-[3.75rem] w-full items-center justify-between gap-3 px-4 py-3 text-left active:bg-surface-raised"
+        onClick={() => setIsExpanded((open) => !open)}
+        type="button"
+      >
+        <span className="min-w-0">
+          <span className="block text-footnote text-text-secondary">Previous best set</span>
+          <span className="mt-0.5 block break-words text-subhead text-text-muted">
+            {`${previous.workoutTitle?.trim() || "Earlier workout"}, ${formatDay(previous.workoutStartedAt)}`}
+          </span>
         </span>
+        <span className="flex flex-none items-center gap-2">
+          <span className="num text-headline text-text">
+            {formatKgValue(previous.bestSet.weightKg)} kg × {previous.bestSet.reps}
+          </span>
+          <IconChevronDown className={`shrink-0 text-text-muted transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
+        </span>
+      </button>
+      {isExpanded ? (
+        <div className="border-t border-line px-4 pb-3.5 pt-3" id={panelId}>
+          <ul aria-label={`Previous sets for ${exercise.exercise.name}`} className="flex flex-wrap gap-1.5">
+            {previousSets.map((set) => (
+              <li
+                className={`num rounded-full px-2.5 py-1 text-footnote ${set.setType === "warmup" ? "bg-warning/12 text-text-secondary" : "bg-surface-raised text-text"}`}
+                key={set.setId}
+              >
+                {set.setType === "warmup" ? <span className="mr-1 font-semibold text-warning">W<span className="sr-only">arm-up</span></span> : null}
+                {formatKgValue(set.weightKg)} kg × {set.reps}
+              </li>
+            ))}
+          </ul>
+        </div>
       ) : null}
     </section>
   );
