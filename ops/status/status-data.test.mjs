@@ -2,19 +2,25 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   parseBetterStackStatusUrl, parseMonitoringFeed, parsePublicMetrics, parseQualitySummary,
-  qualityFreshness, parseHistory, historySummary, timestamp
+  qualityFreshness, parseHistory, historySummary, timestamp, parseAvailability, formatAvailability
 } from "./public/status-data.js";
 import { monitoringFixture, incidentFixture, metricsFixture, qualityFixture } from "./status-fixtures.mjs";
 
 const NOW = Date.parse("2026-09-12T12:00:00Z");
 
 describe("monitoring data", () => {
-  it("parses healthy services without treating page updated_at or availability as an observation/period", () => {
+  it("parses healthy services with Better Stack availability and daily history without treating updated_at as a probe time", () => {
     const view = parseMonitoringFeed(monitoringFixture(NOW), "", NOW);
     assert.equal(view.overallState, "operational");
     assert.equal(view.components.length, 3);
     assert.equal("updatedAt" in view, false);
-    assert.equal("uptime" in view, false);
+    assert.equal(view.components[0].availability, 1);
+    assert.equal(view.components[1].availability, 0.9998);
+    assert.equal(formatAvailability(view.components[0].availability), "100.00%");
+    assert.equal(formatAvailability(view.components[1].availability), "99.98%");
+    assert.equal(parseAvailability(-0.1), null);
+    assert.equal(parseAvailability(1.1), null);
+    assert.equal(parseAvailability("1"), null);
     assert.equal(view.components[0].history.length, 3);
   });
   for (const state of ["degraded", "downtime", "maintenance"]) {

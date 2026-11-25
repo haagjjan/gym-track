@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <meta name="theme-color" content="#faf9f6">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; connect-src 'self' https://app.gymtrack.ch https://uptime.betterstack.com https://*.betteruptime.com https://*.betterstack.com; img-src 'self' data:; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; connect-src 'self' https://app.gymtrack.ch https://uptime.betterstack.com https://*.betteruptime.com https://*.betterstack.com; img-src 'self' data:; frame-src https://app.gymtrack.ch; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
   <meta name="description" content="Explore GymTrack: workout logging, progress insights, real project activity and independently monitored service status.">
   <title>GymTrack — project and service status</title>
   <link rel="preload" href="./source-serif-4-latin.woff2" as="font" type="font/woff2" crossorigin>
@@ -46,13 +46,31 @@
       <div class="project-links"><a href="https://app.gymtrack.ch">Open app →</a><a href="https://github.com/haagjjan/gym-track">View source →</a></div>
     </section>
 
+    <section class="section about-app" aria-labelledby="about-title">
+      <div class="section-heading"><h2 id="about-title">What GymTrack is for</h2><span class="eyebrow">Product context</span></div>
+      <div class="about-grid">
+        <article>
+          <h3>What it does well</h3>
+          <p>Fast set logging during a session—weight, reps, RIR, notes and a rest timer—paired with reusable templates, range-aware lift progress charts, a 3D weekly muscle-volume map, and full CSV import and export.</p>
+        </article>
+        <article>
+          <h3>Who it’s for</h3>
+          <p>Lifters who want a clean, dependable strength-training log on their phone without social feeds, coaching upsells or cluttered menus getting in the way between sets.</p>
+        </article>
+        <article>
+          <h3>Why I built it</h3>
+          <p>Most workout trackers either lock basic history and charts behind subscriptions, feel bloated mid-workout, or treat your training data as theirs. I built and self-host GymTrack as an independent project so I could have a fast, private log I actually enjoy using every session.</p>
+        </article>
+      </div>
+    </section>
+
     <section class="section activity" aria-labelledby="activity-title">
       <div class="section-heading"><h2 id="activity-title">A project in use</h2><span class="eyebrow">Live aggregates</span></div>
       <p class="notice" id="activity-notice">Project activity has not been retrieved.</p>
       <dl class="activity-record">
         <div><dt id="accounts-label">Enabled accounts</dt><dd id="accounts-value">—</dd><dd class="metric-scope" id="accounts-scope">Includes the owner/admin account.</dd></div>
         <div><dt>Workout records</dt><dd id="workouts-value">—</dd><dd class="metric-scope">Includes imported and retained records.</dd></div>
-        <div><dt>Completed in 30 days</dt><dd id="recent-value">—</dd><dd class="metric-scope">By workout completion date.</dd></div>
+        <div><dt>Sets logged</dt><dd id="sets-value">—</dd><dd class="metric-scope">Total non-deleted sets recorded.</dd></div>
       </dl>
       <time class="metadata" id="activity-time" hidden></time>
       <p id="activity-breakdown-notice" class="notice"></p>
@@ -65,36 +83,92 @@
         <summary>What these counts mean</summary>
         <p><strong>Enabled accounts:</strong> accounts marked active, including the owner/admin. This describes account status, not recent usage. Counts below five are shown as “under 5”. Older API responses show non-administrator beta accounts with an explicit label instead.</p>
         <p><strong>Workout records:</strong> current workout-session rows, including imports, administrator sessions, open sessions and soft-deleted rows. Account erasure can reduce this count.</p>
-        <p><strong>Recent activity:</strong> completed, non-deleted workouts, including administrator sessions and retained workouts from accounts that are no longer active. Imports use their original completion dates. The rolling 30 days and eight UTC weeks share the generation cutoff; the current week is partial.</p>
+        <p><strong>Sets logged:</strong> total non-deleted strength and timed sets currently stored across all retained workouts, including imported history and administrator sessions. Account erasure can reduce this count.</p>
+        <p><strong>Weekly activity:</strong> completed, non-deleted workouts across eight Monday-based UTC weeks sharing the generation cutoff, including administrator sessions and retained workouts from accounts that are no longer active. Imports use their original completion dates; the current week is partial.</p>
       </details>
     </section>
 
     <section class="section showcase" aria-labelledby="showcase-title">
-      <div class="section-heading"><h2 id="showcase-title">From workout to insight</h2><span class="eyebrow">Example data</span></div>
-      <p class="secondary">Mobile screens from the app’s hands-on example. All training data shown here is sample data.</p>
-      <div class="showcase-grid">
-        <figure><a href="./images/workout.webp" aria-label="View full-size workout logging screenshot"><img src="./images/workout.webp" alt="Mobile GymTrack example workout with exercises, logged sets, weight, repetitions and reps in reserve." width="430" height="932" loading="lazy"></a><figcaption><h3>Log every set</h3><p>Track weight, repetitions and effort as you train.</p></figcaption></figure>
-        <figure><a href="./images/progress.webp" aria-label="View full-size progress screenshot"><img src="./images/progress.webp" alt="Mobile GymTrack Progress screen showing sample lift performance over time and training summaries." width="419" height="908" loading="lazy"></a><figcaption><h3>Follow your lifts</h3><p>Inspect performance over time with range-aware charts.</p></figcaption></figure>
-        <figure><a href="./images/volume.webp" aria-label="View full-size muscle volume screenshot"><img src="./images/volume.webp" alt="Mobile GymTrack Muscle Volume screen showing sample weekly working sets distributed across muscle groups." width="419" height="908" loading="lazy"></a><figcaption><h3>Understand your volume</h3><p>See where your weekly working sets are going.</p></figcaption></figure>
+      <div class="section-heading"><h2 id="showcase-title">Try the app in your browser</h2><span class="eyebrow">Interactive preview</span></div>
+      <p class="secondary">Live embedded preview of GymTrack loaded from <code>app.gymtrack.ch</code> with sample training data. No account is required, and nothing you tap affects real accounts.</p>
+      <div class="preview-controls" role="group" aria-label="Choose a preview screen">
+        <button type="button" class="preview-tab" data-preview-path="/demo" aria-pressed="true">Workout</button>
+        <button type="button" class="preview-tab" data-preview-path="/demo/progress" aria-pressed="false">Progress</button>
+        <button type="button" class="preview-tab" data-preview-path="/demo/volume" aria-pressed="false">Muscle volume</button>
+        <button type="button" class="preview-tab" data-preview-path="/demo/history" aria-pressed="false">History</button>
       </div>
+      <div class="browser-frame">
+        <div class="browser-bar">
+          <span class="browser-url" id="preview-url">app.gymtrack.ch/demo</span>
+          <a class="browser-open" id="preview-open-link" href="https://app.gymtrack.ch/demo" target="_blank" rel="noopener noreferrer">Open full preview →</a>
+        </div>
+        <iframe
+          id="app-preview-frame"
+          class="preview-iframe"
+          title="Interactive GymTrack app preview"
+          src="https://app.gymtrack.ch/demo"
+          loading="lazy"
+          referrerpolicy="no-referrer"
+        ></iframe>
+      </div>
+      <p class="secondary preview-fallback-note">Because this preview connects to the live application, it will be unavailable during an application outage while this status page remains online.</p>
     </section>
 
     <section class="services" aria-labelledby="services-title">
-      <h2 id="services-title">Services</h2>
-      <dl class="service-list">
-        <div data-component="web-application" data-state="unavailable">
-          <dt>Web application<span class="scope">Login page</span></dt>
-          <dd class="service-state">Unavailable</dd>
-        </div>
-        <div data-component="api-and-database" data-state="unavailable">
-          <dt>Public metrics endpoint<span class="scope">Aggregate API/database read</span></dt>
-          <dd class="service-state">Unavailable</dd>
-        </div>
-        <div data-component="independent-status-page" data-state="unavailable">
-          <dt>Independent status page<span class="scope">Public page reachability</span></dt>
-          <dd class="service-state">Unavailable</dd>
-        </div>
-      </dl>
+      <div class="section-heading"><h2 id="services-title">Services</h2><span class="eyebrow">Better Stack timelines</span></div>
+      <ul class="service-list">
+        <li data-component="web-application" data-state="unavailable">
+          <div class="service-header">
+            <div class="service-name"><h3>Web application</h3><span class="scope">Login page</span></div>
+            <div class="service-meta">
+              <span class="service-uptime" hidden></span>
+              <span class="service-state">Unavailable</span>
+            </div>
+          </div>
+          <div class="service-timeline-wrap" hidden>
+            <div class="service-timeline" role="img" aria-label="Daily status timeline"></div>
+            <div class="service-timeline-legend">
+              <span class="timeline-from"></span>
+              <span class="timeline-summary"></span>
+              <span class="timeline-to"></span>
+            </div>
+          </div>
+        </li>
+        <li data-component="api-and-database" data-state="unavailable">
+          <div class="service-header">
+            <div class="service-name"><h3>Public metrics endpoint</h3><span class="scope">Aggregate API/database read</span></div>
+            <div class="service-meta">
+              <span class="service-uptime" hidden></span>
+              <span class="service-state">Unavailable</span>
+            </div>
+          </div>
+          <div class="service-timeline-wrap" hidden>
+            <div class="service-timeline" role="img" aria-label="Daily status timeline"></div>
+            <div class="service-timeline-legend">
+              <span class="timeline-from"></span>
+              <span class="timeline-summary"></span>
+              <span class="timeline-to"></span>
+            </div>
+          </div>
+        </li>
+        <li data-component="independent-status-page" data-state="unavailable">
+          <div class="service-header">
+            <div class="service-name"><h3>Independent status page</h3><span class="scope">Public page reachability</span></div>
+            <div class="service-meta">
+              <span class="service-uptime" hidden></span>
+              <span class="service-state">Unavailable</span>
+            </div>
+          </div>
+          <div class="service-timeline-wrap" hidden>
+            <div class="service-timeline" role="img" aria-label="Daily status timeline"></div>
+            <div class="service-timeline-legend">
+              <span class="timeline-from"></span>
+              <span class="timeline-summary"></span>
+              <span class="timeline-to"></span>
+            </div>
+          </div>
+        </li>
+      </ul>
     </section>
 
     <section class="section" aria-labelledby="reliability-title">
@@ -141,7 +215,7 @@
         <li><code>https://app.gymtrack.ch/api/public-status</code></li>
         <li><code>https://status.gymtrack.ch</code></li>
       </ul>
-      <p>Availability percentages are withheld because the scalar supplied by the provider does not establish a reporting period. Project activity is retrieved every five minutes and expires 15 minutes after generation. Build evidence is qualified as out of date after 14 days.</p>
+      <p>Uptime percentages and daily status timelines are reported directly from Better Stack’s public status feed for the returned history window. Project activity is retrieved every five minutes and expires 15 minutes after generation. Build evidence is qualified as out of date after 14 days.</p>
     </details>
     <nav aria-label="Resources">
       <a data-monitoring-source hidden>Monitoring source</a>

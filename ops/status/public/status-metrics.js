@@ -2,11 +2,13 @@
 export function parseMetrics(data, generatedAt) {
   const activeBetaAccounts = thresholded(data.activeBetaAccounts);
   const activeAccounts = data.activeAccounts === undefined ? null : thresholded(data.activeAccounts);
+  const setsLogged = optional(() => count(data.setsLogged));
   const recent = optional(() => count(data.completedWorkoutsLast30Days));
   const weeks = optional(() => weeklyCounts(data.completedWorkoutsByWeek, generatedAt));
   return {
     generatedAt, activeBetaAccounts, activeAccounts,
     workoutRecordsProcessed: count(data.workoutRecordsProcessed),
+    setsLogged,
     completedWorkoutsLast30Days: recent, completedWorkoutsByWeek: weeks
   };
 }

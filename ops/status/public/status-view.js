@@ -1,5 +1,5 @@
 import { createActivityRenderer } from "./status-activity.js";
-import { STATUS_LABELS, historySummary } from "./status-data.js";
+import { STATUS_LABELS, formatAvailability, historySummary } from "./status-data.js";
 import { monitoringPresentation, qualityPresentation, REPOSITORY_URL } from "./status-state.js";
 
 const SERVICE_NAMES = {
@@ -66,11 +66,51 @@ export function createStatusRenderer(document) {
 
   function renderServices(channel, presentation) {
     for (const row of document.querySelectorAll("[data-component]")) {
-      const component = channel.data?.components.find((item) => item.key === row.dataset.component);
+      const key = row.dataset.component;
+      const component = channel.data?.components.find((item) => item.key === key);
       const state = presentation.confirmed ? component?.state ?? "unknown"
         : presentation.state === "checking" ? "checking" : presentation.state === "stale" ? "stale" : "unavailable";
       row.dataset.state = state;
       row.querySelector(".service-state").textContent = STATUS_LABELS[state];
+
+      const uptimeEl = row.querySelector(".service-uptime");
+      const formatted = presentation.confirmed && component ? formatAvailability(component.availability) : null;
+      if (uptimeEl) {
+        uptimeEl.hidden = !formatted;
+        uptimeEl.textContent = formatted ? `${formatted} uptime` : "";
+      }
+
+      const wrap = row.querySelector(".service-timeline-wrap");
+      const history = presentation.confirmed && component?.history?.length ? component.history : null;
+      if (!wrap) continue;
+      wrap.hidden = !history;
+      if (!history) continue;
+
+      const sigKey = `timeline:${key}`;
+      const signature = JSON.stringify([history, formatted]);
+      if (signatures.get(sigKey) === signature) continue;
+      signatures.set(sigKey, signature);
+
+      const bar = wrap.querySelector(".service-timeline");
+      const bars = history.map((entry) => {
+        const segment = document.createElement("span");
+        segment.className = "timeline-day";
+        segment.dataset.dayState = entry.state;
+        const label = STATUS_LABELS[entry.state] ?? entry.state;
+        segment.title = `${entry.day}: ${label}`;
+        return segment;
+      });
+      bar.replaceChildren(...bars);
+      const nonOp = history.filter((entry) => entry.state !== "operational").length;
+      bar.setAttribute(
+        "aria-label",
+        `${SERVICE_NAMES[key]} daily status timeline from ${history[0].day} to ${history.at(-1).day}: ${history.length} days, ${nonOp} non-operational${formatted ? `, ${formatted} uptime` : ""}.`
+      );
+      wrap.querySelector(".timeline-from").textContent = history[0].day;
+      wrap.querySelector(".timeline-to").textContent = history.at(-1).day;
+      wrap.querySelector(".timeline-summary").textContent = formatted
+        ? `${formatted} · ${history.length} days`
+        : `${history.length} days`;
     }
   }
 

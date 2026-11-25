@@ -72,9 +72,24 @@ export function parseMonitoringFeed(payload, sourceUrl = "", now = Date.now()) {
 
 function componentFrom(resources, key, now) {
   const matches = resources.filter((item) => componentKey(record(item.attributes).public_name) === key);
-  if (matches.length !== 1) return { key, state: "unknown", history: [] };
+  if (matches.length !== 1) return { key, state: "unknown", availability: null, history: [] };
   const attributes = record(matches[0].attributes);
-  return { key, state: statusValue(attributes.status), history: parseHistory(attributes.status_history, now) };
+  return {
+    key,
+    state: statusValue(attributes.status),
+    availability: parseAvailability(attributes.availability),
+    history: parseHistory(attributes.status_history, now)
+  };
+}
+
+export function parseAvailability(value) {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > 1) return null;
+  return value;
+}
+
+export function formatAvailability(value) {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > 1) return null;
+  return `${(value * 100).toFixed(2)}%`;
 }
 
 function componentKey(value) {

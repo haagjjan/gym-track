@@ -11,19 +11,19 @@ describe("public activity breakdown", () => {
     const parsed = parsePublicMetrics(fixture());
     assert.deepEqual(parsed.activeAccounts, { kind: "exact", value: 8 });
     assert.deepEqual(parsed.activeBetaAccounts, { kind: "below_threshold", threshold: 5 });
-    assert.equal(parsed.completedWorkoutsLast30Days, 23);
+    assert.equal(parsed.setsLogged, 1248);
     assert.equal(parsed.completedWorkoutsByWeek[7].weekStart, "2026-10-19");
   });
   it("allows legacy totals without inventing a recent activity breakdown", () => {
     const parsed = parsePublicMetrics(scenarioFixture("metrics-legacy", NOW).metrics);
     assert.equal(parsed.activeAccounts, null);
     assert.equal(parsed.workoutRecordsProcessed, 105);
-    assert.equal(parsed.completedWorkoutsLast30Days, null);
+    assert.equal(parsed.setsLogged, null);
     assert.equal(parsed.completedWorkoutsByWeek, null);
   });
   it("retains genuine zero counts", () => {
     const parsed = parsePublicMetrics(scenarioFixture("metrics-empty", NOW).metrics);
-    assert.equal(parsed.completedWorkoutsLast30Days, 0);
+    assert.equal(parsed.setsLogged, 0);
     assert.ok(parsed.completedWorkoutsByWeek.every((week) => week.count === 0));
   });
   it("isolates malformed optional fields, rejecting gaps, duplicates, future and invalid weeks", () => {
@@ -44,8 +44,8 @@ describe("public activity breakdown", () => {
       assert.equal(parsed.workoutRecordsProcessed, 105);
     }
     const metrics = fixture();
-    metrics.data.completedWorkoutsLast30Days = "23";
-    assert.equal(parsePublicMetrics(metrics).completedWorkoutsLast30Days, null);
+    metrics.data.setsLogged = "1248";
+    assert.equal(parsePublicMetrics(metrics).setsLogged, null);
   });
   it("rejects invalid account disclosure instead of showing a misleading total", () => {
     for (const accounts of [{ kind: "exact", value: 4 }, { kind: "below_threshold", threshold: 10 }]) {

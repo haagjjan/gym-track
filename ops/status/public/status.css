@@ -60,12 +60,24 @@ p, dd, dt, h1, h3, a, code, time { overflow-wrap: anywhere; }
 #retrieval { display: flex; flex-wrap: wrap; gap: 4px 16px; }
 
 .services { margin-top: 32px; }
-.service-list { border-top: 1px solid var(--rule); }
-.service-list > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 8px 24px; padding-block: 12px; border-bottom: 1px solid var(--rule); }
-.service-list dt { font-weight: 600; }
+.service-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule); }
+.service-list > li { padding-block: 14px; border-bottom: 1px solid var(--rule); }
+.service-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 8px 24px; }
+.service-name h3 { font-size: 16px; line-height: 24px; font-weight: 600; }
 .scope { display: block; margin-top: 2px; font-weight: 400; font-size: 14px; line-height: 21px; color: var(--secondary); }
+.service-meta { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; justify-content: flex-end; }
+.service-uptime { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13px; line-height: 20px; color: var(--healthy); font-weight: 600; }
+[data-state="degraded"] .service-uptime, [data-state="maintenance"] .service-uptime { color: var(--warning); }
+[data-state="downtime"] .service-uptime { color: var(--failure); }
 .service-state { display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 20px; }
 .service-state::before { content: ""; width: 6px; height: 6px; flex-shrink: 0; background: var(--state-color, var(--neutral)); }
+.service-timeline-wrap { margin-top: 12px; }
+.service-timeline { display: flex; gap: 2px; height: 24px; align-items: stretch; }
+.timeline-day { flex: 1 1 0; min-width: 2px; border-radius: 1px; background: var(--neutral); }
+.timeline-day[data-day-state="operational"] { background: var(--healthy); }
+.timeline-day[data-day-state="degraded"], .timeline-day[data-day-state="maintenance"] { background: var(--warning); }
+.timeline-day[data-day-state="downtime"] { background: var(--failure); }
+.service-timeline-legend { display: flex; justify-content: space-between; gap: 12px; margin-top: 6px; font-family: var(--mono); font-size: 12px; line-height: 18px; color: var(--secondary); }
 
 .section { margin-top: 32px; }
 .section + .section { border-top: 1px solid var(--rule); padding-top: 32px; }
@@ -126,15 +138,17 @@ details > p { max-width: 76ch; font-size: 14px; line-height: 21px; color: var(--
   #retrieval-time { display: block; }
   .services, .section, .page-footer { margin-top: 24px; }
   .section + .section { padding-top: 24px; }
-  .service-list > div { gap: 8px 12px; }
-  .service-list dt { font-size: 15px; }
+  .service-header { gap: 8px 12px; }
+  .service-name h3 { font-size: 15px; }
+  .service-meta { gap: 8px 12px; }
   .service-state { gap: 6px; }
   .evidence-record > div { display: block; padding-block: 6px; }
   .evidence-record dd { margin-top: 2px; }
   .page-footer nav { column-gap: 20px; }
 }
 @media (max-width: 359px) {
-  .service-list > div { grid-template-columns: 1fr; }
+  .service-header { grid-template-columns: 1fr; }
+  .service-meta { justify-content: flex-start; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }
@@ -172,13 +186,24 @@ figure { margin: 0; }
 .weekly-table th, .weekly-table td { text-align: left; padding: 8px; border-bottom: 1px solid var(--rule); }
 .weekly-table tbody th { font-weight: 400; }
 .weekly-table td { font-family: var(--mono); }
-.showcase-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin-top: 24px; }
-.showcase-grid img { display: block; width: 100%; max-width: 320px; height: auto; margin-inline: auto; border-radius: 12px; border: 1px solid var(--rule); background: #0a0a0a; }
-.showcase-grid a { display: block; }
-.showcase-grid figcaption { max-width: 320px; margin: 16px auto 0; }
-.showcase-grid figcaption p { font-size: 14px; line-height: 21px; color: var(--secondary); margin-top: 6px; }
+.about-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; border-top: 1px solid var(--rule); padding-top: 20px; }
+.about-grid h3 { margin-bottom: 8px; }
+.about-grid p { font-size: 15px; line-height: 1.6; color: var(--secondary); }
+.preview-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+.preview-tab { appearance: none; min-height: 40px; padding: 8px 14px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); color: var(--text); font: 600 14px/20px var(--serif); cursor: pointer; }
+.preview-tab:hover { border-color: var(--text); }
+.preview-tab[aria-pressed="true"] { background: var(--text); color: var(--paper); border-color: var(--text); }
+.browser-frame { margin-top: 16px; border: 1px solid var(--rule); border-radius: 12px; overflow: hidden; background: #ffffff; }
+.browser-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 16px; border-bottom: 1px solid var(--rule); background: var(--paper); flex-wrap: wrap; }
+.browser-url { font-family: var(--mono); font-size: 13px; line-height: 20px; color: var(--secondary); }
+.browser-open { font-size: 14px; line-height: 20px; }
+.preview-iframe { display: block; width: 100%; height: 680px; border: 0; background: #ffffff; }
+.preview-fallback-note { margin-top: 12px; }
 .engineering-context { margin-bottom: 20px; }
 .services { border-top: 1px solid var(--rule); padding-top: 32px; }
+@media (max-width: 767px) {
+  .about-grid { grid-template-columns: 1fr; gap: 20px; }
+}
 @media (max-width: 599px) {
   .introduction { padding-top: 32px; }
   .project-description { font-size: 17px; margin-top: 20px; }
@@ -186,7 +211,7 @@ figure { margin: 0; }
   .activity-record > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 16px; align-items: baseline; }
   .activity-record dd { margin: 0; font-size: 28px; }
   .activity-record .metric-scope { grid-column: 1 / -1; margin-top: 4px; }
-  .showcase-grid { grid-template-columns: 1fr; gap: 28px; }
+  .preview-iframe { height: 600px; }
   .services { padding-top: 24px; }
   #weekly-chart { overflow-x: auto; }
   #weekly-chart svg { min-width: 640px; }

@@ -20,10 +20,10 @@ export function createActivityRenderer(document) {
     text("accounts-scope", legacy ? "Excludes administrators; total including admin is unavailable." : "Includes the owner/admin account.");
     text("accounts-value", current ? disclosure(accounts) : "—");
     text("workouts-value", current ? number(data.workoutRecordsProcessed) : "—");
-    const recent = current ? data.completedWorkoutsLast30Days : null;
-    text("recent-value", recent === null ? "—" : number(recent));
+    const sets = current ? data.setsLogged : null;
+    text("sets-value", sets === null ? "—" : number(sets));
     const weeks = current ? data.completedWorkoutsByWeek : null;
-    text("activity-breakdown-notice", current && (recent === null || weeks === null)
+    text("activity-breakdown-notice", current && (sets === null || weeks === null)
       ? "The additional activity breakdown is unavailable. Existing totals are shown above." : "");
     const signature = JSON.stringify(weeks);
     if (signature !== previous) {

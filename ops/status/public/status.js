@@ -14,7 +14,32 @@ export async function fetchJson(url) {
   } finally { clearTimeout(timeout); }
 }
 
+const APP_ORIGIN = "https://app.gymtrack.ch";
+
+function initPreviewControls() {
+  const frame = document.getElementById("app-preview-frame");
+  const urlLabel = document.getElementById("preview-url");
+  const openLink = document.getElementById("preview-open-link");
+  const buttons = [...document.querySelectorAll(".preview-tab[data-preview-path]")];
+  if (!frame || !buttons.length) return;
+
+  for (const button of buttons) {
+    button.addEventListener("click", () => {
+      const path = button.dataset.previewPath;
+      if (!path || !path.startsWith("/demo")) return;
+      const target = `${APP_ORIGIN}${path}`;
+      if (frame.getAttribute("src") !== target) frame.setAttribute("src", target);
+      if (urlLabel) urlLabel.textContent = `app.gymtrack.ch${path}`;
+      if (openLink) openLink.href = target;
+      for (const item of buttons) {
+        item.setAttribute("aria-pressed", String(item === button));
+      }
+    });
+  }
+}
+
 function start() {
+  initPreviewControls();
   const controller = createStatusController({ fetchJson, onChange: createStatusRenderer(document) });
   const refresh = () => {
     controller.tick();

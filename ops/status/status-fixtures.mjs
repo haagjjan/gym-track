@@ -3,8 +3,8 @@ export const FIXTURE_SHA = "1234567890abcdef1234567890abcdef12345678";
 export const PROVIDER = "https://gymtrack.betteruptime.com";
 export const SCENARIOS = ["healthy", "incident", "degraded", "outage", "maintenance", "unavailable", "unconfigured", "malformed", "incomplete", "stale", "metrics-unavailable", "metrics-stale", "build-stale", "build-missing", "build-future", "metrics-legacy", "metrics-empty", "metrics-malformed"];
 
-export function resource(publicName, status = "operational") {
-  return { type: "status_page_resource", attributes: { public_name: publicName, status, availability: 1 } };
+export function resource(publicName, status = "operational", availability = 1) {
+  return { type: "status_page_resource", attributes: { public_name: publicName, status, availability } };
 }
 
 export function monitoringFixture(now = Date.now()) {
@@ -12,7 +12,11 @@ export function monitoringFixture(now = Date.now()) {
     day: new Date(now - offset * 86_400_000).toISOString().slice(0, 10), status: "operational",
     downtime_duration: 0, maintenance_duration: 0
   }));
-  const included = [resource("Web application"), resource("API and database"), resource("Independent status page")];
+  const included = [
+    resource("Web application", "operational", 1),
+    resource("API and database", "operational", 0.9998),
+    resource("Independent status page", "operational", 1)
+  ];
   for (const item of included) item.attributes.status_history = structuredClone(days);
   return { data: { type: "status_page", attributes: { aggregate_state: "operational", updated_at: "2020-01-01T00:00:00Z" } }, included };
 }
@@ -62,6 +66,7 @@ export function scenarioFixture(scenario, now = Date.now()) {
     monday.setUTCHours(0, 0, 0, 0);
     monday.setUTCDate(monday.getUTCDate() - (monday.getUTCDay() + 6) % 7 - 49);
     metrics.data.activeAccounts = { kind: "exact", value: 8 };
+    metrics.data.setsLogged = scenario === "metrics-empty" ? 0 : 1248;
     metrics.data.completedWorkoutsLast30Days = scenario === "metrics-empty" ? 0 : 23;
     metrics.data.completedWorkoutsByWeek = [2, 4, 3, 7, 5, 8, 6, 4].map((count, index) => ({
       weekStart: new Date(monday.getTime() + index * 7 * 86_400_000).toISOString().slice(0, 10),
