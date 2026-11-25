@@ -102,7 +102,7 @@
           <span class="phone-btn phone-btn-vol-up" aria-hidden="true"></span>
           <span class="phone-btn phone-btn-vol-down" aria-hidden="true"></span>
           <span class="phone-btn phone-btn-power" aria-hidden="true"></span>
-          <div class="phone-screen">
+          <div class="phone-screen" id="phone-screen" data-preview-state="static">
             <div class="phone-statusbar" aria-hidden="true">
               <span class="phone-time">9:41</span>
               <span class="phone-island"><span class="phone-camera"></span></span>
@@ -120,14 +120,30 @@
                 </svg>
               </span>
             </div>
-            <iframe
-              id="app-preview-frame"
-              class="preview-iframe"
-              title="Interactive GymTrack app preview"
-              src="https://app.gymtrack.ch/demo"
-              loading="lazy"
-              referrerpolicy="no-referrer"
-            ></iframe>
+            <div class="phone-viewport">
+              <iframe
+                id="app-preview-frame"
+                class="preview-iframe"
+                title="Interactive GymTrack app preview"
+                src="https://app.gymtrack.ch/demo"
+                loading="lazy"
+                referrerpolicy="no-referrer"
+              ></iframe>
+              <div class="preview-fallback" id="preview-fallback">
+                <img
+                  id="preview-fallback-image"
+                  class="preview-fallback-image"
+                  src="./images/workout.webp"
+                  alt="GymTrack workout screen static preview"
+                  width="356"
+                  height="660"
+                >
+                <div class="preview-fallback-bar">
+                  <p id="preview-fallback-status">Static preview of GymTrack.</p>
+                  <button type="button" id="preview-retry" class="preview-retry" hidden>Retry</button>
+                </div>
+              </div>
+            </div>
             <div class="phone-home-bar" aria-hidden="true"><span></span></div>
           </div>
         </div>

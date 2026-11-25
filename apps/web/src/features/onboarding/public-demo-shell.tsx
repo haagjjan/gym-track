@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { IconClock, IconDumbbell, IconFigure, IconTrend } from "../../shared/ui/icons";
 import { normalizePathname } from "../../shared/platform/routes";
 import { DemoProvider } from "./demo-provider";
+
+const STATUS_PAGE_ORIGIN = "https://status.gymtrack.ch";
 
 const PUBLIC_TABS = [
   { id: "workout", label: "Workout", href: "/demo", icon: IconDumbbell },
@@ -26,6 +28,23 @@ function activePublicTab(pathname: string): PublicTabId {
 export function PublicDemoShell({ children }: { children: ReactNode }): ReactNode {
   const pathname = normalizePathname(usePathname());
   const active = activePublicTab(pathname);
+
+  useEffect(() => {
+    if (window.parent === window) return;
+    const targetOrigin = window.location.protocol === "https:" ? STATUS_PAGE_ORIGIN : "*";
+    const announceReady = (): void => {
+      window.parent.postMessage({ type: "gymtrack:demo-ready", path: pathname }, targetOrigin);
+    };
+    const onMessage = (event: MessageEvent): void => {
+      if (event.source !== window.parent) return;
+      if (window.location.protocol === "https:" && event.origin !== STATUS_PAGE_ORIGIN) return;
+      const data = event.data as { type?: unknown } | null;
+      if (data?.type === "gymtrack:demo-ping") announceReady();
+    };
+    window.addEventListener("message", onMessage);
+    announceReady();
+    return () => { window.removeEventListener("message", onMessage); };
+  }, [pathname]);
 
   return (
     <DemoProvider startWithPractice>

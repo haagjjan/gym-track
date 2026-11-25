@@ -50,8 +50,12 @@ for (const width of [390, 768, 1440]) {
     await expect(page.locator("#weekly-rows tr").last()).toContainText("partial");
 
     await expect(page.locator(".phone-device #app-preview-frame")).toHaveAttribute("src", "https://app.gymtrack.ch/demo");
+    await expect(page.locator("#preview-fallback-image")).toHaveAttribute("src", "./images/workout.webp");
     await page.getByRole("button", { name: "Progress" }).click();
     await expect(page.locator("#app-preview-frame")).toHaveAttribute("src", "https://app.gymtrack.ch/demo/progress");
+    await expect(page.locator("#preview-fallback-image")).toHaveAttribute("src", "./images/progress.webp");
+    await expect(page.locator("#phone-screen")).toHaveAttribute("data-preview-state", "fallback", { timeout: 8_000 });
+    await expect(page.locator("#preview-retry")).toBeVisible();
 
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
     const accessibility = await new AxeBuilder({ page }).exclude("#app-preview-frame").analyze();
@@ -106,4 +110,20 @@ test("keyboard access and static content without JavaScript", async ({ browser, 
   await expect(staticPage.locator("noscript p")).toContainText("JavaScript is required");
   await expect(staticPage.locator("#accounts-value")).toHaveText("—");
   await context.close();
+});
+
+test("reveals live embedded preview on demo-ready handshake", async ({ page }) => {
+  await page.route("https://app.gymtrack.ch/demo**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "text/html",
+      body: `<!doctype html><html><body><script>const send=()=>window.parent.postMessage({type:"gymtrack:demo-ready",path:"/demo/volume"},"*");window.addEventListener("message",(e)=>{if(e.data&&e.data.type==="gymtrack:demo-ping")send();});send();</script><p>Demo ready</p></body></html>`
+    })
+  );
+  await page.goto("/?fixture=healthy");
+  await page.locator("#phone-screen").scrollIntoViewIfNeeded();
+  await expect(page.locator("#phone-screen")).toHaveAttribute("data-preview-state", "live");
+  await expect(page.locator("#preview-fallback")).toBeHidden();
+  await expect(page.getByRole("button", { name: "Volume" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#preview-open-link")).toHaveAttribute("href", "https://app.gymtrack.ch/demo/volume");
 });
