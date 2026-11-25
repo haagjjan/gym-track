@@ -18,6 +18,8 @@ export function monitoringFixture(now = Date.now()) {
     resource("Independent status page", "operational", 1)
   ];
   for (const item of included) item.attributes.status_history = structuredClone(days);
+  included[1].attributes.status_history[1].status = "degraded";
+  included[1].attributes.status_history[1].downtime_duration = 180;
   return { data: { type: "status_page", attributes: { aggregate_state: "operational", updated_at: "2020-01-01T00:00:00Z" } }, included };
 }
 

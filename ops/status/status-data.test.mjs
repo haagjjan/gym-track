@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   parseBetterStackStatusUrl, parseMonitoringFeed, parsePublicMetrics, parseQualitySummary,
-  qualityFreshness, parseHistory, historySummary, timestamp, parseAvailability, formatAvailability
+  qualityFreshness, parseHistory, historySummary, timestamp, parseAvailability, formatAvailability,
+  buildTimelineDays, windowAvailability
 } from "./public/status-data.js";
 import { monitoringFixture, incidentFixture, metricsFixture, qualityFixture } from "./status-fixtures.mjs";
 
@@ -22,6 +23,13 @@ describe("monitoring data", () => {
     assert.equal(parseAvailability(1.1), null);
     assert.equal(parseAvailability("1"), null);
     assert.equal(view.components[0].history.length, 3);
+
+    const days30 = buildTimelineDays(view.components[1].history, 30, NOW);
+    assert.equal(days30.length, 30);
+    assert.equal(days30.filter((day) => day.state === "nodata").length, 27);
+    assert.equal(days30.filter((day) => day.state === "degraded").length, 1);
+    assert.equal(formatAvailability(windowAvailability(days30, 0.9998)), "99.93%");
+    assert.equal(formatAvailability(windowAvailability(buildTimelineDays([], 7, NOW), 0.9998)), "99.98%");
   });
   for (const state of ["degraded", "downtime", "maintenance"]) {
     it(`respects component and aggregate ${state}`, () => {
