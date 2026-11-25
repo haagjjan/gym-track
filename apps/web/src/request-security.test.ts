@@ -229,6 +229,22 @@ describe("web request security", () => {
     assert.equal(securityHeaders(config, "app.gymtrack.ch")["X-Frame-Options"], "DENY");
   });
 
+  it("allows framing only for the public /demo route from status.gymtrack.ch", () => {
+    const config = readWebSecurityConfig(productionEnv);
+    const demoHeaders = securityHeaders(config, "app.gymtrack.ch", "/demo");
+    const nestedDemoHeaders = securityHeaders(config, "app.gymtrack.ch", "/demo/progress");
+    const loginHeaders = securityHeaders(config, "app.gymtrack.ch", "/login");
+
+    assert.equal(demoHeaders["X-Frame-Options"], undefined);
+    assert.equal(
+      demoHeaders["Content-Security-Policy"],
+      "base-uri 'self'; form-action 'self'; frame-ancestors 'self' https://status.gymtrack.ch"
+    );
+    assert.equal(nestedDemoHeaders["X-Frame-Options"], undefined);
+    assert.equal(loginHeaders["X-Frame-Options"], "DENY");
+    assert.match(loginHeaders["Content-Security-Policy"] ?? "", /frame-ancestors 'none'/);
+  });
+
   it("keeps HSTS off until the operator explicitly enables it", () => {
     const config = readWebSecurityConfig({
       APP_BASE_URL: "https://app.gymtrack.ch",

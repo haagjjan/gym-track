@@ -28,12 +28,13 @@ export function DemoProgressScreen(): ReactNode {
     }} key={`progress-${state.entered}`} />;
 }
 
-export function DemoVolumeScreen(): ReactNode {
+export function DemoVolumeScreen({ basePath = "/help/demo" }: { basePath?: string } = {}): ReactNode {
   const { record } = useDemo();
   const workouts = useDemoWorkouts();
   const [days, setDays] = useState<VolumeWindowDays>(7);
   const payload = demoVolume(workouts, days, Date.now());
+  const workoutLink = (id: string): string => basePath === "/help/demo" ? demoWorkoutHref(id) : `${basePath}/history/${encodeURIComponent(id)}`;
   return <VolumeView volume={loaded(payload)} windowDays={days} setWindowDays={setDays}
     onSelectMuscle={(slug) => { if (payload.weeks.some((week) => week.items.some((item) => item.muscleGroup.slug === slug && item.workingSets > 0))) record("selectedMuscle"); }}
-    workoutHref={demoWorkoutHref} />;
+    workoutHref={workoutLink} />;
 }

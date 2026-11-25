@@ -171,17 +171,36 @@ export function evaluateRequestSecurity(
   return null;
 }
 
+const STATUS_PAGE_ORIGIN = "https://status.gymtrack.ch";
+const LOCAL_STATUS_ORIGINS = [
+  "http://127.0.0.1:4173",
+  "http://localhost:4173",
+  "http://127.0.0.1:4179",
+  "http://localhost:4179"
+];
+
 export function securityHeaders(
   config: WebSecurityConfig,
-  requestHost: string | null
+  requestHost: string | null,
+  pathname = "/"
 ): Readonly<Record<string, string>> {
+  const embeddable = isEmbeddableDemoPath(pathname);
+  const frameAncestors = embeddable
+    ? config.canonicalOrigin.startsWith("https://")
+      ? `'self' ${STATUS_PAGE_ORIGIN}`
+      : `'self' ${STATUS_PAGE_ORIGIN} ${LOCAL_STATUS_ORIGINS.join(" ")}`
+    : "'none'";
+
   const headers: Record<string, string> = {
-    "Content-Security-Policy": "base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+    "Content-Security-Policy": `base-uri 'self'; form-action 'self'; frame-ancestors ${frameAncestors}`,
     "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
     "Referrer-Policy": "strict-origin-when-cross-origin",
-    "X-Content-Type-Options": "nosniff",
-    "X-Frame-Options": "DENY"
+    "X-Content-Type-Options": "nosniff"
   };
+
+  if (!embeddable) {
+    headers["X-Frame-Options"] = "DENY";
+  }
 
   if (
     config.hstsEnabled &&
@@ -192,6 +211,10 @@ export function securityHeaders(
   }
 
   return headers;
+}
+
+function isEmbeddableDemoPath(pathname: string): boolean {
+  return pathname === "/demo" || pathname.startsWith("/demo/");
 }
 
 function commaSeparated(value: string | undefined): string[] {

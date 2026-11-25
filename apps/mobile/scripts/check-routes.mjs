@@ -8,7 +8,8 @@ const mobileApp = new URL("../src/app/", import.meta.url).pathname;
 
 /** Web routes that are not part of the app, with the reason. */
 const WEB_ONLY = new Map([
-  ["/admin", "administrators use the web"]
+  ["/admin", "administrators use the web"],
+  ["/demo/[[...screen]]", "public browser preview embedded by status.gymtrack.ch"]
 ]);
 /** Web routes whose app page has another path (static export has no user-data params). */
 const RENAMED = new Map([

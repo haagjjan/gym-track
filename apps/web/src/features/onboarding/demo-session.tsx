@@ -15,7 +15,7 @@ import { DemoSetPanel } from "./demo-set-panel";
 import { demoExercises, practiceWorkout } from "./demo-data";
 import { useDemo } from "./demo-provider";
 
-export function DemoSession(): ReactNode {
+export function DemoSession({ basePath = "/help/demo" }: { basePath?: string } = {}): ReactNode {
   const { state, setState, record } = useDemo();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
@@ -46,10 +46,10 @@ export function DemoSession(): ReactNode {
       return { ...current, exercises: entries.map((entry, index) => ({ ...entry, position: index + 1 })) };
     });
   }
-  if (!workout) return <section className="m-4 rounded-[var(--radius-card)] bg-surface p-4"><p className="text-body text-text">Start an example workout first.</p><Link className={`${buttonClass("primary")} mt-4 w-full`} href="/help/demo/workout">Open workout</Link></section>;
+  if (!workout) return <section className="m-4 rounded-[var(--radius-card)] bg-surface p-4"><p className="text-body text-text">Start an example workout first.</p><Link className={`${buttonClass("primary")} mt-4 w-full`} href={`${basePath}/workout`}>Open workout</Link></section>;
   const totals = calculateSessionTotals(workout.exercises);
   return <div>
-    <SessionHeader backHref="/help/demo/history" backLabel="Back to example history" focusName={false} isOpen={workout.isOpen} isRenaming={false}
+    <SessionHeader backHref={`${basePath}/history`} backLabel="Back to example history" focusName={false} isOpen={workout.isOpen} isRenaming={false}
       onDelete={() => setDiscard(true)}
       onRename={(title) => update((current) => ({ ...current, title }))} startedAt={workout.startedAt} title={workout.title} />
     <div className="mx-auto grid max-w-5xl gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_260px]">

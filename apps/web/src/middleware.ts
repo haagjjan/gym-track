@@ -37,7 +37,7 @@ export function middleware(request: NextRequest): NextResponse {
 
   if (redirectTarget) {
     const redirect = NextResponse.redirect(redirectTarget, 308);
-    applySecurityHeaders(redirect, securityConfig, request.headers.get("host"));
+    applySecurityHeaders(redirect, securityConfig, request.headers.get("host"), request.nextUrl.pathname);
     return redirect;
   }
 
@@ -57,12 +57,13 @@ export function middleware(request: NextRequest): NextResponse {
       { error: { code: rejection.code, message: rejection.message } },
       rejection.status,
       securityConfig,
-      request.headers.get("host")
+      request.headers.get("host"),
+      request.nextUrl.pathname
     );
   }
 
   const response = NextResponse.next();
-  applySecurityHeaders(response, securityConfig, request.headers.get("host"));
+  applySecurityHeaders(response, securityConfig, request.headers.get("host"), request.nextUrl.pathname);
   return response;
 }
 
@@ -70,12 +71,13 @@ function securedJson(
   body: object,
   status: number,
   config?: WebSecurityConfig,
-  host: string | null = null
+  host: string | null = null,
+  pathname = "/"
 ): NextResponse {
   const response = NextResponse.json(body, { status });
 
   if (config) {
-    applySecurityHeaders(response, config, host);
+    applySecurityHeaders(response, config, host, pathname);
   }
 
   return response;
@@ -84,9 +86,10 @@ function securedJson(
 function applySecurityHeaders(
   response: NextResponse,
   config: WebSecurityConfig,
-  host: string | null
+  host: string | null,
+  pathname: string
 ): void {
-  for (const [name, value] of Object.entries(securityHeaders(config, host))) {
+  for (const [name, value] of Object.entries(securityHeaders(config, host, pathname))) {
     response.headers.set(name, value);
   }
 }
