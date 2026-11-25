@@ -14,6 +14,8 @@ test("creates, filters, edits, and launches a workout template", async ({ page }
   await page.getByLabel(/Email address/i).fill(`${username}@example.com`);
   await page.getByLabel(/^Username$/i).fill(username);
   await page.getByLabel(/^Password \(at least 10 characters\)$/i).fill("template-passphrase-1");
+  await page.getByLabel(/at least 18 and live in Switzerland/i).check();
+  await page.getByLabel(/I accept the Terms/i).check();
   await page.getByRole("button", { name: "CREATE ACCOUNT" }).click();
   await expect(page.getByRole("heading", { name: new RegExp(username, "i") })).toBeVisible();
   const onboarding = page.getByRole("region", { name: "Try the example" });
