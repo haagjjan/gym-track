@@ -71,7 +71,7 @@ jobs:
           test -f ops/status/public/config.json
           test -f ops/status/public/quality.json
           test "$(cat ops/status/public/CNAME)" = "status.gymtrack.ch"
-          test "$(grep -Fc '<script type="module" src="./status.js"></script>' ops/status/public/index.html)" = "1"
+          test "$(grep -Ec '<script type="module" src="\./status\.js(\?v=[a-zA-Z0-9._-]+)?"></script>' ops/status/public/index.html)" = "1"
 
           if grep -rqiE 'onerror=|onload=|style=' ops/status/public; then
             printf 'ERROR: status assets must not contain inline handlers or styles\n' >&2
